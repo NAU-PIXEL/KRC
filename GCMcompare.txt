@@ -1,0 +1,115 @@
+
+run KRC on gcm1.inp and gcm2.iip cases
+
+run qheat.pro
+
+@3
+@31
+@36 to hold these 
+@16  set 4,5,6 for model wanted  season 13 is Ls=100.00919
+@33 to plot one case
+@16 to specify a second case  6 1  -2 2
+@332 to overplot it.
+
+
+TAURAT of 1.0 has ~4K higher atm temps. than 0.5
+____________________________________________________________________________
+
+Robert.M.Haberle@nasa.gov
+Robin.Fergason@asu.edu,phil.christensen@asu.edu,ttitus@usgs.gov
+
+Bob:
+
+Phrases which ask you for something are in upper-case.
+
+You said "We run for 20 sols and output the last sol."  DOES YOU SUN-MARS
+GEOMETRY CHANGE EVERY TIME STEP, OR EVERY DAY, OR DOES MARS SIT AT LS=100 FOR
+TWENTY DAYS?
+
+I would expect the atmosphere temperature comparison to be reasonably
+valid. Because I use an atmosphere that is vertically isothermal it should be
+comparable to a mass-weighted result.
+
+The KRC To-of-atmosphere bolometric temperature is defined by:
+    sigma Tp^4 = sigma Tp^4 (e^-tau) + sigma Tp^4 (1.-e^-tau)
+where tau is the infrared atmospheric opacity (tau sub R in my LaTeX writeups)
+given by: 
+     TAUIR=(CABR+TAUD*TAURAT)*(PRES/PTOTAL)
+where    CABR  = IR opacity of dust-free atmosphere.  Set at 0.18
+	TAUD   = Mean visible opacity of dust, solar wavelengths
+	TAURAT = Ratio of thermal to visible opacity of dust
+        PRES   = Local surface pressure at current season
+	PTOTAL = Global annual mean surface pressure at 0 elev., 689.7 Pascal
+
+This should yield a result similiar to your effective radiance temperature
+calculation. I found that lowering CABR to 0.15 lowers both surface and
+atmospheric temperatures about 1K, while increasing the bolometric variation
+about 1K. DO YOU HAVE A VALUE FOR THE EFFECTIVE OPACITY OF A DUST-FREE 
+NOMINAL ATMOSPHERE?
+
+For the VL-1 @ Ls=100 case, the KRC local surface pressure is ~900 Pascal and
+the infrared opacity (tau) will be about 0.626. This pressure is considerably
+higher than you use. AM I USING TOO HIGH AN ANNUAL MEAN PRESSURE AT 0 ELEVATION?
+I tried change the reference pressure to 540 Pa; about the only effect was to
+increase the atm. diurnal variation about 3 K.
+
+To try to more closely approach what the GCM does, I have run some additional
+KRC cases. I expect it is easier for me to run more cases than for you.
+
+First, I ran a 3-year case [case 3 in plot] with Visible/IR (taurat) dust ratio
+= 1.0, all other conditions the same as in my July 24 runs [case 1 in plot,
+taurat=0.5]. This raises the atm. temperature about 4K and decreases the
+bolmetric temperature variation about 8K. (see attached jpeg figure).
+
+I then modified this by starting all layers at 180K and holding the bottom layer
+(number 19, at 1.1 meters) at that temperature; this surprisingly lowers all
+temperatures all day about 1K [case 4 in plot].
+
+I have run a KRC case with 1-sol spaceing between "seasons", starting 20 days
+before Ls=100 with taurat=1.0, again starting all layers at 180K and holding the
+bottom layer there [dotted line in figure]. This may be as close as KRC can come
+to running the same conditions as your reference GCM run. 
+
+Even with 29 layers, near the maximum for KRC as currently coded,
+this themal inertia only gets to a total depth of 8 meters, so I am wondering
+WHAT IS YOUR SUBSURFACE LAYER STRUCTURE LIKE?
+
+The temperatures from KRC relative to the GCM are listed below.  The GMS means
+were faked UNTIL I GET DIGITAL TABLES FROM YOU.
+
+               Surface Kin.       TOA Bolometric        Atmosphere 
+Case         min   max  mean     min   max  mean     min   max  mean
+GCM        182.1 262.7 215.5   186.5 249.5 213.1   196.2 206.5 201.4
+TR=0.5       8.4   5.9   7.0     3.5  -0.3   0.9    -8.5 -11.4  -9.9
+TR=1.       14.9   9.7  12.4     8.4  -3.9   2.5    -5.5  -6.2  -5.9
+Tdeep=180   13.5   8.8  11.2     7.2  -4.8   1.5    -6.4  -7.2  -6.8
+20 sol      11.4   7.7   9.6     5.5  -6.0   0.0    -7.6  -8.5  -8.0
+
+In summary, 
+1) KRC surface is about 10K warmer and amplitude 5K smaller than the GCM
+2) KRC atmosphere is consistently ~7K colder than the GCM average, 
+3) KRC atmosphere variation is about the same as the GCM
+4) The 20-sol startup may still leave temperatures a couple degrees low
+
+Based upon this, I would be interested in a comparison of the models for a
+condition with minimum atmosphere (away from the poles) to see if the surface
+temperature differences have an identifieable pattern.  CAN YOU EXTRACT THE
+RESULTS FROM AN EXISTING ANNUAL RUN AT A MAXIMUM-ALTITUDE TEMPERATE LOCATION?
+
+____________________________________________________________________________
+sep24 with digital GCM file.
+
+Reverse enginerr effective tau. for KRC gcm1 get .417 to .430
+For Ames GCM, rises through the night to 0.19, minimum at noon of 0.35
+
+
+71,
+3,31,33,
+
+
+need to extract a latitude and season for all cases, in same form as GCM
+perhaps put all in one array, identify one as the reference model.
+ Have good names assigned to each!
+
+
+ print the changes for ref model for all the others.

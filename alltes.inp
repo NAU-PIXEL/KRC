@@ -1,0 +1,309 @@
+ 0 0 / KOLD: SEASON TO START WITH;  KEEP: CONTINUE SAVING DATA IN SAME DISK FILE
+Mars in 1998-2000 m_year/40, start at Ls=0 3 m_yrs early
+    ALBEDO     EMISS   INERTIA        BK       BRC    PERIOD  SPECHEAT   DENSITY
+       .15      1.00      50.0      2.00      1.00    1.0275      630.     1600.
+      CABR    ABRAMP    ABRPHA    PTOTAL     FANON      TATM     TDEEP     spare
+      0.40       .30      260.     689.7      .055      200.    210.61       0.0
+      TAUD     DUSTA    TAURAT     TWILI      ACR2      ARC3     SLOPE    SLOAZI
+       0.2       .90        .5       5.0       0.5      0.10       0.0       90.
+    TFROST    CFROST    AFROST     FEMIS       AF1       AF2    FROEXT      fd32
+     148.0   589944.       .65      1.00      0.65     0.001       50.       0.0
+      RLAY      FLAY     CONVF     DEPTH     DRSET       DDT       GGT     FDOWN
+    1.2000     .1800    2.0000       0.0       0.0     .0020     .1000       0.1
+      DJUL    DELJUL  SOLARDEC       DAU      HLON    SOLCON      GRAV     spare
+    8948.4   17.1745      00.0     1.465        .0     1368.     3.727     12.34
+        N1        N2        N3        N4        N5       N24        IB        IC
+        19       384        10        19       120        24         0         0
+     NRSET      NMHA      NRUN     JDISK     IDOWN       I14       I15     KPREF
+         3        24         1        81         0        71        68         1
+     K4OUT     spare     spare     spare                                     end
+        -1         0         0         0                                       0
+    LP1    LP2    LP3    LP4    LP5    LP6 LPGLOB   LVFA   LVFT  debug
+      F      T      F      F      F      F      F      F      F      F
+  LPORB   LKEY    LSC LNOTIF  LOCAL  spare LPTAVE  spare  debug  debug
+      T      F      F      T      F      F      F      F      F      F
+LATITUDES: in 10F7.2  _____7 _____7 _____7 _____7 _____7 _____7 _____7
+   -90.   -80.   -70.   -60.   -50.   -40.   -30.   -20.   -10.     0.
+    10.    20.    30.    40.    50.    60.    70.    80.    90.
+Elevations: in 10F7.2  _____7 _____7 _____7 _____7 _____7 _____7 _____7
+ -4.379 -4.379 -4.379 -4.379 -4.379 -4.379 -4.379 -4.379 -4.379 -4.379
+ -4.379 -4.379 -4.379 -4.379 -4.379 -4.379 -4.379 -4.379 -4.379
+  97-JAN-30 15:37:58 =RUNTIME.  IPLAN AND TC=   4.0 0.49000
+   4.000000      0.4900000      0.8556749      0.3221672E-01   4.997373    
+  0.9339862E-01   1.523693       10820.59       686.9796      0.9204510    
+   5.539492       24.62278             0.      0.4093198             0.    
+         0.             0.             0.       6.150894      0.4662405    
+  0.4166342E-01  0.6202968       4.377076             0.             0.    
+         0.             0.             0.             0.             0.    
+         0.             0.             0.     -0.9491031E-01  0.8901852    
+  0.4456034     -0.9056373      0.1086292     -0.4099036     -0.4132956    
+ -0.4424591      0.7958748      0.9085325     -0.4166692     -0.3091195E-01
+  0.4171058      0.9088128      0.9055913E-02  0.2431985E-01 -0.2112114E-01
+  0.9994811     -0.3290646     -0.8544949     -0.4019393      0.9443074    
+ -0.2977673     -0.1400645      0.3352761E-07  0.4256445     -0.9048904 
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk050a15t2em4.tds' 
+0 /
+3 2 0. 'LP2 turned off'
+1 3 100. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk100a15t2em4.tds' 
+0 /
+1 3 200. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk200a15t2em4.tds' 
+0 /
+1 3 400. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk400a15t2em4.tds' 
+0 /
+1 3 800. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk800a15t2em4.tds' 
+0 / 
+1 1 0.35 'Albedo'
+1 3 50. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk050a35t2em4.tds' 
+0 /
+1 3 200. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk200a35t2em4.tds' 
+0 /
+1 3 800. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk800a35t2em4.tds' 
+0 / 
+3 2 1. 'LP2 turned on'
+1 17 0.6 'Tau_Dust'
+1 1 0.15 'Albedo'
+1 3 50. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk050a15t6em4.tds' 
+0 /
+3 2 0. 'LP2 turned off'
+1 3 100. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk100a15t6em4.tds' 
+0 /
+1 3 200. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk200a15t6em4.tds' 
+0 /
+1 3 400. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk400a15t6em4.tds' 
+0 /
+1 3 800. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk800a15t6em4.tds' 
+0 / 
+1 1 0.35 'Albedo'
+1 3 50. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk050a35t6em4.tds' 
+0 /
+1 3 200. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk200a35t6em4.tds' 
+0 /
+1 3 800. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk800a35t6em4.tds' 
+0 / 
+3 2 1. 'LP2 turned on'
+1 17 1.0 'Tau_Dust'
+1 1 0.15 'Albedo'
+1 3 50. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk050a15t10em4.tds' 
+0 /
+3 2 0. 'LP2 turned off'
+1 3 100. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk100a15t10em4.tds' 
+0 /
+1 3 200. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk200a15t10em4.tds' 
+0 /
+1 3 400. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk400a15t10em4.tds' 
+0 /
+1 3 800. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk800a15t10em4.tds' 
+0 / 
+1 1 0.35 'Albedo'
+1 3 50. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk050a35t10em4.tds' 
+0 /
+1 3 200. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk200a35t10em4.tds' 
+0 /
+1 3 800. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk800a35t10em4.tds' 
+0 / 
+3 2 1. 'LP2 turned on'
+5 0 0 'new elevs'
+  0.000  0.000  0.000  0.000  0.000  0.000  0.000  0.000  0.000  0.000
+  0.000  0.000  0.000  0.000  0.000  0.000  0.000  0.000  0.000
+1 17 0.2 'Tau_Dust'
+1 1 0.15 'Albedo'
+1 3 50. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk050a15t2ep0.tds' 
+0 /
+3 2 0. 'LP2 turned off'
+1 3 100. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk100a15t2ep0.tds' 
+0 /
+1 3 200. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk200a15t2ep0.tds' 
+0 /
+1 3 400. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk400a15t2ep0.tds' 
+0 /
+1 3 800. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk800a15t2ep0.tds' 
+0 / 
+1 1 0.35 'Albedo'
+1 3 50. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk050a35t2ep0.tds' 
+0 /
+1 3 200. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk200a35t2ep0.tds' 
+0 /
+1 3 800. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk800a35t2ep0.tds' 
+0 / 
+3 2 1. 'LP2 turned on'
+1 17 0.6 'Tau_Dust'
+1 1 0.15 'Albedo'
+1 3 50. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk050a15t6ep0.tds' 
+0 /
+3 2 0. 'LP2 turned off'
+1 3 100. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk100a15t6ep0.tds' 
+0 /
+1 3 200. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk200a15t6ep0.tds' 
+0 /
+1 3 400. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk400a15t6ep0.tds' 
+0 /
+1 3 800. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk800a15t6ep0.tds' 
+0 / 
+1 1 0.35 'Albedo'
+1 3 50. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk050a35t6ep0.tds' 
+0 /
+1 3 200. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk200a35t6ep0.tds' 
+0 /
+1 3 800. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk800a35t6ep0.tds' 
+0 / 
+3 2 1. 'LP2 turned on'
+1 17 1.0 'Tau_Dust'
+1 1 0.15 'Albedo'
+1 3 50. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk050a15t10ep0.tds' 
+0 /
+3 2 0. 'LP2 turned off'
+1 3 100. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk100a15t10ep0.tds' 
+0 /
+1 3 200. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk200a15t10ep0.tds' 
+0 /
+1 3 400. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk400a15t10ep0.tds' 
+0 /
+1 3 800. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk800a15t10ep0.tds' 
+0 / 
+1 1 0.35 'Albedo'
+1 3 50. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk050a35t10ep0.tds' 
+0 /
+1 3 200. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk200a35t10ep0.tds' 
+0 /
+1 3 800. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk800a35t10ep0.tds' 
+0 /
+3 2 1. 'LP2 turned on'
+5 0 0 'new elevs'
+  7.486  7.486  7.486  7.486  7.486  7.486  7.486  7.486  7.486  7.486
+  7.486  7.486  7.486  7.486  7.486  7.486  7.486  7.486  7.486
+1 17 0.2 'Tau_Dust'
+1 1 0.15 'Albedo'
+1 3 50. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk050a15t2ep7.tds' 
+0 /
+3 2 0. 'LP2 turned off'
+1 3 100. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk100a15t2ep7.tds' 
+0 /
+1 3 200. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk200a15t2ep7.tds' 
+0 /
+1 3 400. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk400a15t2ep7.tds' 
+0 /
+1 3 800. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk800a15t2ep7.tds' 
+0 / 
+1 1 0.35 'Albedo'
+1 3 50. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk050a35t2ep7.tds' 
+0 /
+1 3 200. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk200a35t2ep7.tds' 
+0 /
+1 3 800. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk800a35t2ep7.tds' 
+0 / 
+3 2 1. 'LP2 turned on'
+1 17 0.6 'Tau_Dust'
+1 1 0.15 'Albedo'
+1 3 50. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk050a15t6ep7.tds' 
+0 /
+3 2 0. 'LP2 turned off'
+1 3 100. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk100a15t6ep7.tds' 
+0 /
+1 3 200. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk200a15t6ep7.tds' 
+0 /
+1 3 400. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk400a15t6ep7.tds' 
+0 /
+1 3 800. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk800a15t6ep7.tds' 
+0 / 
+1 1 0.35 'Albedo'
+1 3 50. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk050a35t6ep7.tds' 
+0 /
+1 3 200. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk200a35t6ep7.tds' 
+0 /
+1 3 800. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk800a35t6ep7.tds' 
+0 / 
+3 2 1. 'LP2 turned on'
+1 17 1.0 'Tau_Dust'
+1 1 0.15 'Albedo'
+1 3 50. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk050a15t10ep7.tds' 
+0 /
+3 2 0. 'LP2 turned off'
+1 3 100. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk100a15t10ep7.tds' 
+0 /
+1 3 200. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk200a15t10ep7.tds' 
+0 /
+1 3 400. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk400a15t10ep7.tds' 
+0 /
+1 3 800. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk800a15t10ep7.tds' 
+0 / 
+1 1 0.35 'Albedo'
+1 3 50. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk050a35t10ep7.tds' 
+0 /
+1 3 200. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk200a35t10ep7.tds' 
+0 /
+1 3 800. 'Inertia'
+8 0 0 '/hob1/hkieffer/tes/KRC/SI/sk800a35t10ep7.tds' 
+0 / 
+0 /
+0 /
+0 /

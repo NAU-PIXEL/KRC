@@ -1,0 +1,44 @@
+Tim, Robin:
+
+Just to let you know that there is a new version of KRC which can output the
+daily average upward heatflow into the surface. This is intended for study of
+the ice caps. The file output is an additional style of .bin5, selected by
+K4OUT=54
+
+In the process, I somewhat modernized the code by moving all the
+dimension-defining parameters from other commons into KRCCOM and removing the
+redundant definitions. I also added a new common, hatcom.inc, to transfer the new
+items between routines; I am reluctant to change any sizes in the existing
+commons because the C code used to read them into IDL can tolerate no mismatch
+in dimensions. This common would be the place to add other additional items.
+
+As far as I know, the new version is backward-compatible with the circa 2002
+version that was distributed to Robin.
+
+I would like to get some mileage on this new code before distributing it.
+
+Hugh
+
+Tim: I checked, and the frost temperature does change if KPREF and LVFT are set
+properly.
+
+2004jul05 Desire to output the heatflow into the bottom of a frost layer
+
+This would require output of DAYCOM for every latitude and season.
+Decide to define a new common to contain simply this information.
+define Array (# latitudes, # seasons, # models)
+Then bin5 output only the defined part.
+
+In TDAY, isolate the heat conduction term at the surface.
+Requires a counter for model!
+In TDISK, write new section for KODE=54
+Actually: move all dimension-defining parameters from other commons into KRCCOM,
+and create new hatcom.inc to hold new items
+
+
+
+Installation notes:
+
+98may26 In tdisk.f, the units of RECL depend upon compiler options.
+E.g., Sun Fortran; units are bytes (ANSII standard?) if -xl[d] is not
+set, and 4-byte words if it is set. For Linux, the units seen to be bytes.
