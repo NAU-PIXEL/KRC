@@ -25,7 +25,7 @@ C_Lims
         REAL*4 BMD2 (MD21,MD22,MD23,MD24,MD25)
 	EQUIVALENCE(BMD1,BMD2)
 C_Args
-	INTEGER KODE		!in. control
+	INTEGER KODE		! in. control
 C  1 = open file.  then see  KREC
 C        will set  LOPN2=.true. if file opened
 C  2 = write a season. appended after  JREC.  KREC ignored
@@ -34,14 +34,17 @@ C	also, sets record position to append on next write
 C  4 = close the file
 C  5 = write a record of  KRCCOM
 	INTEGER KREC	!in (when  KODE=1): file status: 0=new  1=old
-C_Hist	93mar03	ecisneros ported code to unix platform
+C_Hist ~1975 Hugh Kieffer Original version; evolved over 20 years
+C 93mar03 ecisneros ported code to unix platform
 C		          converted include filenames to lowercase.
 C 97feb11  HHK get file name only from common
 C 97aug03  HHK add short form output  97sep08 accomodate  TPF,ALAT,ELEV
 C 98may26  HHK  NRECL in bytes for  Linux
 C 98aug31  HHK include custom  bin5file capablity 
-C                         51=(30 layers, 2 min/max, 5 lat, 20 seasons, 5 cases)
-C 98nov16  HHK add custom 52=(24 hours, surf & TOA, 5 lat, 40 seasons, 5 cases)
+C                   51=(30 layers, 2 min/max,  5 lat, 20 seasons,  5 cases)
+C     The last 2 layers for min are: TpMin, L_sub_s ; for max are: TpMax, DJU5
+C 98nov16  HHK add  52=(24 hours,   Tsurf/Tp, 10 lat, 40 seasons, 10 cases)
+C 99nov24  HHK move setting  LOPN2 false at 400
 C_Bugs
 C all but last dimension of  BMDn idealy would be dynamically allocated
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
@@ -49,7 +52,7 @@ C does direct write fillout record?
 C?	parameter (nplus=macn24*maxn4-nwkrc) ! needed to fill out record
 	CHARACTER CSTAT*3
 	REAL*4 COMKRC(NWKRC),COMLAT(NWLAT),COMDAY(NWDAY)
-	EQUIVALENCE (COMKRC,ALB),(COMLAT,ALAT),(COMDAY,X)
+	EQUIVALENCE (COMKRC,ALB),(COMLAT,NDJ4),(COMDAY,X)
 
         INTEGER*4 JB5(10) ! sizes to go to  BINF5
         CHARACTER*30 HEADER /'KRC-tes custom save'/
@@ -64,13 +67,13 @@ C request file name and open file			1  1  1  1  1  1  1  1
 	LOPN2=.FALSE.
 	IF (KREC.EQ.0) THEN
 	  CSTAT='NEW'
-	  WRITE (IOPM,*) ' File for saving results?'
+CC	  WRITE (IOPM,*) ' File for saving results?'
 	ELSE
 	  CSTAT='OLD'
 	  WRITE (IOPM,*) ' File to start (and continue) from ?'
 	ENDIF
 C     recl may be bytes or longwords, depending upon  OS and compiler options.
-C  Solaris: it is longwords, since file is unformatted (default for direct access)
+C Solaris: it is longwords, since file is unformatted (default for direct access)
 	IF (K4OUT.EQ.0) THEN
 	  NWTOT=NWKRC+NWLAT	! krccom & latcom
 	ELSEIF (K4OUT.GE.50) THEN ! don't open file yet
@@ -102,9 +105,9 @@ C  Solaris: it is longwords, since file is unformatted (default for direct acces
 	   WRITE(IOSP,13)K4OUT,JB5
  13	   FORMAT ('Initiated custom output: K4OUT=',I3,/'JB5=',10I6)
            GOTO 9
-	ELSEIF (K4OUT.GT.0) THEN
+	ELSEIF (K4OUT.GT.0) THEN ! k4out is 1:49
 	  NWTOT=NWKRC+NWDAY	! krccom & daycom
-	ELSE
+	ELSE			! k4out is negative
 	  NWTOT=2*MACN24*MAXN4	!  TSF  &  TPF only
 	ENDIF
 
@@ -113,6 +116,7 @@ C  Solaris: it is longwords, since file is unformatted (default for direct acces
 	OPEN (UNIT=IOD2,FILE=FDISK,ACCESS='DIRECT',STATUS=CSTAT
      &,RECL=NRECL,ERR=191,IOSTAT=IOS)
 	WRITE(IOSP,110)CSTAT,FDISK,NWTOT, NRECL,DAYTIM
+	WRITE(IOERR,110)CSTAT,FDISK,NWTOT, NRECL,DAYTIM
 110	FORMAT (/'0TDISK:  Opened ',A,' direct access file = ',A
      &/8X,'Record length in R*4 & NRECL = ',2I6,3X,'NOW = ',5A4)
 	LOPN2=.TRUE.
@@ -120,6 +124,8 @@ C  Solaris: it is longwords, since file is unformatted (default for direct acces
 	GOTO 9
 C
 191	WRITE (IOERR,*) ' TDISK:1, ERROR OPENING FILE. IOSTAT=',IOS
+	WRITE (IOERR,*) '   IOD2=',IOD2,'  status=',cstat,'  recl=',nrecl
+	WRITE (IOERR,*) '   file=  ',FDISK
 	LOPN2=.FALSE.
 	GOTO 9
 C
@@ -134,19 +140,20 @@ C write next record (internal record count)		2  2  2  2  2  2  2  2
 	      ND1=MIN(N1,MD11-2) ! save room for 2 items
 	      ND3=MIN(N4,MD13)
 	      IF (J5.LE.MD14 .AND. NCASE.LE.MD15) THEN
+
 		DO J4=1,ND3	! do each latitude
         CALL XTREME (TPF(1,j4),1,N24,TPMIN,TPMAX)  ! get planetary limits
 	          I=1+(J4-1)*MM2+(J5-1)*MM3+(NCASE-1)*MM4 ! first of this set
 		  CALL R2R (TIN(1,j4),BMD1(I),ND1) ! transfer layer minima
-		  BMD1(I+N1  ) =TPMIN
-		  BMD1(I+N1+1) =SUBS
+		  BMD1(I+MD11-2) =TPMIN
+		  BMD1(I+MD11-1) =SUBS
 		  I=I+MD11	! offset to maxima
 		  CALL R2R (TAX(1,j4),BMD1(I),ND1) ! transfer layer minima
-		  BMD1(I+N1  ) =TPMAX
-		  BMD1(I+N1+1) =DJU5
+		  BMD1(I+MD11-2) =TPMAX
+		  BMD1(I+MD11-1) =DJU5
 	        ENDDO
 	     ENDIF
-	   ELSE
+	   ELSE			! K4OUT=50
 	     IF (J5.LE.MD24 .AND. NCASE.LE.MD25) THEN
 		ND1=MIN(N24,MD21)
 		ND3=MIN(N4,MD23)
@@ -156,13 +163,14 @@ C write next record (internal record count)		2  2  2  2  2  2  2  2
 		ENDDO
 	     ENDIF
 	   ENDIF
-	  ELSEIF (K4OUT.GT.0) THEN
+	 ELSEIF (K4OUT.GT.0) THEN ! K4OUT=1:49
 	     WRITE(IOD2,REC=I)COMKRC,COMDAY
-	  ELSE
-	    WRITE(IOD2,REC=I)TSF,TPF
-	  ENDIF
-	  IF (K4OUT.LT.50) WRITE(IOSP,210)FDISK,JREC
- 210	  FORMAT('0TDISK:  WROTE FILE = ',A,' RECORD =',I3)
+	   ELSE			! K4OUT negative
+	     WRITE(IOD2,REC=I)TSF,TPF
+	   ENDIF
+	  I=LNBLNK(FDISK) ! last non-blank character in file name
+	  IF (K4OUT.LT.50) WRITE(IOSP,210)J5,JREC,SUBS,FDISK(1:I)
+ 210	  FORMAT(' TDISK wrote: J5 rec Ls File ',2I4,F7.2,1X,A)
        ELSE
              WRITE (IOERR,*) ' TDISK:2, WRITE, BUT NO FILE OPEN'
        ENDIF
@@ -173,7 +181,7 @@ C read requested record (external record control)	3  3  3  3  3  3  3  3
 		I=KREC
 		READ(IOD2,REC=I,IOSTAT=IOS)COMKRC,COMLAT
 		WRITE(IOSP,310)FDISK,KREC
-310		FORMAT('0TDISK:  READ FILE= ',A,' RECORD=',I3)
+310		FORMAT(' TDISK:  READ FILE= ',A,' RECORD=',I3)
 		IERR=IOS
 		JREC=KREC
 	    ELSE
@@ -190,9 +198,9 @@ C close the file					4  4  4  4  4  4  4  4
 	   ELSE
 	      CLOSE (IOD2)
 	   ENDIF
-	ELSE
-	   WRITE (IOERR,*)'TDISK:4, no file was open'
 	   LOPN2=.FALSE.
+	ELSE
+	   WRITE (IOERR,*)' TDISK:4, no file was open'
 	ENDIF
 	GOTO 9
 C       
@@ -202,7 +210,7 @@ C       output parameters once                          5  5  5  5  5  5  5  5
 	   I=JREC		! need  NWKRC+2*MAXN4=203 items
 	   WRITE (IOD2,REC=I) COMKRC,ALAT,ELEV
 	ELSE 
-	   WRITE (IOERR,*) 'TDISK:5, under wrong conditions'
+      WRITE (IOERR,*) 'TDISK:5,wrong conditions: k4out,jrec=',k4out,jrec
 	ENDIF
 	
  9	RETURN
