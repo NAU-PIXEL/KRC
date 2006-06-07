@@ -1,0 +1,21 @@
+2003jan23 Notes following tutorial for Robin Fergeson, Josh Bandfield
+and Tim Titus.
+
+One-point model temperatreus are influenced by elevation if the opacity
+is >0 Note, negative opacities can cause very long (infinite?) run
+times.
+
+If N5=0, then the values entered for DAU ans SEDC are used for a single
+season.
+
+If KPREF=2 and N4>8, then will do global condensed frost integration, in
+which case you better have input a reasonable set of montonically
+increasing latitudes.
+
+The stored times-of-day are such that the last one is "midnight". E.g.,
+Hour 1 is 1/24 of a sol after midnight. (in tday.f, see use of JJH)
+
+Frost amount units are kg/m^2
+
+Minor code changes to insure non-negative TAUD and DRSET, and to avoid opening
+output binary file if it would not be written to.

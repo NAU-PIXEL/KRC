@@ -1,0 +1,12 @@
+#################################################################
+# Script to write distribution tar file of KRC system
+#  step2  script must be executed first
+#_Hist 2005jan25 Hugh Kieffer   Not running under Suse 9.3
+#################################################################
+
+set FAM='/home/hkieffer/krc'    # family to be distributed
+echo "FAM="$FAM
+cd $FAM
+tar cvfh krcdist.tar Dist
+
+exit

@@ -1,0 +1,88 @@
+\documentclass{article}
+\usepackage{definc}  % Hughs conventions
+%\textheight=9.80in  \topmargin=-0.5in           %  hobo normal=final
+%\textwidth=7.5in  \oddsidemargin=-0.3in \evensidemargin=-0.3in  % hobo final
+%\parindent=0.em \parskip=1.ex %  no indent & paragraph spacing
+\title{THermal model of dust layer on ice}
+\author{Hugh H. Kieffer \ \ \ file=~/hkieffer/xtex/tes/krc/onelay.tex 2006jan06}
+% individual variables
+\def\qF{\Delta M}       % delta frost
+\def\qH{\mathcal{H}} % scale height
+%                with parameters
+
+\begin{document}
+
+\maketitle
+
+History of this \LaTeX ~file:
+
+
+Try to stay with KRC adn vjet paper terminology and symbols
+
+\section{Surface boundary condition} %===============================
+In \pname{TDAY}, the frost-free surface condition is (see Eq. \ref{eq:pit} for
+more detail):
+\qbn W=(1.-A)S_{(t)}'  + \ql 1.-\alpha \qr \epsilon R_{\Downarrow t}
++\frac{k}{X_2}(T_2-T) - \ql 1.-\alpha \qr \epsilon\sigma T^4 \qen
+
+where $X_2$ is the depth to the center of the first soil layer, $S_{(t)}'$ is
+the total solar radiation onto the surface, and $ R_{\Downarrow t}$ is the
+downwelling thermal radiation (assumed isotropic).
+
+\section{Slopes and Conical Holes } %======================================
+
+Surface condition ( from krc)
+ The surface condition for a planar sloped surface or a flat-bottomed pit can be
+ written as follows, using the crude assumption that the surfaces visible to the
+ point of computation are at the same temperature and have the same brightness
+ where illuminated.
+
+\qbn W=(1-A)S_M \left[D_1 \cos i_2 + \Omega D_2 + (1-\Omega) A (G_1 D_1 +
+  \Omega D_2) \right]  +  \Omega \epsilon R_{\Downarrow t}
++\frac{k}{X_2}(T_2-T) -  \Omega \epsilon\sigma T^4 \label{eq:pit}\qen
+
+Where $\Omega$ is visible fraction of the sky, $D_1$ is the collimated beam in
+the Delta-Eddington model and $D_2$ is the diffuse beam. $G_1$ is a geometric
+term for the solid angle of illuminated surface seen by the target surface of
+the pit. Within the [ ] for $W$, 
+\qi the first term is \ct{DIRECT} = the direct collimated beam,
+\qi the second is \ct{DIFFUSE} = the diffuse skylight directly onto the target
+surface,
+\qi the third term is \ct{BOUNCE} = light that has scattered once off the
+surrounding surface.
+
+As a first approximation, for pits $G_1=$ min$( 1, (90-i)/z')$ where $z'$ is the
+slope of the pit walls. For a sloped surface, $G_1$ is unity. For a
+flat-bottomed pit, $i_2 = i$ when the sun is above the pit slope, and $ \cos i_2
+=0$ when the sun is below the pit slope.
+
+\subsection{} %-----------------------------------------------
+Simplest conditions: 
+\qi Equilibrium.
+
+Net radiation and heat lfow budget, above
+
+Conductive heat lfow thorugh the dust layer
+\qbn H_b=k\frac{T_s-T_c}{\Delta z} \qen
+
+Net sublimation  $ \dot{m} = H_b/L$
+
+Heat exchange of the gas $\Delta W = \left( T_S-T_c \right) \dot{m} C_p $
+
+
+
+
+\end{document} %===============================================================
+
+
+%==============================================================================
+\section{} %==================================================
+\subsection{} %-----------------------------------------------
+\subsubsection{} %............................................
+
+\begin{verbatim}
+\end{verbatim}
+
+\begin{enumerate}
+\item
+\end{enumerate}

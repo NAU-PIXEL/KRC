@@ -1,0 +1,109 @@
+###################################
+# Script and comments for making a distribution package of the KRC thermal
+# model file system see the file AAREADME for additional description
+# Step 1 included making a directory structure, commented out below,
+# and constructing the step2 and step3 script files
+#
+#_Hist 2006jan25 Hugh Kieffer Evolve from ROLO distribution system
+# 2006jan25 Hugh Kieffer   Not running under Suse 9.3
+# 2006apr12 HK Have running under Suse9.3
+###################################
+
+set FAM='/home/hkieffer/krc'    # family to be distributed
+set DIST='/Dist'		# generic name for distribution directory top
+set RTOP=$FAM$DIST		# Top of the specific distribution tree
+echo "RTOP="$RTOP
+
+cd $RTOP      # construction area for the full distribution sys
+rm -rf run
+rm -f src/* doc/* idl/*  # To clean out the distribution build area
+## DO NOT REMOVE FILES FROM THE Dist/aaa/ directory
+
+mkdir run
+mkdir run/output
+
+cd $RTOP/doc
+ln -s /home/hkieffer/xtex/definc.sty .
+ln -s /home/hkieffer/xtex/tes/krc/krc.tex .
+ln -s /home/hkieffer/xtex/tes/krc/newatm.tex .
+ln -s /home/hkieffer/xtex/tes/krc/onelay.tex .
+ln -s /home/hkieffer/xtex/tes/krc/krc.ps .
+ln -s /home/hkieffer/xtex/tes/krc/krc.pdf .
+ln -s /home/hkieffer/idl/bin5.txt .
+ln -s /home/hkieffer/krc/evolve.txt .
+ln -s /home/hkieffer/krc/flow.txt .
+ln -s /home/hkieffer/krc/helplist.txt .
+ln -s /home/hkieffer/krc/liens.txt .
+ln -s /home/hkieffer/krc/notes .
+
+cd $RTOP/run
+ln -s /home/hkieffer/krc/modern.inp .
+ln -s /home/hkieffer/krc/tes/krcin_master.inp .
+ln -s /home/hkieffer/krc/tes/krcone_master.inp .
+ln -s /home/hkieffer/krc/tes/testfileoutput.inp 
+ln -s /home/hkieffer/krc/impl/krc   krc_made
+
+cd $RTOP/run/output
+ln -s /home/hkieffer/krc/modern.prt .
+
+cd $RTOP/idl 
+ln -s /home/hkieffer/idl/tes/KRC/when2start.pro .
+ln -s /home/hkieffer/idl/tes/subs/l_s.pro .
+
+cd $RTOP/src
+ln -s /home/hkieffer/krc/Dist/aaa/Makefile .
+ln -s /home/hkieffer/krc/Dist/aaa/sysdef.rules .
+ln -s /home/hkieffer/krc/porb/porbcm.inc
+ln -s /home/hkieffer/krc/tes/units.inc .
+ln -s /home/hkieffer/krc/tes/daycom.inc .
+ln -s /home/hkieffer/krc/tes/filcom.inc .
+ln -s /home/hkieffer/krc/tes/hatcom.inc .
+ln -s /home/hkieffer/krc/tes/krccom.inc .
+ln -s /home/hkieffer/krc/tes/latcom.inc .
+ln -s /home/hkieffer/src/c/rest/b2b.c .
+ln -s /home/hkieffer/src/c/rest/r2r.c .
+ln -s /home/hkieffer/krc/mars/albvar.f .
+ln -s /home/hkieffer/krc/mars/aveday.f .
+ln -s /home/hkieffer/krc/mars/tint.f .
+ln -s /home/hkieffer/krc/porb/eccanom.f .
+ln -s /home/hkieffer/krc/porb/orbit.f . .
+ln -s /home/hkieffer/krc/porb/porb.f .
+ln -s /home/hkieffer/krc/tes/alsubs.f .
+ln -s /home/hkieffer/krc/tes/co2pt.f .
+ln -s /home/hkieffer/krc/tes/epred.f .
+ln -s /home/hkieffer/krc/tes/krc.f .
+ln -s /home/hkieffer/krc/tes/porb0.f .
+ln -s /home/hkieffer/krc/tes/tcard.f .
+ln -s /home/hkieffer/krc/tes/tday.f .
+ln -s /home/hkieffer/krc/tes/tdisk.f .
+ln -s /home/hkieffer/krc/tes/tlats.f .
+ln -s /home/hkieffer/krc/tes/tprint.f .
+ln -s /home/hkieffer/krc/tes/tseas.f .
+ln -s /home/hkieffer/krc/tes/vlpres.f .
+ln -s /home/hkieffer/rad/mie/deding2.f .
+ln -s /home/hkieffer/src/c/isis/b_alloc.c .
+ln -s /home/hkieffer/src/c/isis/b_c2fstr.c .
+ln -s /home/hkieffer/src/c/isis/b_f2cstr.c .
+ln -s /home/hkieffer/src/c/isis/b_free.c .
+ln -s /home/hkieffer/src/c/isis/binding.h .
+ln -s /home/hkieffer/src/c/isis/binf5_bind.c .
+ln -s /home/hkieffer/src/c/isis/binf5.h .
+ln -s /home/hkieffer/src/c/isis/pio_bind_c.c .
+ln -s /home/hkieffer/src/c/isis/primio.c .
+ln -s /home/hkieffer/src/c/isis/primio.h .
+ln -s /home/hkieffer/src/c/isis/u_actinf.c .
+ln -s /home/hkieffer/src/c/isis/u_bind_c.c .
+ln -s /home/hkieffer/src/c/isis/u_move1.c .
+ln -s /home/hkieffer/src/c/isis/u_move4.c .
+ln -s /home/hkieffer/src/c/isis/u_swapn.c .
+ln -s /home/hkieffer/src/for/char/white1.f .
+ln -s /home/hkieffer/src/for/file/binf5.F .
+ln -s /home/hkieffer/src/for/math/rotmsp.f .
+ln -s /home/hkieffer/src/for/math/sigma.f .
+ln -s /home/hkieffer/src/for/math/vaddsp.f .
+ln -s /home/hkieffer/src/for/math/xtreme.f .
+ln -s /home/hkieffer/src/for/time/catime.f .
+ln -s /home/hkieffer/src/for/time/datime.f .
+ln -s /home/hkieffer/src/for/util/b2b.f .
+ln -s /home/hkieffer/src/for/util/idarch.F .
+ln -s /home/hkieffer/src/for/util/r2r.f . 

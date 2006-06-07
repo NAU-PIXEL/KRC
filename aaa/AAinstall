@@ -1,0 +1,49 @@
+       GUIDE TO INSTALLING THE KRC DISTRIBUTION
+
+In a directory one level above the place you wish to have KRC reside,
+untar the krcdist.tar file.
+
+  ./aaa/AAREADME will describe how the distribution package was made.
+
+Files in ~/doc/ that may be helpful
+
+  krc.ps and krc.pdf 
+     PostScript and dpf  are the same description of some of the algorithms
+
+  helplist.txt
+        General help in setting up input files. ASCII text 
+	Most of this is MANDATORY READING
+
+In ./run/ there is a Makefile. This invokes  sysdef.rules  which may need 
+ediiting for your site. See your local Guru.
+
+./run/krc_made is the pre-made executable for PC linux
+
+./run/krcone_master.inp
+        Sample input file for running KRC in one-point mode.
+
+./run/krcin.inp
+        Sample input file for running full-up KRC
+
+./idl/when2start.pro
+        IDL routine to compute KRC start date
+
+./idl/l_s.pro
+        IDL routine for general conversion between Ls and dates
+        [ Called by when2start ]
+
+
+--------------- To make the executable --------------- 
+cd Dist    # cd into the top of the Distribution system 
+cd src
+# may take some Guru to edit your local setup: sysdef.rules  & Makefile
+
+make krc        
+ # when successful
+cd ../run
+ln -s ../src/krc    # Then can run krc in the run directory
+			# You may keep your input files here
+			# Suggest that you send output files to ../out
+			#   or somewhere outside the KRC Distribution system
+# After deciding which test or your own input file to use:
+krc          # this will start the execution. ALrady 
