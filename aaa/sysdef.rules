@@ -1,0 +1,77 @@
+# Set up some shell-level specific variables
+SHELL=/bin/csh
+RM=/bin/rm -f
+#
+# Set up compiler flags
+LIMDBG=-g
+LIMOS=Linux_ix86
+#
+#  These are the GNU C compiler flags
+CC_WARN=-Wall
+CC=gcc -pipe
+CCKLUDGE=gcc -ansi
+CCOPTS=
+OPT_CFLAGS=
+EXTRA_CFLAGS=-Dunix -D$(LIMOS)
+CCPICOPT=-fPIC
+#
+#  These are the FORTRAN compiler flags
+FC_LIMOP=-O             #  Optimize
+FC_LIMXL=-fvxt         #  Linux extended support 
+FC_LIMDL=               #  D_LINES option
+FC_LIMDBG=-g -C
+FC_WARN=
+FC=g77 -pipe -O2
+FCOPTS=$(FC_LIMXL)
+OPT_FFLAGS=-O2
+EXTRA_FFLAGS=-ftypeless-boz -fno-automatic -fno-second-underscore \
+	     -fargument-alias -Dunix -D$(LIMOS)
+FCPICOPT=-fPIC
+
+
+#  Special load flags.  These flags are utilized in all builds, whether
+#  they are FORTRAN or C
+# LD=ld
+LD=gcc
+# LDOPTS=
+LDSHAREDOPTS=-shared --whole-archive
+# LDSHAREDOPTS=-shared -Wl,--whole-archive
+SHARELIBS=
+LDFLAGS=$(LDOPTS)
+
+# Special library MACROS
+AR=ar
+ARFLAGS=-rvs
+RANLIB=/bin/echo
+
+SYSLIBS = -lg2c -lc -lm
+
+#  Set up X and Motif root paths
+XROOT=/usr/X11
+MOTIFROOT=/usr/local
+
+# Library directores that always are searched in
+LIBDIRS=-L. $(USRLIBDIRS) $(EXTRALIBDIRS)
+
+# Specify compilation and build flags (default: None)
+OPTFLAG=
+CFLAGS=$(CCOPTS) $(OPTFLAG)
+FFLAGS=$(FCOPTS) $(OPTFLAG)
+
+
+#  Set up suffixes and special ISIS targets for those suffixes
+.SUFFIXES: .o .c .F .f
+.c.o: 
+	$(CC) $(CC_WARN) $(OPT_CFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) -c $<
+
+.F.o: 
+	$(FC) $(FC_WARN) $(OPT_FFLAGS) $(FFLAGS) $(EXTRA_FFLAGS) -c $<
+.f.o: 
+	$(FC) $(FC_WARN) $(OPT_FFLAGS) $(FFLAGS) $(EXTRA_FFLAGS) -c $<
+##############################___end_of_system_rules_##############
+
+
+IDLLIBS=-lg2c -lm -lc
+LDIDLOPTS= -shared
+
+CCOPTS=$(CCPICOPT)

@@ -1,0 +1,65 @@
+
+       Guide to installing the KRC distribution  2009may12
+
+
+In a directory one level above the place you wish to have KRC reside,
+untar the krcdist.tar file.
+
+  ./aaa/AAREADME will describe how the distribution package was made.
+
+Files in ~/doc/ that may be helpful
+
+  helplist.txt
+        General help in setting up input files. ASCII text 
+	MUck of this is MANDATORY READING
+
+  krcpap.pdf 
+     Draft journal article describing some of the algorithms
+
+
+In ./src/ there is the Makefile that I use here, which will need 
+editing for your site. You should remove reference to any libraries 
+(unless you make some) and add to OBJECTS1 all the fortran source routines.
+
+See your local Guru. Then do:  make krc
+which should complile, although there may be some of warnings about 
+different variable types for R2R
+
+It will keep your file separated if in the run directory you make a line to the
+executable: 
+   ln -s ../src/krc .
+
+run krc.  It will ask for an input file, you can make a soft link to 
+/run/master.inp and then respond:  master.inp <CR>
+  At the request  for a print file name, you can respond simply:  / <CR 
+The original print log output from this test case is in doc/master.prt
+The output binary file isrun/output/ master.t52 
+The input file  run/master5x.inp tests all the type 5x output modes, 
+the corresponding binary output files are run/output/master5.t5x  x=1,2,4,5,6 
+
+Input file Mone.inp will run KRC in the one-point mode, using the specific 
+points listed on one.prt
+
+./run/krc_made is the pre-made executable for PC linux 64-bit machine
+  I do not know if it will run on a 32-bit hardware
+
+./run/Mone.inp
+        Sample input file for running KRC in one-point mode.
+
+./run/master.inp
+        Sample input file for running full-up KRC, many latitudes
+
+--------------- To make the executable --------------- 
+cd Dist    # cd into the top of the Distribution system 
+cd src
+# may take some Guru to edit your local setup:   & Makefile
+
+make krc        
+ # when successful
+cd ../run
+ln -s ../src/krc    # Then can run krc in the run directory
+			# You may keep your input files here
+			# Suggest that you send output files to ../out
+			#   or somewhere outside the KRC Distribution system
+# After deciding which test or your own input file to use:
+krc          # this will start the execution. 

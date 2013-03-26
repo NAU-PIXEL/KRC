@@ -1,0 +1,21 @@
+   1   1  0.2502     Albedo  ALBEDO  <Changed
+  10   1  0.1000     one.inp
+ ---- Start of one-point mode ----
+ Title Line, Text transfered to output. This & next line must be present         
+ 11    Ls   Lat  Hour Elev  Alb Inerti Opac Slop Azim  TkSur  TbPla             Comment
+ 11  99.5  22.3 13.50 -3.1 0.20  100.0 0.30  0.0  12. 287.41 271.49  Viking Lander 1   
+ 11  99.5  22.3 13.50 -3.1 0.20  200.0 0.30  1.0  12. 286.45 270.63  Viking Lander 1   
+ 11  99.5  22.3 13.50 -3.1 0.20  400.0 0.30  0.0  12. 282.49 267.10     VL1            
+ 11 359.5  47.7 13.50 -3.0 0.20  200.0 0.20  0.0 123. 261.54 248.09  Viking Lander 2   
+ 11  44.6  47.7 13.50 -3.0 0.20  200.0 0.20  0.0 123. 276.31 262.65  Viking Lander 2   
+ 11  89.6  47.7 13.50 -3.0 0.20  200.0 0.20  0.0 123. 281.97 269.20  Viking Lander 2   
+ 11 134.5  47.7 13.50 -3.0 0.20  200.0 0.20  0.0 123. 282.87 271.22  Viking Lander 2   
+ 11 179.4  47.7 13.50 -3.0 0.20  200.0 0.20  0.0 123. 270.73 258.48  Viking Lander 2   
+ 11 224.4  47.7 13.50 -3.0 0.20  200.0 0.20  0.0 123. 238.14 225.07  Viking Lander 2   
+ 11 269.4  47.7 13.50 -3.0 0.20  200.0 0.20  0.0 123. 205.81 193.48  Viking Lander 2   
+ 11 314.4  47.7 13.50 -3.0 0.20  200.0 0.20  0.0 123. 231.86 219.02  Viking Lander 2   
+ 11 179.4  -8.8 13.50 16.5 0.20  100.0 0.00  0.0 123. 301.14 300.00  Summit Arsia Mons 
+
+
+     END OF DATA ON INPUT UNIT
+      END KRC

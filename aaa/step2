@@ -1,0 +1,148 @@
+###################################
+# Script and comments for making a distribution package of the KRC thermal
+# model file system see the file AAREADME for additional description
+# Step 1 included making a directory structure, commented out below,
+# and constructing the step2 and step3 script files
+#
+#_Hist 2006jan25 Hugh Kieffer Evolve from ROLO distribution system
+# 2006jan25 Hugh Kieffer   Not running under Suse 9.3
+# 2006apr12 HK Have running under Suse9.3
+# 2006sep12 HK Update to include seasonally-variable albedo and tau
+# 2009may09 HK Update to include T-dependant version
+###################################
+
+set FAM='/home/hkieffer/krc'    # family to be distributed
+set DIST='/Dist'		# generic name for distribution directory top
+set RTOP=$FAM$DIST		# Top of the specific distribution tree
+echo "RTOP="$RTOP
+# unalias rm
+#cd $RTOP      # construction area for the full distribution sys
+#mkdir run
+#mkdir run/output
+
+cd $RTOP/aaa
+## DO NOT REMOVE FILES FROM THE Dist/aaa/ directory
+rm -f *~                # eliminate old versions
+
+cd $RTOP/run
+rm -f *.inp *.tab
+#ln -s /home/hkieffer/krc/tes/testr.inp .
+#ln -s /home/hkieffer/krc/tes/testv.inp .
+#ln -s /home/hkieffer/krc/tes/testout.inp .
+ln -s /home/hkieffer/krc/tes/master.inp .
+ln -s /home/hkieffer/krc/tes/master5x.inp .
+ln -s /home/hkieffer/krc/tes/mast37.inp .
+ln -s /home/hkieffer/krc/tes/Mone.inp .
+ln -s /home/hkieffer/krc/tes/one.inp .
+ln -s /home/hkieffer/krc/tes/valb1.tab .
+ln -s /home/hkieffer/krc/tes/krc  krc_made  # executable for 64-bit hardware
+echo "Done copy to run"
+
+cd $RTOP/run/output
+rm -f *
+#ln -s /home/hkieffer/krc/tes/testr.prt  testr.prtOrig
+ln -s /home/hkieffer/krc/tes/master.prt  master.prtOrig
+ln -s /home/hkieffer/krc/tes/one.prt  one.prtOrig
+ln -s /work1/krc/mars/master.t52 .
+ln -s /work1/krc/mars/master5.t51 .
+ln -s /work1/krc/mars/master5.t52 .
+ln -s /work1/krc/mars/master5.t54 .
+ln -s /work1/krc/mars/master5.t55 .
+ln -s /work1/krc/mars/master5.t56 .
+echo "Done copy to run/output"
+
+
+cd $RTOP/doc
+rm -f *
+#ln -s /home/hkieffer/xtex/tes/krc/jdefinc.sty . 
+#ln -s /work2/apps/tetex/tex/latex/natbib/natbib.sty .
+#ln -s /home/hkieffer/xtex/tes/krc/jpap.tex .
+ln -s /home/hkieffer/xtex/tes/krc/krcpap.pdf .
+ln -s /home/hkieffer/idl/bin5.txt .
+ln -s /home/hkieffer/krc/evolve.txt .
+ln -s /home/hkieffer/krc/flow.txt .
+ln -s /home/hkieffer/krc/helplist.txt .
+ln -s /home/hkieffer/krc/liens.txt .
+ln -s /home/hkieffer/krc/notes .
+echo "Done copy to doc"
+
+cd $RTOP/src
+rm -f *
+#ln -s /home/hkieffer/krc/tes/Makefile .
+ln -s /home/hkieffer/krc/Dist/aaa/Makefile .
+ln -s /home/hkieffer/krc/Dist/aaa/Makec .
+#ln -s /home/hkieffer/krc/Dist/aaa/sysdef.rules .
+ln -s /home/hkieffer/krc/porb/porbcm.inc
+ln -s /home/hkieffer/krc/tes/units.inc .
+ln -s /home/hkieffer/krc/tes/daycom.inc .
+ln -s /home/hkieffer/krc/tes/filcom.inc .
+ln -s /home/hkieffer/krc/tes/hatcom.inc .
+ln -s /home/hkieffer/krc/tes/krccom.inc .
+ln -s /home/hkieffer/krc/tes/latcom.inc .
+ln -s /home/hkieffer/krc/mars/albvar.f .
+ln -s /home/hkieffer/krc/mars/aveday.f .
+ln -s /home/hkieffer/krc/mars/tint.f .
+ln -s /home/hkieffer/krc/porb/eccanom.f .
+#ln -s /home/hkieffer/krc/porb/evmono.f .
+ln -s /home/hkieffer/krc/tes/evmono3.f .
+ln -s /home/hkieffer/krc/porb/orbit.f .
+ln -s /home/hkieffer/krc/porb/porb.f .
+ln -s /home/hkieffer/krc/tes/alsubs.f .
+ln -s /home/hkieffer/krc/tes/co2pt.f .
+ln -s /home/hkieffer/krc/tes/epred.f .
+ln -s /home/hkieffer/krc/tes/krc.f .
+ln -s /home/hkieffer/krc/tes/porb0.f .
+ln -s /home/hkieffer/krc/tes/readtxt360.f .
+ln -s /home/hkieffer/krc/tes/seasalb.f .
+ln -s /home/hkieffer/krc/tes/seastau.f .
+ln -s /home/hkieffer/krc/tes/tcard.f .
+ln -s /home/hkieffer/krc/tes/tday.f .
+ln -s /home/hkieffer/krc/tes/tdisk.f .
+ln -s /home/hkieffer/krc/tes/tlats.f .
+ln -s /home/hkieffer/krc/tes/tprint.f .
+ln -s /home/hkieffer/krc/tes/tseas.f .
+ln -s /home/hkieffer/krc/tes/tyearp.f .
+ln -s /home/hkieffer/krc/tes/vlpres.f .
+echo "done copy from krc"
+ln -s /home/hkieffer/rad/mie/deding2.f .
+ln -s /home/hkieffer/src/for/char/white1.f .
+ln -s /home/hkieffer/src/for/util/binf5.F .
+ln -s /home/hkieffer/src/for/math/rotmsp.f .
+ln -s /home/hkieffer/src/for/math/rndex.f .
+ln -s /home/hkieffer/src/for/math/rterp.f .
+ln -s /home/hkieffer/src/for/math/sigma.f .
+ln -s /home/hkieffer/src/for/math/vaddsp.f .
+ln -s /home/hkieffer/src/for/math/xtreme.f .
+ln -s /home/hkieffer/src/for/util/catime.f .
+ln -s /home/hkieffer/src/for/util/datime.f .
+ln -s /home/hkieffer/src/for/util/b2b.f .
+ln -s /home/hkieffer/src/for/util/idarch.F .
+ln -s /home/hkieffer/src/for/util/r2r.f . 
+echo "done copy from src/for"
+ln -s /home/hkieffer/src/cnew/cisis/b2b.c .
+ln -s /home/hkieffer/src/cnew/cisis/r2r.c .
+ln -s /home/hkieffer/src/cnew/cisis/b_alloc.c .
+ln -s /home/hkieffer/src/cnew/cisis/b_c2fstr.c .
+ln -s /home/hkieffer/src/cnew/cisis/b_f2cstr.c .
+ln -s /home/hkieffer/src/cnew/cisis/b_free.c .
+ln -s /home/hkieffer/src/cnew/cisis/binf5_bind.c .
+ln -s /home/hkieffer/src/cnew/cisis/pio_bind_c.c .
+ln -s /home/hkieffer/src/cnew/cisis/primio.c .
+ln -s /home/hkieffer/src/cnew/cisis/u_actinf.c .
+ln -s /home/hkieffer/src/cnew/cisis/u_bind_c.c .
+ln -s /home/hkieffer/src/cnew/cisis/u_move1.c .
+ln -s /home/hkieffer/src/cnew/cisis/u_move4.c .
+ln -s /home/hkieffer/src/cnew/cisis/u_swapn.c .
+ln -s /home/hkieffer/src/cnew/cisis/binding.h .
+ln -s /home/hkieffer/src/cnew/cisis/binf5.h .
+ln -s /home/hkieffer/src/cnew/cisis/h.h .
+ln -s /home/hkieffer/src/cnew/cisis/isisarch.h .
+ln -s /home/hkieffer/src/cnew/cisis/isisdef.h .
+ln -s /home/hkieffer/src/cnew/cisis/isis_limits.h .
+ln -s /home/hkieffer/src/cnew/cisis/isislogio.h .
+ln -s /home/hkieffer/src/cnew/cisis/isissys.h .
+ln -s /home/hkieffer/src/cnew/cisis/isistypes.h .
+ln -s /home/hkieffer/src/cnew/cisis/primio.h .
+ln -s /home/hkieffer/src/cnew/cisis/u.h .
+ln -s /home/hkieffer/src/cnew/cisis/uidef.h .
+exit

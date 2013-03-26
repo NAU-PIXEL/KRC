@@ -1,0 +1,64 @@
+###################################
+# Script and comments for adding IDL routines to the distribution
+# package of the KRC thermal model file system.
+# Run this after step 2 and before step 3
+#
+#_Hist 2009may09 Hugh Kieffer 
+###################################
+
+set FAM='/home/hkieffer/krc'    # family to be distributed
+set DIST='/Dist'                # generic name for distribution directory top
+set RTOP=$FAM$DIST              # Top of the specific distribution tree
+echo "RTOP="$RTOP
+
+cd $RTOP/idl
+rm -f *  # empty the directory
+
+ln -s /home/hkieffer/idl/tes/KRC/definekrc.pro .  #  Define structures in IDL that correspond for Fortran commons. Calls BYTEPAD
+ln -s /home/hkieffer/idl/tes/KRC/delcase.pro .    # Show delta between arrays changing only last index. Calls HISTFAST
+ln -s /home/hkieffer/idl/tes/KRC/lookrc.pro .     # Read any type 5x KRC bin5 models; look at change between cases. Calls READKRC5*
+ln -s /home/hkieffer/idl/tes/KRC/krccomlab.pro .  # Print KRC common input items. Calls 0
+ln -s /home/hkieffer/idl/tes/KRC/krchange.pro .   # Find changes in KRC input values in common KRCCOM. Calls READKRCCOM MAKEKRCVAL
+ln -s /home/hkieffer/idl/tes/KRC/krclayer.pro .   # Compute center depth of KRC layers. Calls 0
+ln -s /home/hkieffer/idl/tes/KRC/makekrcval.pro . # Make string of selected KRC inputs: Key=val. Calls DELAST0
+ln -s /home/hkieffer/idl/tes/KRC/readkrc52.pro .  # Read RKC type 52 or 51 bin5 file; post 2004jul21. Calls bin5
+ln -s /home/hkieffer/idl/tes/KRC/readkrc54.pro .  # Read KRC type 54 or 55 bin5 file. Calls bin5
+ln -s /home/hkieffer/idl/tes/KRC/readkrc56.pro .  # Read KRC type 56 bin5 file. Calls bin5
+ln -s /home/hkieffer/idl/tes/KRC/readkrccom.pro . # Read a KRCCOM structure from a bin5 file. Calls DEFINEKRC
+ln -s /home/hkieffer/idl/tes/KRC/tstp2ta.pro .    # Convert T_surf and T_plan to T_atm. Calls 0
+ln -s /home/hkieffer/idl/tes/KRC/when2start.pro . # Calc starting date for KRC to reach Ls on specific season step. Calls 0
+
+#ln -s /home/hkieffer/idl/tes/KRC/krcsizes.pro .   # Compute array and common sizes for KRC Fortran. Calls 0
+#ln -s /home/hkieffer/idl/tes/KRC/plotkrc53.pro .  # Plot temperature curves for a series of models. Calls CURVEGUIDE LABEL_CURVE
+#ln -s /home/hkieffer/idl/tes/KRC/readkrc.pro .    # Read KRC annual models, except layer values. Calls 0
+#ln -s /home/hkieffer/idl/tes/KRC/skindepth.pro .  # Diurnal and annual thermal scales. Calls GETPINTS GRAPH LABEL_CURVE SUBTITLE TV2JPG 
+
+echo "Done copy of IDL KRC routines"
+
+# following utilities are referenced directly or indirectly
+ln -s /home/hkieffer/idl/subs/bin5.pro . # Write/Read numeric binary files with 'standard' header. Calls 0
+ln -s /home/hkieffer/idl/subs/bytepad.pro .  # Create a Byte version of a string, padded with trailing blanks. Calls 0
+ln -s /home/hkieffer/idl/subs/chart.pro .    # Strip-chart plot of several variables. Calls PSYMLINE
+ln -s /home/hkieffer/idl/subs/color24bit.pro . # Generate 256 longwords to emulate nice 8-bit color table. Calls 0
+ln -s /home/hkieffer/idl/subs/delast0.pro .  #  Delete trailing 0's past the decimal point. Calls 0
+ln -s /home/hkieffer/idl/subs/getp.pro .     # Modify single numeric value; with prompt and limit tests. Calls 0
+ln -s /home/hkieffer/idl/subs/getpan.pro .   # Modify any elements of numeric array, with prompt and limit tests. Calls 0
+ln -s /home/hkieffer/idl/subs/getpsn.pro .   # Interactive input any elements of a string array, with prompt. Calls 0
+ln -s /home/hkieffer/idl/subs/graph.pro .    # Interface to graphics devices. Calls SETCOLOR
+ln -s /home/hkieffer/idl/subs/histfast.pro . # Robust, easy histogram plot, with statistics, opt row weights. Calls  MEAN_STD SUBTITLE
+ln -s /home/hkieffer/idl/subs/kon91.pro .    # Common minimal functionality in the kon case statement. Calls GETPINTS GRAPH  MAKE99 SETCOLOR TV2JPG TV2LP
+ln -s /home/hkieffer/idl/subs/label_curve.pro . # Place an oriented label on a curve . Calls RNDEX RTERP1
+ln -s /home/hkieffer/idl/subs/locate.pro .   # Find lower index of interval in ordered vector containing x. Calls 0
+ln -s /home/hkieffer/idl/tes/subs/l_s.pro . # Convert Martian season L_s <-> Julian day. Calls 0
+ln -s /home/hkieffer/idl/subs/make99.pro .  #  Make/print list of user options for a program. Calls 0
+ln -s /home/hkieffer/idl/subs/mean_std.pro .  # Mean and standard deviation of a vector. Calls 0
+ln -s /home/hkieffer/idl/subs/psymline.pro .  # Hughs convention for transfering PSYM and LINESTYLE in one. Calls 0
+ln -s /home/hkieffer/idl/subs/rndex.pro .  # Finds floating-point index of within a monotonic array. Calls LOCATE
+ln -s /home/hkieffer/idl/subs/rterp1.pro .  # real interpolation in a vector. Calls 0
+ln -s /home/hkieffer/idl/subs/setcolor.pro .  # Set or modify colors, lines, plot-symbols, #plots/page. Calls COLOR24BIT  GETP  GETPAN  TOOTHB  ST0 
+ln -s /home/hkieffer/idl/subs/st0.pro .  # Make minimal string for numbers, or string arrays. Calls DELAST0 
+ln -s /home/hkieffer/idl/subs/strword1.pro .  # Extract first word from a string or strarr. Calls 0
+ln -s /home/hkieffer/idl/subs/toothb.pro .  # Add a toothed color scale-bar to a window or TVPLEX panel. Calls GETPAN
+
+echo "Done copy of IDL utilities"
+exit
