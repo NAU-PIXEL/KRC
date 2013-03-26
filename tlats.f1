@@ -1,0 +1,252 @@
+	SUBROUTINE TLATS (IQ,IRL)
+C_Titl  TLATS latitude computations for the  KRC thermal model system
+C_Vars
+	INCLUDE 'krccom.inc'
+	INCLUDE 'latcom.inc'
+	INCLUDE 'daycom.inc'
+	INCLUDE 'units.inc'
+C_Args
+	INTEGER IQ  !in. not used
+	INTEGER IRL !out return codes: 1=normal  2=blow-up
+C_hist  1969 thru 97  Hugh_H_Kieffer
+C	97feb11  HHK major revision
+C	97may30  HHK 2nd version of atmospheric radiation
+C 97jul07 from calories to  SI units
+C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
+	REAL*4 BUF(MAXN4)	! fractional surface area in each latitude zone
+	DATA BUF(1) /0./
+	DATA AMW  /43.5/     ! atomic weight of general atmosphere (g/mole)
+	DATA RGAS /8.3145/   ! ideal gas constant  (MKS=J/mol/K)
+	DATA HUGE / 3.4E38/  ! largest  REAL*4 constant
+	DATA TINY / 1.2E-38/ ! smallest  REAL*4 constant
+	DATA EXPMIN / 87.33/ ! neg exponent that would cause underflow
+
+	IRL=1			! set return code to normal
+
+C============ factors that do not depend upn season ===================
+	RANG=2.0*PI/N2		! time step expressed in radians
+C
+C radiation parameters:
+C  ASOL = direct + diffuse insolation as a function of local time
+	ANGLE0 = ABRPHA/RAD
+	TWILFAC = 90./(90.+TWILI)     ! twilight factor
+	TWILIM = COS((90.+TWILI)/RAD) ! minimum cosine i for twilight
+
+C for sloping terrain
+	SLONOR = SLOPE*COS(SLOAZI/RAD) ! north component of dip, degrees
+	RADEAST = (SLOPE/RAD)*SIN(SLOAZI/RAD) ! east " " , radians
+	SKYFAC = 1.-SLOPE/180.  ! fraction of sky remaining
+        jhot=int(float(n2)*13.5/24.) ! index of warmest time of day
+
+C============ factors constant over latitude that depend upon season ============
+
+	SOL=SOLCON/(DAU*DAU)	! solar flux at this heliocentric range
+	RSDEC=SDEC/RAD ! current solar declination
+	SD=SIN(RSDEC)
+	CD=COS(RSDEC)
+C set blowup test to factor larger than perpendicular black surface
+	TBLOW = 2.0 *  ( SOL / (EMIS*SIGMA) )**0.25
+	
+C integrate total sublimation & get current total pressure at 0 elevation
+	IF (J5.EQ.1) BUF(1)=0.	! flag for  TINT; 1st time computes
+	if (n4.gt.8) then ! do global integrations
+	  CALL TINT (FROST4, BUF, SUMF) !  MKS units  BUF = normalized area 
+	  PCAP = SUMF*GRAV	! cap_frost equivalent surface pressure
+	else
+	  pcap=0.
+	endif
+	PCO2M = PTOTAL*(1.-FANON) ! partial pres. of  CO2 at 0 elevation, initial
+	IF (KPREF.EQ.0) THEN
+	  PZREF = PTOTAL
+	ELSEIF (KPREF.EQ.1) THEN
+	  KODE=4
+	  PZREF = PTOTAL*VLPRES(KODE, DJU5)
+	ELSEIF (KPREF.EQ.2) THEN
+	  PZREF = PTOTAL - PCAP
+	ENDIF
+	PCO2G = (PZREF-PTOTAL) + PCO2M !  partial pres. of  CO2 at 0 elevation, now
+	SCALEH = TATM*RGAS/(AMW*GRAV) ! scale height in km
+C
+	IF (LPGLOB) THEN	!print global properties
+	  CALL TPRINT(8)
+	  WRITE(IOSP,'(A,F10.4)')' GLOBAL AVERAGE FROST; kg/m^2 =',SUMF
+	ENDIF
+
+	J4=0
+C  ----------------new latitude loop loop loop--------------------------
+C
+100	J4=J4+1
+	DLAT=ALAT(J4)		! current latitude
+	RLAT=DLAT/RAD
+	CL=COS(RLAT)
+	SL=SIN(RLAT)
+	SS=SL*SD
+	CC=AMAX1(1.E-10,CL*CD)
+C for slope
+	RLAT=(DLAT+SLONOR)/RAD
+	CL2=COS(RLAT)
+	SL2=SIN(RLAT)
+	SS2=SL2*SD
+	CC2=AMAX1(1.E-10,CL2*CD)
+
+	cosi_max = (SS+CC)      !   cos ( incidence angle at noon )
+	COSAM=-SS/CC		!  find length of day and daylight intervals
+	IF (ABS(COSAM).LT.1.) THEN
+		DAM=RAD*ACOS(COSAM)
+	    ELSEIF (COSAM.GE.1.) THEN
+		DAM=0.
+		cosi_max = 1.e-6 ! sun never rises
+	    ELSE
+		DAM=180.
+	    ENDIF
+
+	EFROST = FROST4(J4)
+	PFACTOR = EXP(-ELEV(J4)/SCALEH) !relative to global annual mean
+	PRES = PZREF * PFACTOR		!current local total pressure 
+	OPACITY = TAUD*PFACTOR		!current local pressure
+	ACOSLIM = AMAX1(OPACITY/EXPMIN,0.001) ! limit to avoid math checks
+	SLOLIM = ACOS(ACOSLIM) 		! or 89.94 deg
+	A = opacity/exp(1.)
+	DIFAC = OPACITY * EXP(-OPACITY/2.71828)! initial slope=1, peaks at (e,1.)
+	DIFAC = DIFAC*SKYFAC*DUSTA
+	COSI_AVE= max(1.e-6,AVEDAY(SDEC,DLAT))     ! get average cosine incidence
+	FSOLAR = Cosi_ave*SOL           ! get average solar flux, cgs-units
+
+	IF (LVFA) THEN		! use variable frost albedo
+	  CALL ALBVAR (FSOLAR, AFNOW)	! var. frost albedo
+	ELSE
+	  AFNOW = AFROST
+        ENDIF
+	IF (LVFT) THEN			! use variable frost temperature
+	  TFNOW = CO2PT(1,PFACTOR*PCO2G)! get local frost temperature
+	ELSE
+	  TFNOW = TFROST
+	ENDIF
+
+        if (efrost.le.0.) then ! use proper emissivity and albedo
+          ave_E=emis
+          ave_a=alb
+        else
+          ave_E=femis
+          ave_a=afnow
+        endif
+
+	if(j5.eq.1) then	! no prior season, estimate
+	  t_ave=(fsolar*      (1.-ave_a)/(ave_e*sigma))**0.25 
+	  t_max=(sol*cosi_max*(1.-ave_a)/(ave_e*sigma))**0.25
+	else			! use prior season
+	  t_ave=TTS4(J4)	! average diurnal temperature of prior season
+	  t_max=TSF(13,J4)	! ~max temperature of prior season
+	endif
+C
+C  ADGIR = mean diurnal atm downgoing ir. See krc.tex
+C***  ARC6 is fd32
+        beta_s = fd32+arc2  *taud           ! arc6
+        beta_p = arc3+taurat*taud
+
+         expb= min(expmin,beta_s/cosi_ave)
+	ADGS = FSOLAR*beta_s*(1.+exp(-expb)*ave_a) !AVERAGE SOLAR
+	ADGP = beta_p*ave_e*SIGMA*t_ave**4 ! PLANETARY
+         expb= min(expmin,beta_s/cosi_max)
+	ADGSmax = FSOLAR*beta_s*(1.+exp(-expb)*Ave_a)
+	ADGPmax = beta_p*ave_e*SIGMA*t_max**4 ! PLANETARY
+
+	ADGIR = CABR * (PRES/PTOTAL)*(ADGS+ADGP)
+	C52 = ABRAMP*((ADGsmax+ADGPmax)/(ADGs+ADGP)-1.)
+
+C insolation at mid-step and its average. time origin is midnight.
+C  angle from noon is (j2/n2 * 2.pi) - pi, so cos of this is -cos(j2/n2 *2pi)
+C  cosi = cosine of incidence angle
+	ASUM=0.
+	DO JJ =1,N2 ! time of day loop.................................
+	  ANGLE=(FLOAT(JJ)-0.5)*RANG
+	  COSI= SS -CC*COS (ANGLE) ! cos of incidence angle on horizontal
+	  COSI2= SS2 -CC2*COS (ANGLE+RADEAST) ! " " on slope
+	  
+	  IF (COSI.GT.ACOSLIM .AND. COSI2.GT.0.) THEN
+	    DIRECT=COSI2*EXP(-OPACITY/COSI)	! daytime, add sunlight.
+	  ELSE
+	    DIRECT=0.
+	  ENDIF
+	  
+	  IF (COSI.GT.TWILIM) THEN ! in twilight zone
+	    TWANG = TWILFAC*ACOS(COSI)
+	    DIFFUSE=DIFAC*COS(TWANG)
+	  ELSE
+	    DIFFUSE=0.
+	  ENDIF
+	  qA = (DIRECT+DIFFUSE)*SOL
+	  ASOL(JJ)=qA
+	  ASUM=ASUM+qA
+c downgoing radiation
+	  ADGR(JJ)=ADGIR*(1.+C52*COS(ANGLE-ABRPHA))
+	  if (ld19) write(78,*)adgr(jj),qa,direct,diffuse
+	ENDDO			! end time of day loop....................
+C
+C  find equilibrium temperature at current latitude
+C   first, get radiation equilibrium temperature (frost-free)
+	A = (1.-ALB)*(ASUM/FLOAT(N2))+ EMIS*ADGIR ! average absorbed flux
+	TEQUIL = (A/(EMIS*SIGMA) )**0.25
+	IF (TEQUIL.LT.TFNOW) TEQUIL=TFNOW
+C if continuing, use prior season; else, start with linear profile
+	IF (J5.GT.1) THEN	! start with final value from previous season
+	  JJO=1
+	  DO  I=1,N1PIB
+ 	    T(I)=T4(I,J4)
+	  ENDDO
+	  TTS(1)=TTS4(J4)
+	  TTB(1)=TTB4(J4)
+	ELSE			! start with linear profile
+	  JJO=.75*N2+1.5	! start first day just past 3/4 day
+	  TEST=TEQUIL		!  isothermal if bottom is insulating
+	  IF(IB.EQ.1) TEST=TDEEP
+	  DO  I=1,N1
+	    T(I)=TEQUIL + (TEST-TEQUIL) * (X(I)-X(1))/(X(N1)-X(1))
+	  ENDDO
+	  T(N1PIB)=TEST
+	  TTS(1)=0.
+	  TTB(1)=0.
+	ENDIF
+	IF (LP3) CALL TPRINT (3) ! print header for hourly summary
+C======
+
+	CALL TDAY (2,IR)		! execute day loop
+
+C======
+	IF (IR.EQ.2) THEN		! if blow-up; stop the model
+	  IRL=2
+	  RETURN
+	ENDIF
+C
+C  save results for current latitude
+C
+	FP=DELJUL/PERIOD-J3 ! undone iterations to end of this season.
+	J3P1=J3+1
+	TST4(J4)=TEQUIL
+	DTM4(J4)=DTMJ(J3P1)
+	NDJ4(J4)=J3
+	DO  I=1,N24
+	  TSF(I,J4)=TSFH(I)
+	ENDDO
+	JE=J3P1-2
+	DO  I=1,N1		! save extrema for each layer
+	  TIN(I,J4)=TMIN(I)	!   and predict next season's
+	  TAX(I,J4)=TMAX(I)	!   temperatures.
+	  T4(I,J4)= EPRED(TT(I,JE),FP,MAXN1,TFNOW,TBLOW)
+	ENDDO
+	IF (IB.EQ.1) T4(N1PIB,J4)=T(N1PIB)
+	TTS4(J4) = EPRED(TTS(JE),FP,1,TFNOW,TBLOW)
+	TTB4(J4) = EPRED(TTB(JE),FP,1,TFNOW,TBLOW)
+	EF         = EPRED(FRO(JE),FP,1,0.,999.)
+	TAX(MACN1,J4) = TTS4(J4)-TTS(J3P1)	! amount of extrapolation
+	TIN(MACN1,J4) = TTB4(J4)-TTB(J3P1)	! "  stored at end of arrays
+	AFRO4(J4) = AFNOW	! current cap frost albedo
+	FROST4(J4) = EF		! current cap frost amount
+C
+	IF (LP4) CALL TPRINT (4)	! print daily convergence summary
+	IF (J4.LT.N4) GO TO 100
+C
+C  ---------------------------------------------------------------------
+C
+	RETURN
+	END

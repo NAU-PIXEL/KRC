@@ -1,0 +1,208 @@
+1SP cap water ice exposure                                                        RUN-CASE   1- 0    02 Oct 31 07:18:09   PAGE=  1
+0PARAMETER CHANGES
+ TYPE LOC VALUE
+   1  42   1.028     DELJUL  1 sol
+   2   2   2304.     N2 <<<<<<<<<
+   2   3   1.000     N3: set to run each day
+   1  39   50.00     GGT: set big to avoid iteration
+   2   9   333.0     NRSET: set to not reset layers
+   1  41  0.1226E+05 DJUL: L_s 290
+   1   1  0.2300     ALB
+   2   8   3.000     IC: depth to material 2
+   2  17   53.00     K4OUT: custom
+   2   4   1.000     N4: single latitude
+   8   0   0.000     /hob1/hkieffer/tes/KRC/idl/testn2.t53
+ New Disk file= /hob1/hkieffer/tes/KRC/idl/testn2.t53
+1SP cap water ice exposure                                                        RUN-CASE   1- 1    02 Oct 31 07:18:09   PAGE=  2
+0Input file: tundra.inp                                                                      
+ Print file: krct.prt                                                                        
+ Save file: /hob1/hkieffer/tes/KRC/idl/testn2.t53                                           
+0    ALBEDO     EMISS   INERTIA     COND2     DENS2    PERIOD SPEC_HEAT   DENSITY
+     0.2300    1.0000   50.0000    3.4000  928.0000    1.0275  630.0000 1600.0000
+0      CABR    ABRAMP    ABRPHA    PTOTAL     FANON      TATM     TDEEP   SpHeat2
+     0.1800    0.3000  260.0000  689.7000    0.0550  200.0000  150.0000 1300.0000
+0      TAUD     DUSTA    TAURAT     TWILI      ARC2      ARC3     SLOPE    SLOAZI
+     0.2000    0.9000    0.5000      1.00      0.50      0.10       0.0      90.0
+0    TFROST    CFROST    AFROST     FEMIS       AF1       AF2    FROEXT      ARC6
+   146.0000  589944.0    0.6500    0.9500   0.54000    0.0009   50.0000    0.0000
+0      RLAY      FLAY     CONVF     DEPTH     DRSET       DDT       GGT     FDOWN
+     1.2000    0.1800    2.0000    0.0000    0.0000    0.0020   50.0000    0.1000
+0      DJUL    DELJUL SOLAR DEC       DAU       L_S    SOLCON      GRAV    Atm_Cp
+  12257.220    1.0275    0.0000   1.46500    0.0000 1368.0000    3.7270  800.0000
+0        N1        N2        N3        N4        N5       N24        IB        IC
+         19      2304         1         1        40        24         2         3
+0     NRSET      NMHA      NRUN     JDISK     IDOWN       I14       I15     KPREF
+        999        24         1         1         0        45        65         1
+0     K4OUT     JBARE     spare     spare
+         53         0         5         0
+0    LP1    LP2    LP3    LP4    LP5    LP6 LPGLOB   LVFA   LVFT   LD10
+       F      T      F      F      F      F      F      T      T      F
+0  LPORB   LKEY    LSC LNOTIF  LOCAL   LD16 LPTAVE Prt.78 Prt.79  L_ONE
+       T      F      F      T      T      F      F      F      F      F
+
+ Latitudes: 
+  -85.00
+
+ Elevations:
+    2.90
+1SP cap water ice exposure                                                        RUN-CASE   1- 1    02 Oct 31 07:18:09   PAGE=  3
+ Conductiv.= 2.480E-03  Dens*Cp= 1.008E+06  Diffu.= 2.460E-09  Scale= 8.338E-03
+ Beginning at layer   3
+ Conductiv.= 3.400E+00  Dens*Cp= 1.206E+06  Diffu.= 2.818E-06  Scale= 2.822E-01
+0        ___THICKNESS____   _______CENTER_DEPTH_____ CONVERGENCE
+ LAYER     scale    meter     scale    meter   kg/m^2   factor
+    1    0.1800    0.0015   -0.0900   -0.0008     0.000   0.000
+    2    0.2160    0.0018    0.1080    0.0009     2.882  17.108
+    3    8.7724    0.0731    4.6022    0.0384    70.763  12.318
+    4   10.5269    0.0878   14.2519    0.1188   152.220   8.869
+    5   12.6323    0.1053   25.8315    0.2154   249.969   6.386
+    6   15.1587    0.1264   39.7270    0.3313   367.268   4.598
+    7   18.1905    0.1517   56.4016    0.4703   508.027   3.310
+    8   21.8286    0.1820   76.4111    0.6371   676.937   2.383
+    9   26.1943    0.2184  100.4226    0.8374   879.629   3.432
+   10   31.4332    0.2621  129.2363    1.0776  1122.860   2.471
+   11   37.7198    0.3145  163.8128    1.3659  1414.737   3.558
+   12   45.2638    0.3774  205.3046    1.7119  1764.989   2.562
+   13   54.3165    0.4529  255.0948    2.1271  2185.292   3.689
+   14   65.1798    0.5435  314.8429    2.6253  2689.656   5.313
+   15   78.2158    0.6522  386.5407    3.2231  3294.892   7.650
+   16   93.8590    0.7826  472.5781    3.9405  4021.175  11.017
+   17  112.6308    0.9392  575.8230    4.8014  4892.715  15.864
+   18  135.1569    1.1270  699.7168    5.8345  5938.563  22.844
+   19  162.1883    1.3524  848.3895    7.0742  7193.582  32.895
+0Bottom layers for time doubling:      2    3    4    5    6    7    9   11   19
+Initiated custom output: K4OUT= 53
+JB5=     3   133    82    10     0     0     0     4    30     0
+     1 seconds at end of season   40 of   40
+1SP cap water ice exposure                                                        RUN-CASE   1- 1    02 Oct 31 07:18:09   PAGE=  4
+0PARAMETER CHANGES
+ TYPE LOC VALUE
+   1  34  0.9000E-01 FLAY
+1SP cap water ice exposure                                                        RUN-CASE   1- 2    02 Oct 31 07:18:09   PAGE=  5
+0Input file: tundra.inp                                                                      
+ Print file: krct.prt                                                                        
+ Save file: /hob1/hkieffer/tes/KRC/idl/testn2.t53                                           
+0    ALBEDO     EMISS   INERTIA     COND2     DENS2    PERIOD SPEC_HEAT   DENSITY
+     0.2300    1.0000   50.0000    3.4000  928.0000    1.0275  630.0000 1600.0000
+0      CABR    ABRAMP    ABRPHA    PTOTAL     FANON      TATM     TDEEP   SpHeat2
+     0.1800    0.3000  260.0000  689.7000    0.0550  200.0000  150.0000 1300.0000
+0      TAUD     DUSTA    TAURAT     TWILI      ARC2      ARC3     SLOPE    SLOAZI
+     0.2000    0.9000    0.5000      1.00      0.50      0.10       0.0      90.0
+0    TFROST    CFROST    AFROST     FEMIS       AF1       AF2    FROEXT      ARC6
+   146.0000  589944.0    0.6500    0.9500   0.54000    0.0009   50.0000    0.0000
+0      RLAY      FLAY     CONVF     DEPTH     DRSET       DDT       GGT     FDOWN
+     1.2000    0.0900    2.0000    0.0000    0.0000    0.0020   50.0000    0.1000
+0      DJUL    DELJUL SOLAR DEC       DAU       L_S    SOLCON      GRAV    Atm_Cp
+  12257.220    1.0275  -17.8708   1.44912  313.8665 1368.0000    3.7270  800.0000
+0        N1        N2        N3        N4        N5       N24        IB        IC
+         19      2304         1         1        40        24         2         3
+0     NRSET      NMHA      NRUN     JDISK     IDOWN       I14       I15     KPREF
+        999        24         1         1         0        45        65         1
+0     K4OUT     JBARE     spare     spare
+         53         0         5         0
+0    LP1    LP2    LP3    LP4    LP5    LP6 LPGLOB   LVFA   LVFT   LD10
+       F      T      F      F      F      F      F      T      T      F
+0  LPORB   LKEY    LSC LNOTIF  LOCAL   LD16 LPTAVE Prt.78 Prt.79  L_ONE
+       T      F      F      T      T      F      F      F      F      F
+
+ Latitudes: 
+  -85.00
+
+ Elevations:
+    2.90
+1SP cap water ice exposure                                                        RUN-CASE   1- 2    02 Oct 31 07:18:09   PAGE=  6
+ Conductiv.= 2.480E-03  Dens*Cp= 1.008E+06  Diffu.= 2.460E-09  Scale= 8.338E-03
+ Beginning at layer   3
+ Conductiv.= 3.400E+00  Dens*Cp= 1.206E+06  Diffu.= 2.818E-06  Scale= 2.822E-01
+0        ___THICKNESS____   _______CENTER_DEPTH_____ CONVERGENCE
+ LAYER     scale    meter     scale    meter   kg/m^2   factor
+    1    0.0900    0.0008   -0.0450   -0.0004     0.000   0.000
+    2    0.1080    0.0009    0.0540    0.0005     1.441   4.277
+    3    4.3862    0.0366    2.3011    0.0192    35.381   3.080
+    4    5.2635    0.0439    7.1259    0.0594    76.110   2.217
+    5    6.3161    0.0527   12.9157    0.1077   124.985   3.193
+    6    7.5794    0.0632   19.8635    0.1656   183.634   2.299
+    7    9.0952    0.0758   28.2008    0.2351   254.013   3.310
+    8   10.9143    0.0910   38.2056    0.3186   338.468   2.383
+    9   13.0972    0.1092   50.2113    0.4187   439.815   3.432
+   10   15.7166    0.1311   64.6182    0.5388   561.430   2.471
+   11   18.8599    0.1573   81.9064    0.6830   707.369   3.558
+   12   22.6319    0.1887  102.6523    0.8560   882.495   2.562
+   13   27.1583    0.2265  127.5474    1.0635  1092.646   3.689
+   14   32.5899    0.2717  157.4215    1.3126  1344.828   2.656
+   15   39.1079    0.3261  193.2704    1.6116  1647.446   3.825
+   16   46.9295    0.3913  236.2891    1.9703  2010.588   2.754
+   17   56.3154    0.4696  287.9115    2.4007  2446.358   3.966
+   18   67.5785    0.5635  349.8584    2.9173  2969.282   5.711
+   19   81.0942    0.6762  424.1947    3.5371  3596.791   8.224
+0Bottom layers for time doubling:      2    3    5    7    9   11   13   15   19
+     0 seconds at end of season   40 of   40
+1SP cap water ice exposure                                                        RUN-CASE   1- 2    02 Oct 31 07:18:09   PAGE=  7
+0PARAMETER CHANGES
+ TYPE LOC VALUE
+   1  34  0.5000E-01 FLAY
+1SP cap water ice exposure                                                        RUN-CASE   1- 3    02 Oct 31 07:18:09   PAGE=  8
+0Input file: tundra.inp                                                                      
+ Print file: krct.prt                                                                        
+ Save file: /hob1/hkieffer/tes/KRC/idl/testn2.t53                                           
+0    ALBEDO     EMISS   INERTIA     COND2     DENS2    PERIOD SPEC_HEAT   DENSITY
+     0.2300    1.0000   50.0000    3.4000  928.0000    1.0275  630.0000 1600.0000
+0      CABR    ABRAMP    ABRPHA    PTOTAL     FANON      TATM     TDEEP   SpHeat2
+     0.1800    0.3000  260.0000  689.7000    0.0550  200.0000  150.0000 1300.0000
+0      TAUD     DUSTA    TAURAT     TWILI      ARC2      ARC3     SLOPE    SLOAZI
+     0.2000    0.9000    0.5000      1.00      0.50      0.10       0.0      90.0
+0    TFROST    CFROST    AFROST     FEMIS       AF1       AF2    FROEXT      ARC6
+   146.0000  589944.0    0.6500    0.9500   0.54000    0.0009   50.0000    0.0000
+0      RLAY      FLAY     CONVF     DEPTH     DRSET       DDT       GGT     FDOWN
+     1.2000    0.0500    2.0000    0.0000    0.0000    0.0020   50.0000    0.1000
+0      DJUL    DELJUL SOLAR DEC       DAU       L_S    SOLCON      GRAV    Atm_Cp
+  12257.220    1.0275  -17.8708   1.44912  313.8665 1368.0000    3.7270  800.0000
+0        N1        N2        N3        N4        N5       N24        IB        IC
+         19      2304         1         1        40        24         2         3
+0     NRSET      NMHA      NRUN     JDISK     IDOWN       I14       I15     KPREF
+        999        24         1         1         0        45        65         1
+0     K4OUT     JBARE     spare     spare
+         53         0         5         0
+0    LP1    LP2    LP3    LP4    LP5    LP6 LPGLOB   LVFA   LVFT   LD10
+       F      T      F      F      F      F      F      T      T      F
+0  LPORB   LKEY    LSC LNOTIF  LOCAL   LD16 LPTAVE Prt.78 Prt.79  L_ONE
+       T      F      F      T      T      F      F      F      F      F
+
+ Latitudes: 
+  -85.00
+
+ Elevations:
+    2.90
+1SP cap water ice exposure                                                        RUN-CASE   1- 3    02 Oct 31 07:18:09   PAGE=  9
+ Conductiv.= 2.480E-03  Dens*Cp= 1.008E+06  Diffu.= 2.460E-09  Scale= 8.338E-03
+ Beginning at layer   3
+ Conductiv.= 3.400E+00  Dens*Cp= 1.206E+06  Diffu.= 2.818E-06  Scale= 2.822E-01
+0        ___THICKNESS____   _______CENTER_DEPTH_____ CONVERGENCE
+ LAYER     scale    meter     scale    meter   kg/m^2   factor
+    1    0.0500    0.0004   -0.0250   -0.0002     0.000   0.000
+    2    0.0600    0.0005    0.0300    0.0003     0.800   1.320
+    3    2.4368    0.0203    1.2784    0.0107    19.656   1.901
+    4    2.9241    0.0244    3.9589    0.0330    42.283   2.737
+    5    3.5090    0.0293    7.1754    0.0598    69.436   3.942
+    6    4.2108    0.0351   11.0353    0.0920   102.019   2.838
+    7    5.0529    0.0421   15.6671    0.1306   141.119   2.043
+    8    6.0635    0.0506   21.2253    0.1770   188.038   2.943
+    9    7.2762    0.0607   27.8952    0.2326   244.341   2.119
+   10    8.7314    0.0728   35.8990    0.2993   311.906   3.051
+   11   10.4777    0.0874   45.5036    0.3794   392.982   2.197
+   12   12.5733    0.1048   57.0291    0.4755   490.275   3.163
+   13   15.0879    0.1258   70.8596    0.5909   607.026   2.277
+   14   18.1055    0.1510   87.4564    0.7292   747.127   3.279
+   15   21.7266    0.1812  107.3724    0.8953   915.248   2.361
+   16   26.0719    0.2174  131.2717    1.0946  1116.993   3.400
+   17   31.2863    0.2609  159.9509    1.3337  1359.088   2.448
+   18   37.5436    0.3131  194.3658    1.6207  1649.601   3.525
+   19   45.0523    0.3757  235.6638    1.9651  1998.217   2.538
+0Bottom layers for time doubling:      5    6    8   10   12   14   16   18   19
+     1 seconds at end of season   40 of   40
+
+
+     END OF DATA ON INPUT UNIT
+ jb5= 3 133 82 10 0 0 0 4 30 0
+ Wrote custom array, iret= 0
+      END KRC

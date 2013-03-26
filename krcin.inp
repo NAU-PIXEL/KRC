@@ -1,0 +1,102 @@
+ 0 0 / KOLD: SEASON TO START WITH;  KEEP: CONTINUE SAVING DATA IN SAME DISK FILE
+18 lats for 4 years
+    ALBEDO     EMISS   INERTIA        BK       BRC    PERIOD  SPECHEAT   DENSITY
+       .25      1.00     200.0      2.00      1.00    1.0275      630.     1600.
+      CABR    ABRAMP    ABRPHA    PTOTAL     FANON      TATM     TDEEP     spare
+      0.40       .30      260.     689.7      .055      200.    210.61       0.0
+      TAUD     DUSTA    TAURAT     TWILI      ACR2      ARC3     SLOPE    SLOAZI
+       0.2       .90        .5       5.0       0.5      0.10       0.0       90.
+    TFROST    CFROST    AFROST     FEMIS       AF1       AF2    FROEXT      fd32
+     148.0   589944.       .65      1.00      0.54    0.0009      50.       0.0
+      RLAY      FLAY     CONVF     DEPTH     DRSET       DDT       GGT     FDOWN
+    1.2000     .1800    2.0000       0.0       0.0     .0020        .1       0.1
+      DJUL    DELJUL  SOLARDEC       DAU      HLON    SOLCON      GRAV    Atm_Cp
+    11467.   17.1745      00.0     1.465        .0     1368.     3.727      800.
+        N1        N2        N3        N4        N5       N24        IB        IC
+        27       384        10        18       160        24         2         0
+     NRSET      NMHA      NRUN     JDISK     IDOWN       I14       I15     KPREF
+       999        24         1       120         0        45        65         1
+     K4OUT     JBARE      NMOD    IDISK2                                     end
+         0         0        20         2                                       0
+    LP1    LP2    LP3    LP4    LP5    LP6 LPGLOB   LVFA   LVFT  debug
+      F      T      F      F      F      F      F      T      T      F
+  LPORB   LKEY    LSC LNOTIF  LOCAL   LD16 LPTAVE   f.78   f.79 [LONE]
+      T      F      F      T      F      F      F      F      F      F
+LATITUDES: in 10F7.2  _____7 _____7 _____7 _____7 _____7 _____7 _____7
+ -85.00 -75.00 -65.00 -55.00 -45.00 -35.00 -25.00 -15.00  -5.00   5.00
+  15.00  25.00  35.00  45.00  55.00  65.00  75.00  85.00               
+Elevations: in 10F7.2  _____7 _____7 _____7 _____7 _____7 _____7 _____7
+   4.38   4.55   4.16   4.09   4.10   4.01   3.76   3.60   3.04   1.66
+   0.91   0.58   0.58   0.28  -1.15  -2.07  -1.60  -0.08               
+  97-JAN-30 15:37:58 =RUNTIME.  IPLAN AND TC=   4.0 0.49000
+   4.000000      0.4900000      0.8556749      0.3221672E-01   4.997373    
+  0.9339862E-01   1.523693       10820.59       686.9796      0.9204510    
+   5.539492       24.62278             0.      0.4093198             0.    
+         0.             0.             0.       6.150894      0.4662405   
+  0.4166342E-01  0.6202968       4.377076             0.             0.    
+         0.             0.             0.             0.             0.    
+         0.             0.             0.     -0.9491031E-01  0.8901852    
+  0.4456034     -0.9056373      0.1086292     -0.4099036     -0.4132956    
+ -0.4424591      0.7958748      0.9085325     -0.4166692     -0.3091195E-01
+  0.4171058      0.9088128      0.9055913E-02  0.2431985E-01 -0.2112114E-01
+  0.9994811     -0.3290646     -0.8544949     -0.4019393      0.9443074    
+ -0.2977673     -0.1400645      0.3352761E-07  0.4256445     -0.9048904
+1 3 50. 'Inertia' /
+8 0 0 '/work1/krc/A25I050T20El.d50'
+0/
+0/
+0/
+
+
+
+
+1 4 7.07107 'BK lower layer conductivity' /
+1 5 7.07107 'BRC lower layer volume specific heat' /
+1 15 190 'TDEEP: Initial Condition H2O Ice' /
+1 41 11586.782 'DJUL: L_s 300' /
+1 42 1.0275 'DELJUL: set to 1 sol' /
+2 1 9 'N1, # of layers:' /
+2 3 1 'N3: # iteration days' /
+2 7 1 'IB: 1=constant temperature'
+2 8 99 'IC, lower layer start: set shallow'/  3
+2 16 0 'KPREF: constant P' /
+8 0 0 'i300_a23_s00az000_3' / Disk file name
+0 /
+0 /
+0 /
+1 39 999. 'GGT big to avoid iteration' /
+
+
+
+1 3 100.000 'Inertia' /
+1 4 5.00000 'BK lower layer conductivity' /
+1 5 5.00000 'BRC lower layer volume specific heat' /
+0 /
+1 3 200.000 'Inertia' /
+1 4 3.53553 'BK lower layer conductivity' /
+1 5 3.53553 'BRC lower layer volume specific heat' /
+0 /
+1 3 400.000 'Inertia' /
+1 4 2.50000 'BK lower layer conductivity' /
+1 5 2.50000 'BRC lower layer volume specific heat' /
+0 /
+1 3 800.000 'Inertia' /
+1 4 1.76777 'BK lower layer conductivity' /
+1 5 1.76777 'BRC lower layer volume specific heat' /
+0 /
+1 3 1600.00 'Inertia' /
+1 4 1.25000 'BK lower layer conductivity' /
+1 5 1.25000 'BRC lower layer volume specific heat' /
+0 /
+1 3 2500.00 'Inertia' /
+1 4 1.00000 'BK lower layer conductivity' /
+1 5 1.00000 'BRC lower layer volume specific heat' /
+0 /
+0 /
+0 /
+0 /
+
+1 4 4. 'BK lower layer  conductivity' /
+1 5 4. 'BRC lower layer volume specific heat' /
+2 8 5 'IC, lower layer start'/
+

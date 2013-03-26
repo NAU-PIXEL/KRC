@@ -1,0 +1,84 @@
+Comparing the temperatures for full and one-point krc for a range of opacities:
+2005 March 19
+
+
+Ls = 4.6
+DJUL = 13079.5
+Lat = -14.6
+Hour = 2.00
+Elev = -1.6
+Alb = 0.18
+Inertia = 200
+Slope = 0
+Azim = 0
+
+
+
+
+Opacity = 0.20
+
+Full		One-Point
+187.9629974	187.961
+
+
+Opacity = 0.40
+Full		One-Point
+190.1903534     190.225
+
+
+Opacity = 0.60
+Full		One-Point
+191.4790649     191.626
+
+
+Opacity = 0.80
+Full		One-Point
+192.0131531     192.256
+
+################################
+
+Ls = 341.4
+DJUL = 13033.9
+Lat = -14.6
+Hour = 1.00
+Elev = -1.6
+Alb = 0.18
+Inertia = 200
+Slope = 0
+Azim = 0
+
+
+
+Opacity = 0.20
+
+Inertia		Full		One-Point
+200		193.8630371	194.196
+250		198.3043060	198.558
+300		202.0063477	202.191	
+
+
+Opacity = 0.40
+Inertia		Full		One-Point
+200		196.3381500	196.740
+250		200.3670959	200.694	
+300		203.7397919	204.007
+
+
+
+
+Opacity = 0.60
+Inertia		Full		One-Point
+200		197.8657379	198.345
+250		201.5682068	202.019
+300		204.6690979	205.088
+
+
+
+
+Opacity = 0.80
+Inertia		Full		One-Point
+200		198.5431519	199.166
+250		201.9691162	202.620
+300		204.8559113	205.503
+
+

@@ -1,0 +1,42 @@
+
+
+C KRCCOM interface
+        REAL*4    FD(NUMFD)
+        INTEGER*4 ID(NUMID)
+        LOGICAL   LD(NUMLD)
+C        EQUIVALENCE (FD(1),ALB), (ID(1),N1), (LD(1),LP1)
+C LATCOM interface
+        real*4 cm48(maxn4,8) ! alat, elev, ndj4, dtm4, tst4, tts4, frost4, afro4
+        real*4 cm143(MACN1,MAXN4,3) ! t4, tin, tax
+        real*4 cmh42(MACN24,MAXN4,2) !  tsf, tpf
+
+C     DAYCOM interface
+        real*4 cm16(maxn1,6)    ! x, SCONVG, TLAY , TMIN, TMAX , T
+        real*4 cm132(MAXN1,MAXN3) ! tt
+        real*4 cm33(MAXN3, 3)    ! TTS, TTB , FRO
+        real*4 cm23(MAXN2,3)   ! ASOL, ADGR,, TOUT
+        real*4 cmh2(MAXN24,2) ! TSFH,TPFH 
+        real*4 cm1(MAXBOT)    ! N1K
+C     UNITS interface
+        integer*4 cmu(5)        ! I/O units???
+C     FILCOM interface
+        CHARACTER*80   cmfil3(3) !  FINPUT,FOUT,FDISK
+
+	COMMON /PORBCM/ PC(60)
+C_Hist 2002feb28  Hugh_H_Kieffer
+C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
+C			zero out commons
+C Transfer all REAL*4 arrays from argument to common
+	CALL R2R (FD,    ALB, numfd)		!  KRCCOM reals
+	CALL R2R (ID,     N1, numid) 		!  KRCCOM integers
+	CALL R2R (LD,    LP1, numld) 		!  KRCCOM Logicals
+        CALL R2R (cm48, alat, maxn4*8) 		!  LATCOM
+	CALL R2R (cm143,  t4, MACN1*maxn4*3) 	!  LATCOM
+       	CALL R2R (cmh42, tsf, MACN24*MAXN4*2) 	!  LATCOM: tsf, tpfeaLL R2Rl*4
+        CALL R2R (cm16,    x, maxn1*6) 		! x, SCONVG, TLAY , TMIN, TMAX , T
+        CALL R2R (cm132,  tt, MAXN1,MAXN3)	! tt
+        CALL R2R (cm33,  TTS, MAXN3*3)		! TTS, TTB , FRO
+        CALL R2R (cm23, ASOL, MAXN2*3)		! ASOL, ADGR,, TOUT
+        CALL R2R (cmh2, TSFH, MAXN24*2)		! TSFH,TPFH 
+        CALL R2R (cm1,   N1K, MAXBOT)		! N1K
+

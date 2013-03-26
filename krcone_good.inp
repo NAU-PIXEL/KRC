@@ -1,0 +1,47 @@
+ 0 0 / KOLD: SEASON TO START WITH;  KEEP: CONTINUE SAVING DATA IN SAME DISK FILE
+Base conditions for One-Point Mode  2002aug04
+    ALBEDO     EMISS   INERTIA     COND2     DENS2    PERIOD  SPECHEAT   DENSITY
+       .15      1.00     200.0      2.00     2500.    1.0275      630.     1000.
+      CABR    ABRAMP    ABRPHA    PTOTAL     FANON      TATM     TDEEP   SpHeat2
+      0.18       .30      260.     689.7      .055      200.    204.00    1000.0
+      TAUD     DUSTA    TAURAT     TWILI      ACR2      ARC3     SLOPE    SLOAZI
+       0.2       .90        .5       1.0       0.5      0.10       0.0       90.
+    TFROST    CFROST    AFROST     FEMIS       AF1       AF2    FROEXT      ARC6
+     148.0   589944.       .65      1.00      0.54    0.0009      50.        0.0
+      RLAY      FLAY     CONVF     DEPTH     DRSET       DDT       GGT     FDOWN
+    1.2000     .1800       1.5       0.0       0.0     .0020        .1       0.1
+      DJUL    DELJUL  SOLARDEC       DAU      HLON    SOLCON      GRAV    Atm_Cp
+   12290.7      3.07      00.0     1.465        .0     1368.     3.727      800.
+        N1        N2        N3        N4        N5       N24        IB        IC
+        13       384        10         1         2        24         0         0
+     NRSET      NMHA      NRUN     JDISK     IDOWN       I14       I15     KPREF
+         3        24         1         0         0        45        68         1
+     K4OUT     spare     spare     spare                                     end
+         0         0         0         0                                       0
+    LP1    LP2    LP3    LP4    LP5    LP6 LPGLOB   LVFA   LVFT  debug
+      F      F      F      F      F      F      F      F      F      F
+  LPORB   LKEY    LSC LNOTIF  LOCAL  spare LPTAVE Prt.78 Prt.79   LONE
+      T      F      F      F      F      F      F      F      F      F
+LATITUDES: in 10F7.2  _____7 _____7 _____7 _____7 _____7 _____7 _____7
+   -90.   -80.   -70.   -60.   -50.   -40.   -30.   -20.   -10.     0.
+Elevations: in 10F7.2  _____7 _____7 _____7 _____7 _____7 _____7 _____7
+    0.0    0.0    0.0    0.0    0.0    0.0    0.0    0.0    0.0    0.0
+  97-JAN-30 15:37:58 =RUNTIME.  IPLAN AND TC=   4.0 0.49000
+   4.000000      0.4900000      0.8556749      0.3221672E-01   4.997373    
+  0.9339862E-01   1.523693       10820.59       686.9796      0.9204510    
+   5.539492       24.62278             0.      0.4093198             0.    
+         0.             0.             0.       6.150894      0.4662405    
+  0.4166342E-01  0.6202968       4.377076             0.             0.    
+         0.             0.             0.             0.             0.    
+         0.             0.             0.     -0.9491031E-01  0.8901852    
+  0.4456034     -0.9056373      0.1086292     -0.4099036     -0.4132956    
+ -0.4424591      0.7958748      0.9085325     -0.4166692     -0.3091195E-01
+  0.4171058      0.9088128      0.9055913E-02  0.2431985E-01 -0.2112114E-01
+  0.9994811     -0.3290646     -0.8544949     -0.4019393      0.9443074    
+ -0.2977673     -0.1400645      0.3352761E-07  0.4256445     -0.9048904 
+10 1 0.1 'one.inp' / name of one-point input file
+1 1 0.51 'Albedo" / but should never get here
+0 /
+0 /
+0 / 
+12345678901234567890123456789012345678901234567890123456789012345678901234567890

@@ -1,0 +1,2 @@
+g77 -pipe -O2  -L. -L/home/hkieffer/linux/lib    -o krc krc.o tseas.o tlats.o tday.o tcard.o tprint.o tdisk.o epred.o porb0.o tint.o albvar.o co2pt.o vlpres.o aveday.o porb.o orbit.o eccanom.o \
+-lhk_fmath -lhk_ftin -lhk_ffile -lhk_ftime -lhk_futil -lhk_fchar  -lhk_cisis			  -lncurses -ltermcap -lf2c -lc -lm

@@ -1,0 +1,74 @@
+ 0 0 / KOLD: SEASON TO START WITH;  KEEP: CONTINUE SAVING DATA IN SAME DISK FILE
+Global annual models for Robin and Josh Output end at Ls=360
+    ALBEDO     EMISS   INERTIA     COND2     DENS2    PERIOD SPEC_HEAT   DENSITY
+       .25      1.00      50.0       3.4     928.0    1.0275      630.     2000.
+      CABR    ABRAMP    ABRPHA    PTOTAL     FANON      TATM     TDEEP   SpHeat2
+      0.18       .30      260.     580.0      .055      200.     150.0     1300.
+      TAUD     DUSTA    TAURAT     TWILI      ACR2      ARC3     SLOPE    SLOAZI
+       0.3       .90      .205       0.0       0.5      0.10       0.0       90.
+    TFROST    CFROST    AFROST     FEMIS       AF1       AF2    FROEXT      FD32
+     146.0   589944.       .65      0.95      0.54    0.0009       50.       0.0
+      RLAY      FLAY     CONVF     DEPTH     DRSET       DDT       GGT     FDOWN
+    1.2000     .1800    2.0000       0.0       0.0     .0020        .1       0.1
+      DJUL    DELJUL  SOLARDEC       DAU      HLON    SOLCON      GRAV    Atm_Cp
+   9652.53   17.1745      00.0     1.465        .0     1372.     3.727      800.
+        N1        N2        N3        N4        N5       N24        IB        IC
+        28       384         8        18       160        24         0         0
+     NRSET      NMHA      NRUN     JDISK     IDOWN       I14       I15     KPREF
+         3        24        37       121         0        45        65         1
+     K4OUT     JBARE      NMOD    IDISK2                                     end
+        51         0        50         0                                       0
+    LP1    LP2    LP3    LP4    LP5    LP6 LPGLOB   LVFA   LVFT  debug
+      F      T      F      F      F      F      F      F      T      T
+  LPORB   LKEY    LSC LNOTIF  LOCAL   LD16 LPTAVE Prt.78 Prt.79   LONE
+      T      F      F      T      T      F      F      F      F      F
+LATITUDES: in 10F7.2  _____7 _____7 _____7 _____7 _____7 _____7 _____7
+ -85.00 -75.00 -65.00 -55.00 -45.00 -35.00 -25.00 -15.00  -5.00   5.00
+  15.00  25.00  35.00  45.00  55.00  65.00  75.00  85.00                
+Elevations: in 10F7.2  _____7 _____7 _____7 _____7 _____7 _____7 _____7
+   4.38   4.55   4.16   4.09   4.10   4.01   3.76   3.60   3.04   1.66
+   0.91   0.58   0.58   0.28  -1.15  -2.07  -1.60  -0.08                
+  97-JAN-30 15:37:58 =RUNTIME.  IPLAN AND TC=   4.0 0.49000
+   4.000000      0.4900000      0.8556749      0.3221672E-01   4.997373    
+  0.9339862E-01   1.523693       10820.59       686.9796      0.9204510    
+   5.539492       24.62278             0.      0.4093198             0.    
+         0.             0.             0.       6.150894      0.4662405    
+  0.4166342E-01  0.6202968       4.377076             0.             0.    
+         0.             0.             0.             0.             0.    
+         0.             0.             0.     -0.9491031E-01  0.8901852    
+  0.4456034     -0.9056373      0.1086292     -0.4099036     -0.4132956    
+ -0.4424591      0.7958748      0.9085325     -0.4166692     -0.3091195E-01
+  0.4171058      0.9088128      0.9055913E-02  0.2431985E-01 -0.2112114E-01
+  0.9994811     -0.3290646     -0.8544949     -0.4019393      0.9443074    
+ -0.2977673     -0.1400645      0.3352761E-07  0.4256445     -0.9048904
+8 0 0 '/hum2/hkieffer/krcdemo3.td0' 
+0 /   
+0 /
+0 /
+0 /
+3 2 0. 'LP2 turned off'
+1 3 200. 'Inertia'
+8 0 0 '/hum2/hkieffer/krc/sk200a15t2dtm.tds' 
+0 /
+1 3 400. 'Inertia'
+8 0 0 '/hum2/hkieffer/krc/sk400a15t2dtm.tds' 
+0 /
+1 3 800. 'Inertia'
+8 0 0 '/hum2/hkieffer/krc/sk800a15t2dtm.tds' 
+0 / 
+1 1 0.35 'Albedo'
+1 3 50. 'Inertia'
+8 0 0 '/hum2/hkieffer/krc/sk050a35t2dtm.tds' 
+0 / 
+3 2 1. 'LP2 turned on'
+1 17 0.6 'Tau_Dust'
+1 1 0.15 'Albedo'
+1 3 100. 'Inertia'
+8 0 0 '/hum2/hkieffer/krc/sk100a35t2dtm.tds' 
+0 /
+3 2 0. 'LP2 turned off'
+1 3 400. 'Inertia'
+8 0 0 '/hum2/hkieffer/krc/sk400a35t2dtm.tds' 
+0 /
+0 /
+0 /
