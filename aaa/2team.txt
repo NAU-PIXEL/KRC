@@ -1,0 +1,39 @@
+TES and THEMIS Folks
+
+I have developed a new atmosphere section for the KRC thermal model
+which has decent physics for a one-layer gray atmosphere. Many of the
+prior "tuning" parameters to match the Haberle model at the Viking sites
+are gone. It supports both the "one-point" mode and full-up models to 
+keep you endlessly amused.
+
+Tim is putting the binary executable and several helpful text files
+on out website. There are two IDL routines which help to calculate
+when to start a model if you want to begin storing seasonal records
+after running for a while to approach equilibrium.
+
+
+
+
+Files for KRC distribution   2002sep17
+
+/home/hkieffer/krc/helplist.txt
+	General help in setting up input files. ASCII text
+
+/home/hkieffer/xtex/tex/krc.ps
+	PostScript description of some of the algorithms
+
+/home/hkieffer/krc/tes/krc 
+	Executable for PC linux
+
+/home/hkieffer/krc/tes/krcone_master.inp
+	Sample input file for running KRC in one-point mode.
+
+/home/hkieffer/krc/tes/krcin.inp
+	Sample input file for running full-up KRC
+
+/home/hkieffer/idl/tes/KRC/when2start.pro
+	IDL routine to compute KRC start date
+
+/home/hkieffer/idl/tes/subs/l_s.pro
+	IDL routine for general conversion between Ls and dates
+	[ Called by when2start ]

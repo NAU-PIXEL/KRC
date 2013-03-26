@@ -1,0 +1,183 @@
+1Default values for all parameters. 19 latitudes with mean Mars elevations        RUN-CASE   1- 0    10 Jul 19 18:50:31   PAGE=  1
+0PARAMETER CHANGES
+ TYPE LOC VALUE
+   8   0   0.000     /work1/krc/mars/masterA.t52
+ New Disk file name= /work1/krc/mars/masterA.t52
+   1  12   540.0     PTOTAL set to yield 7  mb at VL1 @ Ls=100  PTOTAL  <Changed
+   1   3   114.5     Iner  INERTIA <Changed
+   1   4  0.2200     COND2  COND2   <Changed
+   1  35   4.000     CONVF  CONVF   <Changed
+ TCARD Exit with IRET=           1          64          20
+1Default values for all parameters. 19 latitudes with mean Mars elevations        RUN-CASE   1- 1    10 Jul 19 18:50:31   PAGE=  2
+0Input file: master.inp                                                                      
+ Print file: krc.prt                                                                         
+ Save file: /work1/krc/mars/masterA.t52                                                     
+0    ALBEDO     EMISS   INERTIA     COND2     DENS2    PERIOD  SpecHeat   DENSITY
+     0.2500    1.0000  114.4727    0.2200  928.0000    1.0275  630.0000 1600.0000
+0      CABR       AMW   [ABRPHA    PTOTAL     FANON      TATM     TDEEP   SpHeat2
+     0.1100   43.5000    0.0000  540.0000    0.0550  200.0000  180.0000 1300.0000
+0      TAUD     DUSTA    TAURAT     TWILI      ARC2     [ARC3     SLOPE    SLOAZI
+     0.3000    0.9000    0.5000      0.00      0.50      0.00       0.0      90.0
+0    TFROST    CFROST    AFROST     FEMIS       AF1       AF2    FROEXT     [FD32
+   146.0000  589944.0    0.6500    0.9500   0.54000    0.0009   50.0000    0.0000
+0      RLAY      FLAY     CONVF     DEPTH     DRSET       DDT       GGT     DTMAX
+     1.2000    0.1800    4.0000    0.0000    0.0000    0.0020    0.1000    0.1000
+0      DJUL    DELJUL SOLAR DEC       DAU       L_S    SOLCON      GRAV    Atm_Cp
+  10322.330   17.1745    0.0000   1.46500    0.0000 1368.0000    3.7270  735.9000
+0    ConUp0    ConUp1    ConUp2    ConUp3    ConLo0    ConLo1    ConLo2    ConLo3
+     0.0130    0.0000    0.0000    0.0000    0.2200    0.0000    0.0000    0.0000
+0    SphUp0    SphUp1    SphUp2    SphUp3    SphLo0    SphLo1    SphLo2    SphLo3
+   630.0000    0.0000    0.0000    0.0000 1300.0000    0.0000    0.0000    0.0000
+0        N1        N2        N3        N4        N5       N24        IB        IC
+         20       384        15        19       120        24         0         7
+0     NRSET      NMHA      NRUN     JDISK    [IDOWN    FlxP14    FlxP15     KPREF
+          3        24         1        81         0        45        65         1
+0     K4OUT     JBARE     Notif    IDISK2
+         52         0        20         0
+0    LP1    LP2    LP3    LP4    LP5    LP6 LPGLOB   LVFA   LVFT  LKofT
+       F      T      F      F      F      F      F      F      F      F
+0  LPORB   LKEY    LSC LNOTIF  LOCAL   LD16 LPTAVE  Prt78  Prt79  L_ONE
+       T      F      F      F      T      F      F      F      F      F
+
+ Latitudes: 
+  -87.50 -80.00 -70.00 -60.00 -50.00 -40.00 -30.00 -20.00 -10.00   0.00
+   10.00  20.00  30.00  40.00  50.00  60.00  70.00  80.00  87.50
+
+ Elevations:
+    3.51   2.01   1.39   1.22   0.38   0.48   1.17   1.67   1.26   0.17
+   -0.94  -1.28  -1.99  -2.51  -3.52  -4.08  -4.51  -4.38  -2.57
+1Default values for all parameters. 19 latitudes with mean Mars elevations        RUN-CASE   1- 1    10 Jul 19 18:50:31   PAGE=  3
+ Conductiv.= 1.300E-02  Dens*Cp= 1.008E+06  Diffu.= 1.290E-08  Scale= 1.909E-02
+ Beginning at layer   7  At   0.0307 m.   Inertia=   515.2
+ Conductiv.= 2.200E-01  Dens*Cp= 1.206E+06  Diffu.= 1.824E-07  Scale= 7.179E-02
+0        ___THICKNESS____   _______CENTER_DEPTH_____ CONVERGENCE
+ LAYER     scale    meter     scale    meter   kg/m^2   factor
+    1    0.1800    0.0034   -0.0900   -0.0017     0.000   0.000
+    2    0.2160    0.0041    0.1080    0.0021     6.598   2.851
+    3    0.2592    0.0049    0.3456    0.0066    14.515   4.106
+    4    0.3110    0.0059    0.6307    0.0120    24.015   5.913
+    5    0.3732    0.0071    0.9729    0.0186    35.416   4.257
+    6    0.4479    0.0086    1.3834    0.0264    49.097   6.130
+    7    2.0211    0.0386    2.6179    0.0500    84.902   4.414
+    8    2.4253    0.0463    4.8411    0.0924   127.868   6.356
+    9    2.9104    0.0556    7.5089    0.1433   179.428   4.576
+   10    3.4924    0.0667   10.7103    0.2045   241.299   6.590
+   11    4.1909    0.0800   14.5520    0.2778   315.545   4.745
+   12    5.0291    0.0960   19.1620    0.3658   404.640   6.832
+   13    6.0349    0.1152   24.6940    0.4714   511.554   4.919
+   14    7.2419    0.1383   31.3325    0.5981   639.851   7.084
+   15    8.6903    0.1659   39.2986    0.7502   793.806  10.200
+   16   10.4283    0.1991   48.8579    0.9327   978.554  14.689
+   17   12.5140    0.2389   60.3291    1.1517  1200.250  21.152
+   18   15.0168    0.2867   74.0945    1.4145  1466.286  30.459
+   19   18.0202    0.3440   90.6130    1.7298  1785.529  43.860
+   20   21.6242    0.4128  110.4352    2.1082  2168.621  63.159
+0Bottom layers for time doubling:      4    6    8   10   12   20
+ Idx,JJJ=           4           5          24           7          19          41           0           0           4          30           0
+ MMM=          24         168        3192      127680           0           0
+ KOMMON,KASE,MASE,MTOT=     1056720      130872           8     1046976
+     2 seconds at end of season  120 of  120
+1Default values for all parameters. 19 latitudes with mean Mars elevations        RUN-CASE   1- 1    10 Jul 19 18:50:31   PAGE=  4
+0PARAMETER CHANGES
+ TYPE LOC VALUE
+   3  10   1.000     LkofT  LKofT <Changed
+ TCARD Exit with IRET=           1          64          20
+ Case  1  DTIME: total, user, system=    2.2937    2.2657    0.0280
+ CCKU/L=  1.3000000E-02   0.000000       0.000000       0.000000      0.2200000       0.000000       0.000000       0.000000    
+ CCPU/L=   630.0000       0.000000       0.000000       0.000000       1300.000       0.000000       0.000000       0.000000    
+    T     cond_SpHeat_UPPER_iner    cond_SpHeat__LOWER_iner
+  130.0  0.01300  630.00  114.47   0.22000 1300.00  515.18
+  140.0  0.01300  630.00  114.47   0.22000 1300.00  515.18
+  150.0  0.01300  630.00  114.47   0.22000 1300.00  515.18
+  160.0  0.01300  630.00  114.47   0.22000 1300.00  515.18
+  170.0  0.01300  630.00  114.47   0.22000 1300.00  515.18
+  180.0  0.01300  630.00  114.47   0.22000 1300.00  515.18
+  190.0  0.01300  630.00  114.47   0.22000 1300.00  515.18
+  200.0  0.01300  630.00  114.47   0.22000 1300.00  515.18
+  210.0  0.01300  630.00  114.47   0.22000 1300.00  515.18
+  220.0  0.01300  630.00  114.47   0.22000 1300.00  515.18
+  230.0  0.01300  630.00  114.47   0.22000 1300.00  515.18
+  240.0  0.01300  630.00  114.47   0.22000 1300.00  515.18
+  250.0  0.01300  630.00  114.47   0.22000 1300.00  515.18
+  260.0  0.01300  630.00  114.47   0.22000 1300.00  515.18
+  270.0  0.01300  630.00  114.47   0.22000 1300.00  515.18
+  280.0  0.01300  630.00  114.47   0.22000 1300.00  515.18
+  290.0  0.01300  630.00  114.47   0.22000 1300.00  515.18
+  300.0  0.01300  630.00  114.47   0.22000 1300.00  515.18
+  310.0  0.01300  630.00  114.47   0.22000 1300.00  515.18
+  320.0  0.01300  630.00  114.47   0.22000 1300.00  515.18
+1Default values for all parameters. 19 latitudes with mean Mars elevations        RUN-CASE   1- 2    10 Jul 19 18:50:31   PAGE=  5
+0Input file: master.inp                                                                      
+ Print file: krc.prt                                                                         
+ Save file: /work1/krc/mars/masterA.t52                                                     
+0    ALBEDO     EMISS   INERTIA     COND2     DENS2    PERIOD  SpecHeat   DENSITY
+     0.2500    1.0000  114.4727    0.2200  928.0000    1.0275  630.0000 1600.0000
+0      CABR       AMW   [ABRPHA    PTOTAL     FANON      TATM     TDEEP   SpHeat2
+     0.1100   43.5000    0.0000  540.0000    0.0550  200.0000  180.0000 1300.0000
+0      TAUD     DUSTA    TAURAT     TWILI      ARC2     [ARC3     SLOPE    SLOAZI
+     0.3000    0.9000    0.5000      0.00      0.50      0.00       0.0      90.0
+0    TFROST    CFROST    AFROST     FEMIS       AF1       AF2    FROEXT     [FD32
+   146.0000  589944.0    0.6500    0.9500   0.54000    0.0009   50.0000    0.0000
+0      RLAY      FLAY     CONVF     DEPTH     DRSET       DDT       GGT     DTMAX
+     1.2000    0.1800    4.0000    0.0000    0.0000    0.0020    0.1000    0.1000
+0      DJUL    DELJUL SOLAR DEC       DAU       L_S    SOLCON      GRAV    Atm_Cp
+  10322.330   17.1745   -3.8850   1.53484  350.8402 1368.0000    3.7270  735.9000
+0    ConUp0    ConUp1    ConUp2    ConUp3    ConLo0    ConLo1    ConLo2    ConLo3
+     0.0130    0.0000    0.0000    0.0000    0.2200    0.0000    0.0000    0.0000
+0    SphUp0    SphUp1    SphUp2    SphUp3    SphLo0    SphLo1    SphLo2    SphLo3
+   630.0000    0.0000    0.0000    0.0000 1300.0000    0.0000    0.0000    0.0000
+0        N1        N2        N3        N4        N5       N24        IB        IC
+         20       384        15        19       120        24         0         7
+0     NRSET      NMHA      NRUN     JDISK    [IDOWN    FlxP14    FlxP15     KPREF
+          3        24         1        81         0        45        65         1
+0     K4OUT     JBARE     Notif    IDISK2
+         52         0        20         0
+0    LP1    LP2    LP3    LP4    LP5    LP6 LPGLOB   LVFA   LVFT  LKofT
+       F      T      F      F      F      F      F      F      F      T
+0  LPORB   LKEY    LSC LNOTIF  LOCAL   LD16 LPTAVE  Prt78  Prt79  L_ONE
+       T      F      F      F      T      F      F      F      F      F
+
+ Latitudes: 
+  -87.50 -80.00 -70.00 -60.00 -50.00 -40.00 -30.00 -20.00 -10.00   0.00
+   10.00  20.00  30.00  40.00  50.00  60.00  70.00  80.00  87.50
+
+ Elevations:
+    3.51   2.01   1.39   1.22   0.38   0.48   1.17   1.67   1.26   0.17
+   -0.94  -1.28  -1.99  -2.51  -3.52  -4.08  -4.51  -4.38  -2.57
+1Default values for all parameters. 19 latitudes with mean Mars elevations        RUN-CASE   1- 2    10 Jul 19 18:50:31   PAGE=  6
+ Conductiv.= 1.300E-02  Dens*Cp= 1.008E+06  Diffu.= 1.290E-08  Scale= 1.909E-02
+ Beginning at layer   7  At   0.0307 m.   Inertia=   515.2
+ Conductiv.= 2.200E-01  Dens*Cp= 1.206E+06  Diffu.= 1.824E-07  Scale= 7.179E-02
+0        ___THICKNESS____   _______CENTER_DEPTH_____ CONVERGENCE
+ LAYER     scale    meter     scale    meter   kg/m^2   factor
+    1    0.1800    0.0034   -0.0900   -0.0017     0.000   0.000
+    2    0.2160    0.0041    0.1080    0.0021     6.598   2.851
+    3    0.2592    0.0049    0.3456    0.0066    14.515   4.106
+    4    0.3110    0.0059    0.6307    0.0120    24.015   5.913
+    5    0.3732    0.0071    0.9729    0.0186    35.416   4.257
+    6    0.4479    0.0086    1.3834    0.0264    49.097   6.130
+    7    2.0211    0.0386    2.6179    0.0500    84.902   4.414
+    8    2.4253    0.0463    4.8411    0.0924   127.868   6.356
+    9    2.9104    0.0556    7.5089    0.1433   179.428   4.576
+   10    3.4924    0.0667   10.7103    0.2045   241.299   6.590
+   11    4.1909    0.0800   14.5520    0.2778   315.545   4.745
+   12    5.0291    0.0960   19.1620    0.3658   404.640   6.832
+   13    6.0349    0.1152   24.6940    0.4714   511.554   4.919
+   14    7.2419    0.1383   31.3325    0.5981   639.851   7.084
+   15    8.6903    0.1659   39.2986    0.7502   793.806  10.200
+   16   10.4283    0.1991   48.8579    0.9327   978.554  14.689
+   17   12.5140    0.2389   60.3291    1.1517  1200.250  21.152
+   18   15.0168    0.2867   74.0945    1.4145  1466.286  30.459
+   19   18.0202    0.3440   90.6130    1.7298  1785.529  43.860
+   20   21.6242    0.4128  110.4352    2.1082  2168.621  63.159
+0Bottom layers for time doubling:      4    6    8   10   12   20
+     4 seconds at end of season  120 of  120
+
+
+     END OF DATA ON INPUT UNIT
+ TCARD Exit with IRET=           5          64          20
+ Case  2  DTIME: total, user, system=    6.6240    6.5690    0.0550
+ JJJ=           5          24           7          19          41           2           0           4          30           0
+ Wrote bin5 file: type and iret=           52           0
+   File name=/work1/krc/mars/masterA.t52                                                     
+      END KRC

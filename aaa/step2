@@ -1,0 +1,152 @@
+###################################
+# Script and comments for making a distribution package of the KRC thermal
+# model file system see the file AAREADME for additional description
+# Step 1 included making a directory structure, commented out below,
+# and constructing the step2 and step3 script files
+#
+#_Hist 2006jan25 Hugh Kieffer Evolve from ROLO distribution system
+# 2006jan25 Hugh Kieffer   Not running under Suse 9.3
+# 2006apr12 HK Have running under Suse9.3
+# 2006sep12 HK Update to include seasonally-variable albedo and tau
+# 2009may09 HK Update to include T-dependant version
+# 2010jan22 HK Update to use IMPLICIT NONE version
+# 2010jul09 HK Update to use version with T-depend. Cp and k
+###################################
+
+set FAM='/home/hkieffer/krc'    # family to be distributed
+set DIST='/Dist'		# generic name for distribution directory top
+set RTOP=$FAM$DIST		# Top of the specific distribution tree
+echo "RTOP="$RTOP
+# unalias rm
+#cd $RTOP      # construction area for the full distribution sys
+#mkdir run
+#mkdir run/output
+
+cd $RTOP/aaa
+## DO NOT REMOVE FILES FROM THE Dist/aaa/ directory
+rm -f *~                # eliminate old versions
+
+cd $RTOP/run
+rm -Rf *
+ln -s /home/hkieffer/krc/tes/master.inp .    # 19 latitudes, defaults parameters
+ln -s /home/hkieffer/krc/tes/master5x.inp .  # output all type 5x binary files
+ln -s /home/hkieffer/krc/tes/mast37 .        # 37 latitudes and mean elevations
+ln -s /home/hkieffer/krc/tes/krcOneA.inp .   # krc input for one-point
+ln -s /home/hkieffer/krc/tes/oneA.inp .      # one-point input table  
+ln -s /home/hkieffer/krc/tes/valb1.tab .     # sample seasonal albedo input
+ln -s /home/hkieffer/krc/src/krc krc64   # executable for 64-bit hardware
+ln -s /home/hkieffer/krc/porb/standish.tab . # Standish planetary orbit elements
+mkdir output
+echo "Done copy to run"
+
+cd $RTOP/run/output
+rm -f *
+ln -s /home/hkieffer/krc/tes/master.prt  master.prtOrig
+ln -s /home/hkieffer/krc/tes/master5.prt  master5.prtOrig
+ln -s /home/hkieffer/krc/tes/oneA.prt  oneA.prtOrig
+ln -s /work1/krc/mars/masterA.t52 .
+ln -s /work1/krc/mars/masterB5.t51 .
+ln -s /work1/krc/mars/masterB5.t52 .
+ln -s /work1/krc/mars/masterB5.t54 .
+ln -s /work1/krc/mars/masterB5.t55 .
+ln -s /work1/krc/mars/masterB5.t56 .
+echo "Done copy to run/output"
+
+cd $RTOP/doc		# check date on all .pdf versus .tex
+rm -f * 		# latex x      la4 x     ps2pdf q.ps x.pdf
+ln -s /home/hkieffer/xtex/tes/krc/jpap.pdf . 	# nascent journal article
+ln -s /home/hkieffer/krc/port.pdf .		# supporting material
+ln -s /home/hkieffer/xtex/tes/krc/HeatOfT.pdf . #  T-dependent materials
+ln -s /home/hkieffer/xtex/themis/cement.pdf . 	# Particulate model
+ln -s /home/hkieffer/krc/helplist.tex .
+#ln -s /home/hkieffer/xtex/definc.sty . 
+#ln -s /work2/apps/tetex/tex/latex/natbib/natbib.sty .
+#ln -s /home/hkieffer/xtex/tes/krc/jpap.tex . # current LaTeX version of journal paper
+#ln -s /home/hkieffer/idl/bin5.txt .
+#ln -s /home/hkieffer/krc/evolve.txt .
+#ln -s /home/hkieffer/krc/flow.txt .
+#ln -s /home/hkieffer/krc/liens.txt .
+#ln -s /home/hkieffer/krc/notes .  # scattered notes from development
+#ln -s /home/hkieffer/krc/Dist/aaa/makeNotes .
+echo "Done copy to doc"
+
+cd $RTOP/src
+rm -f *
+#ln -s /home/hkieffer/krc/src/Makefile .
+ln -s /home/hkieffer/krc/Dist/aaa/Makefile .
+ln -s /home/hkieffer/krc/Dist/aaa/Makec .
+#ln -s /home/hkieffer/krc/Dist/aaa/sysdef.rules .
+ln -s /home/hkieffer/krc/src/porbcm.inc
+ln -s /home/hkieffer/krc/src/units.inc .
+ln -s /home/hkieffer/krc/src/daycom.inc .
+ln -s /home/hkieffer/krc/src/filcom.inc .
+ln -s /home/hkieffer/krc/src/hatcom.inc .
+ln -s /home/hkieffer/krc/src/krccom.inc .
+ln -s /home/hkieffer/krc/src/latcom.inc .
+ln -s /home/hkieffer/krc/src/albvar.f .
+ln -s /home/hkieffer/krc/src/aveday.f .
+ln -s /home/hkieffer/krc/src/tint.f .
+ln -s /home/hkieffer/krc/porb/eccanom.f .
+#ln -s /home/hkieffer/krc/porb/evmono.f .
+ln -s /home/hkieffer/krc/src/evmono3.f .
+ln -s /home/hkieffer/krc/porb/orbit.f .
+ln -s /home/hkieffer/krc/porb/porb.f .
+ln -s /home/hkieffer/krc/src/alsubs.f .
+ln -s /home/hkieffer/krc/src/co2pt.f .
+ln -s /home/hkieffer/krc/src/epred.f .
+ln -s /home/hkieffer/krc/src/krc.f .
+ln -s /home/hkieffer/krc/src/porb0.f .
+ln -s /home/hkieffer/krc/src/readtxt360.f .
+ln -s /home/hkieffer/krc/src/seasalb.f .
+ln -s /home/hkieffer/krc/src/seastau.f .
+ln -s /home/hkieffer/krc/src/tcard.f .
+ln -s /home/hkieffer/krc/src/tday.f .
+ln -s /home/hkieffer/krc/src/tdisk.f .
+ln -s /home/hkieffer/krc/src/tlats.f .
+ln -s /home/hkieffer/krc/src/tprint.f .
+ln -s /home/hkieffer/krc/src/tseas.f .
+ln -s /home/hkieffer/krc/src/tyearp.f .
+ln -s /home/hkieffer/krc/src/vlpres.f .
+echo "done copy from krc"
+ln -s /home/hkieffer/rad/mie/deding2.f .
+ln -s /home/hkieffer/src/for/char/white1.f .
+ln -s /home/hkieffer/src/for/util/binf5.F .
+ln -s /home/hkieffer/src/for/math/rotmsp.f .
+ln -s /home/hkieffer/src/for/math/rndex.f .
+ln -s /home/hkieffer/src/for/math/rterp.f .
+ln -s /home/hkieffer/src/for/math/sigma.f .
+ln -s /home/hkieffer/src/for/math/vaddsp.f .
+ln -s /home/hkieffer/src/for/math/xtreme.f .
+ln -s /home/hkieffer/src/for/util/catime.f .
+ln -s /home/hkieffer/src/for/util/datime.f .
+ln -s /home/hkieffer/src/for/util/b2b.f .
+ln -s /home/hkieffer/src/for/util/idarch.F .
+ln -s /home/hkieffer/src/for/util/r2r.f . 
+echo "done copy from src/for"
+ln -s /home/hkieffer/src/cnew/cisis/b2b.c .
+ln -s /home/hkieffer/src/cnew/cisis/r2r.c .
+ln -s /home/hkieffer/src/cnew/cisis/b_alloc.c .
+ln -s /home/hkieffer/src/cnew/cisis/b_c2fstr.c .
+ln -s /home/hkieffer/src/cnew/cisis/b_f2cstr.c .
+ln -s /home/hkieffer/src/cnew/cisis/b_free.c .
+ln -s /home/hkieffer/src/cnew/cisis/binf5_bind.c .
+ln -s /home/hkieffer/src/cnew/cisis/pio_bind_c.c .
+ln -s /home/hkieffer/src/cnew/cisis/primio.c .
+ln -s /home/hkieffer/src/cnew/cisis/u_actinf.c .
+ln -s /home/hkieffer/src/cnew/cisis/u_bind_c.c .
+ln -s /home/hkieffer/src/cnew/cisis/u_move1.c .
+ln -s /home/hkieffer/src/cnew/cisis/u_move4.c .
+ln -s /home/hkieffer/src/cnew/cisis/u_swapn.c .
+ln -s /home/hkieffer/src/cnew/cisis/binding.h .
+ln -s /home/hkieffer/src/cnew/cisis/binf5.h .
+ln -s /home/hkieffer/src/cnew/cisis/h.h .
+ln -s /home/hkieffer/src/cnew/cisis/isisarch.h .
+ln -s /home/hkieffer/src/cnew/cisis/isisdef.h .
+ln -s /home/hkieffer/src/cnew/cisis/isis_limits.h .
+ln -s /home/hkieffer/src/cnew/cisis/isislogio.h .
+ln -s /home/hkieffer/src/cnew/cisis/isissys.h .
+ln -s /home/hkieffer/src/cnew/cisis/isistypes.h .
+ln -s /home/hkieffer/src/cnew/cisis/primio.h .
+ln -s /home/hkieffer/src/cnew/cisis/u.h .
+ln -s /home/hkieffer/src/cnew/cisis/uidef.h .
+exit
