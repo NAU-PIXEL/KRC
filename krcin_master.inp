@@ -1,0 +1,87 @@
+ 0 0 / KOLD: season to start with;  KEEP: continue saving data in same disk file
+Master input file   2003may25 Lower material is water-ice at ~170K  
+    ALBEDO     EMISS   INERTIA     COND2     DENS2    PERIOD SPEC_HEAT   DENSITY
+       .25      1.00     200.0       3.4     928.0    1.0275      630.     1600.
+      CABR   -ABRAMP   -ABRPHA    PTOTAL     FANON      TATM     TDEEP   SpHeat2
+      0.18     -0.00     -0.00     689.7      .055      200.     150.0     1300.
+      TAUD     DUSTA    TAURAT     TWILI      ACR2     -ARC3     SLOPE    SLOAZI
+       0.2       .90        .5       1.0       0.5     -0.00       0.0       90.
+    TFROST    CFROST    AFROST     FEMIS       AF1       AF2    FROEXT      ARC6
+     146.0   589944.       .65      0.95      0.54    0.0009       50.       0.0
+      RLAY      FLAY     CONVF     DEPTH     DRSET       DDT       GGT    -FDOWN
+    1.2000     .1800    2.0000       0.0       0.0     .0020        .1     -00.0
+      DJUL    DELJUL  SOLARDEC       DAU      HLON    SOLCON      GRAV    Atm_Cp
+   12290.7      3.07      00.0     1.465        .0     1368.     3.727      800.
+        N1        N2        N3        N4        N5       N24        IB        IC
+        19       384        10         9       120        24         0         0
+     NRSET      NMHA      NRUN     JDISK    -IDOWN       I14       I15     KPREF
+       999        24         1        81         0        45        65         1
+     K4OUT     JBARE      NMOD    IDISK2                                     end
+        -1         0         5         0                                       0
+    LP1    LP2    LP3    LP4    LP5    LP6 LPGLOB   LVFA   LVFT  debug
+      F      T      F      F      F      F      F      T      T      F
+  LPORB   LKEY    LSC LNOTIF  LOCAL   LD16 LPTAVE Prt.78 Prt.79   LONE
+      T      F      F      T      T      F      F      F      F      F
+LATITUDES: in 10F7.2  _____7 _____7 _____7 _____7 _____7 _____7 _____7
+ -85.00 -80.00 -75.00 -70.00 -65.00 -60.00 -55.00 -50.00 -45.00  
+Elevations: in 10F7.2  _____7 _____7 _____7 _____7 _____7 _____7 _____7
+   4.38   4.55   4.16   4.09   4.10   4.01   3.76   3.60   3.04  
+  97-JAN-30 15:37:58 =RUNTIME.  IPLAN AND TC=   4.0 0.49000
+   4.000000      0.4900000      0.8556749      0.3221672E-01   4.997373    
+  0.9339862E-01   1.523693       10820.59       686.9796      0.9204510    
+   5.539492       24.62278             0.      0.4093198             0.    
+         0.             0.             0.       6.150894      0.4662405   
+  0.4166342E-01  0.6202968       4.377076             0.             0.    
+         0.             0.             0.             0.             0.    
+         0.             0.             0.     -0.9491031E-01  0.8901852    
+  0.4456034     -0.9056373      0.1086292     -0.4099036     -0.4132956    
+ -0.4424591      0.7958748      0.9085325     -0.4166692     -0.3091195E-01
+  0.4171058      0.9088128      0.9055913E-02  0.2431985E-01 -0.2112114E-01
+  0.9994811     -0.3290646     -0.8544949     -0.4019393      0.9443074    
+ -0.2977673     -0.1400645      0.3352761E-07  0.4256445     -0.9048904
+2 17 -1 'K4OUT: KRCCOM, then TSF & TPF' /
+8 0 0 'output/A25I0200T20C18Pzone.tdi' / Disk file name
+0/
+0/
+0/
+
+
+1 1 0.230000 'Albedo' /
+1 3 50.0000 'Inertia' /
+1 4 7.07107 'BK lower layer conductivity' /
+1 5 7.07107 'BRC lower layer volume specific heat' /
+1 15 190 'TDEEP: Initial Condition H2O Ice' /
+1 17 0. 'TAUD: set to zero'
+1 18 0. 'DUSTA' /
+1 21 0. 'ARC2 Henyey-Greenstein'
+1 41 11586.782 'DJUL: L_s 300' /
+1 42 1.0275 'DELJUL: set to 1 sol' /
+2 1 9 'N1, # of layers:' /
+2 3 1 'N3: # iteration days' /
+2 5 3 'N5, # seasons' /
+2 7 1 'IB: 1=constant temperature'
+2 8 99 'IC, lower layer start: set shallow'/  3
+2 16 0 'KPREF: constant P' /
+3 5 1 'LP5, Print latitude summary' /
+0 /
+
+1 42 1.0275 'DELJUL  1 sol' / 1 of 4 items for daily output
+2  3 1   'N3: set to run each day' / 2 of 4
+1 39 50. 'GGT: set big to avoid iteration' /  3 of 4
+2  9 333 'NRSET: set to not reset layers' / 4 of 4
+
+0/
+1 3 050. 'Iner' /
+0/
+1 3 100. 'Iner' /
+0/
+1 3 400. 'Iner' /
+0/
+1 3 800. 'Iner' /
+0/
+1 3 1600. 'Iner' /
+0/
+1 3 2500. 'Iner' /
+0/
+0/
+0/

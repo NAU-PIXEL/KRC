@@ -1,0 +1,305 @@
+\documentclass{article}
+
+\usepackage{definc}  % Hughs conventions
+
+\textheight=9.80in  \topmargin=-0.5in           %  hobo normal=final
+\textwidth=7.5in  \oddsidemargin=-0.3in \evensidemargin=-0.3in  % hobo final
+\parindent=0.em \parskip=1.ex %  no indent & paragraph spacing
+
+\title{KRC Thermal Model}
+\author{Hugh H. Kieffer \ \ \ file=~/hkieffer/xtex/tes/krc.tex 2004jul21}
+% individual variables
+\def\qF{\Delta M}       % delta frost
+\def\qH{\mathcal{H}} % scale height
+%                with parameters
+
+\begin{document}
+
+\maketitle
+
+History of this \LaTeX ~file:
+\qi 2002jul12-31  Write new atmosphere section
+\qi 2002sep17
+\qi 2004Jul18-22 upgrade description of atmosphere
+
+\section{Symbols}
+Code variable names are shown in text as \ct{VARIAB} 
+and in formulas as $\cf{VARIAB}$. 
+\\ Program and routine names are shown as \pname{PROGRM}. 
+
+\section{Background}
+
+The TES Thermal Inertia routines can run with thermal models generated either by
+Mike Mellon or Hugh Kieffer.  The thermal model described here is Hugh's. For
+the MGS production thermal inertia software, see MGSmodel.tex.
+
+Hugh's MGS thermal model is derived from the Viking thermal model
+(Kieffer et al., 1976, JGR 82,p4249-4291, appendix), and later
+modifications to apply to comets. All the comet-related code has been
+removed, and on 2002jul13 the atmospheric interaction was substantially modified.
+
+The KRC model development began when computing a single case for 19 latitudes at
+40 seasons took an hour on a large university main frame computer. For this
+reason, the code was highly optomized for speed and uses layer thickness
+increasing exponentially downward and time steps that increase by factors of two
+deeper into the subsurface where stability criteria are met. The code is
+modularized based on time scale and function, and there is extensive use of
+Commons. For THEMIS, a ``one-point'' capability was included that allows input
+of a set of points defined by season, latitude, hour and a few major physical
+parameters; KRC will produces the surface kinetic temperature and planetary
+brightness temperature for these points.
+
+In response to an oft-asked question, the acromyn KRC is simply K for
+conductivity, R for ``rho'' $( \rho)$ for density, and C for specific heat; the
+three terms in thermal inertia. 
+
+The numerous input parameters that control the time-depth grid and convergence
+are based upon extensive testing done during the development of the TSEAS, TLATS
+and TDAY routines; be carefull changing them!
+
+A guide to running KRC is in the file \pname{helplist.txt}
+
+\begin{table} 
+\caption{Fortran Code set}
+\label{tab:fort}
+\begin{center}
+\begin{tabular}{ l l} \hline 
+Name & description \\ 
+\hline 
+ & \hcm3 Primary routines \hcm3 \\
+KRC &  Planet surface thermal model; top routine,  MGS-TES version \\
+TSEAS & Advance one "season" along planets orbit for KRC system \\
+TLATS  & Latitude computations for the  KRC thermal model system \\
+TDAY  &  KRC day and layer computations \\
+ & \hcm3 Input / output routines \hcm3 \\
+TCARD &  Data input routine for  KRC system \\
+TDISK  &  Save/read results at the end of a season;  Version with BINF5 \\
+TPRINT &  Printed output routine \\
+ & \hcm3  Specific task routines \hcm3 \\
+ALBVAR & Compute frost albedo as linear function of insolation \\
+ALSUBS  &  Convert between L-sub-s and days into a Martian year \\
+AVEDAY &  Average daily exposure of surface to sunlight. \\
+CO2PT  &   CO2 pressure/temperature relation \\
+DEDING2 &  Delta-Eeddington solution for single homogeneous layer \\
+EPRED &   Exponetial Prediction of numerical iteration \\
+TINT  &   Spherical integrals over globe \\
+VLPRES  &  Viking lander pressure curves \\
+ & \hcm3 Orbit geometry routines \hcm3\\
+PORB &  Computes planetary angles and location for specific time. \\
+PORB0 & Planetary orbit. Read pre-computed matrices and do rotation; minimal for
+KRC \\
+ECCANOM &  Iterative solution of Keplers equations for eccentric orbit \\
+ORBIT &  Compute radius and coordinates for elliptical orbit \\
+ & \hcm3 Utility routines listed in Makefile \hcm3\\
+Fortran & catime.o datime.o idarch.o sigma.o vaddsp.o xtreme.o binf5.o white1.o \\
+C &  b2b.o r2r.o u\_move1.o u\_move4.o u\_swapn.o primio.o pio\_bind\_c.o \\
+C &  binf5\_bind.o b\_alloc.o b\_c2fstr.o b\_f2cstr.o b\_free.o \\
+ & \hcm3 Other routines \hcm3\\
+IDLKRC  &  Interface to IDL. Planet surface thermal model  MGS-TES version \\
+\end{tabular} \end{center}
+\end{table}
+
+
+\section{Surface boundary condition} %-------------------------------
+In \pname{TDAY}, the frost-free surface condition is
+\qb W=(1.-A)S_{(t)}'  + \ql 1.-\alpha \qr \epsilon R_{\Downarrow t}
++\frac{k}{X_2}(T_2-T) - \ql 1.-\alpha \qr \epsilon\sigma T^4 \qe
+
+where $X_2$ is the depth to the center of the first soil layer, $S_{(t)}'$ is
+the total solar radiation onto the surface, and $ R_{\Downarrow t}$ is the
+downwelling thermal radiation (assumed isotropic).
+
+Most constant terms are pre-computed, see Table \ref{tab:sym}.
+
+The boundary condition is satisfied when W=0. A Newton iteration is done:
+\qb \frac{\partial W}{\partial T} = -F_7 -4F_5 T^3 \qe
+thus estimate the change in surface temperature as 
+\qbn \Delta T = W / \ql F_7 +4F_5 T^3\qr \label{Eq:delt} \qen
+
+
+Subscript $F$ indicates the values when frost is present. and the values in
+Eqn.~\ref{Eq:delt} are replaced with $\epsilon_F$, $A_F$, and $T_F$, and no
+iteration is done; leaving $W$ as a non-zero quantity. See Section
+\ref{sec:frost}.
+
+%\pagebreak %<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+\cinput{newatm} %<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+\section{Pressure variation}
+$P_0$ = annual mean surface pressure at the reference elevation (input as
+\ct{ PTOTAL } ). 
+\\$P_g$ = the current global pressure \ct{= PZREF}, can be any of the following: 
+\qi 1) constant at $P_0$
+\qi  2) $P_0$ times the normalized Viking Lander pressure curve \ct{VLPRES}
+\qi  3) based on depletion of atmospheric CO$_2$ by growth of frost caps; =$P_0-$cap .
+\\$P=P_g e^{-z/\qH}$ \ct{= PRES} is the current local total pressure at a specific elevation. The exponential term is \ct{PFACTOR} 
+
+The initial partial pressure of CO$_2$ at zero
+elevation is $P_{c0} = P_0 \cdot (1.- $noncondensing fraction). \ct{= PCO2M}
+
+The current CO$_2$ partial pressure at zero elevation is $P_{cg}=P_{c0} +
+(P_g-P_0)$.  \ct{= PCO2G}
+
+The nominal scale height is: $\qH=T_a \mathcal{R} / \mathcal{M} G $;
+where $T_a$ is the mean atmospheric temperature over
+prior day (or season), $\mathcal{R}$ is the
+universal gas constant, $\mathcal{M}$ is the mean molecular weight of
+the atmosphere (43.5, firm-coded), and G is the martian gravity.
+
+Local current dust opacity scales with total pressure: $ \tau = \tau_0 P/P_0$
+
+\subsection {CO$_2$ Frost condensation and Sublimation \label{sec:frost}}
+
+The local frost condensation temperature \ct{TFNOW} may be either fixed at an
+input value \ct{TFROST}, or derived from $P_c= e^{-z/\qH} P_{cg}$.
+
+The relation between condensation/sublimation temperature and partial pressure
+is taken to be the Clausius-Clapeyron relation: $ \ln P_c=a-b/T$ , in
+\pname{CO2PT} with a=27.9546 [Pascal] and b=3182.48 [1/Kelvin], derived from
+MARS page 959.
+
+The code logic is: after subsurface layer calculations:
+
+If frost is present $E=W \cdot \Delta t$ energy is used to modify the amount of
+frost; $\Delta M = -E/L$ , where $L$ is the latent heat of sublimation. And, the
+frost albedo may be variable, and there may be an exponential attenuation of the
+underlying ground albedo. E.g.,
+
+If Frost then
+\qi calc the change in frost amount, $\Delta M$ , apply it
+\qii if $M \le 0$, then
+\qiii set Frost false \& set $M=0$
+\qi else
+\qii calc unbalanced Power W based on prior T \& determine $\Delta T$ to balance
+\qiii if $T < T_F$ then
+\qiii set Frost true \& set $T=T_F$.
+
+\section {Subsurface} %------------------------------------------------------
+\subsection{Diffusion theory for layered materials}
+Symbols used:
+\qi $i=$ layer index, layer 1 is above the physical surface
+\qii subscript + is shorthand for $i+1$ and subscript - is shorthand for $i-1$
+\qi $I=$ thermal inertia $\equiv \sqrt{k \rho C}$
+\qi $k=$ thermal conductivity
+\qi $\rho=$ bulk density
+\qi $C_p$ or $C=$ specific heat of the material
+\qi$\kappa =$  Thermal diffusivity $ \equiv \frac{k}{\rho C_p}$
+\qi $B_i=$ thickness of layer i, or $\Delta z$
+\qi $t=$ time
+\qi $T=$ temperature
+\qi $H=$ heat flow=$-k \frac{dT}{dz}$
+
+Basic 2nd difference equation of heat flow:
+\qbn \frac{\partial T}{\partial t} = \frac{-1}{\rho C} \frac{\partial}{\partial z} \left( -k \frac{\partial}{\partial z} \right) \\ \mathrm{or}\frac{k}{\rho C} \frac{\partial
+  ^2T}{\partial z^2} \\ \mathrm{or} \\ \frac{\Delta T_i}{\Delta t} = -\frac{ H_{i+1/2} -H_{i-1/2}}{B_i \rho_i C_i} \qen
+Use steady-state relations to find heat flow at interface between two layers:
+$H=-k \nabla T$
+\qb H_{i+.5} = -\frac{T'-T_i}{B_i/2}k_i \ \ \mathrm{or} \ \ 
+T'-T_i = -\frac{ H_{i+.5} B_i}{2 k_i} \qe
+where $T'$ is the temperature at the interface.
+\qb  \mathrm{similarly  \ \ } T_{i+1}-T' = -\frac{ H_{i+.5} B_{i+1}}{2 k_{i+1}} \qe
+\qb  \mathrm{Thus \ \  } T_{i+1}-T_i = -\frac{H_{i+.5}}{2} \left( \frac{B_i}{k_i} +
+    \frac{B_{i+1}}{k_{i+1}} \right) \qe
+\qb  \mathrm{or  \ \  } H_{i+.5} = -\frac{2 (T_{i+1} -T_i) }{  \frac{B_i}{k_i} +
+    \frac{B_{i+1}}{k_{i+1}} } \qe
+
+\qbn \frac{\Delta T_i}{\Delta t} = \frac{2}{B_i \rho_i C_i} \left[ 
+  \frac{T_+ -T_i}{ \frac{B_i}{k_i} + \frac{B_+}{k_+} }
+- \frac{T_i -T_-}{ \frac{B_i}{k_i} + \frac{B_-}{k_-} } \right] \qen
+Put into the form $\Delta T = F_{1_i} \left[ T_+ +F_{2_i} T + F_{3_i} T_+
+\right] $ where $F_2 = -(1+F_3)$.
+
+\qbn F_{1_i} = \frac{k_i}{\rho_i C_i} \frac{ \Delta t}{ B_i^2} \frac{2}{
+  1+\frac{B_+k_i}{B_i k_+}} \qen
+
+\qbn F_{3_i}=\frac{ B_i/k_i \ \ + \ \ B_+/k_+}{B_-/k_- \ \ + \ \ B_i+k_i } 
+ = \frac{1+ \frac{B_+}{B_i} \frac{k_i}{k_+} } { 1+ \frac{B_-}{B_i}
+   \frac{k_i}{k_-} }\qen
+
+ 
+ The classic convergence stability criterion is $\frac {\Delta t}{(\Delta Z)^2}
+ \kappa < \frac{1}{2}$ or $ (\Delta z)^2 \equiv B^2 > 2 \Delta t \kappa $.  
+[ To be safe, at each  layer should use the largest diffusivity of the 3 layers 
+involved in the 2nd difference scheme ]
+
+If a discontinuity of physical properties is invoked, need to reset the layer
+thickness scheme at that point to maintain stability.
+
+
+\subsection{KRC code}
+
+The user inputs the thermal inertia $I$, the bulk density $\rho$, and the
+specific heat of the material $C_p$. Thermal conductivity $k$ is computed from
+  $I^2 / [\rho C_p]$. The thermal diffusivity is $\kappa = \frac{k}{\rho C_p}$.
+While $k$, $\rho$, and $C_p$ do not independantly influence the surface
+temperature for a homogeneous material, they set the spatial scale of the
+subsurface results; SCALE $= \sqrt{kP /\pi \rho C_p}$. 
+
+KRC uses layers that increase geometrically in thickness by a factor RLAY.
+
+In order to simplify the innermost code loops, KRC places the surface between
+the first and second model layers. The input parameter FLAY specifies the
+thickness of this ``virtual'' layer is dimensionless units (in which the diurnal
+skin depth is 1.0), so thatthe thickness of the uppermost layer in the soil is
+FLAY*RLAY, and the depth of its center in meters is 0.5*FLAY*RLAY*SCALE.
+Normally (LP2 set true) a table of layer thickness, depth, (both scaled and in
+meters), overlying mass, and numerical convergence factor is printed out at the
+start of a run.
+\qi $R=$ RLAY = ratio of thickness of succeeding layers
+\qi $X=$ X = scaled depth to middle of each layer
+\qi $B=$ TLAY = scaled thickness of each layer. $l_1=$ FLAY
+\qi $P=$ PERSEC = diurnal period in seconds
+\qbn \mathrm{F4} = 1 + 1/R \qen
+\qbn B_i= B_1*R^{i-1} \sqrt{\frac{k_i}{\rho_iC_p} \frac{P}{\pi}} \qen 
+\qbn X_1 = -B_1/2 \ \ \ \ X_i = X_{i-1}+(B_{i-1}+B_i)/2 \qen
+\qbn \mathrm{FA}_i = \frac{ 2 \cdot k_i \cdot \Delta t}{\rho_iC_p \cdot B_i^2
+  \left( 1 + \frac{B_{i+1}k_i}{B_ik_{i+1}} \right) } \qen
+\qbn \mathrm{FA3}_i=\frac{B_i/k_i \ + \ B_{i+1}/k_{i+1} }{B_i/k_i \ + \
+  B_{i-1}/k_{i-1} } \qen
+
+The convergence safety factor is $\Delta Z / \sqrt{ 2. \Delta t \cdot
+  \kappa}$. If this is less than about 0.8, the process is numerically
+unstable. If possible, the routine will keep this larger than 2.
+
+\subsection{Layered Material}
+ Beginning with layer IC, all lower layers can have their conductivity, density
+ and volume specific heat reset to COND2, DENS2, and SPHT2 respectively. If
+ LOCAL is set true, then the physical thickness of these layes scales with the
+ local thermal diffusivity; otherwise, geometric increase continues unaltered.
+
+\section{One-point Model 2002aug04}
+To support the THEMIS team, an interface to the KRC system was built that
+computes the temperature for a single condition. The user generates a file
+'one.inp' that contains lines of specific times and conditions.
+
+The input file \ct{krcone\_master.inp} is set to do one latitude for 2 seasons.
+It contains a change-card 10 which points to 'one.inp' as the file of specific
+points.
+
+\subsection{Code to accomodate One-point mode}
+krc.f: 
+\qi at the start of each case, sets IQ=1, which tells TSEAS to restart.
+\qi after each season, calls TPRINT(9)
+
+tseas.f
+\qi does not report the time elapsed
+
+tcard:
+\qi Has a section for first item on change line being 11, which decodes the line into
+\qii L\_s,ALAT(1),HOURO,ELEV(1),ALB,SKRC,TAUD,SLOPE,SLOAZI
+\qii computes DJUL for the desired L\_s using \pname{ALSUBS}
+\qi does not call TPRINT to print changes
+
+tprint(9):
+\qi Interpolates in hour,  Prints one line of: 
+\qii SUBS,ALAT(1),HOURO,ELEV(1),ALB,SKRC,TAUD,SLOPE,SLOAZI,touto,q4
+\qiii touto is the surface kinetic temperature at the requested hour
+\qiii q4 is planetary bolometric 
+
+\section{Evolution}
+\subsection{2004jul20} 
+Allow scale height to depend upon diurnal-average atmosphere temperature
+
+Modify output type 52 to include atmospheric temperature, but only up to 5
+cases. It now reduces file size to actual number of latitudes and seasons.
+\end{document}

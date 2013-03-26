@@ -1,0 +1,288 @@
+5 0 0  ' new elevs'
+  7.486  7.486  7.486  7.486  7.486  7.486  7.486  7.486  7.486  7.486
+  7.486  7.486  7.486  7.486  7.486  7.486  7.486  7.486  7.486  7.486
+1 1 0.15 'Albedo'
+1 17 0.00 'Tau dust'
+1 3   24. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0024a15t000ep7.tds'
+0/
+1 3   35. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0035a15t000ep7.tds'
+0/
+1 3   52. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0052a15t000ep7.tds'
+0/
+1 3   77. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0077a15t000ep7.tds'
+0/
+1 3  114. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0114a15t000ep7.tds'
+0/
+1 3  168. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0168a15t000ep7.tds'
+0/
+1 3  249. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0248a15t000ep7.tds'
+0/
+1 3  367. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0367a15t000ep7.tds'
+0/
+1 3  542. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0541a15t000ep7.tds'
+0/
+1 3  800. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0800a15t000ep7.tds'
+0/
+1 17 0.50 'Tau dust'
+1 3   24. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0024a15t050ep7.tds'
+0/
+1 3   35. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0035a15t050ep7.tds'
+0/
+1 3   52. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0052a15t050ep7.tds'
+0/
+1 3   77. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0077a15t050ep7.tds'
+0/
+1 3  114. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0114a15t050ep7.tds'
+0/
+1 3  168. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0168a15t050ep7.tds'
+0/
+1 3  249. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0248a15t050ep7.tds'
+0/
+1 3  367. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0367a15t050ep7.tds'
+0/
+1 3  542. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0541a15t050ep7.tds'
+0/
+1 3  800. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0800a15t050ep7.tds'
+0/
+1 17 1.00 'Tau dust'
+1 3   24. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0024a15t100ep7.tds'
+0/
+1 3   35. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0035a15t100ep7.tds'
+0/
+1 3   52. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0052a15t100ep7.tds'
+0/
+1 3   77. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0077a15t100ep7.tds'
+0/
+1 3  114. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0114a15t100ep7.tds'
+0/
+1 3  168. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0168a15t100ep7.tds'
+0/
+1 3  249. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0248a15t100ep7.tds'
+0/
+1 3  367. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0367a15t100ep7.tds'
+0/
+1 3  542. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0541a15t100ep7.tds'
+0/
+1 3  800. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0800a15t100ep7.tds'
+0/
+1 1 0.25 'Albedo'
+1 17 0.00 'Tau dust'
+1 3   24. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0024a25t000ep7.tds'
+0/
+1 3   35. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0035a25t000ep7.tds'
+0/
+1 3   52. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0052a25t000ep7.tds'
+0/
+1 3   77. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0077a25t000ep7.tds'
+0/
+1 3  114. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0114a25t000ep7.tds'
+0/
+1 3  168. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0168a25t000ep7.tds'
+0/
+1 3  249. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0248a25t000ep7.tds'
+0/
+1 3  367. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0367a25t000ep7.tds'
+0/
+1 3  542. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0541a25t000ep7.tds'
+0/
+1 3  800. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0800a25t000ep7.tds'
+0/
+1 17 0.50 'Tau dust'
+1 3   24. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0024a25t050ep7.tds'
+0/
+1 3   35. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0035a25t050ep7.tds'
+0/
+1 3   52. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0052a25t050ep7.tds'
+0/
+1 3   77. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0077a25t050ep7.tds'
+0/
+1 3  114. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0114a25t050ep7.tds'
+0/
+1 3  168. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0168a25t050ep7.tds'
+0/
+1 3  249. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0248a25t050ep7.tds'
+0/
+1 3  367. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0367a25t050ep7.tds'
+0/
+1 3  542. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0541a25t050ep7.tds'
+0/
+1 3  800. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0800a25t050ep7.tds'
+0/
+1 17 1.00 'Tau dust'
+1 3   24. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0024a25t100ep7.tds'
+0/
+1 3   35. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0035a25t100ep7.tds'
+0/
+1 3   52. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0052a25t100ep7.tds'
+0/
+1 3   77. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0077a25t100ep7.tds'
+0/
+1 3  114. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0114a25t100ep7.tds'
+0/
+1 3  168. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0168a25t100ep7.tds'
+0/
+1 3  249. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0248a25t100ep7.tds'
+0/
+1 3  367. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0367a25t100ep7.tds'
+0/
+1 3  542. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0541a25t100ep7.tds'
+0/
+1 3  800. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0800a25t100ep7.tds'
+0/
+1 1 0.35 'Albedo'
+1 17 0.00 'Tau dust'
+1 3   24. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0024a35t000ep7.tds'
+0/
+1 3   35. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0035a35t000ep7.tds'
+0/
+1 3   52. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0052a35t000ep7.tds'
+0/
+1 3   77. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0077a35t000ep7.tds'
+0/
+1 3  114. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0114a35t000ep7.tds'
+0/
+1 3  168. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0168a35t000ep7.tds'
+0/
+1 3  249. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0248a35t000ep7.tds'
+0/
+1 3  367. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0367a35t000ep7.tds'
+0/
+1 3  542. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0541a35t000ep7.tds'
+0/
+1 3  800. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0800a35t000ep7.tds'
+0/
+1 17 0.50 'Tau dust'
+1 3   24. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0024a35t050ep7.tds'
+0/
+1 3   35. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0035a35t050ep7.tds'
+0/
+1 3   52. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0052a35t050ep7.tds'
+0/
+1 3   77. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0077a35t050ep7.tds'
+0/
+1 3  114. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0114a35t050ep7.tds'
+0/
+1 3  168. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0168a35t050ep7.tds'
+0/
+1 3  249. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0248a35t050ep7.tds'
+0/
+1 3  367. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0367a35t050ep7.tds'
+0/
+1 3  542. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0541a35t050ep7.tds'
+0/
+1 3  800. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0800a35t050ep7.tds'
+0/
+1 17 1.00 'Tau dust'
+1 3   24. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0024a35t100ep7.tds'
+0/
+1 3   35. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0035a35t100ep7.tds'
+0/
+1 3   52. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0052a35t100ep7.tds'
+0/
+1 3   77. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0077a35t100ep7.tds'
+0/
+1 3  114. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0114a35t100ep7.tds'
+0/
+1 3  168. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0168a35t100ep7.tds'
+0/
+1 3  249. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0248a35t100ep7.tds'
+0/
+1 3  367. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0367a35t100ep7.tds'
+0/
+1 3  542. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0541a35t100ep7.tds'
+0/
+1 3  800. 'Inertia'
+8 0 0 '/work/paarlberg/model_thermal/krc_2004jul/krc/db/sk0800a35t100ep7.tds'
+0/
+0/
+0/
+0/

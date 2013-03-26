@@ -1,0 +1,9 @@
+1Base conditions for One-Point Mode  2002aug04                                    RUN-CASE   1- 0    04 Oct 12 10:36:59   PAGE=  1
+0PARAMETER CHANGES
+ TYPE LOC VALUE
+  10   1  0.1000     one.inp
+ ---- Start of one-point mode ----
+ Title Line, Text transfered to output. This line must be present                
+ 11    Ls   Lat  Hour Elev  Alb Inerti Opac Slop_Azim  TkSur  TbPla
+ 11 123.1   4.1  9.40 22.2 0.17  100.0 0.10  0.0   0.  258.52649  257.55963
+ 11 320.1 -33.1 15.50 -3.1 0.15  500.1 0.55  0.0 123.  269.76581  246.62875

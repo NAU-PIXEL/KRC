@@ -1,0 +1,120 @@
+C	implicit none					      |	C      implicit none
+	INCLUDE 'hatcom.inc'				      <
+        PARAMETER (MD15=5)       ! cases, e.g., inertias      |	        PARAMETER (MD15=5)       ! cases = inertias
+        REAL*4 BMD1 (MD11*MD12*MD13*MD14*MD15) ! 60,000 words |	        REAL*4 BMD1 (MD11*MD12*MD13*MD14*MD15) ! 60000 words
+C For hourly conditions:  revised 2004jul22   First "season"  <
+C  Lats 1:3 contain KRCCOM (203 words in space for 216)	      <
+C  Lats 4:5 contain DJU5 (up to MD24 in space of 144)	      <
+C  Lats 6:7 contain SUBS (L_s) for each season. " "	      <
+C  Lats 8:9 contain PZREF. " "				      <
+        PARAMETER (MD21=MAXNH)	! hours; 24		      |	        PARAMETER (MD21=MAXNH)	! hours
+        PARAMETER (MD22=3)	! surface & planetary & Atmos |	        PARAMETER (MD22=2)	! surface & planetary
+        PARAMETER (MD24=81)	! 1+ # seasons		      |	        PARAMETER (MD24=80)	! seasons
+        PARAMETER (MD25=5)	! cases			      |	        PARAMETER (MD25=10)	! cases = inertias
+        REAL*4 BMD2 (MD21*MD22*MD23*MD24*MD25) ! 554,040 word |	        REAL*4 BMD2 (MD21*MD22*MD23*MD24*MD25) ! 729600 words
+        INTEGER MD31,MD32,MD33	! maximum dimensions	      |	        INTEGER MD31,MD34,MD35! maximum dimensions
+        PARAMETER (MD32=82)	! seasons (first 2 hold KRCCO |	        PARAMETER (MD34=82)	! seasons (first 2 hold KRCCO
+        PARAMETER (MD33=10)	! cases			      |	        PARAMETER (MD35=10)	! cases
+        REAL*4 BMD3 (MD31*MD32*MD33) ! 89,380 words	      |	        REAL*4 BMD3 (MD31*MD34*MD35) ! 89380 words
+C for Heat flow. Save surface temperture and heat flow at mid |		EQUIVALENCE(BMD1,BMD2,BMD3)
+C as function of season and latitude.  Store KRCCOM in the fi <
+C Output file will be only as large as used.		      <
+        INTEGER MD41,MD42,MD43,MD44	! maximum dimensions  <
+        PARAMETER (MD41=MAXN5)	! max # seasons  [740]	      <
+        PARAMETER (MD42=3)	! heat flow, surface temperat <
+        PARAMETER (MD43=6)	! 1 for KRCCOM + 5 latitudes  <
+        PARAMETER (MD44=10)	! cases			      <
+        REAL*4 BMD4 (MD41*MD42*MD43*MD44) ! 84,000 words      <
+							      <
+	EQUIVALENCE(BMD1,BMD2,BMD3,BMD4)		      <
+C 2004jul06 HK Add file style 54. [GO to  IMPLICIT NONE. NOPE <
+C	REAL*4 ALB					      <
+	INTEGER MM2,MM3,MM4,MM5	! multiple array dimensions.  |		INTEGER MM2,MM3,MM4	! multiple array dimensions
+	INTEGER NSOUT		! number of seasons expected  |
+							      >		REAL*4 ASOLH(MAXNH),AH
+	REAL*4 ASOLH(MAXNH),AH,TPMIN,TPMAX		      |		SAVE JB5,ND1,ND3,ND4,ND5,JREC,MM2,MM3,MM4 ! insure th
+	SAVE JB5,ND1,ND3,ND4,JREC,MM2,MM3,MM4 ! insure these  <
+C Note. Case and KRCCOM are completely defined at this point  <
+	    NWTOT=2*MAXNH*MAXN4 !  TSF  &  TPF only	      |		    NWTOT=2*MACNH*MAXN4 !  TSF  &  TPF only
+	  ELSEIF (K4OUT.EQ.52) THEN 			      <
+	    JB5(1) = 5		! # of dimensions	      <
+	    JB5(2) = MD21	! # Hours		      <
+	    JB5(3) = MD22	! # items		      <
+	    JB5(4) = MAX(N4,9)	! # latitudes, need space for <
+	    JB5(5) = N5-JDISK+2 ! 1+ number of seasons to com <
+	    ND1=JB5(2)		! offset between items	      <
+	    ND4=N4		! remember how many latitudes <
+	    MM3=JB5(2)*JB5(3)	! # words in a latitude	      <
+	    MM4=MM3*JB5(4)	! # words in a season	      <
+	    MM5=MM4*JB5(5)	! # words in a case	      <
+	    CALL R2R (0.,BMD2,-MM5) ! insure first case initi <
+	    JB5(3) = MD32	!			      |		    JB5(3) = MD34	!
+	    JB5(4) = MD33	!			      |		    JB5(4) = MD35	!
+	    MM4=MD31*MD32				      |		    MM4=MD31*MD34
+	  ELSEIF (K4OUT.EQ.54) THEN			      <
+	    JB5(1) = 4		! # of dimensions	      <
+C	    JB5(2) = N5-JDISK+1	! number of seasons to output <
+C	    IF (JB5(2).LT.NWKRC/MD42) WRITE(IOSP,*)	      <
+C     1	    'ERROR: Too few seasons to hold KRCCOM for K4OUT= <
+	    JB5(2) = MD41	! # seasons. Else might fail  <
+	    JB5(3) = MD42	! # items		      <
+	    JB5(4) = N4+1	! # latitudes +1	      <
+	    ND1=JB5(2)					      <
+	    MM3=JB5(2)*JB5(3)	! # words in a latitude	      <
+	    MM4=MM3*JB5(4)	! # words in a case	      <
+	    CALL R2R(0.,BMD4,-MM4) ! insure first case initia <
+	  JOUT=J5-JDISK		! 0-based season count after  |		   JREC=J5-JDISK+1	! 1-based season count after 
+	  I=(NCASE-1)*MM5+1	! first word for this case    |		   IF (JREC.EQ.1) THEN	! jrec used to insure done on
+	  IF (JOUT.EQ.0) THEN	! jrec used to insure done on |		    ND1=N24		! size to be used for first d
+	    CALL R2R (ALB,BMD2(I),NWKRC) ! into first lat.    |		    ND3=N4		!  " 3rd
+	    IF (N24.NE.ND1 .OR. N4.NE.ND4 		      |		    ND4=N5-JDISK+1	!  " 4th
+	1	 .OR. N5-JDISK+2.NE.JB5(5)) THEN	      |		    MM2=ND1*2		! total size through 2nd dime
+							      >		    MM3=MM2*ND3		!  " 3rd
+							      >		    MM4=MM3*ND4		!  " 4th
+							      >		    JB5(1) = 5		! # of dimensions
+							      >		    JB5(2) = ND1	!
+							      >		    JB5(3) = MD22	!
+							      >		    JB5(4) = ND3	!
+							      >		    JB5(5) = ND4	!
+							      >		  ELSE
+							      >		    IF (N24.NE.ND1 .OR. N4.NE.ND3 .OR. N5-JDISK+1.NE.
+	1	   'Change of NHOUR, NLAT, or #to Disk not al |		1 'Change of NHOUR, NLAT, or #to Disk not allowed for
+	      WRITE (IOERR,*)n24,nd1, n4,nd4 ,N5-JDISK+1,JB5( <
+	  IF (JOUT.LE.JB5(5)-2 .AND. NCASE.LE.MD25) THEN      |		   JREC=J5-JDISK+1	! 1-based season count after 
+	    J=I+JOUT		! first word for this case/se |		  IF (JREC.LE.MD24 .AND. NCASE.LE.MD25) THEN
+	    BMD2(J+3*MM3) =DJU5	! date for this case and seas |		    I=MM4*(NCASE-1)+ MM3*(JREC-1) + 1 ! address of fi
+	    BMD2(J+5*MM3) =SUBS				      |		    DO J4=1,ND3		! do each latitude
+	    BMD2(J+7*MM3) =PZREF			      |		      CALL R2R (TSF(1,J4),BMD1(I),ND1)
+	    J=I+MM4*(JOUT+1)	! season offset, +1 for heade |		      I=I+ND1
+	    DO J4=1,ND4		! do each latitude	      |		      CALL R2R (TPF(1,J4),BMD1(I),ND1)
+	      I=J+(J4-1)*MM3				      |		      I=I+ND1
+	      CALL R2R (TSF(1,J4),BMD2(I)        ,ND1) ! copy <
+	      CALL R2R (TPF(1,J4),BMD2(I+ND1)    ,ND1)	      <
+	      CALL R2R (TAF(1,J4),BMD2(I+ND1+ND1),ND1)	      <
+	ELSEIF (K4OUT.EQ.53) THEN ! ......................... |		ELSE	! K4OUT=53  .................................
+	  IF  (NCASE.LE.MD33) THEN			      |		  IF  (NCASE.LE.MD35) THEN
+	    IF (JREC.LE.MD32-2) THEN			      |		    IF (JREC.LE.MD34-2) THEN
+	ELSEIF (K4OUT.EQ.54) THEN	! ......	      <
+C need to save surface temperature and heatflow for all lats  <
+	  IF (NCASE.LE.MD44) THEN ! insure case fits 	      <
+	    I=1+(NCASE-1)*MM4	! first word for this case    <
+C       At first output season of each case, save KRCCOM as t <
+C   KRCCOM is 203 4-byte words long			      <
+C  [ season, [T,H,F],latitude,case]jd5 {2, 3, 4, 5]  [2]=ND1  <
+	    JOUT=J5-JDISK	! output season offset	      <
+	    IF (JOUT.EQ.0)  CALL R2R (ALB,BMD4(I),NWKRC) ! in <
+	    IF (JOUT.LT.MD41) THEN ! within storage room      <
+	      J=I+ND1+ND1+JOUT 	! "Frost" area for fake latit <
+	      BMD4(J)=DJU5	! save the season	      <
+	      K=I+JOUT		! base index of first real la <
+	      DO J=1,N4		! each latitude		      <
+		I=K+J*MM3	! location in first vector fo <
+		BMD4(I)      =TSF(1,J) ! surface temperature  <
+		BMD4(I+ND1)  =HEATMM(J)	! surface heat flow   <
+		BMD4(I+ND1+ND1)=FROST4(J) ! frost budget      <
+	      ENDDO					      <
+	    ENDIF					      <
+	  ENDIF						      <
+	    IF (K4OUT.EQ.54) JB5(5) = NCASE 		      <
+							      >
+							      >

@@ -1,0 +1,105 @@
+2004jul21 Distribution set for KRC Thermal Model
+
+
+	SEQUENCE TO GENERATE THE DISTRIBUTION SET.
+
+Create an empty dist/ directory
+
+Create soft links to all code needed
+
+Create soft links to a few sample input files
+
+Create the Makefile. This is based on Hugh Kieffer's system rules, 
+modified by he and Kris Becker for running KRC on a customer Linux system.
+
+Create a subdirectory  'output'
+
+Make the main program:  make krc
+  Rename the binary to krc_made
+
+	TESTING DONE 2004Jul21 (not required to make distribution set)
+
+Run krc on each of the sample input files
+krcin_master.inp
+testfileoutput.inp
+krcone_master.inp
+
+Build the LaTeX document all the way to Postscript.
+
+Final:  Delete the contents of the   output  directory
+	Delete the intermediate LaTeX files
+	Delete all the *.o files
+
+-----------------------------------------------------------------------------
+
+	STEPS TO BUILD THE  KRC  SYSTEM AND USE IT
+
+In a directory one level above the place you wish to have KRC reside,
+untar the krc.tar file.
+
+Make the main program:  make krc
+ If this fails, get help from your local guru.
+ The binary  krc_made  was made from the distribution files;
+it may work for you.
+
+Print the help file: helplist.txt   >>>>   READ IT   <<<<
+Print the documentation. krc.ps
+  note, the LaTeX source files, *.tex are also present.
+
+Run krc on each of the sample input files. To do this, > krc
+ When prompted for input file, enter the sample file name, without any 
+    encasing quotes and no leading or trailing blanks.
+ When prompted for print file, you may simply enter a bare slash  "/"
+    to keep the name  krc.prt
+Look at the print file to see what was done.
+Look at the  output  directory to see if the expected binary files were created.
+
+krcin_master.inp should produce
+-rw-r--r--    1 hkieffer   149568 Jul 21 10:16 A25I0200T20C18Pzone.tdi
+
+testfileoutput.inp should produce (with your ownership and date) 
+-rwxr--r--    1 hkieffer    77312 Jul 21 10:21 krcsamp.t52*
+-rwxr--r--    1 hkieffer   240640 Jul 21 10:21 krcsamp.t51*
+-rwxr--r--    1 hkieffer   214016 Jul 21 10:21 krcsamp.t54*
+-rwxr--r--    1 hkieffer   437248 Jul 21 10:21 krcsamp.t53*
+-rw-r--r--    1 hkieffer   479360 Jul 21 10:21 krcsamp.td0
+-rw-r--r--    1 hkieffer   149568 Jul 21 10:21 krcsamp.tdm1
+-rw-r--r--    1 hkieffer  1634880 Jul 21 10:21 krcsamp.td1
+
+krcone_master.inp  should not produce a binary output file.
+The warnings "TDISK:2, WRITE, BUT NO FILE OPEN" are normal;
+ you may ignore them.
+
+Then, copy either master input file, make the changes you wish, 
+and run     krc  .
+Note that  one.inp  contains the points to be output; the 
+model is defined by the values in   krcone_master.inp
+
+There are two IDL routines which help to calculate
+when to start a model if you want to begin storing seasonal records
+after running for a while to approach equilibrium.
+
+
+Files with KRC distribution:
+
+helplist.txt
+        General help in setting up input files. ASCII text
+
+krc.ps
+        PostScript description of some of the algorithms
+
+krc_made 
+        Executable for PC linux, made before distribution.
+
+krcone_master.inp
+        Sample input file for running KRC in one-point mode.
+
+krcin_master.inp
+        Sample input file for running full-up KRC
+
+when2start.pro
+        IDL routine to compute KRC start date
+
+subs/l_s.pro
+        IDL routine for general conversion between Ls and dates
+        [ Called by when2start ]

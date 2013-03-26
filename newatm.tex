@@ -1,0 +1,239 @@
+
+\subsection{Insolation \ \ \ Implimented 2002jul13} %............................
+Define one-layer atmosphere, grey in the solar and thermal regions.
+
+The current local solar wavelength region atmospheric opacity of dust, $\tau$
+can vary with atmospheric pressure: $\tau = \tau_0 \cdot P/P_0$
+
+Direct and diffuse illumination are computed using a double-precision
+Delta-Eddington model, with single scattering albedo $\varpi$ and
+Henyey-Greenstein asymmetry parameter $G_H$ .
+
+The incidence angle from zenith onto a horizontal surface is $i$. Direct
+(collimated) insolation is computed for the local surface, which may be sloped
+in any direction and has incidence angle $i_2$; direct insolation is zero when
+either $i$ or $i_2$ is $>90$\qd.  Diffuse illumination is based on $i$, with the
+optional extension into twilight (see Section \ref{sec:twi}). For a sloped
+surface, the solid angle of skylight is reduced and light reflected off the
+regional surface (presumed Lambert) is added; the Delta-Eddington downward
+diffuse radiance is multiplied by $\cf{DIFAC}=(1-\alpha) + \alpha A $, where
+$\alpha$ is fraction of the upper hemisphere obscured by ground.
+
+The diurnal variation of insolation onto the surface at the bottom of the
+atmosphere is computed for the current season and latitude: 
+Incidence angles are computed by:
+\qbn \cos i = \sin \delta \sin \theta - \cos \delta \cos \theta \cos \phi \qen
+\qbn \cos i_2 = \sin \delta \sin \theta_2 - \cos \delta \cos \theta_2 \cos \phi_2 \qen
+where $\delta$ = the solar declination, $\theta$ = latitude, 
+$\theta_2$ = latitude + slope north, $\phi$ = hour angle from midnight, 
+$\phi_2$ = hour angle + slope east.
+
+If a sloping surface is used, the regional surface is assumed to be at the same
+temperature (may be a poor approximation) and of the same albedo.
+
+The incident flux at the top of atmosphere: $ I = S_M  \cos i$, \  
+where  $S_M \equiv \frac{S_o}{U^2} $, $S_o$ is the solar constant and $U$ is
+heliocentric range of Mars.
+
+Use Delta-Eddington model for atmosphere scattering and fluxes (\ct{DEDING2.f});
+output parameters are normalized to unit solar irradiance along the incident
+direction at the top of atmosphere; so they must be multiplied by $S_M$ to get flux.
+\qi  BOND      Planetary (atm plus surface system) albedo
+\qi  COLL   Direct beam at bottom = collimated + aureole
+\qi  RI(2,2)   Diffuse irradiances: 
+\qii             (1,=  $I_0$ = isotropic  \ \  (2, =  $I_1$ = asymmetric
+\qii             ,1)= at top of atmosphere  \ \  ,2) = at bottom of atm
+
+ The net diffuse flux is $ F = \pi* [I_0 \pm(2/3)*I_1]$ where  + is
+ down,$F^\downarrow$;   - is up, $F^\uparrow$ .  [Shettle \& Weinman eq. 8]
+
+Solar heating of the atmosphere, by simple conservation of energy, is 
+ $ H_V = S_M*\left( \mu_0-F^\uparrow(0)-(1-A_s) 
+\left[ \mu_0 \mathrm{COLL} +F^\downarrow(\tau) \right] \right) $
+
+\subsubsection{Twilight \label{sec:twi}}
+Twilight is allowed to account for having a turbid atmosphere. It is implimented
+as having the diffuse downward illumination depend upon an incidence angle
+scaled to go to 90\qd ~when the Sun is \ct{TWILI} below the geometric horizon. 
+
+Because of the twilight extension, there can be a small negative energy balance near
+twilight. Physically, this is lateral scattering and does not strictly fit a
+one-layer model. There is no solar heating of the atmosphere during twilight.
+
+\subsubsection{Atmospheric IR radiation}
+
+Assume a gray IR spectrum with opacity  $\tau_R =P/P_0 \cdot (C_1+C_2\tau)$
+where $C_1$ represents the opacity of the ``clear'' atmosphere, primarily due to
+the 15\um ~band, and $C_2$ is the IR/visual opacity ratio for dust.
+
+The fractional thermal transmission of the atmosphere at zenith is
+$e^{-\tau_R}$. Define the fractional absorption $\beta \equiv 1. -e^{-\tau_R}$.
+
+
+The fractional transmission of planetary (thermal) radiation in a hemisphere is:
+\qbn  e^{-\tau_e} \equiv\
+  \int_0^{90} e^{-\tau/\cos \theta} \cos \theta \sin \theta  \ d \theta \qen
+
+Numerical integration in \pname{hemi\_int.pro} shows that the effective
+hemispheric opacity is, within about 0.05 in the factor,  
+\qbn  \tau_e \sim \left[ 1.0 < 
+( 1.50307  -0.121687 * \ln \tau_R )  < 2.0 \right] \tau_R \qen
+
+ Define the effective absorption $\beta_e \equiv 1. -e^{-\tau_e}$.
+
+The hemispheric downward (and upward) emission from a gray slab atmosphere is:
+$ R_{\Downarrow t} =\sigma T_a^4 \beta_e$.
+
+The IR heating of the atmosphere is: 
+$H_R = \epsilon \sigma T_s^4 (1.-e^{-\tau_e}) -2R_{\Downarrow t}
+   = \sigma \beta_e (\epsilon T_s^4-2 T_a^4)$
+
+\subsubsection{Atmospheric temperature}
+
+Compute atmospheric temperature by simple perturbation:$ \frac{ \partial
+  T_a}{\partial t} = \frac{H_R+H_V}{c_p M_a} $ where $M_a=P/G$ is the mass of the
+atmosphere and $c_p$ is its specific heat at constant pressure.  
+
+Because the atmospheric temperature variation has significant time lag relative
+to the surface, one can use the surface temperature from the prior time step
+with little error.
+
+If the computed atmospheric temperature drops below the \qcc saturation temperature
+for one scale height above the local surface, it is bounded at this value. This
+strictly does not conserve energy.
+
+The nadir planetary temperature is given by $\sigma T_P^4 = \epsilon \sigma
+T_S^4 (e^{-\tau_R}) + \sigma T_a^4 (1-e^{-\tau_R})$ \ or \ 
+$T_P = \left[ \epsilon (1.-\beta) T_S^4 +  \beta T_a^4 \right]^{1/4}$ 
+
+\subsection{Starting Conditions: Day-average equilibrium}
+
+Atmosphere temperature balance, $H_V$ is solar (Visible) heating of the atmosphere:
+\qbn <H_V>+\epsilon \sigma < T_s^4 > (1.-e^{-\tau_e}) = 2 (1.-e^{-\tau_e})
+  \sigma < T_a^4 > \ \mathrm{or} \   <H_V>+\epsilon \sigma < T_s^4 > \beta_e = 2 <  R_{\Downarrow t} > \ \ [Eq:abal] \label{Eq:abal} \qen
+
+Surface energy balance, where $I$ is the insolation onto the surface
+\qbn \epsilon \sigma < T_s^4 > -  \epsilon \sigma (1.-e^{-\tau_e}) < T_a^4 >=
+(1-A)<I>  \label{Eq:sbal} \qen
+
+Solve: replace $+\epsilon \sigma <T_s^4> $ in Eq. \ref{Eq:abal}, and use $
+\beta_e$ :
+\qbn <H_V>+ \left[ \epsilon \sigma \beta_e < T_a^4 >
++(1-A)<I>\right]\beta_e  = 2\beta_e  \sigma < T_a^4 > \qen
+
+\qbn < T_a^4 > = \frac{<H_V>/\beta_e + (1-A)<I>}{ \sigma (2- \epsilon \beta_e)} \qen
+
+Substitute into Eq. \ref{Eq:sbal} to get $<T_s>$:
+\qbn < T_s^4 > =  \beta_e < T_a^4 > + \frac{(1-A)<I>}{  \epsilon \sigma}  \qen
+
+ 
+The planetary heating values can be based on the average surface temperatures
+from the prior season; this is similiar to allowing some long-term lag in
+atmospheric temperature response. They could be based on the prior day, but
+there is then some concern over numerical stability.
+
+\subsection{Liens}
+
+Note: as of 2004jul19  $\beta$ is 1.- transmission
+
+ Atm\_Cp.  should be 860. in krcin master.inp
+
+Visible atm heating.  
+\qi  qdeding.pro has as: 
+\qiii    trans=botdown+cosi*coll     ; total flux reaching the surface
+\qiii    atmheat=mu0-topup -(1.-albsurf)*trans ; atmospheric heating
+\qiii    absorp=atmheat/mu0
+\qii And plots absorp to match JWW figures of fraction of  enegry absorbed by atm.
+\qi  tlats.f has:
+\qiii   SOL=SOLCON/(DAU*DAU)    ! solar flux at this heliocentric range
+\qiii       ATMHEAT=COSI-TOPUP-(1.-AS)*(BOTDOWN+COSI*COLL) ! atmospheric heating
+\qiii     QA=ATMHEAT*SOL        ! solar heating of atm.
+\qiii     ADGR(JJ)=QA
+%\pagebreak %<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+In table \ref{tab:sym}; computation frequency is indicated as:
+\qii C = Input constant
+\qii F = Firm-coded constant
+\qii O = Once
+\qii S = Every ``season'' (may be as frequent as each sol)
+\qii H = Every ``Hour'' (24 times per sol)
+\qii R = Rapid: every timestep (Nominal is 384 times per sol)
+\qi subscript $f$ on these means when frost is present
+\qii * = Lien on how this is done
+
+Subscript $[f]$ means that frost values are used if frost is present.
+
+\begin{table}[ht]
+\caption{Symbols and variables}
+\label{tab:sym}
+\begin{center}
+\begin{tabular}{ c c c r  l } \hline 
+Sym   & Name in & Input or  & Value  & What and Basis \\  
+-bol  & Code    & Equation  & +freq. &  \\  
+\hline  
+$A$   & \ct{AS} &   & S,R$_f$ & Current bolometric albedo\\
+$c_p$   & \ct{ATMCP} & Atm\_Cp  & 860. C & Atm. specific heat at constant
+pressure J K$^{-1}$ kg$^{-1}$, MARS p.855\\
+$C_1$    & \ct{CABR}  & CABR  & 0.18 C & Clear atmosphere IR absorption. Estimate  \\
+$C_2$    & \ct{TAURAT}&       & 0.5 C & IR/vis relative opacity. 
+                                Viking  VIS \& IRTM opacities. MARS p.1022,5  \\
+$F_3$  & \ct{FAC3}   & $ (1-A_{[f]}) $   &  S,R$_f$ & Surface solar absorbtance  \\ 
+$F_4$  & \ct{FAC4}   & $1+1/\mathrm{RLAY} $   & O &  Layer factor \\
+$F_5$  & \ct{FAC5}   & $ (1.-\alpha) \epsilon \sigma  $   & O & Surface thermal
+emission factor    \\ 
+$4 F_5$  & \ct{FAC45} & $  4 (1.-\alpha) \epsilon \sigma  $   & O & Surface thermal
+emission factor  \\ 
+$F_6$  & \ct{FAC6}   & $(1-\alpha ) \epsilon_{[f]} $  & O & Frost emission factor \\
+$F_7$  & \ct{FAC7}   & $ \frac{k}{X_2}$    & O & Layer scaling \\
+$F_8$  & \ct{FAC8}   & $e^{-\tau_R} \epsilon _{[f]}$    & O & fraction of surface
+Blackbody reaching top-of-atm  \\
+$F_9$  & \ct{FAC9}   & $\sigma (1-e^{-\tau_e}) $    & O &    \\
+$G$   & \ct{GRAV} & GRAV  & 3.727 C & Martian gravity, m s$^{-1}$ \\
+$G_H$      & \ct{G0}    & ARC2  & 0.5 C & Henyey-Greenstein asymmetry.  MARS p.1030 \\
+$\mathcal{H}$   & \ct{SCALEH} &  &  S & Scale height in km. Based on TATM*\\
+$H_V$   & \ct{ADGR} &   & R & solar heating of atm  Wm$^{-2}$\\
+$i$   & \ct{} &   & R &  incidence angle from zenith onto a horizontal surface\\
+$i_2$   & \ct{} &   & R &  incidence angle onto local slope;
+                          from SLOPE and SLOAZI \\
+$k$  & \ct{COND} &  COND   &  C & Thermal conductivity of the soil \\
+$\mathcal{M}$ & \ct{AMW} &   & 43.5 F & Atomic weight of general atmosphere
+                        (g/mole). \\ 
+$P_0$    & \ct{PTOTAL}    &  PTOTAL  & 689.7 C & Global annual mean surface
+pressure, Pa \\
+$P_g$   & \ct{PZREF} &  & S  & Current pressure at reference level\\
+$P$  & \ct{PRES} &   & S & Current local surface pressure \\
+$R_{\Downarrow t} $   & \ct{ATMRAD} &  $ F_9 T_a^4 $   & R &  hemispheric 
+        emission from a gray slab atmosphere.  Wm$^{-2}$\\
+$S_o$   & \ct{SOLCON} & SOLCON & 1368. C  & Solar constant. Wm$^{-2}$ \\
+$S_M$   & \ct{SOL} & $S_o/U^2$   &  S & Solar flux at Mars. W/m$^2$ \\
+$S'_{(t)}$   & \ct{ASOL} &   & R & total insolation onto slope surface  Wm$^{-2}$\\
+$T$   & \ct{TSUR} &   & R & Surface kinetic temperature\\
+$T_a$   & \ct{TATM} & TATM   & 200. C* & Temperature of the atmosphere. Kelvin \\ 
+$T_a$   & \ct{TATMJ} &    & R & Temperature of the atmosphere. Kelvin \\
+$T_P$   & \ct{TPFH} &   & R & nadir planetary temperature \\
+$t$   & \ct{} &   & - & Time from midnight ("Hour") \\
+$U$   & \ct{DAU} &   & S & Heliocentric range in Astronomical Units\\
+$W$   & \ct{POWER} &   & R  & Energy into the surface boundary\\
+$\alpha$  & 1-\ct{SKYFAC} & $(1-\alpha) $  & S & Fraction of upper hemisphere occupied by ground = slope/180  \\
+$\beta$   & \ct{BETA} & $ 1-e^{-\tau_R}$   & S & vertical thermal absorption of atmosphere \\
+$\beta_e$   & \ct{BETH} & $ 1-e^{-\tau_e}$  &  S & hemispheric thermal absorption of atmosphere \\
+$\epsilon$   & \ct{EMIS} &   & S,R$_f$ & Surface emmissivity.  FEMIS for frost \\
+$\gamma$   & \ct{TWILFAC} &   & S & twilight extension factor = 90/(90+twilight)\\
+$\theta$   & \ct{DLAT} &   & S & Latitude. $\theta_2$ = latitude + slope north \\
+$\varpi$ & \ct{OMEGA} & DUSTA & 0.9 C & Dust grain single scattering albedo. MARS p.1030 \\
+$\sigma$ & \ct{SIGSB} & 5.67051e-8 &  F & Stephan-Boltzman constant W m$^{-2}$ K$^{-4}$ \\
+$\tau_0$ & \ct{TAUD}  & TAUD  & 0.2  C & Nominal solar-range dust opacity \\
+$\tau$   & \ct{OPACITY} &  &  S & Current local dust opacity \\
+$\tau_e$ & \ct{TAUEFF} &  & S & effective thermal opacity of the atmosphere\\
+$\tau_R$ & \ct{TAUIR} &   & S & thermal opacity, zenith \\
+$\phi$   & \ct{ANGLE} &   & R & Hour angle from midnight, $\phi_2$  = hour angle + slope east \\
+$<\_>$   & \ct{} &   &  & diurnally-averaged value \\
+$$   & \ct{TWILI} & TWILI & 1.0 C & Central angle extension of twilight, degrees\\
+     & \ct{DTAFAC} & $ \Delta t / (c_p \frac{P}{g})$    & O & Atmosphere heating factor  \\
+     & \ct{FEMIT}  & $ (1-\alpha ) \epsilon_f \sigma T_f^4 $  & O & Frost thermal emission \\
+$$   & \ct{} &   &  & \\
+\end{tabular} \end{center}
+\end{table}
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "krc"
+%%% End: 

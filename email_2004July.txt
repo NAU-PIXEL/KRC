@@ -1,0 +1,46 @@
+From: Hugh Kieffer <hkieffer@charter.net>
+Date: Thu, Jul 22, 2004 at 5:11 PM
+Subject: KRC version 2004july
+To: ttitus@usgs.gov, Robin.Fergason@asu.edu, phil.christensen@asu.edu
+
+
+
+Tim / Robin:
+
+Here is the KRC distribution, attached as a tar file. It has not had
+much use yet, so I would save your current working version in a safe
+place. It contains all the source code, an updated helplist.txt and a
+major rewrite of the LaTeX documentation.
+
+Note the new type 54 output file, and the MODIFIED type 52. Both of
+these adjust some dimensions to the actual number of latitudes and/or
+seasons and cases used; making for more efficient files; see the revised
+explanation in helplist.txt
+
+Note the [partial] list of IDL routines at the end of helplist.txt.
+
+The only significant computation modification is to now use a scale
+height base on the current atmospheric temperature. This should not
+change surface temperatures noticeably.
+
+It would be good to update several input parameters:
+AtmCP to 860. Based on MARS p.855 (default 800 probably too low)
+CABR  ? Based upon TES spectra of the clearest atmosphere?
+DUSTA and TAURAT and ARC2  based on Clancy analysis ?
+
+This is a 'beta' (maybe alpha) distribution, so please let me know of
+errors, obfuscations, shortcomings, ...  To my amasement, there are only
+5000 lines of code here
+
+
+In a directory one level above the place you wish to have KRC reside,
+untar the krc.tar file.
+Then read AAREADME for further instructions.  Enjoy
+
+Hugh
+
+--------------------------------------------------
+Hugh H. Kieffer
+Celestial Reasonings .... Voice & Fax 775-882-3787
+2256 Christmas Tree Lane ....... Cell 775-315-5135 << New 2004Apr
+Carson City, NV 89703 ....... hkieffer@charter.net

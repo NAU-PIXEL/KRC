@@ -1,0 +1,41 @@
+	INCLUDE 'hatcom.inc'				      <
+	DATA AMW  /43.5/	! atomic weight of general at |		DATA AMW  /43.5/     ! atomic weight of general atmos
+	DATA RGAS /8.3145/	! ideal gas constant  (MKS=J/ |		DATA RGAS /8.3145/   ! ideal gas constant  (MKS=J/mol
+	DATA HUGE / 3.3E38/	! largest  REAL*4 constant    |		DATA HUGE / 3.3E38/  ! largest  REAL*4 constant
+	DATA TINY / 2.0E-38/	! smallest  REAL*4 constant   |		DATA TINY / 2.0E-38/ ! smallest  REAL*4 constant
+	DATA EXPMIN / 86.80/	! neg exponent that would cau |		DATA EXPMIN / 86.80/ ! neg exponent that would cause 
+	REAL*4 COSI_AM(2)	! cos_incidence angle: averag |		REAL*4 COSI_AM(2)	!cos_incidence angle
+	REAL*4 COLL,COL3,BOND	! returned by Delta-Eddington |		real*4 coll,col3,bond ! returned by Delta-Eddington
+	RSDEC=SDEC/RAD		! current solar declination   |		RSDEC=SDEC/RAD ! current solar declination
+	TBLOW = 2.0 *  ( SOL / (EMIS*SIGSB) )**0.25	      |		TBLOW = 2.0 *  ( SOL / (EMIS*SIGMA) )**0.25
+	IF (N4.GT.8) THEN	! do global integrations      |		IF (N4.GT.8) THEN ! do global integrations
+							      >		SCALEH = TATM*RGAS/(AMW*GRAV) ! scale height in km
+	IF (LPGLOB) THEN	! print global properties     |		IF (LPGLOB) THEN	!print global properties
+							      <
+C2004jul07	FAC7=COND/X(2) ! X is in DAYCOM.  COND is in  <
+	COSI_AM(2) = (SS+CC)	!  cos ( incidence angle at n |		COSI_AM(2) = (SS+CC)      !   cos ( incidence angle a
+	IF (J5.EQ.1) THEN				      <
+	  TATMAVE=TATM					      <
+	ELSE						      <
+	  CALL SIGMA(TAF(1,J4),N24,TATMAVE,TATMSIG) ! diurnal <
+	ENDIF						      <
+	SCALEH = TATMAVE*RGAS/(AMW*GRAV) ! scale height in km <
+	DIFAC=SKYFAC+AS*(1.-SKYFAC) ! sky plus regional surfa |		difac=skyfac+as*(1.-skyfac) ! sky plus regional surfa
+	IH = 1			! saving "hour" count	      <
+	AH = FLOAT(N2)/FLOAT(N24) ! time steps between saving <
+	JJH = AH+.5		! round to time step of first <
+	  TOPUP=0.					      <
+	    TOPUP  =PI*(RI(1,1)-F23*RI(2,1)) ! diffuse flux u |		    topup  =PI*(RI(1,1)-F23*RI(2,1)) ! diffuse flux u
+	    ATMHEAT=COSI-TOPUP-(1.-AS)*(BOTDOWN+COSI*COLL) !  |		    ATMHEAT=cosi-topup-(1.-AS)*(BOTDOWN+COSI*COLL) ! 
+	  IF (JJ.EQ.JJH) THEN	!  JJH is next saving hour    <
+	    TOFALB(IH,J4)=TOPUP				      <
+	    IH = IH+1		! increment to next hour      <
+	    JJH = IH*AH+.5	! next time-step to save      <
+	  ENDIF						      <
+	TAEQ4=(AVEH/BETH+AVEI)/(SIGSB*(2.-AVE_E*BETH)) ! equi |		TAEQ4=(AVEH/BETH+AVEI)/(SIGMA*(2.-AVE_E*BETH)) ! equi
+	TSEQ4=BETH*TAEQ4+AVEI/(SIGSB*AVE_E) ! equilib T_s^4   |		TSEQ4=BETH*TAEQ4+AVEI/(SIGMA*AVE_E) ! equilib T_s^4
+	TEXTRA(J4,1) = TTS4(J4)-TTS(J3P1) ! amount of extrapo |		TAX(MACN1,J4) = TTS4(J4)-TTS(J3P1) ! amount of extrap
+	TEXTRA(J4,2) = TTB4(J4)-TTB(J3P1) ! " " , bottom      |		TIN(MACN1,J4) = TTB4(J4)-TTB(J3P1) ! "  stored at end
+C	TAX(MAXN1,J4)= TEXTRA(J4,1) ! overload into tax	      <
+C	TIN(MAXN1,J4)= TEXTRA(J4,2) ! overload 		      <
+	HEATMM(J4) = HEAT1M	! daily average surface heat  <
