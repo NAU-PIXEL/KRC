@@ -1,0 +1,121 @@
+FLOW.TXT KRC System: Subroutine Calls and COMMON usage	  88sep11
+
+~  = IF ( )
+c- = for planet version only (LD20 .TRUE.)
+c+ = for comet  version only (LD20 .FALSE.)
+(n = call with control code =n
+
+KRC
+    R2R
+    TCARD (1
+       ~TDISK (1
+       ~TDISK (3
+      ~~TDISK (4
+       ~PORB (1
+       ~TPRINT (8
+|>
+|  ~TPRINT (1
+|   DATIME
+|   TDAY (1
+|  ~TPRINT (2
+|   TSEAS
+|      ~TDISK (1
+|       COMA
+|           COMA2
+|   |>
+|   |  ~TCARD
+|   |  ~TDAY (1
+|   |  ~PORB
+|   |   TLATS
+|   |    c-~TINT
+|   |	   ~CP0
+|   |	  ~~TPRINT (8
+|   |   |>
+|   |   | c-AVEDAY
+|   |   |  ~ALBVAR
+|   |   | c+SUBLM
+|   |   |  ~TPRINT (3
+|   |   |   TDAY (2
+|   |   |   |> 
+|   |   |   |   |>
+|   |   |   |   |   layer loops
+|   |   |   |   | c+SUBLM
+|   |   |   |   ^---<time_of_day]
+|   |   |   ^-----<days]
+|   |   |       ~TPRINT (7
+|   |   |       ~TPRINT (4
+|   |   |    EPRED
+|   |   |   ~TPRINT (4
+|   |   ^-----<latitudes]
+|   |   ~TPRINT (5
+|   |   ~TPRINT (6
+|   |    COMA
+|   |        COMA2
+|   |    R2R
+|   |   ~TDISK (2
+|   ^--<seasons]
+|        TDISK (4
+|   TCARD (2
+|  ~PORB1
+^--<parameter sets]
+.
+.
+References to *.INC COMMON's
+
+L=List  N=Nolist  X=explicit code
+
+	KRCCOM	LATCOM	DAYCOM	UNITS	FILCOM	COMCOM	PORBCM
+KRC	L	L	L	L	L	L	X
+TSEAS	N			N		N
+TLATS	N	N	N	N	N
+TDAY	N		N	N
+TCARD	N	N	N	N
+TPRINT	N	N	N	N	N
+TDISK	N	N		N	N
+COMA	N	N		N		N
+COMA2	N	N				N
+PORB1				N			N
+PORB							N
+ALBVAR	N
+TINT	N	N
+
+no references to *.INC
+AVEDAY  CP0	DATIME	EPRED	ORBIT	ROTATE	R2R
+
+Older version of representation
+
+KRC
+  R2R
+  TCARD (1
+    ~TDISK (1
+    ~TDISK (3
+    ~TDISK (4
+    ~PORB (1
+    ~TPRINT (8
+|>TPRINT (1
+| TDAY (1
+| TPRINT (2
+| TSEAS ------>	TSEAS
+| TCARD (2	  ~TDISK (1
+| ~PORB1	  COMA
+|--<		    COMA2
+		|>~TCARD
+		|  TDAY
+		| PORB
+		| TLATS ------>	TLATS
+		| ~TPRINT (5	  c-~TINT
+		| ~TPRINT (6	    ~CP0
+		| COMA		    ~~TPRINT (8
+		|   COMA2	|>c-~AVEDAY
+		| R2R		|   ~ALBVAR
+		| ~TDISK (2	| c+SUBLM
+		|--<		| ~TPRINT (3
+				| TDAY (2----->	TDAY (2
+				| EPRED		|> day loop
+				| ~TPRINT (4	||>time loops
+				|--<		||  layer loops
+						||  c+ SUBLM
+						||---<
+						|-----<
+						  TPRINT (7
+						  TPRINT (4

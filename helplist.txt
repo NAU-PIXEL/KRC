@@ -1,0 +1,706 @@
+ 		KRC: PLANETARY SURFACE TEMPERATURES
+			HELPLIST.TXT 2003jan22
+        Hugh Kieffer. Original code ~1969, many revisions.
+
+2002jul12-17 Replace atmosphere with Delta-Eddington model, and atmospheric
+temperature based on solar and IR energy balance. 
+
+              RUNNING THE "ONE-POINT" MODE (2002mar08)
+
+A parameter initialization file   krcone.inp  is provided. It sets the KRC 
+system into a reasonable mode for one-point calculations. Do not change that 
+file unless you have read this entire file.
+
+A line near the end of that file points to a file 'one.inp' which can contain
+any number of one-point conditions. 'one.inp' is intended to be edited to
+contain the cases you want; however, it must maintain the input format of the
+sample file.
+
+First Line is any title you wish. It must be present.
+The second line is an alignement guide for the location lines. It must be there.
+
+Each following line must start with an '11 '; this is a code that tells the
+full-up KRC that is a one-point line. The next 9 fields are read with a fixed
+format, and each item should be aligned with the last character of the Column
+title. All items must be present, each line must extend at least to the m in
+Azim; comments may extend beyond that, but they will not appear in the output
+file. Be sure to have a <CR> at the end of the last input line.
+
+The fields (after the 11) in the one-point input are:
+	Ls 	L_sub_S season, in degrees
+	Lat	Aerocentric latitude in degrees
+	Hour	Local time, in 1/24'ths of a Martian Day
+	Elev	Surface elevation (relative to a mean surface Geoid), in Km
+	Alb	Bolometric Albedo, dimensionless
+	Inerti	Thermal Inertia, in SI units
+	Opac	Atmospheric dust opacity in the Solar wavelength region
+	Slop_	Regional slope, in degrees from horizontal
+	Azim	Azimuth of the down-slope direction, Degrees East of North.
+
+The two additional columns in the output file are:
+  	TkSur	Surface kinitic temperature
+	TbPla	Planetary bolometric brightness temperature
+
+
+Try running the binary file first. If that fails, a Makefile is provided to
+complile and link the program; simply enter "make krc" and pray. If this fails,
+have your local guru look over the Makefile for local dependancies. Suggestions
+of making the Makefile more universal are welcome.
+
+To run the program, change to the directory where the program was built, and
+enter "krc". You should get a prompt:
+       ?* Input file name or / for default =
+       krcone.inp                         
+If the initialization file still has this name and is in the same directory,
+enter a single "/" and <CR>. Otherwise, enter the full pathname to the 
+initialization file, with no quotes and no blanks.
+
+A second prompt is for the name of the output file: 
+       ?* Print file name or / for default =
+       krc.prt     
+Again, if this is satisfactory, simply enter  / <CR> , else enter the desired
+file path-name.
+
+----- Comments on the One-point model. 
+
+The initialization file of 2002mar08 is set to compute the temperatures at the
+season requested without seasonal memory. It uses layers that extend to 5
+diurnal skin depths. It does not treat the seasonal frost properly, so don't
+believe the results near the edge of the polar cap. Execution time on a circa
+2001 PC may be the order of 0.01 seconds per case.
+
+KRC uses a parametric atmosphere. The current parameters are estimates that
+approximate the Haberle-Jakosky-Mellon model results. However, this
+fidelity has not been throughly checked.
+
+The underlying model is the full verions of KRC. By modifying the initialization
+file, you can compute almost anything you might want. If you choose to try this,
+best to read the remainder of this document.
+
+================================================================================
+
+				METHOD
+
+Program is designed to do compute surface and subsurface temperatures for a
+global set of latitudes at a full set of seasons, with enough depth to capture
+the annual thermal wave, and to compute seasonal condensation mass. For historic
+reasons, the code has substantial optimization. There are generalities that
+allow this code set to be used for any solid body with any spin vector, in any
+orbit (around any star); this is also the source of some of the complexity.
+ 
+Method is explicit forward finite differences with exponentially increasing 
+layer thickness and binary time increase with depths where allowed by stability. 
+Depth parameter is scaled to the diurnal thermal skin depth.
+Initially starts at 18 hours with the mean temperature of a perfect conductor.
+Second degree perturbation is applied at the end (midnight) of the (third) day; 
+this jumps the mean temperature of all layers and the lower boundary to equal 
+the mean surface temperature.
+
+Boundary condition treatment:
+  Perturbation solution of quartic equation at surface for each iteration;
+    temperature gradient assumed uniform in top interval.
+  Lower boundary may be insulating or constant-temperature.
+
+Atmospheric Radiation:
+  Delta-Eddington model for insolation; direct onto sloped surface and diffuse,
+with possible twilight extension.
+  Atmosphere temperature based on DelEdd solar absorption and IR opacity
+[Pre 2002jul16
+  First-order treatment of scattering of solar radiation. 
+  Diurnal temperature is modeled as sinusoidal with phase shift.]
+
+Keplerian orbital motion; seasons are at uniform increments of time. Mean 
+orbital elements are pre-calculated for any epoch (all planets and several
+comets) by the PORB code set.
+
+Units are SI;  days for orbital motion. (Revised from cal-cgs, 97july)
+
+Options:
+  Different Physical properties below a set layer (IC).
+  Regional slope
+  Three ways to handle seasonal global pressure variation
+
+MARS: 
+Global integral of CO2 frost-gas budget can control surface pressure.
+Allows different surface elevation for each latitude zone.
+  Zonal frost saturation temperature tracks local surface pressure.
+Option for cap albedo to depend upon mean daily insolation.
+
+			CONVERGENCE NOTES
+
+Convergence prediction routine can't jump more than one time constant
+(TAU=X**2/2) for the total thickness.  Therefore, if X(N1) is small,
+make DDT smaller than usual.  If DELJUL is much smaller than 
+(X(N1))**2/2, then DDT can be as large as 0.3.  Otherwise DDT must be about
+0 for the prediction routine to work well (it assumes the 3rd derivative to
+be 0).
+
+The source code for 'krccom.inc' indicates which subroutine sets many of the 
+parameters; as the routine name in lowercase just below the parameter name.
+
+
+
+  DATA PARAMETERS : Input file contains parameter names on comment lines
+ - - - - - - - - - - - - - - - - - - - -
+The first input line is always KOLD,KEEP (I*), which set file usage.
+  These are described near the end of this help file under  DISK BINARY FILES.
+ If KOLD=0, then the following are read in sequence:
+
+Items with numbers inset 2 spaces below are computed, not input.
+ - - - - - - - - - - - - - - - - - - - -
+Type 4	Title (20A4) 80 characters of anything to appear at top of each page.
+
+Type 1	Real parameters 	(8F10.2)	================================
+   Surface Properties
+1	ALB	Surface albedo
+2	EMIS	Surface emissivity
+3	SKRC	Surface thermal inertia [J m^-2 s^-1/2 K^-1] { cal cm * 4.184e4}
+4	COND2	Lower material conductivity (IC>0)
+5	DENS2	Lower material density (IC>0)
+6	PERIOD	Length of solar day in days (of 86400 seconds)
+7	SPHT	Surface specific heat [J/Kg/K]  {cal/g/K * 4184.}
+8	DENS	Surface density [kg/m^3] {g/cubic cm. *10}
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+   Atmospheric Properties
+9	CABR	Atmospheric infrared back radiation coefficient
+                2002jul16 IR opacity of dust-free atmosphere
+10	ABRAMP	[Amplitude of diurnal variation of CABR]  UNUSED
+11	ABRPHA	[Phase of ABRAMP, degrees relative to midnight] UNUSED
+12	PTOTAL	Global annual mean surface pressure at 0 elev., Pascal[=.01mb]
+13	FANON	Mass-fraction of mean atmosphere that is non-condensing
+14	TATM	Atm temp for scale-height calculations
+-   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   
+15	TDEEP	Fixed bottom temperature. Used if IB<=1.
+16	SPHT2	Lower material specific heat (IC>0)
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+  Dust  & Slope Properties
+17	TAUD	Mean visible opacity of dust, solar wavelengths
+18	DUSTA	Single scattering albedo of dust
+19	TAURAT	Ratio of thermal to visible opacity of dust
+20	TWILI	Twilight extension angle [deg]
+21	ARC2	Henyey-Greenstein asymmetry factor
+  moon        = eclipse start time in local Hours
+22	ARC3	coeff. for planetary heating NOT USED
+  moon        = eclipse duration in seconds 0=no eclipse
+23	SLOPE	Ground slope, degrees dip. MUST NOT slope beyond pole.
+24	SLOAZI	Slope azimuth, degrees east from north
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+    Frost Properties
+25	TFROST	Minimum Frost saturation temperature
+		  may be overridden by local saturation temperature (LVFT)
+26	CFROST	Frost latent heat [J/Kg] {cal/gm*4184. 	[ Not used if
+27	AFROST	Frost albedo, may be overridden (LVFA)	[ TFROST never
+28	FEMIS	Frost emissivity  			[ reached
+29	AF1	constant term in linear relation of albedo to solar flux
+30	AF2	linear term in relation of albedo to solar flux units=1/flux
+		   Afrost = AF1 + AF2 * <cos incidence> SOLCON / DAU^2
+31	FROEXT	Frost required for unity scattering attenuation coeff. [Kg/m^2]
+                the lesser of this and 0.1 is always used.
+32	fd32	spare
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+   Thermal Solution Parameters
+33	RLAY	Layer thickness ratio
+34	FLAY	First layer thickness (in skin depths)
+35	CONVF	Safety factor for classical numerical convergence
+		 0 for no binary time division of lower layers
+		 >0 for binary time division
+36	DEPTH	Total model depth (scaled) (overrides FLAY if not 0.)
+37	DRSET   Perturbation factor in jump convergence. If = 0., then
+		  all layers reset to same average as surface layer. Else,
+                  does quadratic curve beteen surface and bottom averages
+38	DDT	Convergence limit of temperature 2nd differences
+39	GGT	Convergence test: RMS layer T changes in a day, 
+			and del_T surface each time step
+40	FDOWN	Mass ratio factor for grid motion ( enabled by IDOWN) UNUSED
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+   Orbit Geometry & Constants
+41	DJUL	Starting Julian date of run -2440000(N5>0)
+42	DELJUL	Increment between seasons in Julian days (N5>1)
+43	SDEC	Solar declination in degrees. (N5=0)
+44	DAU	Distance from Sun in astronomical units (N5=0)
+45	SUBS	Aerocentric longitude of Sun, in degrees. (for printout only)
+46	SOLCON	Solar constant Applied Optics 1977 v.16, p.2693: 1367.9 W/m^2
+                1366.2 Based on figure in Frohlich, Observations of irradiance 
+                variations, Space Sci. Rev.,94,15-24,2000
+47	GRAV	Surface gravity.  MKS-units
+48	AtmCp   Specific heat at constant pressure of the atmosphere
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+COMPUTED REAL*4 VALUE
+  49    fd49(9) Spare
+  58    PRES    Local surface pressure at current season
+  59    OPACITY Solar opacity for current elevation and season
+  60    TATMJ   One-layer atmosphere temperature
+  61	SKYFAC	fraction of upper hemisphere that is sky
+  62	TFNOW	frost condensation temperature at current latitude
+  63	AFNOW	frost albedo  at current latitude
+  64	PZREF	Current surface pressure at 0 elevation, [Pascal]
+  65	SUMF	Global average columnar mass of frost [MKS]
+  66	TEQUIL	Equilibrium temperature ( no diurnal variation)
+  67	TBLOW	Numerical limit (Blowup) temperature
+  68	HOURO	Output Hour requested for "one-point" model
+  69	SCALEH	Atmospheric scale height
+  70	BETA	Atmospheric IR absorption
+  71	DJU5	Current Julian date (offset 2440000 ala PORB convention)
+  72	DAM	Half length of daylight in degrees
+  73	EFROST	Frost on the ground at current latitude [Kg/m^2] {g/cm^2 * 10.} 
+  74	DLAT	Current latitude
+  75	COND	Top material Thermal conductivity (for printout only)
+  76	DIFFU	Top material Thermal diffusivity (for printout only)
+  77	SCALE	Top material Diurnal skin depth (for printout only)
+  78	PI	pi
+  79	SIGMA	Stephan-Boltzman constant (set in KRC)
+  80	RAD	Degrees/radian
+
+Type 2	Integer Parameters	(8I10) ====================================
+
+1	N1	# layers (including fake first layer) (lim MAXN1)
+2	N2	# 'times' per day (lim MAXN2). Must be an even number, 
+		  should be a multiple of N24 and NMHA.
+3	N3	Maximum # days to iterate for solution (lim MAXN3)
+		  98sep03 This can be 1, but then must use  DELJUL ~= PERIOD
+		If N3 lt 3, first day starts on midnight. else at 18H 
+4	N4	# latitudes (lim MAXN4=19). Global integrations done for N4>8
+5	N5	# 'seasons'. If 0, then DAU and SDEC will be used as entered
+                for a single season.
+6	N24	# 'hours' per day stored, should be divisior of  N2 (lim MAXNH)
+7	IB	Bottom control: 0=insulating, 1=constant temperature 
+		  98sep03   2=start all layers =TDEEP & constant temperature 
+8	IC	First layer of changed properties. 
+		      0 or 999=homogeneous, or 3 to N1-2
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+9	NRSET	# days before reset of lower layers;  >N3=no reset
+10	NMHA	# 'hour angles' per day for printout (no limit)
+11	NRUN	Run #
+12	JDISK	Season count disk output is to begin
+13	IDOWN	First layer for grid motion. 0(none),1 or 2. NOT USED
+14	I14	Index in FD of flexible print
+15	I15	 ""
+16	KPREF	Mean global pressure control. 0=constant
+		1= follows Viking Lander curve  2=reduced by global frost, but
+                then N4 must be >8, and latitudes must be monotonic increasing
+                and must include both polar regions (no warning for your failure)
+17	K4OUT	Disk output control: -=KRCCOM(once), then TSF & TPF;
+		 0=LATCOM;   +=DAYCOM for the last latitude.
+		>=50 is custom bin5 file 
+18	JBARE	J5 season count at end of which to set frost amount to 0. 0=never
+19	NMOD	Spacing of season for notification. minimum of 1
+20      IDISK2  # of season to report disk write
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+COMPUTED I*4 VALUES
+  21	KOLD    Season index for reading starting conditions
+  22    id22(6)	unused
+  28	NFD	Number of real items read in
+  39	NID	Number of integer items read in
+  30	NLD	Number of logical items read in
+  31	N1M1	Temperature vrs depth printout limit (N1-1)
+  32	NLW	Temperature vrs depth printout increment
+  33	JJO	Index of starting time of first day
+  34	KKK	Total # separately timed layers
+  35	N1PIB	N1+IB Used to control reset of lowest layer
+  36	NCASE	Count of input parameter sets in one run
+  37	J2	Index of current time of day
+  38	J3	Index of current day of iteration
+  39	J4	Index of current latitude
+  40	J5	Index of current "season"
+
+Type 3	Logical Parameters	(10L7) ====================================
+
+1	LP1	Print program description. TPRINT(1) 
+2	LP2	Print all parameters and change cards (2)
+3	LP3	Print hourly conditions on last day (3)
+4	LP4	Print daily convergence summary (4)
+5	LP5	Print latitude summary (5)
+6	LP6	Print TMIN and TMAX versus latitude and layer (6)
+7	LPGLOB	Print global parameters each season
+8	LVFA	Use variable frost albedo
+9	LVFT	Use variable frost temperatures
+10	spare   (debug in TDAY)
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+11	LPORB	Call PORB1 just after full input set
+12	LKEY	Read change item from terminal after main input set
+13	LSC	Read change cards from input file at start of each season
+14	LNOTIF	Notify terminal at start of each season
+15	LOCAL	Use each layer for scaling depth
+16	LD16	  (used in Tlats) 
+17	LD17	Print <T>-<TSUR> at midnight for each layer [TDAY]
+18	LD18	Output to fort.78 [TLATS] insolation and atm.rad.coefficents
+19	LD19	Output to fort.79 [TLATS] insolation and atm.rad. arrays 
+20	LONE	(Computed) Set TRUE if KRC is in the "one-point" mode
+21	***	Flag to continue from memory, not stored.
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+followed in 'krccom' by: 
+[real*4] TITLE(20)	80-character title
+[real*4] DAYTIM(5)	20-character run  date and time
+================================================================
+
+Latitude(s) (10F7.2) N4 latitudes in degrees, no internal separations.
+Latitudes to be in order; south to north. [[If last latitude is
+.LE. 0, will assume symmetric results for global integrations]]
+
+Elevation(s) (10F7.2) N4 items in Km corresponding to latitudes
+
+Orbital Parameters (LPORB=T) Format identical to that produced by PORB
+program set ASCII file output. So these can be directly included with
+editor. see PORBCM.INC
+
+
+PARAMETER CHANGES   Change values in KRCCOM	(List Directed)
+?* Type, index in array, new value (real, 0.=false), 'reason'
+
+      Type	Meaning                         Valid Location
+
+	0	End of Current Changes
+	1	Real Parameter			1-60
+	2	Integer Parameter		1-20
+	3	Logical Parameter		1-20
+	4	New Latitude Card(s) Follow
+	5	New Elevation Card(s) Follow
+	6	New Orbital Parm Cards Follow (LPORB Must be True)
+	7	Text becomes new Title
+	8	Text becomes new disk file name
+	9	Complete new set of input follows
+       10       Text becomes new One-Point input file name
+       11       This is a set of parameters for "one-point" model 
+                  For this type, 9 values must appear in a rigid format
+
+		COMMON /LATCOM/  see latcom.inc
+		COMMON /DAYCOM/  see daycom.inc
+Error Returns:
+ "Parameter error in TDAY(1)" : Convergence factor < .8 classic. 
+	Instability anticipated.  
+ "UNSTABLE; Layer..... TDAY(1): 
+
+
+DRSET:	0=>	Reset by del_aver_T for each layer:
+		else: reset by {linear + DRSET*quadratic}*{<surf>-<botm>}
+TDAY: LRESET	Reset midnight T's for all but top layer.
+      LDAY	Last day computations
+
+-------------------  Handy things -------------------------------
+
+The first "hour" in printout and output arrays is 1/24 (strictly, 1/N24) of a
+sol after midnight. E.g., the last time is midnight, not the first.
+
+	----- DISK BINARY FILES ----------
+
+The routine TDISK is used to read or write direct-access binary files. 
+Each file record consists of   KRCCOM plus LATCOM  or   KRCCOM plus DAYCOM.
+Normally, LATCOM is written; the first season to write is specified by JDISK, 
+all following seasons will go to the same file.
+
+Disk output is largely controlled by the KRC routine.
+
+The first Hour (of 24) stored is 1.0; the last is midnight.
+
+ - - - Items which control file I/O - - - - -
+
+KOLD & KEEP on first input line
+  KOLD: 0= input card set follows;  else=disk record number to start from,
+	 then will read any change cards.
+	If LPORB in old file was True, then there must be a PORB card set 
+	  as the set of lines following the KEEP,KOLD line
+  KEEP: 0= close disk file after reading seasonal record KOLD;  
+	>0= value of JJJJJ at which to start saving seasons in same disk 
+	file [overrides JDISK].
+  To start from a prior seasonal run, need to determine the record 
+	corresponding to the desired season;
+	 KOLD=J5_target - JDISK(old) ; >0
+	set KEEP=1, change card J5=number of new seasons, set K4OUT.
+
+
+JDISK sets the first season to save results
+
+N5    sets the last season to run
+
+K4OUT sets the record content:
+ -  will output first record of KRCCOM,ALAT,ELEV, then records of TSF & TPF
+ 0 (normal) will output records of KRCCOM+LATCOM
+ +n<=50 will output records of KRCCOM+DAYCOM for the last computed latitude.
+ > 50 writes custom bin5 file after several cases
+       51=(30 layers, 2 min/max, 5 lat, 40 seasons, 5 cases)
+          layers 29,30 for min are: TpMin, L_sub_s ; for max are: TpMax, DJU5
+       52=(24 hours, surf & TOA, 10 lat, 80 seasons, 10 cases)
+       53=(combo  at 1 lat, 2+80 seasons, 10 cases)
+	  combo is  FRO,TSFH,TPFH,TMIN,TMAX, ASOL(each hour)    [,ASOL,TOUT]
+; 53 Only: The first [2] "seasons" contain the bits of KRCCOM. Thus, Real values 
+; (but not Integers or byte=string) can be retrieved by knowing their location. 
+; Meaning of first index for the remaining Seasons.
+; 0 = Frost amount
+;   1:24  = Tsurf for 24 hours
+;  25:48  = Tplan  "  " 
+;  49:78  = Tmin for up to 30 layers
+;  79:108 = Tmax  "   "  
+; 109:132 = Asolh at points near 24 Hours
+
+Once a disk file is opened, any records written will go into that file until a
+new filename is specified (Type 8  Change line), which closes the current file.
+   
+To run & save various cases for a single season, set N5 and JDISK to 1.
+
+To extract a detailed day by saving DAYCOM to disk, set JDISK=N5, set a new
+	file name, and set K4OUT to desired latitude (normally 1):
+
+To run continuously with output every K ((1-3) days, set DELJUL=K*PERIOD
+	this will force prediction terms to near 0.
+	setting N3=1 will turn off all prediction.
+	set GGT large (to avoid iteration for convergence)
+	set NRSET=999 (to avoid reset of layers)
+
+To continue run with new parameters (e.g., DELJUL)
+	3 21 1 'flag set to continue'
+  Note: changing DELJUL will cause reset of DJUL
+Must increase the value of N5: 2 5 bigger 'Increase stopping season' 
+Reset will not occur because J5 continues incrementing
+
+
+
+ASCII Output Files
+
+ krc.prt  general; results, what is output is controlled by LP1:6 & LPGLOB
+
+fort.76
+tlats.f: mimic Mike Mellon ASCII files
+        if (ld16) then
+          write(76,761)subs,dlat,alb,skrc,taud,pres
+ 761      format(/,'      Ls      Lt       A       I    TauD       P'
+ 762      format(f7.2,f9.3,f8.3,f9.3)
+            write(76,762)qh,tsfh(i),adgr(j),qs
+
+          do i=1,n24
+            j=(i*n2)/n24
+            qh=i*qhs
+            qs=(1.-alb)*asol(j) ! absorbed insolation
+            write(76,762)qh,tsfh(i),adgr(j),qs
+          enddo
+
+fort.78
+tlats.f:  for average and maximum:
+        if (ld18) write(78,*)cosi_(i), t_(i),ADGs(i),ADGP(i)
+        if (ld18) write(78,*)j5,j4,sol,ave_a,adgir,c52,beta
+
+fort.79
+tlats.f:   for each time-step
+       if (ld19) write(79,*)adgr(jj),qa,direct,diffuse
+   col 1 = downgoing thermal radiation
+   col 2 = total insolation reaching surface
+   col 3 = direct  fraction of insolation
+   col 4 = diffuse fraction of insolation
+
+------------------ To run two material types (00jan23)
+
+Set IC to the first layer to have the lower material properties ( >= 3)
+Set COND2 to the lower material conductivity
+Set DENS2 to the lower material density
+Set SPHT2 to the lower material specific heat
+If LOCAL is False, then initial setting of all layer thicknesses is based
+upon the scale of the upper material; if it is set True, the thickness of the
+lower layers is set by their scale.
+  TDAY no longer allows unstable (thin) layers, and will increase the thickness
+of the layer IC to satisfy the convergence safety factor FCONV if needed. 
+However, the code to check on convergence was retained.
+
+--------------------------------------------------------------------------------
+
+ The following listing of all commons was generated by these Linux commands:
+
+cd /home/hkieffer/krc
+rm allinc.txt
+cat tes/krccom.inc tes/latcom.inc tes/daycom.inc tes/filcom.inc tes/units.inc porb/porbcm.inc > allinc.txt 
+
+C_Titl  KRCCOM.INC  common for input and transfer variables
+C_Limitations
+	IMPLICIT REAL*4 (A-H,O-Z), INTEGER*4 (I,J,K,M,N), LOGICAL*4 (L) ! std.,+L
+	PARAMETER (NUMFD=80, NUMID=40, NUMLD=20)! number of each type
+	PARAMETER (MACN4 =19)	! dimension of latitudes
+	PARAMETER (NWKRC=NUMFD+NUMID+NUMLD+25+2*MACN4) 
+				! above is size of common in 32-bit words
+C_Description.  
+C  Cset -> routine which sets value.  seas=TSEAS  lat=TLAT
+C *= initially set as input, this routine may reset value.
+C lines 1-4 = real: input via  TCARD
+C	5-6 =   " : transfer
+C	7-8 = integer: input via  TCARD
+C	9-A =    "   : transfer
+C	B-C = logical: input via  TCARD
+C	D   = title (input via tcard) and run_time (transfer)
+
+	COMMON /KRCCOM/   ! grouped by 5 and 10
+     1 ALB,EMIS,SKRC,COND2,DENS2, PERIOD,SPHT,DENS,CABR,ABRAMP       ! 1:10
+     2,ABRPHA,PTOTAL,FANON,TATM,TDEEP, SPHT2,TAUD,DUSTA,TAURAT,TWILI ! 11:20
+     3,ARC2,ARC3,SLOPE,SLOAZI,TFROST, CFROST,AFROST,FEMIS,AF1,AF2    !   :30
+     4,FROEXT,FD32,RLAY,FLAY,CONVF, DEPTH,DRSET,DDT,GGT,FDOWN        !   :40
+Cset					  *day1
+     4,DJUL,DELJUL,SDEC,DAU,SUBS, SOLCON,GRAV,ATMCP ! total of 48 input  : 48
+     &,FD49(6),TATMIN,PRES,OPACITY,TAUIR,TAUEFF,TATMJ                !  :60
+Cset   *seas       ----seas-------
+     5,SKYFAC,TFNOW,AFNOW,PZREF,SUMF, TEQUIL,TBLOW, HOURO,SCALEH,BETA !  :70
+Cset   -----------lats--------- tint ---lats-------      ---lats----
+     6,DJU5,DAM,EFROST,DLAT,COND,  DIFFU,SCALE,PI,SIGMA,RAD	!71:80
+Cset   seas lat day2   lats -------day1------- --main------
+     7,N1,N2,N3,N4,N5,  N24,IB,IC,NRSET,NMHA                      !  1:10
+     8,NRUN,JDISK,IDOWN,I14,I15,  KPREF,K4OUT,JBARE,NMOD,IDISK2   ! 11:20
+     9,KOLD,ID22(6),  NFD,NID,NLD                                 ! 21:30
+Cset             ----card---
+     A,N1M1,NLW,JJO,KKK,N1PIB,  NCASE,J2,J3,J4,     J5		  ! 31:40
+Cset   ---day1- lat ----day1-    main -day2- lats  seas
+     B,LP1,LP2,LP3,LP4,LP5,    LP6,LPGLOB,LVFA,LVFT,L10           !  1:10
+     C,LPORB,LKEY,LSC,LNOTIF,LOCAL,   LD16,LD17,LD18,LD19,LONE	  ! 11:20
+     D,TITLE(20),DAYTIM(5)   ! these two mkae up 100 bytes
+Cset    tcard    tprint
+     &,ALAT(MACN4)	 ! latitude in degrees. set in  TCARD
+     &,ELEV(MACN4)	 ! elevation in km. set in  TCARD
+C
+	REAL*4    FD(NUMFD)
+        INTEGER*4 ID(NUMID)
+        LOGICAL*4   LD(NUMLD)
+	EQUIVALENCE (FD(1),ALB), (ID(1),N1), (LD(1),LP1)
+
+C_Hist	85may12  Hugh_H_Kieffer  USGS_Flagstaff major revision
+C	86jul01 HHK add comments of where variable is set
+C  97feb11  HHK revise many locations and sizes
+C  97sep08  HHK add  SCALEH,BETA   97sep11 replace  DIMENSION
+C  98MAY26  HHK remove  L from implicit integer
+C  00jan23  HHK redefine  BK->COND2  BRC->DENS2  FD16->SPHT2
+C 2002mar01 HHK Make implict L logical*4
+C 2002mar07 HHK LD20-->LONE.  move ALAT & ELEV from LATCOM, make id(21)=kold
+C 2002jul16 HK Add OPACITY to common
+C_End _______________________________________________________________________
+C_Titl  LATCOM.INC   common for latitude-dependant items in  KRC
+	PARAMETER (MAXN4 =19)	! dimension of latitudes. Must match  KRCCOM
+	PARAMETER (MACN24=24)	! hour dimension,  must match  DAYCOM
+	PARAMETER (MACN1 =30)	! layer dimension, must match  DAYCOM
+	PARAMETER (NWLAT=2793)	! size of this common in 4-byte words
+C_arg: all are set in  TLATS
+      COMMON /LATCOM/
+     & NDJ4(MAXN4)	 ! # days to compute solution for each latitude
+     &,DTM4(MAXN4)	 ! rms temperature change on last day
+     &,TST4(MAXN4)	 ! predicted equilibrium temperature of ground
+     &,TTS4(MAXN4)	 ! predicted mean surface temperature for each latitude
+     &,TTB4(MAXN4)	 ! predicted mean bottom temperature
+     &,FROST4(MAXN4)	 ! predicted frost amount gram/cm^2.
+     &,AFRO4(MAXN4)	 ! frost albedo.  
+     &,TTA4(MAXN4)	 ! final atmosphere temperature  
+     &,TTX4(MAXN4)	 ! spare
+     &,T4(MACN1,MAXN4)	 ! predicted convergence surface temperature
+     &,TIN(MACN1,MAXN4)	 ! minimum hourly layer temperature
+     &,TAX(MACN1,MAXN4)	 ! maximum hourly layer temperature
+     &,TSF(MACN24,MAXN4) ! final hourly surface temperature
+     &,TPF(MACN24,MAXN4) ! final hourly planetary temperature
+C_Desc
+CC size is (9+ 3*MACN1 +2*MACN24)*MAXN4
+C_Hist  85may12  Hugh_H_Kieffer    97feb11  HHK add  ELEV
+C  97sep08  HHK add  TPF
+C 2002mar09 HHK  Move ALAT & ELEV from here to KRCCOM
+C 2002jul13 HK Add TTA4 and TTX4
+C_End _______________________________________________________________________
+
+C_Titl  DAYCOM.INC   common for layer and time items in  KRC
+	PARAMETER (MAXN1 =30)	   ! dimension of layers
+	PARAMETER (MAXN2 =384)	   ! dimension of times of day = 24*12
+	PARAMETER (MAXN3 =16)	   ! dimension of iteration days
+	PARAMETER (MAXNH=24)	   ! dimension of saved times of day
+	PARAMETER (MAXN1P=MAXN1+1) ! dimension layer temperture points
+	PARAMETER (MAXBOT=10)	   ! dimension of time divisions
+	PARAMETER (NWDAY = 1951)   ! size of this common in 4-byte words
+C_Desc
+CC size =  (6*MAXN1 +1) + (5+MAXN1)*MAXN3 + 3*MAXN2 + 2*MAXNH + MAXBOT
+C  ASOL &  ADGR are set in  TLATS, the rest are set in  TDAY
+
+      COMMON /DAYCOM/ X(MAXN1)	! Depth at layer centers [m]
+     &, SCONVG(MAXN1)	! Classical convergence factor for each layer
+     &, TLAY(MAXN1)	! Layer thicknesses [m]
+     &, TMIN(MAXN1)	! Minimum layer temperatures of day
+     &, TMAX(MAXN1)	! Maximum layer temperatures of day
+     &, T(MAXN1P)	! Layer temperatures (T(1) is surface temperature)    
+     &, TT(MAXN1,MAXN3)	! Temperatures at start of day for each layer and day 
+     &, TTS(MAXN3)	! Mean daily surface temperatures                     
+     &, TTB(MAXN3)	! Mean daily bottom temperatures                      
+     &, TTA(MAXN3)	! End-of-Day Atmospheric temperatures
+     &, DTMJ(MAXN3)	! RMS daily temperature                               
+     &, FRO(MAXN3)	! Daily frost amounts. [kg/m^2]                    
+     &, ASOL(MAXN2)	! Insolation at each time of day                      
+     &, ADGR(MAXN2)	! Atm. solar heating at each time of day 
+     &, TOUT(MAXN2)	! Surface temperatures of solution at each time of day
+     &, TSFH(MAXNH)	! Hourly surface temperatures at solution
+     &, TPFH(MAXNH)	! Hourly planetary temperatures at solution
+     &, N1K(MAXBOT)	! Binary time division layers
+C_Hist	84jun15  Hugh_H_Kieffer  97feb11  HHK add  ADGR  
+C    97mar03 correct  NWDAY       97sep08  HHK add  TPFH
+C 2002jul12 HK Add TTA, ADGR was down-going atmospheric  IR radiance
+C_End __________________________________________________________________________
+C_Titl FILCOM.INC  Common for file names
+	COMMON /FILCOM/ FINPUT,FOUT,FDISK
+	CHARACTER*80    FINPUT,FOUT,FDISK
+C_Hist   85oct14  Hugh_Kieffer  97feb12 increase string length
+C 2002mar01 HHK increase string length from 60
+C_End____________________________________________________________________________
+C_Titl  UNITS.INC common  /UNITS/ for logical units and errors  KRC
+	COMMON /UNITS/
+     & IOPM	! prompt, usually terminal screen
+     &,IOKEY	! interactive input, usually terminal keyboard
+     &,IOIN	! input; input disk file or terminal
+     &,IOSP	! printer (spooled)
+     &,IOERR	! error messages, commonly =  IOSP
+     &,IOD1	! disk unit for explanation file (temporarily open)
+     &,IOD2	! disk output files
+     &,IOD3	! spare
+     &,IRTN	! subroutine # in which error occured
+     &,IERR	! error return code
+     &,LOPN1,LOPN2	! status of logical units
+     &,LOPN3,LOPN4	!  .TRUE. means that one is currently open
+C_Hist	1985----  Hugh_H_Kieffer
+C_End____________________________________________________________________________
+
+C_Titl  PORBCM.INC   include for PORB system COMMOM
+C_Vars
+      COMMON /PORBCM/ PLANUM,TC, ODE,CLIN,ARGP,ECC,SJA,TJO,PERIOD
+     1 ,ZFQA,ZFQB,  SIDAY,TLO,  OBL, CQA,CQB,  P17(2)
+     2 ,ZFEB,ZFEC,XFEXB,ARGV,SLP, P23
+     3 ,PHOXX(3),PHEXX(3),HFXX(3), FQ(9),EO(9),HO(9)
+     5 ,PI, DAYTIM(5), IOK,IOS,IOP,IOD
+C_Desc
+c all angles in radians
+C
+C conditions at request epoch
+C PLANUM	PLANET NUMBER, OUT FROM THE SUN (>9 ARE OTHER OBJECTS)
+C TC	 	TIME IN CENTURIES FROM REFERENCE DATE (1950.0)
+C ODE		LONGITUDE OF THE NODE
+C CLIN		INCLINATION
+C ARGP		ARGUMENT OF PERIAPSIS
+C ECC		ECCENTRICITY
+C SJA		SEMI-MAJOR AXIS (ASTRONOMICAL UNITS)
+C TJO		JULIAN DATE OF PERIHELION
+C PERIOD	PERIOD OF THE ORBIT (JULIAN DAYS)
+C ZFQA		PLANET POLE ORIENTATION IN EARTH EQUITORIAL SYSTEM: DECLINATION
+C ZFQB		  "     "      "        "    "       "        "     RIGHT ACEN.
+C SIDAY		SIDERIAL ROTATION PERIOD OF BIDY (HOURS)
+C TLO		JULIAN DATE OF ZERO LONGITUDE TOWARDS PLANETS VERNAL EQUINOX ??
+C OBL		OBLIQUITY OF THE EARTH'S AXIS
+C CQA		REFERENCE STAR, IN EARTH EQUATORIAL: DECLINATION
+C CQB		   "        "   "    "       "     : RIGHT ACENSION
+C P17(2)	SPARE
+C
+C items computed from epoch constants
+C ZFEB		Planets pole in ecliptic system; longitude
+C ZFEC		   "	"	"	"	 co-latitude
+C XFEXB		Angle along planets equator from ecliptic to planet orbit
+C ARGV		ANGLE FROM PLANETS ORBITAL NODE TO PLANETS VERNAL EQUINOX
+C SLP		L-SUB-S AT PERIAPSIS
+C P24		SPARE
+C
+C PHOXX(3)	VECTOR FROM FOCUS (SUN) TO PLANET: ORBITAL PLANE COORDINATES
+C PHEXX(3)	"     "     "    "    "     "    EQUTORIAL COORDINATES
+C HFXX(3)	VECTOR FROM PLANET TO SUN IN PLANET-FIXED COORDINATES
+C FQ(9)		ROTATION MATRIX: TO PLANET-FIXED FROM EARTH-EQUITORIAL
+C EO(9)		ROTATION MATRIX: TO ECLIPTIC FROM ORBITAL
+C HO(9)		ROTATION MATRIX: TO HELIOCENTRIC PLANET-FIXED, FROM ORBITAL
+C --- end of the 60 real variables transfered to disk files
+C PI		3.14159...
+C DAYTIM(5)	run_time in  20 ASCII bytes
+C IOK		LOGICAL UNIT FOR INPUT (KEYBOARD)
+C IOS		LOGICAL UNIT FOR PROMPT (SCREEN)
+C IOP		LOGICAL UNIT FOR OUTPUT (PRINTER)
+C IOD		LOGICAL UNIT FOR DATA FILE
+C_End
