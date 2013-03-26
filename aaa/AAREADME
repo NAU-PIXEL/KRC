@@ -1,0 +1,57 @@
+        GUIDE TO BUILDING THE KRC DISTRIBUTION TAR FILE
+
+------------ Begin  ONLY FOR THE FIRST DISTRIBUTION  Begin------------
+
+Decide on the top directory of the distribution files.   ~/krc/Dist/
+Decide on the directory structure below this. Described in  step2
+
+Create these directories
+
+Create the distribution system scripts
+Put all these in Dist/aaa/  Edit in semi-permanent fashion
+Any other files that must be edited: copy them into Dist/aaa and edit there
+
+
+ - step2 Script file to build accumulate all the source code and files needed to
+ make and run the executable application. [[ Will also build the LaTeX
+ documents to Postscript and pdf.] Do by hand]
+
+ - sysdef.rules    System-dependant rules for Make. 
+   May need to edit for your local system environment
+
+ - Makefile  The make file to build the shared object library system
+
+ - step3  Script to make the tar file
+
+---------------  End  ONLY FOR THE FIRST DISTRIBUTION  End ----------------
+
+For a new release:
+If any new routines or new input files:
+  Add these to the soft links in step2
+  Update the Make file
+
+
+Execute the /home/hkieffer/krc/Dist/step2 script, which empties the build
+area, creates directories and copies files into the build area
+
+  DO NOT REMOVE FILES FROM   ~/krc/Dist/aaa/ 
+
+  RENAME the prior distribution tar file to archive it
+
+Execute the /home/hkieffer/krc/Dist/step3 script, which will move to one
+directory above the construction directory and Tar the entire code set,
+following the symbolic links
+
+Send  AAinstall krcdist.tar  to the customer
+
+	TESTING 
+
+Test the build:
+ cd ~/krc/impl
+untar the Dist file
+Follow the directions of AAinstall
+
+once all works well, run step 3b to include the executable krc
+
+Final:  Delete the intermediate LaTeX files
+	Delete all the *.o files
