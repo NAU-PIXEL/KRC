@@ -1,0 +1,112 @@
+1Global annual models. Sample of each binary output                               RUN-CASE  37- 0    04 Sep 27 07:32:51   PAGE=  1
+0PARAMETER CHANGES
+ TYPE LOC VALUE
+   8   0   0.000     /work/paarlberg/model_thermal/full_krc/out.td1
+ New Disk file name= /work/paarlberg/model_thermal/full_krc/out.td1
+1Global annual models. Sample of each binary output                               RUN-CASE  37- 1    04 Sep 27 07:32:51   PAGE=  2
+0Input file: test_edit.inp                                                                   
+ Print file: krc.prt                                                                         
+ Save file: /work/paarlberg/model_thermal/full_krc/out.td1                                  
+0    ALBEDO     EMISS   INERTIA     COND2     DENS2    PERIOD SPEC_HEAT   DENSITY
+     0.2500    1.0000  200.0000    3.4000  928.0000    1.0275  630.0000 2000.0000
+0      CABR    ABRAMP    ABRPHA    PTOTAL     FANON      TATM     TDEEP   SpHeat2
+     0.1800    0.3000  260.0000  580.0000    0.0550  200.0000  150.0000 1300.0000
+0      TAUD     DUSTA    TAURAT     TWILI      ARC2      ARC3     SLOPE    SLOAZI
+     0.3000    0.9000    0.2050      0.00      0.50      0.10       0.0      90.0
+0    TFROST    CFROST    AFROST     FEMIS       AF1       AF2    FROEXT      ARC6
+   146.0000  589944.0    0.6500    0.9500   0.54000    0.0009   50.0000    0.0000
+0      RLAY      FLAY     CONVF     DEPTH     DRSET       DDT       GGT     FDOWN
+     1.2000    0.1800    2.0000    0.0000    0.0000    0.0020    0.1000    0.1000
+0      DJUL    DELJUL SOLAR DEC       DAU       L_S    SOLCON      GRAV    Atm_Cp
+   9652.530   17.1745    0.0000   1.46500    0.0000 1372.0000    3.7270  800.0000
+0        N1        N2        N3        N4        N5       N24        IB        IC
+         19       384        15        18       160        24         0       999
+0     NRSET      NMHA      NRUN     JDISK     IDOWN       I14       I15     KPREF
+          3        24        37       121         0        45        65         1
+0     K4OUT     JBARE     spare     spare
+          0         0        50         0
+0    LP1    LP2    LP3    LP4    LP5    LP6 LPGLOB   LVFA   LVFT   LD10
+       F      T      F      F      F      F      F      F      F      F
+0  LPORB   LKEY    LSC LNOTIF  LOCAL   LD16 LPTAVE Prt.78 Prt.79  L_ONE
+       T      F      F      T      T      F      F      F      F      F
+
+ Latitudes: 
+  -85.00 -75.00 -65.00 -55.00 -45.00 -35.00 -25.00 -15.00  -5.00   5.00
+   15.00  25.00  35.00  45.00  55.00  65.00  75.00  85.00
+
+ Elevations:
+    4.38   4.55   4.16   4.09   4.10   4.01   3.76   3.60   3.04   1.66
+    0.91   0.58   0.58   0.28  -1.15  -2.07  -1.60  -0.08
+1Global annual models. Sample of each binary output                               RUN-CASE  37- 1    04 Sep 27 07:32:51   PAGE=  3
+ Conductiv.= 3.175E-02  Dens*Cp= 1.260E+06  Diffu.= 2.520E-08  Scale= 2.668E-02
+0        ___THICKNESS____   _______CENTER_DEPTH_____ CONVERGENCE
+ LAYER     scale    meter     scale    meter   kg/m^2   factor
+    1    0.1800    0.0048   -0.0900   -0.0024     0.000   0.000
+    2    0.2160    0.0058    0.1080    0.0029    11.527   2.851
+    3    0.2592    0.0069    0.3456    0.0092    25.359   2.053
+    4    0.3110    0.0083    0.6307    0.0168    41.958   2.956
+    5    0.3732    0.0100    0.9729    0.0260    61.877   2.129
+    6    0.4479    0.0120    1.3834    0.0369    85.779   3.065
+    7    0.5375    0.0143    1.8761    0.0501   114.462   2.207
+    8    0.6450    0.0172    2.4673    0.0658   148.882   3.178
+    9    0.7740    0.0207    3.1768    0.0848   190.185   2.288
+   10    0.9288    0.0248    4.0282    0.1075   239.749   3.295
+   11    1.1145    0.0297    5.0498    0.1347   299.226   2.372
+   12    1.3374    0.0357    6.2758    0.1675   370.598   3.416
+   13    1.6049    0.0428    7.7469    0.2067   456.244   2.460
+   14    1.9259    0.0514    9.5123    0.2538   559.020   3.542
+   15    2.3111    0.0617   11.6308    0.3103   682.351   2.550
+   16    2.7733    0.0740   14.1730    0.3782   830.349   3.672
+   17    3.3279    0.0888   17.2236    0.4596  1007.945   5.288
+   18    3.9935    0.1066   20.8843    0.5573  1221.062   7.615
+   19    4.7922    0.1279   25.2771    0.6745  1476.801  10.965
+0Bottom layers for time doubling:      2    4    6    8   10   12   14   19
+
+0TDISK:  Opened NEW direct access file = /work/paarlberg/model_thermal/full_krc/out.td1                                  
+        Record length in R*4 & NRECL =   2996 11984   NOW =  04 Sep 27 07:32:51 
+ TDISK wrote: J5 rec Ls File  121   1   8.49 /work/paarlberg/model_thermal/full_krc/out.td1
+ TDISK wrote: J5 rec Ls File  122   2  16.73 /work/paarlberg/model_thermal/full_krc/out.td1
+ TDISK wrote: J5 rec Ls File  123   3  24.79 /work/paarlberg/model_thermal/full_krc/out.td1
+ TDISK wrote: J5 rec Ls File  124   4  32.69 /work/paarlberg/model_thermal/full_krc/out.td1
+ TDISK wrote: J5 rec Ls File  125   5  40.46 /work/paarlberg/model_thermal/full_krc/out.td1
+ TDISK wrote: J5 rec Ls File  126   6  48.11 /work/paarlberg/model_thermal/full_krc/out.td1
+ TDISK wrote: J5 rec Ls File  127   7  55.69 /work/paarlberg/model_thermal/full_krc/out.td1
+ TDISK wrote: J5 rec Ls File  128   8  63.22 /work/paarlberg/model_thermal/full_krc/out.td1
+ TDISK wrote: J5 rec Ls File  129   9  70.72 /work/paarlberg/model_thermal/full_krc/out.td1
+ TDISK wrote: J5 rec Ls File  130  10  78.22 /work/paarlberg/model_thermal/full_krc/out.td1
+ TDISK wrote: J5 rec Ls File  131  11  85.75 /work/paarlberg/model_thermal/full_krc/out.td1
+ TDISK wrote: J5 rec Ls File  132  12  93.32 /work/paarlberg/model_thermal/full_krc/out.td1
+ TDISK wrote: J5 rec Ls File  133  13 100.98 /work/paarlberg/model_thermal/full_krc/out.td1
+ TDISK wrote: J5 rec Ls File  134  14 108.75 /work/paarlberg/model_thermal/full_krc/out.td1
+ TDISK wrote: J5 rec Ls File  135  15 116.64 /work/paarlberg/model_thermal/full_krc/out.td1
+ TDISK wrote: J5 rec Ls File  136  16 124.70 /work/paarlberg/model_thermal/full_krc/out.td1
+ TDISK wrote: J5 rec Ls File  137  17 132.94 /work/paarlberg/model_thermal/full_krc/out.td1
+ TDISK wrote: J5 rec Ls File  138  18 141.39 /work/paarlberg/model_thermal/full_krc/out.td1
+ TDISK wrote: J5 rec Ls File  139  19 150.07 /work/paarlberg/model_thermal/full_krc/out.td1
+ TDISK wrote: J5 rec Ls File  140  20 159.00 /work/paarlberg/model_thermal/full_krc/out.td1
+ TDISK wrote: J5 rec Ls File  141  21 168.21 /work/paarlberg/model_thermal/full_krc/out.td1
+ TDISK wrote: J5 rec Ls File  142  22 177.69 /work/paarlberg/model_thermal/full_krc/out.td1
+ TDISK wrote: J5 rec Ls File  143  23 187.45 /work/paarlberg/model_thermal/full_krc/out.td1
+ TDISK wrote: J5 rec Ls File  144  24 197.48 /work/paarlberg/model_thermal/full_krc/out.td1
+ TDISK wrote: J5 rec Ls File  145  25 207.77 /work/paarlberg/model_thermal/full_krc/out.td1
+ TDISK wrote: J5 rec Ls File  146  26 218.28 /work/paarlberg/model_thermal/full_krc/out.td1
+ TDISK wrote: J5 rec Ls File  147  27 228.98 /work/paarlberg/model_thermal/full_krc/out.td1
+ TDISK wrote: J5 rec Ls File  148  28 239.80 /work/paarlberg/model_thermal/full_krc/out.td1
+ TDISK wrote: J5 rec Ls File  149  29 250.69 /work/paarlberg/model_thermal/full_krc/out.td1
+ TDISK wrote: J5 rec Ls File  150  30 261.59 /work/paarlberg/model_thermal/full_krc/out.td1
+ TDISK wrote: J5 rec Ls File  151  31 272.41 /work/paarlberg/model_thermal/full_krc/out.td1
+ TDISK wrote: J5 rec Ls File  152  32 283.11 /work/paarlberg/model_thermal/full_krc/out.td1
+ TDISK wrote: J5 rec Ls File  153  33 293.63 /work/paarlberg/model_thermal/full_krc/out.td1
+ TDISK wrote: J5 rec Ls File  154  34 303.92 /work/paarlberg/model_thermal/full_krc/out.td1
+ TDISK wrote: J5 rec Ls File  155  35 313.96 /work/paarlberg/model_thermal/full_krc/out.td1
+ TDISK wrote: J5 rec Ls File  156  36 323.72 /work/paarlberg/model_thermal/full_krc/out.td1
+ TDISK wrote: J5 rec Ls File  157  37 333.21 /work/paarlberg/model_thermal/full_krc/out.td1
+ TDISK wrote: J5 rec Ls File  158  38 342.42 /work/paarlberg/model_thermal/full_krc/out.td1
+ TDISK wrote: J5 rec Ls File  159  39 351.36 /work/paarlberg/model_thermal/full_krc/out.td1
+ TDISK wrote: J5 rec Ls File  160  40   0.04 /work/paarlberg/model_thermal/full_krc/out.td1
+     4 seconds at end of season  160 of  160
+
+
+     END OF DATA ON INPUT UNIT
+ Closed direct access file
+      END KRC
