@@ -1,4 +1,6 @@
-       GUIDE TO INSTALLING THE KRC DISTRIBUTION
+
+       Guide to installing the KRC distribution  2010jul20
+
 
 In a directory one level above the place you wish to have KRC reside,
 untar the krcdist.tar file.
@@ -7,43 +9,69 @@ untar the krcdist.tar file.
 
 Files in ~/doc/ that may be helpful
 
-  krc.ps and krc.pdf 
-     PostScript and dpf  are the same description of some of the algorithms
-
-  helplist.txt
+  helplist.tex
         General help in setting up input files. ASCII text 
-	Most of this is MANDATORY READING
+	Much of this is MANDATORY READING
 
-In ./run/ there is a Makefile. This invokes  sysdef.rules  which may need 
-ediiting for your site. See your local Guru.
+  jpap.pdf 
+     Draft journal article describing some of the algorithms
 
-./run/krc_made is the pre-made executable for PC linux
+  port.pdf
+    Supporting documentation: wide range of formality. See its index
 
-./run/krcone_master.inp
-        Sample input file for running KRC in one-point mode.
+  HeatOfT.pdf 
+    Information on T-dependent materials, and how to create KRC parameters
 
-./run/krcin.inp
-        Sample input file for running full-up KRC
+  cement.pdf 
+    Thermal conductivity of cemented particulates
 
-./idl/when2start.pro
-        IDL routine to compute KRC start date
 
-./idl/l_s.pro
-        IDL routine for general conversion between Ls and dates
-        [ Called by when2start ]
+In ./src/ there is the Makefile  which will probably need 
+editing for your site. You should remove reference to any libraries 
+(unless you make some) and add to OBJECTS1 all the fortran source routines.
 
+See your local Guru. Then do:  make krc
+which should complile, although there may be some of warnings about 
+different variable types for R2R
+
+./run/krc64 is the pre-made executable for PC linux 64-bit machine
+  I do not know if it will run on 32-bit hardware
+
+
+Copy either master.inp or master5x.inp and edit to fit your needs; the default
+name that krc looks for is krc.inp. If you want 5 degree latitude spacing,
+mast37 contains just the latitudes and mean elevations for every 5 degrees.
+
+Run krc.  It will ask for an input file name. If you wish krc.inp,
+    respond simply:  / <CR 
+  At the request for a print file name, you can respond simply:  / <CR 
+
+
+The original print log output for master.inp is run/output/master.prtOrig
+    The output binary file is run/output/masterA.t52 
+The input file  run/master5x.inp tests all the type 5x output modes, 
+the corresponding binary output files are run/output/master5B.t5x  x=1,2,4,5,6 
+
+Input file krcOneA.inp will run KRC in the one-point mode, using the specific 
+points listed on oneA.inp. The expected output is in oneA.prtOrig
 
 --------------- To make the executable --------------- 
 cd Dist    # cd into the top of the Distribution system 
 cd src
-# may take some Guru to edit your local setup: sysdef.rules  & Makefile
+# may take some Guru to edit your local setup:   Makefile
 
 make krc        
  # when successful
 cd ../run
-ln -s ../src/krc    # Then can run krc in the run directory
+ln -s ../src/krc  .  # Then can run krc in the run directory
 			# You may keep your input files here
 			# Suggest that you send output files to ../out
 			#   or somewhere outside the KRC Distribution system
 # After deciding which test or your own input file to use:
-krc          # this will start the execution. ALrady 
+krc          # this will start the execution. 
+
+--------------  Use of the IDL programs ---------------------
+
+Look at init.pro (probably requires an IDL guru), edit it as appropriate for
+your installation, and run it after starting IDL.  It uses setcolor.pro to setup
+256 colors into !binc

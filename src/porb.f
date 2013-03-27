@@ -12,17 +12,16 @@ C_KEYS	ORBIT
 C_DESCR	conic orbit; uses soltuion to Keplers equation
 C_CALLS ORBIT ROTATE /PORBCM/=PROBCM.INC
 C_HIST	70xxxxx HHKieffer UCLA ORIGINAL VERSION
-C	75sep29 HHK recode ?
-C	84may29 HHK VAX version
-C	85jan13 HHK revised PORBCM
-C	85sep14 HHK change called routine argument order to agree with *SP system
+C 75sep29 HHK recode ?
+C 84may29 HHK VAX version
+C 85jan13 HHK revised PORBCM
+C 85sep14 HHK change called routine argument order to agree with *SP system
 C_END
 C
-C	INCLUDE 'porbcm.inc/NOLIST'
 	INCLUDE 'porbcm.inc'
 
       T = TJ-TJO
-      CALL ORBIT (SJA,PERIOD,ECC,T, PER,PHOXX)
+      CALL ORBIT (SJA,OPERIOD,ECC,T, PER,PHOXX)
       CALL ROTATE (EO,PHOXX, PHEXX)
       PEA = ASIN (PHEXX(3)/PER)
       PEB = ATAN2 (PHEXX(2),PHEXX(1))

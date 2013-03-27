@@ -1,13 +1,13 @@
 	PROGRAM KRC
 C_Titl  KRC planet surface thermal model  MGS-TES version
 C_Vars
-	INCLUDE 'krccom.inc'
+	INCLUDE 'krccom.inc' ! has IMPLICIT NONE
 	INCLUDE 'latcom.inc'
 	INCLUDE 'daycom.inc'
 	INCLUDE 'units.inc'
 	INCLUDE 'filcom.inc'
-
-	COMMON /PORBCM/ PC(60)
+	REAL PC(60)	
+	COMMON /PORBCM/ PC
 C_Hist	85oct01  Hugh_H_Kieffer
 C	87nov22  HHK  send errors to screen, force parameter print if error.
 C	93mar03  ECisneros converted include filename to lowercase, also
@@ -22,13 +22,20 @@ C 97jul07 from calories to  SI units
 C 99dec07  HHK add option to continue from current condition
 C 2002mar07 HHK Add option for "one-point" rapid runs for Surface T
 C 2006mar22 HHK Minor: change default input file to   krc.inp
+C 2009mar05 HK Minor cleanup
+C 2010jan11HK Change to use of IMPLICIT NONE
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
-C			zero out commons
-	CALL R2R (0.,ALB, -NWKRC)		!  KRCCOM
-	CALL R2R (0.,NDJ4,-NWLAT)		!  LATCOM
-	CALL R2R (0.,X, -NWDAY)			!  DAYCOM
+
+	REAL ELAPSED,TIMES(2)	! declare the types of DTIME()
+	INTEGER IOD, IQ, IR,KREC
+	INTEGER IOST		!? returned by OPEN
+	CHARACTER*80 CBUF	! temporary use
+C			zero out some commons
+	CALL R2R (0.,ALB, -NWKRC) !  KRCCOM
+	CALL R2R (0.,NDJ4,-NWLAT) !  LATCOM
+	CALL R2R (0.,XCEN,-NWDAY) !  DAYCOM
 	FDISK='krc.tdi'
-C			set logical units
+C		set logical units. See   units.com   for description
 	IOD1 = 1
 	IOD2 = 2
 	IOIN = 3
@@ -39,10 +46,14 @@ C			set logical units
 	LOPN2 = .FALSE.
 	LONE =.FALSE.		! true when in one-point mode
 C			set constants
-	PI = 3.14159265
-	RAD = 180./PI		! degrees/radian
+	PIVAL = 3.14159265
+	RADC = 180./PIVAL		! degrees/radian
 	SIGSB = 5.67051e-8 !  Stephan-Boltzman constant:  SI =  W m^-2 K^-4
-CC	SIGSB = 1.354518E-12 ! stephan-boltzman constant: cal:cm:sec:k
+	RGAS = 8.3145	 ! ideal gas constant  (MKS=J/mol/K)
+	HUGE = 3.3E38	 ! largest   REAL constant
+	TINY = 2.0E-38	 ! smallest  REAL constant
+	EXPMIN = 86.80	 ! neg exponent that would almost cause underflow
+	KREC=0			! ensure it has a storage location
 C			open files: input, print, save
 50	FINPUT = 'krc.inp'
 	WRITE (IOPM,*)'?* Input file name or / for default =',FINPUT
@@ -56,51 +67,66 @@ CC	call U_std_init ('krc','1997-09-09','invoke traps') ! to invoke traps
 	READ (IOKEY,*,ERR=60,end=9) FOUT
 	OPEN (UNIT=IOSP,FILE=FOUT,err=82)
 C			read and check a complete set of input parameters
+D	write(iosp,*) 'before TCARD LP2=',LP2 !<<< debug 
+	CALL DATIME (DAYTIM)
 	CALL TCARD (1,IR)
-
+D	write(iosp,*) 'after TCARD IR,LP2=',IR, LP2 !<<< debug
+D	write(*,*) 'TCARD1 return=',ir !<<< debug
+	IF (IR.GT.4) GO TO 170
+	IF (LP1) CALL TPRINT (1) ! print program description
+	CALL DTIME(TIMES,ELAPSED) ! Start clock, GNU recommended form 
+C				*****  BEGIN case  *****
+ 140	NCASE = NCASE+1		! have a case defined
 	IF (IR.EQ.4) THEN	! Switch to "one-point" mode
 	  CLOSE(IOIN)		! close the card input file
-C	  write(*,*)'FINPUT=',finput
+D	  write(*,*)'FINPUT=',finput !<<< debug
 	  OPEN (UNIT=IOIN,FILE=FINPUT,STATUS='OLD',iostat=iost,err=81)
-C	  write(*,*)' IOSTAT=',iost
-	  READ (IOIN,'(A80)',ERR=83,END=84) FDISK ! read Users title
-C	  write(*,*)' k2'
+D	  write(*,*)' IOSTAT=',iost !<<< debug
+	  READ (IOIN,'(A80)',ERR=83,END=84) CBUF ! read Users title
+D	  write(*,*)' k2' !<<< debug
 	  WRITE(IOSP,*)'---- Start of one-point mode ----'
-	  WRITE(IOSP,*)FDISK	! write users title
-	  READ (IOIN,'(A80)',ERR=83,END=84) FDISK ! skip the col header line
-C	  write(*,*)' k3'
-	  WRITE(IOSP,*)'11    Ls   Lat  Hour Elev  Alb Inerti Opac '
-	1      ,'Slop_Azim  TkSur  TbPla'
+	  WRITE(IOSP,*)CBUF	! write users title
+	  READ (IOIN,'(A80)',ERR=83,END=84) CBUF ! skip the col header line
+D	  write(*,*)' k3' !<<< debug
+	  WRITE(IOSP,'(A,A)')'C_END  Ls   Lat  Hour Elev  Alb Inerti '
+     &      ,'Opac Slop Azim  TkSur  TbPla             Comment'
 	  LONE=.TRUE.
 	  CALL TCARD (2,IR)	! read first one-point case
+D	write(IOSP,*) 'KRC TCARD2 return=',IR !<<< debug
 	ENDIF
-	IF (IR.GT.4) GO TO 170
-C				*****  BEGIN case  *****
-140	NCASE = NCASE+1
-	IQ = IR	  	!transfer "continuing" flag from  TCARD to  TSEAS
-	IF (LONE) IQ=1
-	IF (LP1) CALL TPRINT (1)	! print program description
-	CALL TDAY (1,IR)		! initialize day computations
+	IQ = IR	             ! transfer "continuing" flag from  TCARD to  TSEAS
+	IF (LONE) IQ=1		! set TSEAS to start fresh
+	CALL TDAY (1,IR) 	! initialize day computations
+D	write(IOSP,*)'KRC TDAY 1 return, LP2',IR,LP2 !<<< debug
 	IF (LP2 .OR. IR.NE.1) CALL TPRINT (2)
-C	IF (.NOT.LONE .AND. (LP2 .OR. IR.NE.1)) CALL TPRINT (2)		! print input parameters
+C	IF (.NOT.LONE .AND. (LP2 .OR. IR.NE.1)) CALL TPRINT (2)	! print input parameters
 	IF (IR.NE.1) THEN
 		WRITE(IOSP,*)' PARAMETER ERROR IN TDAY(1)'
 		IF (N5.GT.0) GOTO 170
 	    ENDIF
-	IF (IQ.LT.2) CALL R2R (TFROST,TTS4,-MAXN4) !  TLATS uses for atm rad.
 	IF (.NOT.LOPN2 .AND. JDISK.GT.0 .AND. MAX(N5,1).GE.JDISK) 
      &    CALL TDISK (1,0) ! open output disk file
 C======
-
+D	write(*,*) 'cond=',cond	!<<< debug
+D	write(*,*)'KRC LP4=',LP4 !<<< debug
+        CALL DATIME (DAYTIM)	! reset the time at start of each model
 	CALL TSEAS (IQ,IR)		! %%%%% execute season loop %%%%
-C	write(*,*)'TSEAS return IQ,IR=',IQ,IR
+D	write(*,*)'TSEAS return IQ,IR,N5,krec=',IQ,IR,N5,krec !<<< debug
 C======
-	IF (LONE) CALL TPRINT(9)
+	IF (LONE) CALL TPRINT(9) ! print results at requested one-point
 
 	IF (IR.NE.1 .AND. N5.GT.0) GO TO 170	! stop on error in seasonal run
 	CALL TCARD (2,IR)		! read set of parameter changes
+
+D	WRITE(IOSP,*)'TCARD 2 IR=',IR,krec  !<<< Debug
 	IF (IR.EQ.3) NCASE=NCASE-1 ! do not increment case for continuing from memory
-	IF (IR.LT.5) GOTO 140
+	IF (.NOT. LONE .OR. IR.EQ.5) THEN 	! 
+	   CALL DTIME(TIMES,ELAPSED) ! elapsed seconds
+ 133	   FORMAT(1X,'Case',i3,2x,a1,'TIME: total, user, system=',3f10.4)
+	   WRITE(   *,133)NCASE,'D', ELAPSED,TIMES
+	   WRITE(IOSP,133)NCASE,'D', ELAPSED,TIMES
+	ENDIF
+	IF (IR.LT.5) GOTO 140	! 5 is END of data
 C
  170	IF (LOPN2) CALL TDISK (4,KREC)	! all done: close disk files
 
@@ -113,7 +139,7 @@ C???	CALL CHKMATH(IOSP)
 
 C error section
  81	WRITE(IOERR,*)'KRC error opening input file =',FINPUT
-	write(ioerr,*) 'IOSTAT=',iost
+	WRITE(IOERR,*) 'IOSTAT=',IOST
 	GOTO 50
  82	WRITE(IOERR,*)'KRC error opening print file =',FOUT
 	GOTO 60

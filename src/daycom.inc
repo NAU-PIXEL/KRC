@@ -1,18 +1,16 @@
 C_Titl  DAYCOM.INC   common for layer and time items in  KRC
-	PARAMETER (MAXN1P=MAXN1+1) ! dimension layer temperture points
-	PARAMETER (MAXBOT=10)	   ! dimension of time divisions
+      INTEGER NWDAY
 	PARAMETER (NWDAY = 6*MAXN1+1  + (5+MAXN1)*MAXN3 + 3*MAXN2 
-	1    + 2*MAXNH + MAXBOT) ! size of this common in 4-byte words
+     & + 2*MAXNH + MAXBOT) ! size of this common in 4-byte words
 C_Desc
 C  ASOL &  ADGR are set in  TLATS, the rest are set in  TDAY
-
-      COMMON /DAYCOM/ X(MAXN1)	! Depth at layer centers [m]
+      REAL XCEN(MAXN1)	! Depth at layer centers [m]
      &, SCONVG(MAXN1)	! Classical convergence factor for each layer
-     &, TLAY(MAXN1)	! Layer thicknesses [m]
+     &, BLAY(MAXN1)	! Layer thicknesses [m]
      &, TMIN(MAXN1)	! Minimum layer temperatures of day on the hour
      &, TMAX(MAXN1)	! Maximum layer temperatures of day on the hour
-     &, T(MAXN1P)	! Layer temperatures (T(1) is surface temperature)    
-     &, TT(MAXN1,MAXN3)	! Temperatures at start of day for each layer and day 
+     &, TTJ(MAXN1P)	! Layer temperatures (TTJ(1) is surface temperature)    
+     &, TT1(MAXN1,MAXN3)! Temperatures at start of day for each layer and day 
      &, TTS(MAXN3)	! Mean daily surface temperatures                     
      &, TTB(MAXN3)	! Mean daily bottom temperatures                      
      &, TTA(MAXN3)	! End-of-Day Atmospheric temperatures
@@ -23,11 +21,19 @@ C  ASOL &  ADGR are set in  TLATS, the rest are set in  TDAY
      &, TOUT(MAXN2)	! Surface temperatures of solution at each time of day
      &, TSFH(MAXNH)	! Hourly surface temperatures at solution
      &, TPFH(MAXNH)	! Hourly planetary temperatures at solution
-     &, N1K(MAXBOT)	! Binary time division layers
+      INTEGER N1K(MAXBOT)	! Binary time division layers
+
+      COMMON /DAYCOM/ XCEN, SCONVG, BLAY, TMIN, TMAX, TTJ, TT1
+     &, TTS, TTB, TTA,DTMJ, FRO, ASOL, ADGR, TOUT, TSFH, TPFH, N1K
+
 C_Hist	84jun15  Hugh_H_Kieffer  97feb11  HHK add  ADGR  
-C    97mar03 correct  NWDAY       97sep08  HHK add  TPFH
+C   97mar03 HK correct  NWDAY       97sep08  HHK add  TPFH
 C 2002jul12 HK Add TTA, ADGR was down-going atmospheric  IR radiance
 C 2002aug15 HK NWDAY is computed, =1951
 c 2002oct30 HK set N2 to 8*384 as trial  NWday=10015
 C 2004jul07 HK Move dimension-defining parameters from other commons into KRCCOM
+C 2008oct02 HK Move MAXBOT and MAXN1P from here to KRCCOM
+C 2008nov13 HK Change names: X->XCEN  T->TTJ  TT->TT1  TLAY->BLAY
+C 2010jan12 HK Change to IMPLICIT NONE assumed in krccom
 C_End __________________________________________________________________________
+  

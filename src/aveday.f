@@ -2,10 +2,11 @@
 C_Titl  AVEDAY average daily exposure of surface to sunlight.
 c   this is the average daily insolation, normalized to the solar flux at 
 C    current distance from the sun.
+      IMPLICIT NONE
 C_Args
-	REAL*4 SDEC ! in. solar declination in degrees.
+	REAL SDEC ! in. solar declination in degrees.
 C			(the sub-solar latitude on the planet)
-	REAL*4 XLAT ! in. latitude on surface; in degrees. 
+	REAL XLAT ! in. latitude on surface; in degrees. 
 C
 C_Desc formula from  WARD(1974),  J.G.R. vol. 79, page 3375;
 C   equations 49 & 50 on page 3382.
@@ -13,12 +14,15 @@ C Input angles should be no greater than 90. degrees, this routine does
 C   not check them.
 C_Hist	86jul03  HHKieffer; revision of earlier  CFSOLAR.
 C	87sep13  HHK incorporate the 1/pi term in this routine.
+C     2010jan11 HK convert to implicit none
 C_End
-	DATA PI/3.1415926/
-        REAL*4 R2D /57.29578/     ! degrees in one radian
-        REAL*4 D2R /1.7453293E-2/ ! radians pre degree
-
-C  ETA = length of half-day, in radians
+	REAL PI/3.1415926/
+        REAL R2D /57.29578/     ! degrees in one radian
+        REAL D2R /1.7453293E-2/ ! radians pre degree
+        REAL sdecr            ! solar declination in radians
+        REAL xlatr            ! surface latitude, radians
+        REAL eta              ! length of half-day, in radians
+        REAL result
 
            sdecr=d2r*sdec
            xlatr=d2r*xlat

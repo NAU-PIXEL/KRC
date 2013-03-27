@@ -1,5 +1,5 @@
 	SUBROUTINE BINF5 (ACTION,FILENAME, HEADER,ID,DDATA, RET)
-C_titl  BINF5:  read/write binary file with idl-style header
+C_titl  BINF5:  read/write binary file with IDL-style header
 	IMPLICIT NONE
 C****************************************************************************
 C_Args  Type          name          i/o  Description
@@ -50,7 +50,7 @@ C  !ISIS  indicate ISIS versions of code,  versus  !HK
 C_Lim
 	INTEGER*4  MAXT,MAXD,NBH,MAXARC
 	PARAMETER (MAXT=5) ! number of defined types
-	PARAMETER (MAXARC=5) ! number of 
+	PARAMETER (MAXARC=6) ! number of machine architectures
 	PARAMETER (MAXD=6) ! max number of dimensions
 	PARAMETER (NBH=512) ! total length of header buffer
 C   on read, if  Header is too long, last part will be trimmed.
@@ -64,6 +64,9 @@ C 99nov05  HHK allow longer headers
 C  and include as ckb real differences from the version at
 C    /home/kbecker/isis/apps/rolo2/libs/librolo/binf5.f
 C2004jul12 HK add arch-type for Mac.
+C 2008mar31 HK Replace  SWAPBYTER4 with SWAPBYTE4
+C           and  Replace C## with D for conditional compile
+C           and temporary firmcode machine architecture   << BEWARE
 C_End
 
 	INTEGER*4 IERR		! return code from pio routines
@@ -81,15 +84,16 @@ C_End
 	INTEGER*4 NBYPW(MAXT) /1,2,4,4,8/
 	INTEGER*4 IDL(10)		! array to contain idl size values
 	CHARACTER*120 BUF
-	CHARACTER*5 ARCH(MAXARC) /'sparc','x86  ','alpha','ppc','unkno'/ !hardware architecture
-C  IDARCH index =                   1      2       3  4=mac
-	INTEGER*4 BARCH(MAXARC) /   1  ,   2    ,  2 ,2 ,2/ !byte-order type (arbitrary)
-	CHARACTER*5 ARCHCPU
+	CHARACTER*6 ARCH(MAXARC) /'sparc ','alpha ','ppc   ','x86   '
+      1 ,'x86_64','unknow'/		!hardware architecture
+C  IDARCH index =                   1      2       3=mac
+	INTEGER*4 BARCH(MAXARC) / 1,2,2 ,2 ,2,0 / ! byte-order type (arbitrary)
+	CHARACTER*6 ARCHCPU
 
-	INTEGER*4   BT2,BA1,BA2,BC1 ! fixed byte locations
+	INTEGER*4  BT2,BA1,BA2,BC1 ! fixed byte locations
 	PARAMETER (BC1=NBH-4)	! first of  C_END
 	PARAMETER (BA2=BC1-1)	! last byte of architecture
-	PARAMETER (BA1=BC1-5)	! first " "
+	PARAMETER (BA1=BC1-8)	! first " " 2008 compatibility with bin5.pro
 	PARAMETER (BT2=BA1-1)	! last room for text
 	INTEGER*4  WHITE1,IDARCH		! functions
 C****************************************************************************
@@ -108,13 +112,14 @@ C****************************************************************************
 	NBYTES = NBH+NBY        ! total # bytes in file
 
 	IARCH=IDARCH(BUF)	! get current machine type as integer and string
-	ARCHCPU=BUF(1:5)
+	ARCHCPU=BUF(1:6)
+C-	ARCHCPU=ARCH(5)    ! BEWARE  BEWARE BEWARE BEWARE BEWARE
 	JCPU=0
 	DO I=1,MAXARC
 	  IF (ARCHCPU.EQ.ARCH(I)) JCPU=BARCH(I) ! save archit. type
 	ENDDO
         WRITE (*,*) 'BINF5: ARCH S= ',IARCH,' >', ARCHCPU,'<',jcpu
-	WRITE (*,*) 'BINF5 called with ID= ',ID
+	WRITE (*,*) 'BINF5 called with ID= ',ID,'   2008apr01'
 	IF (JCPU.EQ.0) GOTO 87
 
 	IF (ACTION .EQ. 'W' .OR. ACTION .EQ. 'w') THEN !=======  WRITE ========
@@ -135,7 +140,7 @@ C  K for sizes, 28 for date and its delimiters, 10 for ending
 	   K=WHITE1 (BUF,CC)	! remove excess spacing; put into header
 C  K is last non-blank character
 	   LL =(ID(9)+(K+28+10)-1)/NBH +1 ! number of blocks required
-C##	   write(*,*)'ID(9),K,LL,plan=',ID(9),K,LL,plan !###
+D	   write(*,*)'ID(9),K,LL,plan=',ID(9),K,LL,plan !###
 	   IF (PLAN.LT.LL) THEN
 	     PLAN=PLAN+1
 	     GOTO 100
@@ -143,8 +148,8 @@ C##	   write(*,*)'ID(9),K,LL,plan=',ID(9),K,LL,plan !###
 
 C  PLAN is now the number of header blocks that will be written
 	   ND1=plan*NBH+1	! first location after header
-C##	WRITE (*,*) 'BINF5: NBH,ND1,NIT,NBY,NBYTES='
-C##     &                     ,NBH,ND1,NIT,NBY,NBYTES
+D	WRITE (*,*) 'BINF5: NBH,ND1,NIT,NBY,NBYTES='
+D    &                     ,NBH,ND1,NIT,NBY,NBYTES
 
 	   CC(K+1:K+3)= '<< '	! end of dimensions
 	   K=K+3		! current end of stuff
@@ -170,12 +175,12 @@ Ckb           call u_datime(buf) !ISIS
 	   ENDIF
 
 	   LL=ID(9)-J		! number of user text bytes still to write
-C##	   write(*,*)'kblock,i,j,ll=',kblock,i,j,ll !##
+D	   write(*,*)'kblock,i,j,ll=',kblock,i,j,ll !##
 	   IF (LL.GT.0) THEN
 	     I=MIN(I,LL)	! amount to write, even if 0
 	     CC(K+1:K+I) = HEADER(J+1:J+I) ! move text to header
 	   ENDIF
-C##	   write(*,*)'LOC=',LOC	!###
+D	   write(*,*)'LOC=',LOC	!###
 	   CALL PIO_WT (FID, LOC, NBH, HH, IERR) ! write one block
 	   IF (IERR .NE. 0) GOTO 93
 	   LOC=LOC+NBH
@@ -188,7 +193,7 @@ C				!   header record starting at beginning
 	     GOTO 200
 	   ENDIF
 
-C##	   write(*,*)'LOC,ND1=',LOC,ND1	!###
+D	   write(*,*)'LOC,ND1=',LOC,ND1	!###
 	   CALL PIO_WT (FID, ND1,NBY, DDATA, IERR) ! write data to file
 	   IF (IERR .NE. 0) GOTO 94
 
@@ -233,9 +238,9 @@ C read rest of header, transfering to user up to their room limit
 	   DO KBLOCK=1,PLAN	   ! one block at a time into local buffer
 	     IF (KBLOCK.GT.1) THEN
 	       LOC=LOC+NBH
-C##	       write(*,*)'LOC=',LOC ! ###
+D	       write(*,*)'LOC=',LOC ! ###
 	       CALL PIO_RD (FID,LOC, NBH, HH, IERR) ! read a block
-C##	       write(*,*)'CC=',cc ! ###
+D	       write(*,*)'CC=',cc ! ###
 	       IF (IERR .NE. 0) GOTO 83
 	     ENDIF
 	     IF (ID(9).GT.0) THEN ! user asked for header, extract it
@@ -243,19 +248,19 @@ C##	       write(*,*)'CC=',cc ! ###
 	       I = MIN(LL-K,ID(9)-J) ! end of text, or callers room to store
 	       IF (I.GT.0) HEADER(J+1:J+I)=CC(K+1:K+I) ! add to header
 	       J=J+I		! increment # text bytes written
-C##	       write(*,*)'Last byt into header  J=',j !###
+D	       write(*,*)'Last byt into header  J=',j !###
 	       K=0	! text starts at beginning of all but first block
 	     ENDIF
 	   ENDDO
 	   idl(9)=j		! bytes moved to caller
 
 C	   CALL R2R (IDL,ID,10) !HK return file array dimensions
-           call u_move4 (10,idl,id) !ISIS return file array dimensions
+           call u_move4 (10,idl,id) ! return file array dimensions
 
 	   IF (NBD.GT.0) THEN	! read data from file
 	       LOC=LOC+NBH
 	      ND1= IDL(10)+1
-C##	      write(*,*)'Read: LOC,ND1,NBD=',LOC,ND1,NBD !###
+D	      write(*,*)'Read: LOC,ND1,NBD=',LOC,ND1,NBD !###
 	      CALL PIO_RD (FID, ND1,NBD, DDATA, IERR)
 	      IF (IERR .NE. 0) GOTO 84
 
@@ -264,7 +269,7 @@ C##	      write(*,*)'Read: LOC,ND1,NBD=',LOC,ND1,NBD !###
 		IF (CC(BA1:BA2).EQ.ARCH(I)) J=BARCH(I) ! get file archit. type
 	      ENDDO
 	   WRITE (*,*)'BINF5 Read: file arch & J= >',CC(BA1:BA2),'<',J
-C##	      IF(ID(9).GT.0) WRITE (*,*)'BINF5 Read: header= ',HEADER
+D	      IF(ID(9).GT.0) WRITE (*,*)'BINF5 Read: header= ',HEADER
 C       write (*,'(5a10)')(arch(i),i=1,3)
 	      IF (J.EQ.0) GOTO 88 ! unknown type
 
@@ -272,15 +277,15 @@ C       write (*,'(5a10)')(arch(i),i=1,3)
 !ISIS the # lines below
 #if defined(SWAP_RESTRICTIONS)
 		IF (IDL(8).EQ.4) THEN
-		  CALL SWAPBYTER4 (DDATA,NIT,DDATA) ! assumes real*4
+		  CALL SWAPBYTE4 (DDATA,NIT,DDATA) ! assumes real*4
 		  WRITE(*,*) 'BINF5 swapping bytes. # R*4 words=',NIT
 		ELSEIF (IDL(8).GT.1) THEN
 		  WRITE(*,*) 'BINF5 fails to swap bytes'
 		  RET=-10
 		ENDIF
 #else
-               if (nbypw(idl(8)) .gt. 1) then !ISIS
-                  call u_swapn(nit, nbypw(idl(8)), ddata, ddata) !ISIS
+               if (nbypw(idl(8)) .gt. 1) then
+                  call u_swapn(nit, nbypw(idl(8)), ddata, ddata) ! ISIS routine
                 endif !ISIS
 #endif
 	      ENDIF
