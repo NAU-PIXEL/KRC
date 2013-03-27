@@ -1,5 +1,5 @@
 Title Line, Text transfered to output. This & next line must be present
-11    Ls   Lat Hour  Elev  Alb Inerti Opac Slop Azim <Align each field 
+11    Ls   Lat Hour  Elev  Alb Inerti Opac Slop Azim <Align each field ]
 11 100.0  22.3 13.5  -3.1 0.20  100.0 0.30  0.0 12.3 Viking Lander 1  
 11 100.   22.3 13.5  -3.1 0.20  200.0 0.30  5.0 90.  VL1
 11 100.   22.3 13.5  -3.1 0.20  200.0 0.30  5.0 180. VL1 

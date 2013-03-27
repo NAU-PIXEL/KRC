@@ -21,8 +21,8 @@ C 2010jan12 HK Use IMPLICIT NONE
 C 2011aug01 HK Fix incorrect typing
 C_End
         INTEGER*4 I
-        REAL*4 EDGE,SL,S
-
+        REAL EDGE,SL,S
+Cd	print * , 'TINT: N4',N4,MAXN4 !<dbug
 	IF (AREA(1).LE.0.) THEN	! first time, compute area array
 	  SL = -1.0		! sine of prior band edge (south pole at start)
 	  DO  I = 1,N4
@@ -39,7 +39,6 @@ C	  write(*,*) 'Radc=',radc
 C	  write(*,*) 'alat=',(alat(i),i=1,n4)
 	ENDIF
 C	write(*,*) 'area=',(area(i),i=1,n4)
-
 	SUM = 0.		! do summing weighted by area
 	DO I = 1, N4
 	  SUM = SUM + AREA(I) * VIN(I)

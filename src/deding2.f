@@ -49,9 +49,8 @@ C 2002jul16 HK Changed name from DEDING1,
 C	revised fourth and next-to-last argument
 C 2002jul16  Using qdeding2.pro, results agree with JWW figures only for BOND.
 C 2002jul21  Go to double precision computation; all agree with JWW figs 1,3
+C 2012feb26 HK Remove unused variables
 C_End
-C1	DATA PI/3.1415926/,TT/.6666666667/	! pi, 2/3
-C1	DATA EXPMAX,VLARGE/46.05,1.0E20/	! large exponent & real number
 C1	REAL vv(2,2),BB(2)	! matrix and right-hand side
 C1	INTEGER*4 INDX(2)		! used by ludcmp
 	REAL*8 PI/3.141592653589793D0/	! pi
@@ -60,8 +59,8 @@ C1	INTEGER*4 INDX(2)		! used by ludcmp
 	REAL*8 TWO   /2.D0/
 	REAL*8 THREE /3.D0/
 	REAL*8 FOUR  /4.D0/
-	REAL*8 VLARGE/1.0D200/	! large real number & max exponent
-	REAL*8 EXPMAX /460.51D0/ !   & max exponent
+C	REAL*8 VLARGE/1.0D200/	! large real number
+	REAL*8 EXPMAX /460.51D0/ ! maximum exponent
 	REAL*8 GMAX /0.999D0/	! maximum magnitude of G
 	REAL*8 EPSILON /1.D-8/	! limit for 1-omega
 

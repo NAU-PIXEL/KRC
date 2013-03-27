@@ -13,19 +13,20 @@ C   equations 49 & 50 on page 3382.
 C Input angles should be no greater than 90. degrees, this routine does
 C   not check them.
 C_Hist	86jul03  HHKieffer; revision of earlier  CFSOLAR.
-C	87sep13  HHK incorporate the 1/pi term in this routine.
-C     2010jan11 HK convert to implicit none
+C 1987sep13  HK incorporate the 1/pi term in this routine.
+C 2010jan11  HK convert to implicit none
+C 2012feb26  HK Remove unused variables
 C_End
 	REAL PI/3.1415926/
-        REAL R2D /57.29578/     ! degrees in one radian
+C        REAL R2D /57.29578/     ! degrees in one radian
         REAL D2R /1.7453293E-2/ ! radians pre degree
         REAL sdecr            ! solar declination in radians
         REAL xlatr            ! surface latitude, radians
         REAL eta              ! length of half-day, in radians
         REAL result
 
-           sdecr=d2r*sdec
-           xlatr=d2r*xlat
+        SDECR=D2R*SDEC
+        XLATR=D2R*XLAT
 	IF (ABS(XLAT).LT.(90.-ABS(SDEC))) THEN
 	  ETA=ACOS(-TAN(SDECr)*TAN(XLATr))	! day and night
 	  RESULT = ( ETA*SIN(SDECr)*SIN(XLATr) +

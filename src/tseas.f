@@ -5,8 +5,8 @@ C_Vars
 	INCLUDE 'latcom.inc'
 	INCLUDE 'hatcom.inc'
 	INCLUDE 'units.inc'
-        REAL  PCOM1(22),SLP,P24,PHOXX(3),PCOM2(33)
-	COMMON /PORBCM/ PCOM1,SLP,P24,PHOXX,PCOM2 ! only SLP, PHOXX used
+        REAL  PCOM1(22),SLP,BLIP,PHOXX(3),PCOM2(33)
+	COMMON /PORBCM/ PCOM1,SLP,BLIP,PHOXX,PCOM2 ! only SLP, PHOXX used
 
 C_Args
 	INTEGER IQ ! in. 1 = start from scratch
@@ -23,19 +23,24 @@ C 2008oct22 HK Used IDOWN as season to make changes
 C 2009mar05 HK Minor cleanup
 C 2009apr22 HK Add call to TYEAR
 C 2010jan12 HK Use IMPLICIT NONE, move TINT call from TLATS to TSEAS
-C 2011aug07 HK Change test to call PORB from N5.GT.0	
+C 2011aug07 HK Change test to call PORB from N5.GT.0
+C 2012mar02 HK Add atmosphere flag, remove unused labels
+C 2012mar27  HK	 Test on KVTAU changed from .GE.0 to EQ.1
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
 
 C 
-	INTEGER IRL,ITIM0,ITIM,KREC
+	INTEGER I,J,IRL,ITIM0,ITIM,KREC
 	REAL*4 PEA,PEB,HFA,HFB,TANOM ! related to PORB
 
 	INTEGER TIME	! system function, time in seconds since 1970
 	REAL SEASALB,SEASTAU	! functions called
 	REAL BUF(MAXN4)	! fractional surface area in each latitude zone
+	REAL*4 QLOST
 	DATA BUF(1) /0./
+	LOGICAL LATM
 
- 991	IF (IDB1.NE.0) WRITE(IOSP,*)'MSEASa',IQ,IR,J5,LSC,N5,LONE
+	LATM=PTOTAL.GT.1.		! atmosphere present flag
+ 	IF (IDB1.NE.0) WRITE(IOSP,*)'MSEASa',IQ,IR,J5,LSC,N5,LONE
 
 	IF (IQ .EQ. 1) THEN 	! if start of a model
 C	   IF (IQ .EQ. 1) then ! ryped
@@ -72,7 +77,7 @@ CC      SUBS=ANG360 ((TANOM+SLP)*RADC)
 	ENDIF
 C
 	IF (KVALB .GT. 0) ALB=SEASALB(SUBS) ! variable soil albedo
-	IF (KVTAU .GT. 0) TAUD=SEASTAU(SUBS) ! variable atm. opacity
+	IF (KVTAU .EQ. 1) TAUD=SEASTAU(SUBS) ! variable atm. opacity
 D	write (*,*)'TSEAS: ',J5,N5,LOPN2,IDOWN,SUBS ! ,KVALB,alb
 C======
 
@@ -80,9 +85,24 @@ C======
 
 C======
 
-	IF (N4.GT.8) CALL TINT (FROST4, BUF, SUMF) !  MKS units  BUF = normalized area 
+	IF (N4.GT.8 .AND. LATM) CALL TINT (FROST4, BUF, SUMF) !  MKS units  BUF = normalized area 
 	IF (LP5) CALL TPRINT (5)	! print latitude summary
 	IF (LP6) CALL TPRINT (6)	!  & min and max layer temperature
+
+DCC temporary check on lost energy 2012may10
+DC	QLOST= 0.
+DC	DO I=1,N4
+DC	   IF (TTX4(I).GT.QLOST) THEN
+DC	      QLOST=TTX4(I)
+DC	      J=I		! location of max
+DC	   ENDIF
+DC	ENDDO
+DC	IF (QLOST.GT.0) THEN
+DC	   WRITE(*,*)'J5,J,QLOST=',J5,J,QLOST
+DC 377	   FORMAT(I3,37F9.3)
+DC	   WRITE(77,377) J5,TTX4
+DC	   WRITE(77,377) IFIX(SUBS),FROST4
+DC	ENDIF
 
 C	CALL TYEARP (1,IRY) ! store midnight T for all layers and latitudes
 C	IF (IRY.LT.0) WRITE(IOERR,*)'TYEARP error return=',IRY

@@ -32,10 +32,11 @@ C 2008nov13 HK Add input card for T-dependent conductivity
 C 2009feb24 HK Briefly try using titcom.inc and block data for parameter titles
 C               but prints left-adjusted, not useful for aligning input.
 C 2009may10 HK add TITONE as one-point comment field
+C 2012feb26 HK Remove unused variables
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
 
 C
-        INTEGER I,I1,I2,J,J3P1,K,IQ
+        INTEGER I,J,J3P1,K,IQ
         INTEGER IPG /0/
         REAL Q2,Q4,Q6,TOUTO
 
@@ -90,6 +91,7 @@ C
      &/        '0  LPORB   LKEY    LSC LNOTIF  LOCAL'
      &,         '   LD16 LPTAVE  Prt78  Prt79  L_ONE'/1X,10L7)
 
+D	  print *, 'TPRINT: N4,MAXN4=',n4,MAXN4
         WRITE (IOSP,230) 'Latitudes: ',(ALAT(I),I=1,N4)
         WRITE (IOSP,230) 'Elevations:',(ELEV(I),I=1,N4)
  230    FORMAT (/1X,A/(1X,10F7.2))
@@ -196,7 +198,7 @@ C print page heading  (IQ =8)  & for 2,3,5,6
 C
 800     IPG=IPG+1
         WRITE(IOSP,810) TITLE,NRUN,NCASE,DAYTIM,IPG
-810     FORMAT ('1',20A4,' RUN-CASE',I4,'-',I2
+810     FORMAT ('1',20A4,' RUN-CASE',I3,'-',I2
      &,3X,5A4,'  PAGE=',I3)
         GOTO (100,200,850,250,850,850,99,99,99) ,IQ
 C              1   2   3   4   5   6   7  8  9
@@ -208,7 +210,6 @@ C
      &,'       DAU       L_S JULIAN DAY    J5   two from KRCCOM'
      &/1X,3F10.4,F10.2, F10.5,2F10.2,I7,2X,2G10.4)
         GO TO (99,99,300,99,500,600,99,99,99) ,IQ
-
 C
 C Print one line of "one-point" results
 C

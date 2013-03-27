@@ -1,7 +1,8 @@
+%\title{KRC Helplist-i}
 \begin{verbatim}
 
  		KRC: PLANETARY SURFACE TEMPERATURES
-			HELPLIST.TXT  2011Aug08
+			HELPLIST.TXT  2012nov07
         Hugh Kieffer. Original code ~1969, many revisions.
 
 Major changes:
@@ -12,15 +13,17 @@ temperature based on solar and IR energy balance.
 2008nov-2009feb Add capability for temperature-dependant thermal conductivity
 and 2010feb temperature-dependant specific heat and revision of KRCCOM.
 
-The evolution of KRC code is contained in  evolve.txt.
+2011aug Create separate version for generation of thermal movies
 
-A crude diagram of the call architecture is in  flow.txt
+2012mar Include logical switches to allow having no atmosphere
+
+The evolution of KRC code is contained in:  evolve.txt.
+
+A crude diagram of the call architecture is in:  flow.txt
 
 ================================================================================
 
 				METHOD
-
-See the LaTeX document for a more detailed description: tes/krc/jpap.tex
 
 Program is designed to compute surface and subsurface temperatures for a global
 set of latitudes at a full set of seasons, with enough depth to capture the
@@ -94,12 +97,13 @@ be left blank or contain the end of the line. The 13 lines following Elevations
 are a geometry matrix for Mars orientation and orbit in 2005, and should not be
 touched; they can be replaced by running PORBMN carefully.
 
-The titles lines are skipped, so that you may put comments there carefully
+The title lines are skipped, so that you may put comments there carefully
 
 The first input line is always KOLD,KEEP (I*), which sets file usage.
   These are described near the end of this help file under  DISK BINARY FILES.
   If and only if there is a third non-zero integer, then will read next card as
-  6 debug flags, IDB1 to IBD6, which are normally zero
+  6 debug flags, IDB1 to IBD6, which are normally zero. 
+  See Section DEBUG OPTIONS below
 The next (normally second) line is free text where you can outline the purpose 
 of your run. 
  If KOLD=0, then a full set of input values is read. 
@@ -126,11 +130,11 @@ Type 1	Real parameters 	(8F10.2)	================================
 8	DENS	Surface density [kg/m^3] {g/cubic cm. *10}
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
    Atmospheric Properties
-9	CABR	Atmospheric infrared back radiation coefficient
-                2002jul16 IR opacity of dust-free atmosphere
+9	CABR	IR opacity of dust-free atmosphere of PTOTAL surface pressure
 10	AMW	Molecular weight of the atmosphere
 11	[ABRPHA	UNUSED [Phase of ABRAMP, degrees relative to midnight] 
 12	PTOTAL	Global annual mean surface pressure at 0 elev., Pascal[=.01mb]
+                If KPREF=2, global average of atmosphere plus cap system.
 13	FANON	Mass-fraction of mean atmosphere that is non-condensing
 14	TATM	Atm temp for scale-height calculations
 -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   
@@ -212,8 +216,8 @@ COMPUTED REAL*4 VALUE
   65    HUGE = 3.3E38	 nearly largest  REAL*4 value
   66    TINY = 2.0E-38	 nearly smallest REAL*4 value
   67    EXPMIN = 86.80	 neg exponent that would almost cause underflow
-  68    fd60(2) Spare
-  69    
+  68    FSPARE  Spare
+  69    FLOST   Atm frost 'lost' in the atm. in last day at current lat./season
   70    RGAS = 8.3145	 ideal gas constant  (MKS=J/mol/K)
   71    TATMIN  Atmosphere saturation temperature
   72    PRES    Local surface pressure at current season
@@ -238,9 +242,9 @@ COMPUTED REAL*4 VALUE
   91	COND 	Top material Thermal conductivity (for printout only)
   92	DIFFU	Top material Thermal diffusivity (for printout only)
   93	SCALE	Top material Diurnal skin depth (for printout only)
-  94	PI	pi
+  94	PIVAL	pi
   95	SIGSB	Stephan-Boltzman constant (set in KRC)
-  96	RAD	Degrees/radian
+  96	RADC	Degrees/radian
 
 Type 2	Integer Parameters	(8I10) ====================================
 
@@ -259,7 +263,7 @@ Type 2	Integer Parameters	(8I10) ====================================
 8	IC	First layer (remember that 1 is air) of changed properties. 
 		  if 3 to N1-2.   > N1-2 (e.g., 999) =homogeneous
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-9	NRSET	# days before reset of lower layers;  >N3=no reset
+9	NRSET	# days before reset of lower layers first season;  >N3=no reset
 10	NMHA	# 'hour angles' per day for printout (no limit)
 11	NRUN	Run #; appears in some printout
 12	JDISK	Season count that disk output is to begin. 0=none
@@ -267,9 +271,9 @@ Type 2	Integer Parameters	(8I10) ====================================
 14	I14	Index in FD of flexible print
 15	I15	 ""
 16	KPREF	Mean global pressure control. 0=constant
-		1= follows Viking Lander curve  2=reduced by global frost, but
-                then N4 must be >8, and latitudes must be monotonic increasing
-                and must include both polar regions (no warning for your failure)
+	      1= follows Viking Lander curve  2=reduced by global frost, but
+              then N4 must be >8, and latitudes must be monotonic increasing
+              and must include both polar regions (no warning for your failure)
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 17	K4OUT	Disk output control: See details in DISK BINARY FILES section
 		Three modes of direct access Fortran files;  one case per file.
@@ -289,7 +293,9 @@ Type 2	Integer Parameters	(8I10) ====================================
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 COMPUTED I*4 VALUES
   21	KOLD    Season index for reading starting conditions
-  22    id22(6)	22 and 23 used as flags for season-variable ALB and TAUD
+  22    KVALB   Flag: to use seasonal surface albedo ALB
+  23    KVTAU   Flag: 1:TAUD=SEASTAU(SUBS)  2:CLIMTAU opacities for dust and ice
+  24    ID24(4) spare
   28	NFD	Number of real items read in
   39	NID	Number of integer items read in
   30	NLD	Number of logical items read in
@@ -348,7 +354,7 @@ editor. see PORBCM.INC
                        PARAMETER CHANGES 
 
 Fortran List Directed.  Change the values in KRCCOM	
- White-separated, a "/" terminates the read and leaves remaining values unchanged
+White-separated, a "/" terminates the read and leaves remaining values unchanged
  The 4 items are: Integer Integer Numeric_value 'Text' / Comment
     1: Type (integer) see table below
     2: Index in array (integer), as listed in table above
@@ -371,8 +377,9 @@ what you intended.
    6   New Orbital Parm Cards Follow (LPORB Must be True)  any
    7   Text becomes new Title                              any
    8   Text becomes new disk or season-variation file name
-         if index=22, read variable ALBEDO
-         if index=23, read variable TAUD
+         if index=22, call SEASALB to read variable ALBEDO
+         if index=23, call SEASTAU to read variable TAUD
+	 if index=24, call CLIMTAU to read Mars climate
    9   Complete new set of input follows                   any
   10   Text becomes new One-Point input file name
   11   This is a set of parameters for "one-point" model 
@@ -380,7 +387,7 @@ what you intended.
   12   Set of 2*4 coefficents for T-dep. conductivity.  List-directed IO
   13   Set of 2*4 coefficents for T-dep. specific heat. List-directed IO 
 For 12 and 13, 8 white-space-separated coefficients must follow after 
-the type on the same line, with no interveening index or text 
+the type on the same line, with no intervening index or text 
 
 To start variable albedo, use input card: 
   8 22 0 'AlbedoFileName' / Variable albedo text file name
@@ -390,6 +397,7 @@ Files of text table of value versus season will be read at the start of a
 run. These will apply to ALL latitudes. See example  valb1.tab
  
 Variable Tau done the same way, with 22 being replaced with 23
+CLIMTAU files have dust and ice opacity over season and latitude.
 
                 COMMON /LATCOM/  see latcom.inc
                 COMMON /DAYCOM/  see daycom.inc
@@ -416,8 +424,9 @@ TDAY: LRESET   Reset midnight T's for all but top layer.
 The first "hour" in printout and output arrays is 1/24 (strictly, 1/N24) of a
 sol after midnight. E.g., the last time is midnight, not the first.
 
-Atmospheric scale height, SCALEH, depends upon physical constants and 
-  TATMAVE which (2007nov) is always = TATM, input.  and GRAV , input
+Atmospheric scale height, SCALEH, depends upon physical constants GRAV [input] 
+and TATMAVE which (2007nov) is TATM [input] for the first season and 
+thereafter the diurnal average of the prior season.
 
         ----- DISK BINARY FILES ----------
 
@@ -586,9 +595,9 @@ heat
  
 One way to generate the coefficients is to run for each of the upper and lower
 materials the IDL procedure KOFTOP, which can call all of the
-temperture-dependant routines. KOFTOP allows change of its parameters, including
-grain radius and pressure, and will print the required parameters ready for
-input to KRC.
+temperature-dependant routines. KOFTOP allows change of its parameters,
+including grain radius and pressure, and will print the required parameters
+ready for input to KRC.
 
 Below are sample coefficients for thermal conductivity based on Sylvain
 Piqueux's numerical model for un-cemented soils; the fit error is <0.1% over
@@ -658,15 +667,13 @@ of making the Makefile more universal are welcome.
 
 To run the program, change to the directory where the program was built, and
 enter "krc". You should get a prompt:
-       ?* Input file name or / for default =
-       Mone.inp                         
+       ?* Input file name or / for default = Mone.inp 
 If the initialization file still has this name and is in the same directory,
 enter a single "/" and <CR>. Otherwise, enter the full pathname to the 
 initialization file, with no quotes and no blanks.
 
 A second prompt is for the name of the output file: 
-       ?* Print file name or / for default =
-       krc.prt     
+       ?* Print file name or / for default = krc.prt
 Again, if this is satisfactory, simply enter  / <CR> , else enter the desired
 file path-name.
 
@@ -682,21 +689,37 @@ The underlying model is the full version of KRC. By modifying the initialization
 file, you can compute almost anything you might want. If you choose to try this,
 best to read all of this document.
 
---------------------------------------------------------------------------------
-Debug options
+------------------------------ DEBUG OPTIONS ----------------------------------
+tcard.f:75:     IF (IDB2.GE.5) WRITE(IOSP,*) 'TCARD-A',IQ
+tcard.f:123:    IF (IDB1.GE.1) PRINT *,'Before PORB0'
+tcard.f:125:    IF (IDB1.GE.1) PRINT *,'AFTER PORB0'
+tcard.f:349:    IF (IDB1.NE.0) WRITE(IOSP,*)'TCARD Exit: IRET=',IRET,NFD,ID(1) 
+tday.f:63:      IF (IDB2.GE.5) WRITE(IOSP,*) 'TDAY IQ,J4=',IQ,J4,jjo
+tday.f:544: 9   IF (IDB2.GE.6) WRITE(IOSP,*) 'TDAYx'
+tdisk.f:90:     IF (IDB3.NE.0) WRITE(IOSP,*)'TDISKa ',KODE,KREC,NCASE,J5,K4OUT
+tdisk.f:424:       IF (IDB3.GE.3) WRITE(IOSP,*)'TDISKc  KREC=',KREC,LOPN2,IOD2,I
+tdisk.f:431:    IF (IDB3.GE.3) WRITE(IOSP,*)'TDISKx  KREC=',KREC
+tlats.f:53:     LQ1=IDB2.GE.3           ! once per season or latitude
+tlats.f:54:     LQ2=IDB2.GE.6           ! each day
+tlats.f:55:     IF (IDB2.NE.0) WRITE(IOSP,*)'TLATSa',N3,N4,J5,LATM,LQ1,LQ2
+tlats.f:422: 9      IF (IDB2.GE.3) WRITE(IOSP,*)'TLATSx',N1,N1PIB,N2,N24,J3
+tseas.f:41:     IF (IDB1.NE.0) WRITE(IOSP,*)'MSEASa',IQ,IR,J5,LSC,N5,LONE
+in tlats.f:
+115:    IF (LQ1) PRINT *,'TLAT1 J5,TBLOW=',J5,TBLOW
+185:    IF (LQ1) print *,'TLATS: J4,SOLR...',J4,SOLR,ACOSLIM,COSIAM(1)
+255:       IF (LQ2) WRITE(IOSP,*),'TLatc',JJ,COSI,COS3,DIRECT,DIFFUSE 
+293:    IF (LQ1) then 
+           PRINT *,'AVEA ...',AVEA,AVEE,AVEI,AVEH
+           PRINT *,'CABR...',CABR,TAUD,TAUIR,FACTOR,TAUEFF
+           PRINT *,'BETA...',BETA,QS,SIGSB 
+           PRINT *,'TAEQ4,TSEQ4,TEQUIL',TAEQ4,TSEQ4,TEQUIL
+308:       IF (LQ1) PRINT *,'TSUR,TBOT',TEQUIL,TSUR,TBOT
+309:       IF (LQ1) PRINT *,'XCEN',XCEN 
+331:    IF (LQ1) PRINT *,'TTJ',TTJ
 
-tcard.f:335:    IF (IDB1.NE.0) WRITE(IOSP,*)'TCARD Exit: IRET=',IRET,NFD,ID(1)
-tday.f:56: 991  IF (IDB2.GE.5) WRITE(IOSP,*) 'TDAY IQ,J4=',IQ,J4,jjo
-tday.f:358:C 993          IF (J.EQ.IDB4) THEN
-tday.f:490: 9   IF (IDB2.GE.6) WRITE(IOSP,*) 'TDAYx'
-tdisk.f:93: 991 IF (IDB3.NE.0) WRITE(IOSP,*)'TDISKa ',KODE,KREC,NCASE,J5,K4OUT
-tdisk.f:425:       IF (IDB3.GE.3) WRITE(IOSP,*)'TDISKc  KREC=',KREC,LOPN2,IOD2,I
-tdisk.f:432:    IF (IDB3.GE.3) WRITE(IOSP,*)'TDISKx  KREC=',KREC
-tlats.f:44:     IF (IDB2.NE.0) WRITE(IOSP,*)'TLATSa',N1,N1PIB,N2,N24,J5
-tlats.f:369: 9  IF (IDB2.GE.3) WRITE(IOSP,*)'TLATSx',N1,N1PIB,N2,N24,J3
-tseas.f:37: 991 IF (IDB1.NE.0) WRITE(IOSP,*)'MSEASa',IQ,IR,J5,LSC,N5,LONE
-seastau.f:35:         IF (IDB5.NE.0) THEN  print table read
-seastau.f:51:          IF (IDB5.GT.1) WRITE(IOSP,*)'SEASTAU',LSUB,OUT
+Set LD18 or 19 to write bottom-of-atmosphere downgoing fluxes to separate files
+every time tlats is called.
+ 
 --------------------------------------------------------------------------------
 Reading type 5x files
 
@@ -707,13 +730,14 @@ Calls: None == None other than IDL library
 Firm code of common definitions. Must be recoded if a Fortran *.inc changes
 
 READKRCCOM  Read a KRCCOM structure from a bin5 file
-uses 3-element HOLD array. Returns a structure of krccom
+Uses 3-element HOLD array. Returns a structure of krccom
 Options to open or close bin5 file or read one case 
 Calls: DEFINEKRC
 Files: bin5
 HOLD is: 0]=logical unit  1]=number of words in a case  2]=# cases in the file 
 
-MAKEKRCVAL Make string of selected KRC inputs: Key=val
+MAKEKRCVAL 
+Make string of selected KRC inputs: Key=val
 Calls: DEFINEKRC
 
 KRCHANGE  Find changes in KRC input values in common KRCCOM
@@ -833,8 +857,6 @@ TSEAS uses a few items to calculate LsubS;
 TYEAR uses the value for length of year.
 
 
-
-
 >> Lower boundary condition and resetting (jumping) layer temperatures.
 At the start of a case, TLATS sets the temperature profile linear with depth
 in one of three ways:
@@ -847,17 +869,30 @@ else N1PIB=N1.  T(N1+1) is not reset in the time calculations. In TDAY, for each
 time step, the temperature of the lower boundary is set equal to T(N1PIB), which
 results in either zero heat flow (IB=0) or a constant temperature.
 
->> Seasonal variation of albedo or opacity
+>> Seasonal variation of albedo or opacity or ``climate''
 
 When TCARD encounters a type of 8 and an index of 23(tau) [or 22(albedo)], it
 transfers the text item into FVTAU (which is in COMMON /FILCOM/) and then calls
 SEASTAU with an Ls of -999 .  SEASTAU when called with LSUB LT -90 calls
 (providing IOD3) READTXT360, which reads file. Maximum number of rows is 360,
-more will be ignored. first and last entry read are wrapped with +,- 360 to Ls
-to ensure no interpolation faults later. TCARD set the varaible Tau flag, KVTAU,
+more will be ignored. First and last entry read are wrapped with +,- 360 to Ls
+to ensure no interpolation faults later. TCARD sets the variable Tau flag, KVTAU,
 true if table-read was successful, else it is set false.
+If KVTAU is set, TSEAS calls SEASTAU at start of each season, resetting TAUD. 
 
-If KVTAU is set, TSEAS calls SEASTAU at start of each season, resetting TAUD.
+If type 8 and index 23, the same as above except names are -ALB rather than -TAU
+
+If type 8 and index 24, then TCARD calls CLIMTAU to open and read a .bin5 
+climate file, and sets KVTAU=2
+
+CLIMTAU expects to read a .bin5 file (season,latitude,2) with dust and ice
+infrared opacities; this file is normally made by the IDL routine mopacity.pro .
+Season is assumed to the uniform in Ls from 0 to 360-delta and latitude assumes
+to be uniform from -90+delta/2 to +90-delta/2. CLIMTAU has firm-coded sizes, 72
+seasons and 36 latitudes, and stores the file. Upon later calls from TLATS, it
+returns the two opacities at a requested Ls and latitude, using bi-linear
+interpolation.
+
 
 >> Cap-dependent pressure
 TSEAS:   BUF(1)=0.       ! flag for  TINT to compute areas
@@ -866,7 +901,6 @@ IF (N4.GT.8) CALL TINT (FROST4, BUF, SUMF)
 Tlats
         IF (N4.GT.8) THEN       ! use global integrations
           PCAP = SUMF*GRAV      ! cap_frost equivalent surface pressure
-
 
  KPREF.EQ.2
  PZREF = PTOTAL - PCAP

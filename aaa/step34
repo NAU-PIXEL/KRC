@@ -1,0 +1,42 @@
+###################################
+# Script and comments for add-on items for KRC distribtuion
+# Run after step 3 and before step 4
+# FOr new distribution, transfer all links out of this file to step3
+# 2011oct18 HK  emptied 2013jan25
+###################################
+
+set FAM='/home/hkieffer/krc'    # family to be distributed
+set RT1='/work2/'		# one level above distribution constuction area
+set RT2='Dist'			# distribution construction area
+set NAME='KRC' 			# name for this distribution
+set SKEL='distJan21.tar'        # <<<<< EDIT  last part of tar file name 
+set DIRB='addon'
+
+
+# use names relative to location when doing the tar
+
+set RTOP=$RT1$RT2		# Top of the distribution tree
+set IN=$RT1$RT2/$DIRB		# construction area
+set OUT=$RT1$NAME$SKEL 		# output tar file
+
+echo "RTOP="$RTOP
+echo "IN="$IN
+echo "OUT="$OUT
+
+cd $RTOP
+mkdir $DIRB
+
+cd $DIRB
+# vvvvvvvvv  files to be added
+# to go in /doc
+
+# to go to /run
+
+#to go to /run/output
+
+#^^^^^^^^^^ files to be added
+
+echo "Done copy to "$DIRB
+
+cd $RT1
+tar cvfh  $OUT $IN		 # tar following all links

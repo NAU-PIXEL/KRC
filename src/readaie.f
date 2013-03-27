@@ -9,7 +9,7 @@ C_Titl  READAIE Read line-interleaved file of albedo,inertia and elevation
       REAL VVV(*)               !out. Elevation in km
       INTEGER IER ! out error code  In as logical unit number when IK <=0
 
-      INTEGER NLIN,NSAM,NPAR,MKEEP,HEADW
+      INTEGER NLIN,NSAM,NPAR,MKEEP ! ,HEADW
       PARAMETER(NSAM=2880,NLIN=1440,NPAR=3,MKEEP=80) ! Max DIMENSIONS IN FILE
 c      PARAMETER(HEADW=512/4)
 c      INTEGER*4 HEAD(HEADW)     ! 512-byte header
@@ -23,7 +23,7 @@ c      real TRI4(1440,720,3)        ! one PANE in 4ppd map
 c      real  iii(1440,3,720)        ! from maprebin.pro
       real PANE(NSAM,NLIN)        ! one PANE in input map
       real TRIP(2880,MKEEP,3)        ! strip storage
-      real STRIP(NSAM,NPAR) ! one row of all parame
+C      real STRIP(NSAM,NPAR) ! one row of all parame
 C      EQUIVALENCE (III,HEAD)
 c      EQUIVALENCE (III,TRI4,TRIP)
 c      EQUIVALENCE (PAN4,PANE,STRIP)
@@ -32,8 +32,7 @@ c      EQUIVALENCE (PAN4,PANE,STRIP)
      + ,'request outside stored range'/
 c      character*4 sss(3) /'Alb','Ti','Topo'/
       character*40 buf,guf
-      INTEGER I,J,k,M  ! generic and return codes
-      integer iret,jjj(10)          ! for binf5
+      INTEGER I,J,k,M           ! generic and return codes
       INTEGER IOD,KEEP,K0,iocheck
       SAVE TRIP,K0,KEEP
 c      LOGICAL DOB /.false./ ! .true./ !
@@ -51,6 +50,7 @@ C  When  IK 1 or more, extracts that relative line from the saved array,
 C unscales it into  AAA,RRR,VVV
 
 C_Hist 2011aug15:19  Hugh  Kieffer  To read map input file for  MKRC
+C 2012feb26  HK  Remove unused variables
 C_End
 
       I=IER                     ! may be logical unit to use

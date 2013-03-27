@@ -1,5 +1,5 @@
 	REAL FUNCTION FINTERP (XIN,XX,N,YY)
-C_Titl  RNDEX  Floating-point interpolation of Y for monotonic X
+C_Titl  FINTERP  Floating-point interpolation of Y for monotonic X
 	IMPLICIT  NONE
 C Function will be Y at X limits if  XIN  not within  XX limits
 C_Args

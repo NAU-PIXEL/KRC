@@ -8,10 +8,11 @@ C_Titl  EVMONO3  Evaluate monomial of 3rd degree for a vector input, with scalin
       REAL XMUL               ! in.  Multiply factor for offset  XX
       REAL YY(M)              ! out. Dependant values
 C_Hist 2008nov04  Hugh  Kieffer: for thermal conductivity
-C    2010jan09 HK  Replace do loop for powers with explicit code 
+C 2010jan09 HK  Replace do loop for powers with explicit code 
+C 2012feb26 HK  Remove unused variables
 C_End
-      INTEGER I,J
-      REAL S,X
+      INTEGER J
+      REAL X
 
       DO J=1,M                  ! each input value
          X=(XX(J)-XOFF)*XMUL

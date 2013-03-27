@@ -1,0 +1,53 @@
+C1 Format follows Sturms. List-directed I/O. 0's must be explicit
+
+'MERCURY' / 1 Planet name
+0.3870986 / Semi-major axis in A.U.
+0.2056244325 2.043E-5 3.0E-8 / Eccentricity
+318.527027 4.0923344366 6.6667E-6 / Mean anomoly
+7.00381 -.00597 1.E-6 / Inclination of mean orbit to ecliptic
+47.73859 -0.12559 -9.E-5 / Longitude of the node
+28.93892 .28439 7.E-5 / Argument of perihelion
+280.86554 -3.289E-2 -1.E-5 / Right Ascension of Pole
+61.39767 -4.71E-3 1.E-5 / Declination of Pole
+37.95923 -9.577E-2 8.E-5 / node to autumal equinox
+0.  0 0 / Obliquity
+343.54720 6.136 0 / Prime meridian
+
+'MARS' / 2 Planet name
+1.5236915 / Semi-major axis in A.U.
+.09335891275 9.1987E-5 -7.7E-8 / Eccentricity
+169.458720 .5240207716 1.825972E-4 1.1944E-6 / Mean anomoly, T^3 term ignored
+1.85000 -8.21E-3 -2.E-5 / Inclination of mean orbit to ecliptic
+49.17193 -0.29470 -6.5E-4 / Longitude of the node
+285.96668 .73907 4.7E-4 / Argument of perihelion
+316.8538 -.0996 0. / Right Ascension of Pole
+53.0066 -.0566 0. / Declination of Pole
+43.34526 -.09181 -1.E-4 / node to autumal equinox
+24.76883 0.01220 6.E-5 / Obliquity
+148.672501 350.891962 0 / Prime meridian
+
+'Halley' / 3 Planet name
+17.935906 / Semi-Major axis in A.U.
+0.967267 0 0 / Eccentricity
+0.0 0 0 / Mean anomoly
+162.2378 0 0 / Inclination of mean orbit to ecliptic
+58.1531 0 0 / Longitude of the node
+111.8534 0 0 / Argument of perihelion
+41.74286 0 0 / Right Ascension of Pole
+-69.67708 0 0 / Declination of Pole
+0. 0 0 / node to autumal equinox
+0 0 0 / Obliquity
+0 90. / Prime meridian
+				/ first of 13 lines in a set is blank
+'OBJECT_NAME' / 4 Planet name
+A.U. / Semi-Major axis in A.U.
+C0 C1 C2 / Eccentricity
+DEG0 DEG_per_day DEG2 / Mean anomoly
+DEG DEG1 DEG2 / Inclination of mean orbit to ecliptic
+DEG DEG1 DEG2 / Longitude of the node on ecliptic
+DEG DEG1 DEG2 / Argument of perihelion
+DEG DEG1 DEG2 / Right Ascension of Pole
+DEG DEG1 DEG2 / Declination of Pole
+DEG DEG1 DEG2 / node to autumal equinox
+DEG DEG1 DEG2 / Obliquity
+DEG DEG_per_day / Prime meridian

@@ -9,23 +9,25 @@ C_Args
 	INTEGER IQ !in. 1=initialization   2=day computations
 	INTEGER IRET !out. 1=normal return  2=numerical blowup
 C_Hist	97feb11  Hugh_Kieffer  USGS_Flagstaff major revision
-C 98sep04  HHK move setting  N1PIB to  TCARD, minor code cleanup
-C 00jan22  HHK Adjust layer thickness if required for stability and
+C 1998sep04  HK  move setting  N1PIB to  TCARD, minor code cleanup
+C 2000jan22  HK  Adjust layer thickness if required for stability and
 C       redefine convergance factor to be square of earlier code.
-C 02jul12 HK Revise atmosphere.
-C 04jul07 HK Change  MIN (FROEXT,0.1) to MAX (FROEXT,0.01)
-C 2004sep30 HK Allow output of surface fluxes every hour
-C 2008sep21 HK Allow for Snow formation in cold atm and fall to surface
-C 2008nov07-2008feb14 HK Incorporate temperature-dependent conductivity
-C 2010jan09 HK Fix so FAC7 conforms to temperature-dependent conductivity
-C 2010jan12 HK Use IMPLICIT NONE
-C 2010feb16 HK Incorporate temperature-dependent specific heat
-C 2010sep04 HK Remove the 0.9 pad on  N3 limit of deljul/period
-C 2011jul16 HK Remove one unused statement   I=MIN0(KN+1,IC-1)
+C 2002jul12  HK  Revise atmosphere.
+C 2004jul07  HK  Change  MIN (FROEXT,0.1) to MAX (FROEXT,0.01)
+C 2004sep30  HK  Allow output of surface fluxes every hour
+C 2008sep21  HK  Allow for Snow formation in cold atm and fall to surface
+C 2008nov07-2008feb14  HK  Incorporate temperature-dependent conductivity
+C 2010jan09  HK  Fix so FAC7 conforms to temperature-dependent conductivity
+C 2010jan12  HK  Use IMPLICIT NONE
+C 2010feb16  HK  Incorporate temperature-dependent specific heat  !kt
+C 2010sep04  HK  Remove the 0.9 pad on  N3 limit of deljul/period
+C 2011jul16  HK  Remove one unused statement   I=MIN0(KN+1,IC-1)
+C 2012feb26  HK  Remove unused variables
+C 2012feb29  HK  Add test for NAN's  UNSUCCESSFUL
+C 2012mar01  HK  Include logical switches for atmosphere. 
+C 2012apr24  HK  Tiny cleanup  May10: add FLOST calculation
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
-C  QQ is used in several places as temporary value
-
-
+C
 C new variables for k(T)
 	REAL FBI(MAXN1),FCI(MAXN1),FKI(MAXN1) !kt layer factors
 	REAL KTT(MAXN1P)	!kt thermal conductivity of each layer
@@ -33,37 +35,44 @@ C new variables for k(T)
 	REAL FBK,FBKL,FA1J,FA3J !kt temporary factors
 	LOGICAL LKOW ! true if there are lower layers of different properties
 	INTEGER IK2,IK3,IK4 ! layer indices for kofT
-	EQUIVALENCE (ASOL,QK),(TOUT,QR,TAVE) ! allow temporary shared space
 	REAL TOFF/220./		!kt TEMPERATURE SCALING
 	REAL TMUL/0.01/		!kt TEMPERATURE SCALING
 
 	REAL FA1(MAXN1), FA2(MAXN1), FA3(MAXN1),DTJ(MAXN1) ! each max # layers
-	REAL KJ(MAXN2)		! bottom layer for calculations at each time step
+	REAL KJ(MAXN2)	 ! bottom layer for calculations at each time step
         REAL QK(MAXN1P),QR(MAXN1P),TAVE(MAXN1),DIFFI(MAXN1)
-        EQUIVALENCE (ASOL,QK),(TOUT,QR,TAVE) ! allow temporary shared space
-
+C allow temporary shared space
+        EQUIVALENCE (ASOL,QK)      ! QK used only during initialization
+        EQUIVALENCE (TOUT,QR,TAVE) ! QR used only during initialization
+               ! TOUT used only on last day 
+               ! TAVE used only when LRSET True, which is never the last day
+C
         INTEGER I,II,IH,IP,J,JJ,JJH,JJJ,JJP,JRSET,J3P1,K,KN,KM,KM1
      &, N1P1,N1PBM1
-
-        REAL A,ABRAD,ADEL,ADELN,AH,AP,ATMRAD,B,CPOG,DELT,DFROST,DTAFAC
+C
+        REAL ABRAD,ADEL,ADELN,AH,AP,ATMRAD,CPOG,DELT,DFROST,DTAFAC
      &,DTIM,DTIMI,DTM,EMTIR,FAC3,FAC4,FAC45,FAC5,FAC6,FAC6F,FAC7,FAC8
-     &,FAC82,FAC9,FEMIT,FROEX,HEAT,HEATFM,OMBETA,PERSEC,POWER,QQ,SAFE2
+     &,FAC82,FAC9,FEMIT,FROEX,HEAT,HEATFM,PERSEC,POWER,SAFE2
      &,SHEATF,SNOW,TATM4,TBOTM,TRSET,TSUR,TSURM,TS3,TSUR4,ZD,FCJ
-
-	LOGICAL LDAY,LFROST,LRESET
+	REAL QA,QB,QQ ! temporary use
+D	REAL NAN  ! for testing if NAN
+	LOGICAL LDAY,LFROST,LRESET,LATM
+C D	LOGICAL ISNAN		! intrinsic Function NOT IN MY SYSTEM
+D	integer*4 mhist,jhist	!<dbug
+D	parameter (mhist=20)	!<dbug
+D	integer*4 ihist(mhist)	!<dbug
+C
 	SAVE KTT
-
- 991	IF (IDB2.GE.5) WRITE(IOSP,*) 'TDAY IQ,J4=',IQ,J4,jjo
-
+C
+	IF (IDB2.GE.5) WRITE(IOSP,*) 'TDAY IQ,J4=',IQ,J4,jjo
 	IRET=1
 	GOTO (100,200), IQ
-
+C
 C  initialization  (IQ = 1)
 C Set up grid based upon nominal conductivity, then use T-dependant values
 C in the time loops. Assumption here is that conductivity could depend on
 C several variables, but that having all but T constant for a given case is 
-C adequate. Hence, compute K of T once per case, store as a table with no 
-C finer resolution than 1 K.
+C adequate.
 C The convergence safty factor should be chosen to be adequate to cover 
 C the conductivity variation
 
@@ -77,18 +86,18 @@ C insure day loop does not go past next season
 	N1PBM1=N1PIB-1
 	NLW=1+(N1-3)/10
 	PERSEC = PERIOD * 86400. ! get solar period in seconds
-	DTIM=PERSEC/N2		! size of one time step
-	COND=SKRC*SKRC/(DENS*SPHT) ! conductivity
-	DIFFU=COND/(DENS*SPHT)	! diffusivity
+	DTIM=PERSEC/N2		 ! size of one time step
+	COND=SKRC**2/(DENS*SPHT) ! conductivity
+	DIFFU=COND/(DENS*SPHT)	 ! diffusivity
 	SCALE=SQRT(DIFFU*PERSEC/PIVAL)
-	IF (DEPTH.GE.1.0) THEN	! calculate  FLAY for bottom(n1) =  DEPTH
+	IF (DEPTH.GE.1.0) THEN	 ! calculate  FLAY for bottom(n1) =  DEPTH
 	  QQ=1.
-	  B=0.
+	  QB=0.
 	  DO J=2,N1
 	    QQ=QQ*RLAY
-	    B=B+QQ
+	    QB=QB+QQ
 	  ENDDO
-	  FLAY=DEPTH/B
+	  FLAY=DEPTH/QB
 	ENDIF
 C
 C  calculate frequently used constants
@@ -111,7 +120,7 @@ C  IC is first of lower material, including the virtual layer
 	  KTT(J)=QK(J)		! thermal conductivity, in case not T-dependent
 D	  write(*,*)'J,diffi,blay=',J,diffi(J),blay(J)
 	ENDDO
-
+C
 C Print table of T-dependant inertias.  Temporary use of  FBI,FCI,FKI,FA1,FA2
 	IF (LKOFT) THEN		!kt   k of  T section
 	   K=20
@@ -127,18 +136,22 @@ C Print table of T-dependant inertias.  Temporary use of  FBI,FCI,FKI,FA1,FA2
 	   WRITE(IOSP,*)'   T     cond_SpHeat_UPPER_iner'
      &   ,'    cond_SpHeat__LOWER_iner'
 C                         130.0  0.02590  375.46  124.74 
-
 	   DO I=1,K
 	      QQ=SQRT(FBI(I)*FA1(I) *DENS) ! upper inertia
-	      A =SQRT(FCI(I)*FA2(I)*DENS2)! lower inertia
-	      WRITE(IOSP,120) FKI(I),FBI(I),FA1(I),QQ,FCI(I),FA2(I),A
+	      QA =SQRT(FCI(I)*FA2(I)*DENS2)! lower inertia
+	      WRITE(IOSP,120) FKI(I),FBI(I),FA1(I),QQ,FCI(I),FA2(I),QA
 	   ENDDO
  120	    FORMAT(1X,F6.1,F9.5,2F8.2,F10.5,2F8.2)
+ 121	    FORMAT(1X,A6,2F10.5,2F10.2)
+C       Check that values agree at TOFF
+	 WRITE(IOSP,* )'          ConUp     ConLo     SphUp     SphLo' ! labels
+	    WRITE(IOSP,121 )'Input',COND,COND2,SPHT,SPHT2   ! inputs 
+	    WRITE(IOSP,121 )'T-dep',CCKU(1),CCKL(1),CCPU(1),CCPL(1) !  T-dep at TOFF
 	 ENDIF
 C
 C  Calculate layer dependent factors
 C  K=index of binary depth  N1K=bottom layer for binary  K
-C		00jan22
+C             2000jan22
 C  Allow doubling of time step at successive layers; but never more than a 
 C factor of 2 between layers, and never a decrease in the time step with 
 C increasing layers.
@@ -171,10 +184,10 @@ C
 	  ENDIF
 	ENDIF
 	  WRITE(*,*)'SAFE2,actual+',SAFE2,QQ,KM1,KM,KKK,DTIMI
-
+C
 	DO J=2,N1		! layer loop
 	  XCEN(J)= XCEN(J-1)+ (BLAY(J)+BLAY(J-1))/2. ! center depth
-	  SCONVG(J)=BLAY(J)**2/(2.*DTIMI* DIFFI(J))
+	  SCONVG(J)=BLAY(J)**2/(2.*DTIMI* DIFFI(J)) ! Safety factor
 	  IF (J.EQ.IC) KM=KM1	! remove constraint on upper layers
 	  IF (K.LT.KM .AND. J.GT.2 .AND. MOD(KKK,2).EQ.0 
      &    .AND. SCONVG(J).GT. SAFE2) THEN ! increase time step
@@ -187,7 +200,7 @@ C
 	  IF (SCONVG(J).LT. 1.) THEN
 	    IRET=2		! error return if unstable
 	    WRITE (IOERR,137)J,K,SCONVG(J)
- 137	    FORMAT (' UNSTABLE; Layer, #_doubleings, factor =',2I3,F6.4)
+ 137	    FORMAT (' UNSTABLE; Layer, #_doubleings, factor =',2I3,F8.4)
 	  ENDIF
 C for constant conductivity
 	  FCJ= 2.* DTIMI /(QR(J) * BLAY(J)**2) !kt
@@ -195,16 +208,16 @@ C for constant conductivity
 	  FA3(J)= (BLAY(J)/QK(J) + BLAY(J+1)/QK(J+1))
      &       / (BLAY(J)/QK(J) + BLAY(J-1)/QK(J-1))
 	  FA2(J)=-1.-FA3(J)
-C T-dependant conductivity
+C T-dependent conductivity
 	  FBI(J)=  BLAY(J+1)/BLAY(J)   !kt 
 	  FAC7=DENS		! temporary use of FAC7
 	  IF (J.GE.IC ) FAC7=DENS2 ! for upper/lower density
 	  FCI(J)= 2.* DTIMI /(FAC7 * BLAY(J)**2) !kt
- 125	  FORMAT(1X,I4,E12.5,f10.1,F8.5,f10.5, F9.6,2F8.5,F9.5,2E12.5)
+D 125	  FORMAT(1X,I4,E12.5,f10.1,F8.5,f10.5, F9.6,2F8.5,F9.5,2E12.5)
 D	  WRITE(41,125)J,DIFFI(J),DTIMI, BLAY(J),SCONVG(J)  !dbw
 D     &     ,FA1(J),FA3(J),FBI(J),FCI(J),QK(J),QR(J) !dbw
 	ENDDO			! end of layer loop
-
+C
 	FAC7=COND/XCEN(2)
 	KKK=K+1			! one larger than number of time doublings
 	N1K(KKK)=N1
@@ -217,21 +230,26 @@ C set last layer for each time.  KJ(JJ)=K for  JJ time increment
 	   ENDDO
 	   II=II+II		! double the spacing
 	ENDDO
-	
+C	
 	GOTO 9
 C=======================================================================
 C=============================================== day computations  (IQ = 2)
 C
 200	DTMJ(1)=-1.
+	LATM=PTOTAL.GT.1.	! atmosphere present flag
 	LDAY=N3.LE.1		! normally false
-	LRESET=.FALSE.
+	LRESET=.FALSE.		! flag for reset of lower layers
+C D	fac3=0.			! just for next statement
+C D	NAN=PIVAL/fac3		! generate a NAN
 	FAC3  = 1.-ALB
 	FAC5  = SKYFAC*EMIS*SIGSB
 	FAC45 = 4.*FAC5
 	FAC6  = SKYFAC*EMIS
 	FAC6F = SKYFAC*FEMIS
-        FAC9=SIGSB*BETA		! factor for downwelling hemispheric flux
-        CPOG=ATMCP*(PRES/GRAV)	! atmosphere:  D_Energy / d_T
+C Following 5 used only  with atmosphere.  EMTIR used only for fac8, and FAC8 
+C used only with atmosphere. Ensure divisor CPOG is not zero
+	FAC9=SIGSB*BETA		! factor for downwelling hemispheric flux
+	CPOG=ATMCP*(max(PRES, 1.)/GRAV) ! atmosphere:  D_Energy / d_T
 	DTAFAC=DTIM/CPOG	! dT=heat*dtafac
 	EMTIR = EXP(-TAUIR)	! Zenith Infrared transmission of atm
 	FAC82=1.-EMTIR		!  " absorption "
@@ -248,15 +266,22 @@ D	write(iosp,*) 'FAC9,DTAFAC=',FAC9,DTAFAC,EMTIR,FAC82
 C  TATMJ and  EFROST enter via  KRCCOM	
 	FROEX = MAX (FROEXT,0.01)	! scale-mass for insolation attenuation
 	FRO(1) = EFROST
+	IF (.NOT. LATM) EFROST=0.
 	IF (EFROST.GT.0.) THEN	! frost is present  kg/m^2
 	  LFROST = .TRUE.
 	  TSUR = TFNOW
-	  FEMIT = FAC6F*SIGSB*TFNOW**4
-	  FAC8=EMTIR*FEMIS
+	  FEMIT = FAC6F*SIGSB*TFNOW**4 ! upward frost radiation toward space
+	  FAC8=EMTIR*FEMIS ! ground effective emissivity through atmosphere ?
 	ELSE			! bare ground
 	  LFROST = .FALSE.
 	  FAC8=EMTIR*EMIS
 	ENDIF
+	FLOST=0.		! sum of lost frost
+D	do i=1,mhist	!<dbug
+D	   ihist(i)=0	!<dbug
+D	enddo	!<dbug
+D	print *,'T200: J5,J4,TSUR,FAC8',j5,j4,tsur,fac8	!<dbug
+D	print *,'N4,LATM,tatmj',N4,latm,tatmj	!<dbug
 C
 C  *v*v*v*v*v*v*v*v*v*v*v*v*v* new day loop v*v*v*v*v*v*v*v*v*v*v*v
 C
@@ -313,104 +338,132 @@ D 126	   FORMAT(1X,2I3,F10.6,F12.6,F11.6,E13.5)
 	   FAC7=KTT(2)/XCEN(2)
 	ELSE        ! original constant conductivity ----------------------
            DO  J=2,KN
-              DTJ(J)=FA1(J)* (TTJ(J+1)+FA2(J)*TTJ(J)+FA3(J)*TTJ(J-1)) ! diffusion
+             DTJ(J)=FA1(J)* (TTJ(J+1)+FA2(J)*TTJ(J)+FA3(J)*TTJ(J-1)) ! diffusion
            ENDDO
 	ENDIF          !----------------------
 	   DO  J=2,KN
 	      TTJ(J)=TTJ(J) + DTJ(J) ! apply the delta-T
 	   ENDDO
-
 D	   if (kn.eq.n1) write(43,343)jj,jjj,j5,kn,fac7,(dtj(j),j=2,kn) !dbw
 D 343	   format(i4,i3,i4,i3,32f12.7)
 C
 C -^-^-^-^-^-^-^-^-^-^-^-^-^-^-^- end of layer loops ^-^-^-^-^-^-^-^-^-^-^
-	ATMRAD= FAC9*TATMJ**4	! hemispheric downwelling  IR flux
-        IF (LFROST) THEN	! surface temperature is buffered
-	  A = AFNOW + (ALB-AFNOW)*EXP(-EFROST/FROEX) ! albedo for frost layer
-	  SHEATF= FAC7*(TTJ(2)-TSUR) ! upward heatflow into the surface
-	  POWER = (1.-A)*ASOL(JJ) + FAC6F*ATMRAD
-     &        + SHEATF - FEMIT ! unbalanced flux into surface
-	  DFROST = -POWER/CFROST ! rate of frost formation or sublimation
-	  EFROST=EFROST + DFROST*DTIM ! amount on ground; kg*m**-2
-	  IF (EFROST.LE.0.) THEN ! reset to bare ground
-	    LFROST = .FALSE.
-	    EFROST = 0.
-	    FAC8=EMTIR*EMIS
-	  ENDIF
-	ELSE	! boundary conditions includes  T**4 radiation balance
-
-	  ABRAD = FAC3*ASOL(JJ) + FAC6*ATMRAD	! surface absorbed radiation
+        IF (LFROST) THEN	!+-+-+-+ surface temperature is frost-buffered
+	   ATMRAD= FAC9*TATMJ**4 ! hemispheric downwelling  IR flux
+	   QA = AFNOW + (ALB-AFNOW)*EXP(-EFROST/FROEX) ! albedo for frost layer
+	   SHEATF= FAC7*(TTJ(2)-TSUR) ! upward heatflow into the surface
+C   unbalanced flux into surface
+	   POWER = (1.-QA)*ASOL(JJ) + FAC6F*ATMRAD + SHEATF - FEMIT
+	   DFROST = -POWER/CFROST ! rate of frost formation or sublimation
+	   EFROST=EFROST + DFROST*DTIM ! amount on ground; kg*m**-2
+	   IF (EFROST.LE.0.) THEN ! reset to bare ground
+	      LFROST = .FALSE.
+	      EFROST = 0.
+	      FAC8=EMTIR*EMIS
+	   ENDIF
+	ELSE IF (LATM) THEN	!+-+-+-+ boundary condition with atmosphere
+	   ATMRAD= FAC9*TATMJ**4 ! hemispheric downwelling  IR flux
+	   ABRAD = FAC3*ASOL(JJ) + FAC6*ATMRAD ! surface absorbed radiation
 C iterate as needed for  Newton convergance
 C 992	  j=1 ! next 11  C lines 2010apr21 tracing down NAN from Tlats
- 230	  TS3=TSUR**3		! bare ground
-	  SHEATF= FAC7*(TTJ(2)-TSUR)
-	  POWER = ABRAD + SHEATF - FAC5*TSUR*TS3 ! unbalanced flux
-	  DELT = POWER / (FAC7+FAC45*TS3)
+D	   ii=0			!<dbug
+ 230	   TS3=TSUR**3		! bare ground
+	   SHEATF= FAC7*(TTJ(2)-TSUR) ! upward heat flow to surface
+	   POWER = ABRAD + SHEATF - FAC5*TSUR*TS3 ! unbalanced flux
+	   DELT = POWER / (FAC7+FAC45*TS3)
 C	  if (delt.ne.delt) then
 C	     write(ioerr,*)'DELT bad',TSUR,sheatf,power,DELT
 C	     write(ioerr,*) fac3,asol(jj),fac6,ATMRAD,abrad
 C	     write(ioerr,'(6i6)')j,jj,j2,j3,j4,j5
 C	     delt=1.e-3
 C	  endif
-	  TSUR=TSUR+DELT
-	  ADEL=ABS(DELT)
-C 993	  IF (J.EQ.IDB4) THEN
-C	     WRITE(IOSP,*)'TDAYB',J,TSUR,DELT,FAC7,FAC45
-C	     IF (J.GT.20) STOP
-C	  ENDIF
-C	  J=J+1
-	  IF (ADEL.LT.GGT) GOTO 240 ! satisfies convergence test
-	  ADELN=ADEL/TSUR
-	  IF (ADELN.GT.0.8) GOTO 340 ! probably blowing up numerically
-	  IF (ADELN.GT.0.1) TSUR=TSUR-0.7*DELT ! reduce increment, help stability
-	  GOTO 230
-
- 240	  IF (TSUR.GT.TBLOW) GOTO 340 ! numerical stability test
-	  IF (TSUR.LT.TFNOW) THEN ! reset to frost on ground
-	    LFROST = .TRUE.	! turn frost flag on
-	    TSUR = TFNOW	! set to local frost temperature
-	    FEMIT = FAC6F*SIGSB*TFNOW**4
-	    FAC8=EMTIR*FEMIS
-	  ENDIF
-	ENDIF
-
-	TSURM=TSURM+TSUR
-	TBOTM=TBOTM+TTJ(N1)
-	HEATFM=HEATFM+SHEATF
+	   TSUR=TSUR+DELT
+	   ADEL=ABS(DELT)
+D	   ii=ii+1		!<dbug
+D	   if (ii.ge.mhist) then !<dbug
+D	      print *,'TDAY: j5,j4,j3,jj',j5,j4,j3,jj !<dbug
+D	      print *,'...tsur',abrad,sheatf,power,delt,tsur !<dbug
+D	      goto 9		!<dbug
+D	   endif		!<dbug
+C       if (ISNAN(TSUR)) goto 340 ! FAILS
+C       if( (TSUR+1.).eq.tsur) goto 340 !  FAILS. True only if is  NAN 
+	   IF (ADEL.LT.GGT) GOTO 240 ! satisfies convergence test
+C	   if (TSUR.eq.NAN) goto 340 ! FAILS. also true if  DELT is  NAN
+	   ADELN=ADEL/TSUR
+	   IF (ADELN.GT.0.8) GOTO 340 ! probably blowing up numerically
+	   IF (ADELN.GT.0.1) TSUR=TSUR-0.7*DELT ! reduce increment, help stability
+	   GOTO 230
+C	   
+ 240	   CONTINUE
+D	   ihist(ii)=ihist(ii)+1 !<dbug
+	   IF (TSUR.GT.TBLOW) GOTO 340 ! numerical stability test
+	   IF (TSUR.LT.TFNOW) THEN ! reset to frost on ground
+	      LFROST = .TRUE.	! turn frost flag on
+	      TSUR = TFNOW	! set to local frost temperature
+	      FEMIT = FAC6F*SIGSB*TFNOW**4
+	      FAC8=EMTIR*FEMIS
+	   ENDIF
+	ELSE			!+-+-+-+ no atmosphere
+	   ABRAD = FAC3*ASOL(JJ) ! surface absorbed radiation
+C iterate as needed for  Newton convergance
+C 992	  j=1 ! next 11  C lines 2010apr21 tracing down NAN from Tlats
+D	   ii=0			!<dbug
+ 232	   TS3=TSUR**3		! bare ground
+	   SHEATF= FAC7*(TTJ(2)-TSUR)
+	   POWER = ABRAD +SHEATF - FAC5*TSUR*TS3 ! unbalanced flux
+	   DELT = POWER / (FAC7+FAC45*TS3) ! Newton estimate
+	   TSUR=TSUR+DELT
+	   ADEL=ABS(DELT)
+	   IF (ADEL.LT.GGT) GOTO 242 ! satisfies convergence test
+C	   if (TSUR.eq.NAN) goto 340 ! FAILS. also true if  DELT is  NAN
+	   ADELN=ADEL/TSUR
+	   IF (ADELN.GT.0.8) GOTO 340 ! probably blowing up numerically
+	   IF (ADELN.GT.0.1) TSUR=TSUR-0.7*DELT !reduce increment,help stability
+	   GOTO 232
+C
+ 242	  IF (TSUR.GT.TBLOW) GOTO 340 ! numerical stability test
+	ENDIF			!+-+-+-+ end no atmosphere
+C
+	TSURM=TSURM+TSUR	! sum over the day
+	TBOTM=TBOTM+TTJ(N1)	! "
+	HEATFM=HEATFM+SHEATF	! "
 	IF (LRESET) THEN	! accumulate average temperature at each layer
-	  DO  J=2,N1
-	    TAVE(J)=TAVE(J)+TTJ(J)
-	  ENDDO
+	   DO  J=2,N1
+	      TAVE(J)=TAVE(J)+TTJ(J)
+	   ENDDO
 	ENDIF
 	TSUR4=TSUR**4
-	TATM4=TATMJ**4
-C 2002jul12  ADGR was downwelling  IR flux; becomes solar heating
-	HEAT=ADGR(JJ)+FAC9*(EMIS*TSUR4-2.*TATM4) ! net atm. heating flux
-	TATMJ=TATMJ+HEAT*DTAFAC ! delta Atm Temp in 1 time step
+C
+	IF (LATM) THEN		!v-v-v-v-v  with atmosphere
+	   TATM4=TATMJ**4
+C       2002jul12  ADGR was downwelling  IR flux; becomes solar heating
+	   HEAT=ADGR(JJ)+FAC9*(EMIS*TSUR4-2.*TATM4) ! net atm. heating flux
+	   TATMJ=TATMJ+HEAT*DTAFAC ! delta Atm Temp in 1 time step
+	ENDIF			!^-^-^-^-^
 	IF (.NOT.LDAY) GOTO 270
-
 	TOUT(JJ)=TSUR		! save surface temperatures at each time
 	IF (JJ.EQ.JJH) THEN	!  JJH is next saving hour
-	  TTJ(1)=TSUR
-	  TSFH(IH)=TSUR		! save hourly temperatures on last iteration
-C	  TPFH(IH)=(FAC8*TSUR4+BETA*TATM4)**0.25 ! planetary  
-	  TPFH(IH)=(FAC8*TSUR4+FAC82*TATM4)**0.25 ! planetary  
-	  TAF(IH,J4)=TATMJ	! save Atm Temp.
-	  DOWNVIS(IH,J4)=ASOL(JJ) ! save downward solar flux
-	  DOWNIR(IH,J4)=ATMRAD	! save downward IR flux
-D	  write(iosp,*)'L299', ASOL(JJ),ATMRAD,heat,tatmj
-	  DO  J=1,N1		! save extreme temperatures for each layer
-C..		th(j,ih)=t(j)	! save depth-time solution [th(maxn1,MAXNH]
-	    IF (TTJ(J).LT.TMIN(J)) TMIN(J)=TTJ(J)
-	    IF (TTJ(J).GT.TMAX(J)) TMAX(J)=TTJ(J)
-	  ENDDO
-	  IH = IH+1
-	  JJH = IH*AH+.5
+	   TTJ(1)=TSUR
+	   TSFH(IH)=TSUR	! save hourly temperatures on last iteration
+	   IF (LATM) THEN	!v-v-v-v-v  with atmosphere
+	      TPFH(IH)=(FAC8*TSUR4+FAC82*TATM4)**0.25 ! planetary  
+	      TAF(IH,J4)=TATMJ	! save Atm Temp.
+	      DOWNIR(IH,J4)=ATMRAD ! save downward IR flux
+	   ENDIF		!^-^-^-^-^
+	   DOWNVIS(IH,J4)=ASOL(JJ) ! save downward solar flux
+D       write(iosp,*)'L299', ASOL(JJ),ATMRAD,heat,tatmj
+	   DO  J=1,N1		! save extreme temperatures for each layer
+C..     th(j,ih)=t(j)	! save depth-time solution [th(maxn1,MAXNH]
+	      IF (TTJ(J).LT.TMIN(J)) TMIN(J)=TTJ(J)
+	      IF (TTJ(J).GT.TMAX(J)) TMAX(J)=TTJ(J)
+	   ENDDO
+	   IH = IH+1
+	   JJH = IH*AH+.5
 	ENDIF
 C
 	IF (JJ.EQ.JJP) THEN	! print "hourly" temperatures
-	 IF (LP3) WRITE(IOSP,260)IP,EFROST,TTJ(1),(TTJ(I),I=2,N1M1,NLW)
-     &      ,TTJ(N1),tatmj
+	   IF (LP3) WRITE(IOSP,260)IP,EFROST,TTJ(1),(TTJ(I),I=2,N1M1,NLW)
+     &     ,TTJ(N1),tatmj
  260	   FORMAT (I7,F8.3,(12F8.1))
 	   IP = IP+1
 	   JJP = IP*AP+.5	! time step of next print
@@ -418,10 +471,14 @@ C
 270	CONTINUE  !^+^+^+^+^+^+^+^+^+^+^+ end of time loop ^+^+^+^+^+^+^+^+^+^+^
 C
 C  store results of day, calculate rms change
-
-	IF (TATMJ.LT.TATMIN) THEN ! Tatm is below saturation T
+C
+	IF (LATM .and. (TATMJ.LT.TATMIN)) THEN ! Tatm is below saturation T
 	   SNOW= (TATMIN-TATMJ)*CPOG/CFROST ! snow formation  Kg/m^2 in this time step
-	   IF (LFROST) EFROST=EFROST + SNOW ! let it fall to surface
+	   IF (LFROST) THEN
+	      EFROST=EFROST + SNOW ! let it fall to surface
+	   ELSE
+	      FLOST=FLOST+ SNOW ! record mass "lost" from system ??
+	   ENDIF
 D	write(*,*)'jjj,Tmin,Ta,SNOW,EFR=',jjj,TATMIN,TATMJ,SNOW,EFROST !!!
 	   TATMJ=TATMIN		! keep no colder that saturation
 	ENDIF
@@ -438,8 +495,10 @@ C
 	TTS(J3P1)=TSURM/QQ	! average surface T
 	TTB(J3P1)=TBOTM/QQ	! average bottom T
 	HEAT1M=HEATFM/QQ	! average upward heatflow into the surface
-	TTA(J3P1)=TATMJ         ! final atm. temperature
-	FRO(J3P1)=EFROST        ! final frost amount
+	IF (LATM) THEN		!v-v-v-v-v  with atmosphere
+	   TTA(J3P1)=TATMJ	! final atm. temperature
+	   FRO(J3P1)=EFROST	! final frost amount
+	ENDIF			!^-^-^-^-^
 C
 C  are we done?
 C
@@ -466,27 +525,33 @@ C
 		    TTJ(J)=TTJ(J)-TAVE(J) !   as  TSUR
 		 ENDIF
 	      ENDDO
-	      IF (LD17) WRITE(IOSP,'(I7,F8.3,F8.1,12F8.3)') !+++++++
-     &      JJJ,DTM,TTS(J3P1),(TAVE(I),I=2,N1M1,NLW),TAVE(N1) !+++++++
+	      IF (LD17) WRITE(IOSP,'(I7,F8.3,F8.1,12F8.3)') !+
+     &      JJJ,DTM,TTS(J3P1),(TAVE(I),I=2,N1M1,NLW),TAVE(N1) !+
 	   ENDIF
 	   IF (J5.LE.1 .AND. JJJ.GE.JRSET) LRESET=.TRUE.
 	ENDIF
  320	CONTINUE ! *^*^*^*^*^*^*^*^*^*^*^*^ end of day loop *^*^*^*^*^*^*^*^*^*
-
+C
 	JJJ=N3			! if loop finished, index value not guarenteed
  330	J3=JJJ			! reset the counter kept in common
 	GOTO 9
-c
+C
 340	IRET=2  !   blow-up. force a stop; print current conditions
+	write(IOSP,*)'TDAY blowup: jjj,j4,j5=',jjj,j4,j5
+	write(IOSP,*)'LRESET,LDAY,tsur=',LRESET,LDAY,TSUR
+	IF (LATM) write(IOSP,*)'atm items=',atmrad,abrad,LFROST,EFROST
+	write(IOSP,*)'sheatf,power,delt=',sheatf,power,delt
 	TTJ(1)=TSUR
 	J2=JJ
 	J3=JJJ
-	CALL TPRINT (7)
-	WRITE(IOSP,*) 'TSUR,DELT,TATMJ,TBLOW=',TSUR,DELT,TATMJ,TBLOW
-	CALL TPRINT (2)
-	CALL TPRINT (4)
-
+	CALL TPRINT (7)		! print message and  TTJ
+	WRITE(IOSP,*) 'DELT,TATMJ,TBLOW=',DELT,TATMJ,TBLOW
+	CALL TPRINT (2)		! print full input set
+	CALL TPRINT (4)		! print daily convergence
+C
  9	IF (IDB2.GE.6) WRITE(IOSP,*) 'TDAYx'
+D	print *,'TDAY: j5,j4',j5,j4	!<dbug
+D	print *,ihist		!<dbug
 	RETURN
 C
 	END

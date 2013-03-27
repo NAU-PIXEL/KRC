@@ -44,5 +44,5 @@ Elevations: in 10F7.2 _____7 _____7 _____7 _____7 _____7 _____7 _____7
   0.9994786     -0.3252879     -0.8556869     -0.4024770      0.9456150    
  -0.2943530     -0.1384504      0.7823110E-07  0.4256245     -0.9048999 
 1  1 0.2502 'Albedo'  / Example of change to base parameters
-10 1 0.1    'one.inp' / Name of one-point input file
+10 1 0.1    'oneA.inp' / Name of one-point input file
 Free text on any length may follow the above line

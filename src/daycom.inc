@@ -1,7 +1,7 @@
 C_Titl  DAYCOM.INC   common for layer and time items in  KRC
       INTEGER NWDAY
-	PARAMETER (NWDAY = 6*MAXN1+1  + (5+MAXN1)*MAXN3 + 3*MAXN2 
-     & + 2*MAXNH + MAXBOT) ! size of this common in 4-byte words
+	PARAMETER (NWDAY = 5*MAXN1 + MAXN1P + (5+MAXN1)*MAXN3
+     &  + 3*MAXN2 + 2*MAXNH + MAXBOT) ! size of this common in 4-byte words
 C_Desc
 C  ASOL &  ADGR are set in  TLATS, the rest are set in  TDAY
       REAL XCEN(MAXN1)	! Depth at layer centers [m]

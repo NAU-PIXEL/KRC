@@ -1,16 +1,13 @@
 ##########################################################################
-#_Title Makefile Make file to generate objects for subdir of libisis
+#_Title Makec -    Linux  x86_64 OS make KRC C routine library
 #_Args  NONE
-#
-#_Descr This is a specially derived Makefile to process sources from
-#       a subdirectory of an ISIS library.
-#
+#_Descr Defines dependancies for GNU compilers using  make
 #_Hist  Feb 08 2005 Kris Becker, USGS, Flagstaff Original Version
-#_Ver $Id: Makefile,v 1.3 2005/02/18 22:15:38 kbecker Exp $
-# 2009may16 Hugh Kieffer for KRC export distribution
+# 2009may17 Hugh Kieffer Modify for the C routines needed by KRC
+# 2011oct24 HK Modify for distribution
 #_End
 ###########################################################################
-#
+
 # Set up some shell-level specific variables
 SHELL=/bin/csh
 RM=/bin/rm -f
@@ -23,73 +20,33 @@ HOST_MACH  = $(shell uname -m)
 HHKOS      ?= $(HOST_MACH)
 HHKINC     ?= $(CURDIR)
 
-#  GNU C compiler flags.
-CC=gcc -pipe -O2  -Wall -fPIC -Dunix -D$(HOST_ARCH) -D$(HOST_MACH)  # -D$(HHKOS)
-
-# FORTRAN compiler flags.
-FC=g77 -pipe -O2  -fPIC -fvxt  -ftypeless-boz -fno-automatic \
-	-fno-second-underscore -fargument-alias \
-	-Dunix -D$(HOST_ARCH) -D$(HOST_MACH) # -D$(HHKOS)
-
-# Include files paths
-INCLUDES=-I. -I$(HHKINC)
-
-# Code Library directores 
-# LIBDIRS=-L/home/hkieffer/linux/lib
+#  GNU C compiler and flags.
+CC=gcc -pipe -O2  -Wall -fPIC -Dunix -D$(HOST_ARCH) -D$(HOST_MACH) -D$(HHKOS)
 
 #  Special load flags.  These flags are utilized in all builds, whether
 #  they are FORTRAN or C
-# 2007aug10 Put in the order concatonated below
-# LD=ld
 LDFLAGS=-shared
 
-# LDSHAREDOPTS=-shared --whole-archive
-
 # Special library MACROS
-AR=ar
-ARFLAGS=-rvs
-RANLIB=/bin/echo
+AR=ar           # handles archives
+ARFLAGS=-rvs    # r=replace v=verbose s=include index
+#? RANLIB=/bin/echo
+#? RXROOT=/usr/X11   #??? where is this
+#? RMOTIFROOT=/usr/local  #  not used at all?
 
+# set LIBRARY to be name of library
+#LIBRARY  ?= libhk_cisis
+#LIBNAME   = $(LIBRARY).a
+LIBNAME=./libhk_cisis.a
 SYSLIBS=-lncurse -ltermcap  -lg2c -lc -lm
 
-#  Set up X and Motif root paths
-#
-XROOT=/usr/X11   # Does not exist
-MOTIFROOT=/usr/local  #  not used at all?
-
-#  Set up suffixes and special ISIS targets for those suffixes
-.SUFFIXES: .o .c .F .f
-.c.o: 
-	$(CC) $(INCLUDES) -c $<
-
-.F.o: 
-	$(FC) $(INCLUDES) -c $<
-.f.o: 
-	$(FC) $(INCLUDES) -c $<
-
-
-#^^^^^ end of system rules
-
-
-
-#  Some general shell commands 
-AR             ?= ar
-ARFLAGS        ?= rv
-RM             ?= /bin/rm -f
-CP             ?= /bin/cp -p
-
-#
-# set LIBRARY to be name of library
-LIBRARY        ?= krc_c
-LIBNAME        = $(LIBRARY).a
-
-#
 #  Set up source dependancies
 SRCS = $(wildcard *.c)
-OBJS  = $(addsuffix .o, $(basename $(SRCS)))
+OBJS = $(addsuffix .o, $(basename $(SRCS)))
 
 #  Define all required targets
 .PHONY : all install clean $(LIBNAME)
+
 all: $(LIBNAME)
 
 install: $(LIBNAME)
@@ -98,9 +55,6 @@ install: $(LIBNAME)
 $(LIBNAME): $(OBJS)
 	$(AR) $(ARFLAGS) $(LIBNAME) $(OBJS)
 
-
 #  Clean up 
 clean: 
 	$(RM) $(OBJS) $(LIBNAME)
-
-

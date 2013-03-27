@@ -21,7 +21,7 @@ C_Titl  PORBCM.INC   include for PORB system COMMOM
      &,XFEXB	! 21 Angle along planets equator from ecliptic to planet orbit
      &,ARGV	! 22 ANGLE FROM PLANETS ORBITAL NODE TO PLANETS VERNAL EQUINOX
      &,SLP	! 23 L-SUB-S AT PERIAPSIS
-     &,P24	! 24 SPARE
+     &,BLIP	! 24 Planet obliquity
      &,PHOXX(3)	! 25 VECTOR FROM FOCUS (SUN) TO PLANET: ORBITAL PLANE COORDINATES
      &,PHEXX(3)	! 28 "     "     "    "    "     "    EQUTORIAL COORDINATES
      &,HFXX(3)	! 31 VECTOR FROM PLANET TO SUN IN PLANET-FIXED COORDINATES
@@ -39,13 +39,16 @@ C --- end of the 60 real variables transfered to disk files
 C_Vars
       COMMON /PORBCM/ PLANUM,TC, ODE,CLIN,ARGP,ECC,SJA,TJO,OPERIOD
      1 ,ZFQA,ZFQB,  SIDAY,TLO,  OBL, CQA,CQB,  P17
-     2 ,ZFEB,ZFEC,XFEXB,ARGV,SLP, P24
+     2 ,ZFEB,ZFEC,XFEXB,ARGV,SLP,BLIP
      3 ,PHOXX,PHEXX,HFXX, FQ,EO,HO
      5 ,PICON, RUNTIM, IOK,IOS,IOP,IOD
 C_Desc
-C All angles in radians
+C    >>> All angles in radians <<<
 C Conditions at request epoch
-C 2009dec24 HK Change PERIOD, PI, DAYTIM to OPERIOD, PICON, RUNTIM; to avoid 
-C conflict with  krccom.inc.  Revise PLANUM
+C_Hist 1997jan30 and earlier  Hugh Kieffer
+C 2009mar17  HK Number the positions in comments
+C 2009dec24  HK Change PERIOD, PI, DAYTIM to OPERIOD, PICON, RUNTIM; to avoid 
+C    conflict with  krccom.inc.  Revise PLANUM
 C_Hist 2010jan12 Hugh Kieffer  Change to IMPLICIT NONE.
-C_End
+C 2012mar02  HK  Replace spare P24 with BLIP
+C_End 

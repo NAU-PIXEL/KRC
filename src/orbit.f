@@ -1,30 +1,34 @@
-	SUBROUTINE ORBIT (A,PERIOD,ECC,TPER, R,XX)
-C_TIT  ORBIT compute radius and coordinates FOR ELLIPTICAL ORBIT
+	SUBROUTINE ORBIT (SMA,PERIOD,ECC,TPER, RADF,XX)
+C_TITL  ORBIT  Compute radius and coordinates for elliptical orbit. DefPrec.
+	IMPLICIT NONE
 C_ARG
-	REAL*4 A	!I. semimajor axis, in units desired for  XX.
-	REAL*4 PERIOD 	!I. orbital period in same units as  TPER
-	REAL*4 ECC 	!I. eccentricity of orbit
-	REAL*4 TPER	!I. request time from periapsis, same units as PERIOD
-	REAL*4 R	!O. current distance from focus, in units of  A.
-C			   will be set negative if ECCENTRIC ANOMOLY 
-C			   COMPUTATION NOT FULLY ACCURATE. 
-	REAL*4 XX	!O. cartesian position of body in system with "z" toward
+	REAL SMA        !I. semimajor axis, in units desired for  XX.
+	REAL PERIOD 	!I. orbital period in same units as  TPER
+	REAL ECC 	!I. eccentricity of orbit
+	REAL TPER	!I. request time from periapsis, same units as  PERIOD
+	REAL RADF	!O. current distance from focus, in units of  SMA.
+C			   Will be set negative if eccentric anomoly 
+C			   computation not fully accurate. 
+	REAL XX(3)	!O. cartesian position of body in system with "z" toward
 C			  positive pole of orbit, "x" toward periapsis
 C_Calls  ECCANOM  [SIN,COS,SQRT,AMOD]
-C_HIST  84MAY29  HUGH_H_KIEFFER FROM EARLIER VERSIONS ~69,~78
-C	89DEC11  HHK MOVE DETERMINATION OF ECCENTRIC ANOMOLY INTO   ECCANOM
+C_Hist 84may29  Hugh_H_Kieffer  From earlier versions ~69,~78
+C 1989dec11  HK  Move determination of eccentric anomoly into  ECCANOM
+C 2005dec28  HK  Change to use of IMPLICIT NONE
+C 2012mar02  HK  Clean up names and case. no change to algorithm
 C_END
-	DIMENSION XX(3)
-	DATA TWOPI/6.28318531/
+	REAL TWOPI/6.283185307179586/
+	REAL ANOM,EE,CE
+	REAL ECCANOM		! function
 
-	R=A
-	ANOM=AMOD(TWOPI*TPER/PERIOD,TWOPI)	! CALC. MEAN ANOMOLY
-	EE=ECCANOM(ECC,ANOM)			! GET ECCENTRIC ANOMOLY
-	IF (EE-ANOM.GT.4) R=-A	!  ECCANOM DID NOT REACH DESIRED ACCURACY
+	RADF=SMA
+	ANOM=AMOD(TWOPI*TPER/PERIOD,TWOPI)	! calc. mean anomoly
+	EE=ECCANOM(ECC,ANOM)			! get eccentric anomoly
+	IF (EE-ANOM.GT.4) RADF=-SMA  !  eccanom did not reach desired accuracy
 	CE=COS(EE)
-	XX(1)= A * (CE-ECC)
-	XX(2)= A * SQRT(1.-ECC**2) *SIN(EE)
+	XX(1)= SMA * (CE-ECC)
+	XX(2)= SMA * SQRT(1.-ECC**2) *SIN(EE)
 	XX(3)= 0.
-	R=R*(1.-ECC*CE)
+	RADF=RADF*(1.-ECC*CE)
 	RETURN
 	END

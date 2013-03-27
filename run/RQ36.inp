@@ -1,0 +1,97 @@
+ 0 0 1/ KOLD: start season;  KEEP: continue saving data in same disk file 
+0 0 0 0 0 0  1 6 2 3 0 0 / 6 IDBx debug flags Present IFF 3rd value above ne 0 
+Asteroid RQ36  19 latitudes  T-dependent properties test
+    ALBEDO     EMISS   INERTIA     COND2     DENS2    PERIOD  SpecHeat   DENSITY
+       .03      1.00      50.0       3.4     928.0  0.178667     630.0     2200.
+      CABR       AMW   [ABRPHA    PTOTAL     FANON      TATM     TDEEP   SpHeat2
+      0.00      43.5     -0.00       0.5      .055      200.     200.0     1300.
+      TAUD     DUSTA    TAURAT     TWILI      ACR2     [ARC3     SLOPE    SLOAZI
+       0.0       .90       0.5       0.0       0.5     -0.00       0.0       90.
+    TFROST    CFROST    AFROST     FEMIS       AF1       AF2    FROEXT     [FD32
+      10.0   589944.       .65      0.95      0.54    0.0009       50.       0.0
+      RLAY      FLAY     CONVF     DEPTH     DRSET       DDT       GGT     DTMAX
+    1.2000     .1800    2.0000       0.0       0.0     .0020       0.1       0.1
+      DJUL    DELJUL  SOLARDEC       DAU     LsubS    SOLCON      GRAV     AtmCp
+   16000.0   10.9111      00.0     1.465        .0     1368.     3.727     735.9
+    ConUp0    ConUp1    ConUp2    ConUp3    ConLo0    ConLo1    ConLo2    ConLo3
+  0.149858  0.042111  0.035592  0.000366      3.40       0.0       0.0       0.0
+    SphUp0    SphUp1    SphUp2    SphUp3    SphLo0    SphLo1    SphLo2    SphLo3
+  577.4365  199.0392  -36.4975   18.4841     1300.       0.0       0.0       0.0
+        N1        N2        N3        N4        N5       N24        IB        IC
+        21       384        10        19       162        48         0       999
+     NRSET      NMHA      NRUN     JDISK     IDOWN    FlxP14    FlxP15     KPREF
+         3        24         1       121         0        45        65         0
+     K4OUT     JBARE     Notif   [IDISK2                                     end
+        52         0        20        -0                                       0
+    LP1    LP2    LP3    LP4    LP5    LP6 LPGLOB   LVFA   LVFT  LkofT
+      F      T      F      F      F      F      F      F      F      F
+  LPORB   LKEY    LSC  spare  LOCAL  Prt76 LPTAVE  Prt78  Prt79  L_ONE
+      T      F      F      F      T      F      F      F      F      F
+Latitudes: in 10F7.2  _____7 _____7 _____7 _____7 _____7 _____7 _____7
+ -87.50 -80.00 -70.00 -60.00 -50.00 -40.00 -30.00 -20.00 -10.00   0.00
+  10.00  20.00  30.00  40.00  50.00  60.00  70.00  80.00  87.50  -0.00
+Elevations: in 10F7.2 _____7 _____7 _____7 _____7 _____7 _____7 _____7
+   0.00   0.00   0.00   0.00   0.00   0.00   0.00   0.00   0.00   0.00
+   0.00   0.00   0.00   0.00   0.00   0.00   0.00   0.00   0.00   0.00 
+  12 Mar 16 15:16:04 =RUNTIME.  IPLAN AND TC= 403.0 0.70000
+   403.0000      0.7000000      0.3580744E-01  0.1053377       1.156572
+  0.2036995       1.126038       15875.79       436.4428      -1.362031
+  -1.198034       4.288000       0.000000      0.4093198       0.000000
+   0.000000       0.000000       0.000000       4.844865       2.533351
+  0.1551258E-01  0.8440375E-01   1.072168       2.831480       0.000000
+   0.000000       0.000000       0.000000       0.000000       0.000000
+   0.000000       0.000000       0.000000     -0.9928001     -0.9301057E-01
+  0.7547924E-01 -0.1060594      0.9754459     -0.1930196     -0.5567305E-01
+ -0.1996352     -0.9782875      0.3696316      0.9241799      0.9625092E-01
+ -0.9291708      0.3672205      0.4231796E-01  0.3764097E-02 -0.1050756
+  0.9944571      0.4782214     -0.6642161      0.5745620     -0.8782393
+ -0.3616809      0.3128621     -0.3352761E-07  0.6542201      0.7563041
+8 0 0 '/work1/krc/RQ36pt.t52' / Disk file name
+1 3 436.318  'INERTIA' / match T_dep
+1 7 577.4365 'SpecHeat' / match T_dep
+1 35 8. 'CONVF' / account for variable k
+0/
+3 10 1 'LkofT' / Temperature-dependant properties
+0/
+12  0.149858  0. 0. 0.    3.40        0.0       0.0       0.0 / conductivities
+13  577.4365  0. 0. 0.    1300.       0.0       0.0       0.0 / SpecHeat
+0/
+0/
+0/
+
+
+
+
+
+8 0 0 '/work1/krc/RQ36p.t52' / Disk file name
+0/
+1 3 200 'INERTIA' / 
+0/
+1 3 800 'INERTIA' / 
+0/
+0/
+0/ 
+
+Below: SEPARATE RUN for T-dependent cases because only 3 cases fit at once
+case 1 is traditional T_dep turned off
+case 2 is with T-dep properties
+case 3 is with T-dep code, but properties constant over T
+
+8 0 0 '/work1/krc/RQ36pt.t52' / Disk file name
+1 3 436.318  'INERTIA' / match T_dep
+1 7 577.4365 'SpecHeat' / match T_dep
+1 35 8. 'CONVF' / account for variable k
+0/
+3 10 1 'LkofT' / Temperature-dependant properties
+0/
+12  0.149858  0. 0. 0.    3.40        0.0       0.0       0.0 / conductivities
+13  577.4365  0. 0. 0.    1300.       0.0       0.0       0.0 / SpecHeat
+0/
+0/
+0/
+
+
+year is 436.443481 days
+with default convf
+default convf: Bottom layers for time doubling:      2    4    6    8   10   21
+convf=8        Bottom layers for time doubling:      6    8   10   12   14   21

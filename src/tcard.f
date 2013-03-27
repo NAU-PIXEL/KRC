@@ -34,11 +34,15 @@ C 2010jan23  HK  Fix error that allowed one-point mode to exit without limit che
 C 2010apr21  HK  Add option for reading debug control integers
 C 2011jul16  HK  Fix so  IC=0 does not generate error message for each case
 C 2011jul31  HK  Add print of debug flags if they are read
+C 2010feb26  HK  -Wall yields 'initialization string truncated to match variable'
+C         at  SPEC_HEAT in DATA statement
+C 2012mar27  HK  Incorporate  CLIMTAU
+C 2012oct31 HK Minor format changes. Increment NRUN upon new file
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
 
 	INTEGER LNBLNK ! intrinsic function, need this because of implicit  L
-	REAL ALSUBS,SEASALB,SEASTAU		! functions
-	REAL Q,XREAD
+	REAL*4 ALSUBS,SEASALB,SEASTAU,CLIMTAU ! functions
+	REAL*4 QB,QF,XREAD	! temporary 
 	CHARACTER TEXT*74
 	CHARACTER RBUF*80 ! internal file buffer
 	CHARACTER*8 WHAT ! distinguish what was expected to read 
@@ -53,10 +57,10 @@ C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
         INTEGER I,IG,IIIN,ILEN,IREAD,JERR,KEEP,KOUNT,NEW,KDB
 
 	DATA TITF /'ALBEDO','EMISS','INERTIA','COND2','DENS2','PERIOD' !6
-     & ,'SPEC_HEAT','DENSITY','CABR','AMW','ABRPHA','PTOTAL','FANON' !7
-     & ,'TATM','TDEEP','SpHeat2','TAUD','DUSTA','TAURAT','TWILI' !7
-     & ,'ARC2','ARC3','SLOPE','SLOAZI','TFROST','CFROST','AFROST' !7
-     & ,'FEMIS','AF1','AF2','FROEXT','spare','RLAY','FLAY','CONVF' !8
+     & ,'SPEC_HEAT','DENSITY','CABR','AMW','ABRPHA','PTOTAL','FANON'   !7
+     & ,'TATM','TDEEP','SpHeat2','TAUD','DUSTA','TAURAT','TWILI'       !7
+     & ,'ARC2','ARC3','SLOPE','SLOAZI','TFROST','CFROST','AFROST'      !7
+     & ,'FEMIS','AF1','AF2','FROEXT','spare','RLAY','FLAY','CONVF'     !8
      & ,'DEPTH','DRSET','DDT','GGT','DTMAX','DJUL','DELJUL','SolarDec' !8
      & ,'DAU','L_S','SOLCON','GRAV','Atm_Cp','ConUp0','ConUp1','ConUp2' !8
      & ,'ConUp3','ConLo0','ConLo1','ConLo2','ConLo3','SpHUp0','SpHUp1' !7
@@ -76,8 +80,8 @@ C
 	IF (J5.GT.1 .AND. J5.EQ.IDOWN) IRET=3 ! continue after changes
 	KOUNT=0			! Number of change cards read
 	JERR=0			! in case of IO error
-D	WRITE(*,*)'TCARD entry  IQ,J5=',IQ,J5 !<<<dbug
-D	WRITE(IOSP,*)'TCARD entry  IQ,J5=',IQ,J5 !<<<dbug
+D	WRITE(*,*)'TCARD entry  IQ,J5=',IQ,J5 !< dbug
+D	WRITE(IOSP,*)'TCARD entry  IQ,J5=',IQ,J5 !< dbug
 	GO TO (100,160), IQ
 C
 C initiate commons from input file or from disk saved record  (IQ = 1)
@@ -112,43 +116,32 @@ C initiate commons from input file or from disk saved record  (IQ = 1)
 	  READ (IOIN,'(/8F10.2)'  ,ERR=431,END=430) (FD(I),I=1,NFD)
 	  READ (IOIN,'(/8I10)'    ,ERR=432,END=430) (ID(I),I=1,NID)
 	  READ (IOIN,'(/10L7)'    ,ERR=433,END=430) (LD(I),I=1,NLD)
+	  print *, 'TCARD:notice N4,MAXN4=',n4,MAXN4
 	  READ (IOIN,'(/(10F7.2))',ERR=434,END=430) (ALAT(I),I=1,N4)
 	  READ (IOIN,'(/(10F7.2))',ERR=435,END=430) (ELEV(I),I=1,N4)
 	ENDIF
 	
 C  GET orbital parameters if needed
+	IF (IDB1.GE.1) PRINT *,'Before PORB0'
 	IF (LPORB) CALL PORB0
+	IF (IDB1.GE.1) PRINT *,'AFTER PORB0'
 
 C  READ a set of parameter change cards  (IQ = 2)
-C
-160	IIIN=IOIN
-	IF (LKEY) IIIN=IOKEY
-	IF (LKEY) WRITE(IOPM,162)
-162	FORMAT (' ENTER* CHANGES:  TYPE, LOCATION, NEW VALUE,[TEXT]'
-     &/'   TYPE: 0/=DONE, 1=REAL, 2=INT, 3=LOGI, 7=file, ?=HELP')
-	GOTO 164
 
-163	WRITE (IOPM,'(A)') RBUF
-	WRITE (IOPM,1635)
-1635	FORMAT(' input error, try again'
-     &/' location is index within the FD, ID, OR LD array'
-     &/' new value should be positive number for a logic. "true"'
-     &/' text = optional ascii description, within quotes')
-
-164	READ (IIIN,'(A80)',ERR=163,END=430) RBUF ! read into character buffer
+ 160	READ (IOIN,'(A80)',ERR=436,END=430) RBUF ! read into character buffer
 	KOUNT=KOUNT+1
-	READ (RBUF,*,ERR=163,END=430) IG
+	READ (RBUF,*,ERR=437,END=430) IG
 	WRITE(*,*)'IG=',IG, '  RBUF=',RBUF
 	IF (IG.LT.1) GOTO 370 ! no more changes
 	IF (IG.LT.11) THEN	! read a single parameter
-	   READ (RBUF,*,ERR=163,END=430) IG,IREAD,XREAD,TEXT
+	   READ (RBUF,*,ERR=438,END=430) IG,IREAD,XREAD,TEXT
 	   ILEN = LNBLNK(TEXT)
 	   IF (.NOT. LONE .AND. KOUNT.EQ.1) THEN
 	      CALL TPRINT (8)	! print page heading
 	      WRITE (IOSP,166)
- 166	      FORMAT ('0PARAMETER CHANGES'/' TYPE LOC VALUE')
+ 166	FORMAT ('--------- TYPE LOC VALUE -------- Parameter changes')
 	   ENDIF
- 167	   FORMAT (2I4,G12.4,1X,A,2x,A,'<Changed')
+ 167	   FORMAT (' Changed>>',2I4,G12.4,1X,A,2x,A)
 	   IF (IG.GT.3) WRITE (IOSP,167) IG,IREAD,XREAD,TEXT(1:ILEN)
 	ENDIF
 	GO TO (210,220,230,240,250,260,270,280,100,300,310,320,330), IG
@@ -166,6 +159,7 @@ C    7   Text becomes new Title                              any
 C    8   Text becomes new disk or season-variation file name
 C          if index=22, read variable ALBEDO
 C          if index=23, read variable TAUD
+C          if index=24, read climate opacity file
 C    9   Complete new set of input follows                   any
 C   10   Text becomes new One-Point input file name          any
 C   11   This is a set of parameters for "one-point" model   none
@@ -205,19 +199,24 @@ C	IF (IREAD.EQ.12) NCASE=0 ! JDISK: 2009mar reason lost
 
  280	IF (IREAD.EQ.22) THEN	! IG=8 Read file name
 	  FVALB=TEXT		! move file name into common
-	  I=SEASALB(-999.)	! READ DATA FILE
-	  KVALB=0		! SET FLAG OFF
-	  IF (I.GT.1) KVALB=1	! SET VARIABLE ALBEDO FLAG
-	  write (*,*) 'TCARD I back=',i
+	  I=SEASALB(-999.)	! read data file
+	  KVALB=0		! set flag off
+	  IF (I.GT.1) KVALB=1	! set variable albedo flag
 	ELSEIF (IREAD.EQ.23) THEN 
 	  FVTAU=TEXT		! move file name into common
-	  I=SEASTAU(-999.)	! READ DATA FILE
-	  KVTAU=0		! SET FLAG OFF
-	  IF (I.GT.1) KVTAU=1	! SET VARIABLE Tau FLAG
+	  I=SEASTAU(-999.)	! read data file
+	  KVTAU=0		! set flag off
+	  IF (I.GT.1) KVTAU=1	! set variable tau flag
+	ELSEIF (IREAD.EQ.24) THEN 
+	  FVTAU=TEXT		! move file name into common
+	  QF=CLIMTAU(-999.,0.,QB) ! read data file
+	  KVTAU=0		! set flag off
+	  IF (QF.EQ.0) KVTAU=2	! set variable Climate flag
 	ELSE
 	  CALL TDISK(4,0)	! Default: new disk file name, close current
 	  FDISK = TEXT		! move new file name into common
-	  WRITE (IOSP,*)'New Disk file name= ',FDISK(1:ILEN)
+	  NRUN=NRUN+1		! increment run count
+	  WRITE (IOSP,*)NRUN,'=Run. New Disk file name= ',FDISK(1:ILEN)
 	ENDIF
 	write(*,*)'TCARD_280',IREAD, I, KVALB,KVTAU
 	GOTO 160
@@ -250,13 +249,13 @@ D	write(*,*)'TCARD returning with IRET=',IRET          !<<<debug
 	GOTO 390 ! skip limit checks that one-point file cannot change
 
  320	WHAT='8-Cond.'
-	write(IOSP,*)' CCK Was',CCKU,CCKL
+!	write(IOSP,*)' CCK Was',CCKU,CCKL
 	READ (RBUF,*,ERR=417,END=418) IG,CCKU,CCKL !ConUp0:ConLo3
 	write(IOSP,*)' CCK Now',CCKU,CCKL
 	GO TO 160 
 
  330	WHAT='8-SpHt.'
-	write(IOSP,*)' CCK Was',CCPU,CCPL
+!	write(IOSP,*)' CCK Was',CCPU,CCPL
 	READ (RBUF,*,ERR=417,END=418) IG,CCPU,CCPL !SphUp0:SphLo3
 	write(IOSP,*)' CCK Now',CCPU,CCPL
 	GO TO 160
@@ -306,15 +305,15 @@ C
 	NMOD = MAX(NMOD,1)	! insure positive modulo
 	IF (DRSET.LT.0. .OR. DRSET.GT.0.) THEN ! insure reasonable
  389	  FORMAT (/1X,A,' invalid. Input and reset = ',2g12.5)
-	  q=0.
-	  WRITE (IOERR,389) 'DRSET',DRSET,q
-	  DRSET=Q
+	  QF=0.
+	  WRITE (IOERR,389) 'DRSET',DRSET,QF
+	  DRSET=QF
 	ENDIF
 
  390	IF (TAUD.LT.0.) THEN	! insure physically valid
-	  q=0.
-	  WRITE (IOERR,389) 'TAUD',TAUD,Q
-	  TAUD=Q
+	  QF=0.
+	  WRITE (IOERR,389) 'TAUD',TAUD,QF
+	  TAUD=QF
 	ENDIF
 	GOTO 9
 
@@ -327,6 +326,9 @@ C
 C
 C no more input data
 C
+ 438    JERR=JERR+1
+ 437    JERR=JERR+1
+ 436    JERR=JERR+1
  435	JERR=JERR+1
  434	JERR=JERR+1
  433	JERR=JERR+1
@@ -341,6 +343,6 @@ C
 	WRITE (IOSP,'(//5X,A)') 'END OF DATA ON INPUT UNIT'
 
  9	CONTINUE	! only exit from this routine
-	IF (IDB1.NE.0) WRITE(IOSP,*)'TCARD Exit: IRET=',IRET,NFD,ID(1) !<<<dbug
+	IF (IDB1.NE.0) WRITE(IOSP,*)'TCARD Exit: IRET=',IRET,NFD,ID(1) !< dbug
 	RETURN		
 	END

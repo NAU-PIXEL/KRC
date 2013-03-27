@@ -1,0 +1,24 @@
+#################################################################
+# Script to write distribution tar file of KRC system
+#  step3  script[s] must be executed first
+#_Hist 2005jan25 Hugh Kieffer
+# 2009may12 HK minor cleanup
+# 2011oct17 HK Make generic
+#################################################################
+
+set RT1='/work2/'		# one level above distribution constuction area
+set RT2='DistKRC'		# distribution construction area
+set NAME='krc' 			# name for this distribution
+set SKEL='dist.tar'		# last part of tar file name	
+
+# name construction
+set IN=$RT1$RT2			# construction area
+set OUT=$RT1$NAME$SKEL 		# output tar file
+
+echo "IN="$IN
+echo "OUT="$OUT
+
+cd $IN
+tar cvfh  $OUT aaa doc idl run src 	 # tar following all links	
+
+exit

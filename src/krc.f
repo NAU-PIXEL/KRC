@@ -23,11 +23,12 @@ C 99dec07  HHK add option to continue from current condition
 C 2002mar07 HHK Add option for "one-point" rapid runs for Surface T
 C 2006mar22 HHK Minor: change default input file to   krc.inp
 C 2009mar05 HK Minor cleanup
-C 2010jan11HK Change to use of IMPLICIT NONE
+C 2010jan11 HK Change to use of IMPLICIT NONE
+C 2013jan16 HK Eliminate the multiple use of IR
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
 
 	REAL ELAPSED,TIMES(2)	! declare the types of DTIME()
-	INTEGER IOD, IQ, IR,KREC
+	INTEGER IOD, IQ, IRC,IRD,IRS,KREC
 	INTEGER IOST		!? returned by OPEN
 	CHARACTER*80 CBUF	! temporary use
 C			zero out some commons
@@ -39,21 +40,22 @@ C		set logical units. See   units.com   for description
 	IOD1 = 1
 	IOD2 = 2
 	IOIN = 3
-	IOKEY = 5
+	IOKEY= 5
 	IOPM = 6
 	IOSP = 7
 	IOERR = IOPM
 	LOPN2 = .FALSE.
 	LONE =.FALSE.		! true when in one-point mode
 C			set constants
-	PIVAL = 3.14159265
-	RADC = 180./PIVAL		! degrees/radian
-	SIGSB = 5.67051e-8 !  Stephan-Boltzman constant:  SI =  W m^-2 K^-4
-	RGAS = 8.3145	 ! ideal gas constant  (MKS=J/mol/K)
-	HUGE = 3.3E38	 ! largest   REAL constant
-	TINY = 2.0E-38	 ! smallest  REAL constant
-	EXPMIN = 86.80	 ! neg exponent that would almost cause underflow
+	PIVAL = 3.14159265      ! pi
+	RADC = 180./PIVAL	! degrees/radian
+	SIGSB = 5.67051e-8	!  Stephan-Boltzman constant:  SI =  W m^-2 K^-4
+	RGAS = 8.3145		! ideal gas constant  (MKS=J/mol/K)
+	HUGE = 3.3E38		! largest   REAL constant
+	TINY = 2.0E-38		! smallest  REAL constant
+	EXPMIN = 86.80		! neg exponent that would almost cause underflow
 	KREC=0			! ensure it has a storage location
+	NRUN=0			! no output file yet
 C			open files: input, print, save
 50	FINPUT = 'krc.inp'
 	WRITE (IOPM,*)'?* Input file name or / for default =',FINPUT
@@ -69,15 +71,15 @@ CC	call U_std_init ('krc','1997-09-09','invoke traps') ! to invoke traps
 C			read and check a complete set of input parameters
 D	write(iosp,*) 'before TCARD LP2=',LP2 !<<< debug 
 	CALL DATIME (DAYTIM)
-	CALL TCARD (1,IR)
-D	write(iosp,*) 'after TCARD IR,LP2=',IR, LP2 !<<< debug
-D	write(*,*) 'TCARD1 return=',ir !<<< debug
-	IF (IR.GT.4) GO TO 170
+	CALL TCARD (1,IRC)
+D	write(iosp,*) 'after TCARD IR,LP2=',IRC, LP2 !<<< debug
+D	write(*,*) 'TCARD1 return=',IRC !<<< debug
+	IF (IRC.GT.4) GO TO 170
 	IF (LP1) CALL TPRINT (1) ! print program description
 	CALL DTIME(TIMES,ELAPSED) ! Start clock, GNU recommended form 
 C				*****  BEGIN case  *****
  140	NCASE = NCASE+1		! have a case defined
-	IF (IR.EQ.4) THEN	! Switch to "one-point" mode
+	IF (IRC.EQ.4) THEN	! Switch to "one-point" mode
 	  CLOSE(IOIN)		! close the card input file
 D	  write(*,*)'FINPUT=',finput !<<< debug
 	  OPEN (UNIT=IOIN,FILE=FINPUT,STATUS='OLD',iostat=iost,err=81)
@@ -91,16 +93,16 @@ D	  write(*,*)' k3' !<<< debug
 	  WRITE(IOSP,'(A,A)')'C_END  Ls   Lat  Hour Elev  Alb Inerti '
      &      ,'Opac Slop Azim  TkSur  TbPla             Comment'
 	  LONE=.TRUE.
-	  CALL TCARD (2,IR)	! read first one-point case
-D	write(IOSP,*) 'KRC TCARD2 return=',IR !<<< debug
+	  CALL TCARD (2,IRC)	! read first one-point case
+D	write(IOSP,*) 'KRC TCARD2 return=',IRC !<<< debug
 	ENDIF
-	IQ = IR	             ! transfer "continuing" flag from  TCARD to  TSEAS
+	IQ = IRC		! transfer "continuing" flag from  TCARD to  TSEAS
 	IF (LONE) IQ=1		! set TSEAS to start fresh
-	CALL TDAY (1,IR) 	! initialize day computations
-D	write(IOSP,*)'KRC TDAY 1 return, LP2',IR,LP2 !<<< debug
-	IF (LP2 .OR. IR.NE.1) CALL TPRINT (2)
-C	IF (.NOT.LONE .AND. (LP2 .OR. IR.NE.1)) CALL TPRINT (2)	! print input parameters
-	IF (IR.NE.1) THEN
+	CALL TDAY (1,IRD) 	! initialize day computations
+D	write(IOSP,*)'KRC TDAY 1 return, LP2',IRD,LP2 !<<< debug
+	IF (LP2 .OR. IRD.NE.1) CALL TPRINT (2)
+C	IF (.NOT.LONE .AND. (LP2 .OR. IRD.NE.1)) CALL TPRINT (2) ! print input parameters
+	IF (IRD.NE.1) THEN
 		WRITE(IOSP,*)' PARAMETER ERROR IN TDAY(1)'
 		IF (N5.GT.0) GOTO 170
 	    ENDIF
@@ -110,23 +112,23 @@ C======
 D	write(*,*) 'cond=',cond	!<<< debug
 D	write(*,*)'KRC LP4=',LP4 !<<< debug
         CALL DATIME (DAYTIM)	! reset the time at start of each model
-	CALL TSEAS (IQ,IR)		! %%%%% execute season loop %%%%
-D	write(*,*)'TSEAS return IQ,IR,N5,krec=',IQ,IR,N5,krec !<<< debug
+	CALL TSEAS (IQ,IRS)		! %%%%% execute season loop %%%%
+D	write(*,*)'TSEAS return IQ,IRS,N5,krec=',IQ,IRS,N5,krec !<<< debug
 C======
 	IF (LONE) CALL TPRINT(9) ! print results at requested one-point
 
-	IF (IR.NE.1 .AND. N5.GT.0) GO TO 170	! stop on error in seasonal run
-	CALL TCARD (2,IR)		! read set of parameter changes
+	IF (IRS.NE.1 .AND. N5.GT.0) GO TO 170	! stop on error in seasonal run
+	CALL TCARD (2,IRC)		! read set of parameter changes
 
-D	WRITE(IOSP,*)'TCARD 2 IR=',IR,krec  !<<< Debug
-	IF (IR.EQ.3) NCASE=NCASE-1 ! do not increment case for continuing from memory
-	IF (.NOT. LONE .OR. IR.EQ.5) THEN 	! 
+D	WRITE(IOSP,*)'TCARD 2 IR=',IRC,krec  !<<< Debug
+	IF (IRS.EQ.3) NCASE=NCASE-1 ! do not increment case for continuing from memory
+	IF (.NOT. LONE .OR. IRC.EQ.5 ) THEN 	! 
 	   CALL DTIME(TIMES,ELAPSED) ! elapsed seconds
  133	   FORMAT(1X,'Case',i3,2x,a1,'TIME: total, user, system=',3f10.4)
 	   WRITE(   *,133)NCASE,'D', ELAPSED,TIMES
 	   WRITE(IOSP,133)NCASE,'D', ELAPSED,TIMES
 	ENDIF
-	IF (IR.LT.5) GOTO 140	! 5 is END of data
+	IF (IRC.LT.5) GOTO 140	! 5 is END of data
 C
  170	IF (LOPN2) CALL TDISK (4,KREC)	! all done: close disk files
 
@@ -145,7 +147,7 @@ C error section
 	GOTO 60
  83	WRITE(IOERR,*)'KRC error reading one-point header lines',FDISK 
 	GOTO 9
- 84	WRITE(IOERR,*)'KRC unexpected EOF reading one-point header lines' 
+ 84	WRITE(IOERR,*)'KRC unexpected EOF reading one-point header' 
 	GOTO 9
 
 	END

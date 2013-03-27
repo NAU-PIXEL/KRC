@@ -1,44 +1,54 @@
         GUIDE TO BUILDING THE KRC DISTRIBUTION TAR FILE
+History: 2006 Hugh Kieffer
+2011oct23  2013jan25  HK Update
 
 ------------ Begin  ONLY FOR THE FIRST DISTRIBUTION  Begin------------
 
 Decide on the top directory of the distribution files.   ~/krc/Dist/
-Decide on the directory structure below this. Described in  step2
-
-Create these directories
+Decide on the directory structure below this. My normal architecture is 
+-/aaa   Scripts to make distribution, installation guides, Makefile
+-/doc   Docucmentation on the system
+-/src   Source code other than IDL, copy of makefile[s]
+-/idl1   Source IDL code, essential for reading type 5x output files
+-/idl2   Source IDL code, other
+-/run   Input files
+-/run/output  To hold output of runs
+-/addon Updates after a full distribution
 
 Create the distribution system scripts
-Put all these in Dist/aaa/  Edit in semi-permanent fashion
-Any other files that must be edited: copy them into Dist/aaa and edit there
+Put all these in krc/aaa/  Edit in semi-permanent fashion
+Any other files that must be edited: copy them into krc/aaa and edit there
 
+Script files: 
+step1  Creates the directory structure
 
- - step2 Script file to build accumulate all the source code and files needed to
- make and run the executable application. [[ Will also build the LaTeX
- documents to Postscript and pdf.] Do by hand]
+step2  Updates any documentation files, such as running latex and ps2pdf
 
- - sysdef.rules    System-dependant rules for Make. 
+step3  Script file to build accumulate all the source code and files needed to
+ make and run the executable application.
+
+ - Makefile  The make file to build the shared object library system. 
    May need to edit for your local system environment
 
- - Makefile  The make file to build the shared object library system
+step4  Script to make the tar file
 
- - step3  Script to make the tar file
+step6  Copy edited versions of files unique to specific installation on top 
+        of the distribution version.
 
 ---------------  End  ONLY FOR THE FIRST DISTRIBUTION  End ----------------
 
 For a new release:
 If any new routines or new input files:
-  Add these to the soft links in step2
+  Add these to the soft links in step3
   Update the Make file
 
 
-Execute the /home/hkieffer/krc/Dist/step2 script, which empties the build
+Execute the /home/hkieffer/krc/Dist/step3 script[3], which empties the build
 area, creates directories and copies files into the build area
-
-  DO NOT REMOVE FILES FROM   ~/krc/Dist/aaa/ 
 
   RENAME the prior distribution tar file to archive it
 
-Execute the /home/hkieffer/krc/Dist/step3 script, which will move to one
+Execute the /home/hkieffer/krc/Dist/step4 script, which will move to one
 directory above the construction directory and Tar the entire code set,
 following the symbolic links
 
@@ -51,7 +61,21 @@ Test the build:
 untar the Dist file
 Follow the directions of AAinstall
 
-once all works well, run step 3b to include the executable krc
+Once all works well, copy or link-to the executable krc into  -/run 
 
 Final:  Delete the intermediate LaTeX files
 	Delete all the *.o files
+
+
+       TRANSFER
+
+callasu   to login to ASU
+~/bin/gp G /work2/krcdist.tar   to pull from hulk to ASU
+
+if does not work, may need to edit gp on hulk, then 
+
+gp p bin/gp asu  to push new version of gp to ASU
+
+bastion will not repond to pings.
+
+scp /work2/krcdist.tar

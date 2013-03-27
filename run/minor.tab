@@ -1,0 +1,85 @@
+Orbit elements and spin axis for minor bodies.
+                       2 comment line    See bottom of file for explanation
+'Vesta' / 1 object name.   Values from Tim Titus email 2009nov30
+2455201. /  epoch in full Julian date  2010Jan4
+2.3619  / Semi-Major axis in A.U.: a
+0.0887  / Eccentricity: e
+7.134 / Inclination of mean orbit to ecliptic : i [deg]
+103.915 / Longitude of the ascending node: Omega [deg]
+149.837 / Argument of perihelion: w [deg]
+253.504 / Mean anomoly at epoch: M [deg]
+308. / Right Ascension of Pole, J2000 [deg]
+48. / Declination of Pole, J2000 [deg]
+0. / Prime meridian at epoch [deg]
+0.222583 /Sideral rotation period, [days]
+
+'Vesta-h' / 2 orbit from http://www.cfa.harvard.edu/iau/Ephemerides/Bright/2006/00004.html
+2453800.5 / 2006 Mar. 6.0 epoch in full Julian date
+2.3613051  / Semi-Major axis in A.U.: a
+0.0890882  / Eccentricity: e
+7.13351 / Inclination of mean orbit to ecliptic : i [deg]
+103.92607 / Longitude of the ascending node: Omega [deg]
+150.30933 / Argument of perihelion: w [deg]
+232.80490 / Mean anomoly at epoch: M [deg]
+308. / Right Ascension of Pole, J2000 [deg]
+48. / Declination of Pole, J2000 [deg]
+0. / Prime meridian at epoch [deg]
+0.222583 /Sideral rotation period, [days]
+
+'1999RQ36' / 3 http://ssd.jpl.nasa.gov/sbdb.cgi?sstr=101955  2012feb29
+2456000.5 / epoch in full Julian date
+1.126038025838632 / Semi-Major axis in A.U.: a  period=436.443481 day
+.2036994928473318 / Eccentricity: e
+6.035405340360255 / Inclination of mean orbit to ecliptic : i [deg]
+2.051615098784052 / Longitude of the ascending node: Omega [deg]
+66.2666863129749  / Argument of perihelion: w [deg]
+102.8657778912915 / Mean anomoly at epoch: M [deg]
+-68.6423 / Right Ascension of Pole, J2000 [deg]
+-78.0386 / Declination of Pole, J2000 [deg]
+   0. / Prime meridian at epoch [deg]
+4.288 /Sideral rotation period, [days]
+
+'Ceres' / 4  From Tim Titus 2012aug08
+2456400.5 / epoch in full Julian date     2000.0= 2451545.D0 
+2.768 / Semi-Major axis in A.U.: a
+0.076  / Eccentricity: e
+10.594  / Inclination of mean orbit to ecliptic : i [deg]
+80.330 / Longitude of the ascending node: Omega [deg]
+72.167  / Argument of perihelion: w [deg]
+327.8540426 / Mean anomoly at epoch: M [deg]
+291. / Right Ascension of Pole, J2000 [deg]
+59. / Declination of Pole, J2000 [deg]
+0.  / Prime meridian at epoch [deg]
+0.379167 /Sideral rotation period, [days] 9.1 Hours
+
+'skeleton' / 99 object name, between single quotes
+ / epoch in full Julian date     2000.0= 2451545.D0 
+1 / Semi-Major axis in A.U.: a
+2 / Eccentricity: e
+3 / Inclination of mean orbit to ecliptic : i [deg]
+4 / Longitude of the ascending node: Omega [deg]
+5 / Argument of perihelion: w [deg]
+6 / Mean anomoly at epoch: M [deg]
+7 / Right Ascension of Pole, J2000 [deg]
+8 / Declination of Pole, J2000 [deg]
+9 / Prime meridian at epoch [deg]
+10 /Sideral rotation period, [days]
+
+
+---------------------------------
+
+Explanation.
+The first two line of the file are comments
+Each object must have 12 lines to be read, followed by one line spacing
+All angles are in degrees.   Inertial reference system assumed to be J2000
+
+Epoch can be full JD or that -2440000. PORB system internally uses dates
+ relative to 2440000
+Each line after epoch must contain one value, the values at epoch.
+  In addition, it may contain a linear term, in Julian centuries
+  In addition, this may be followed by a quadratic term, in Julian centuries
+Numeric fields are separated by white space; if less than 3, they
+ must be followed by a slash to terminate the list-directed I/O 
+E.g.:   V0  V1  V2 / 
+  then V=V0 +V1*Tc +V2*Tc^2  in degrees
+  where Tc is Julian centruies from Epoch

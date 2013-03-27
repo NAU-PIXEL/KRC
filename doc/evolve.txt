@@ -1,4 +1,7 @@
-evolve.txt  Notes on evolution of KRC code
+\begin{verbatim}
+evolve.txt  Notes on evolution of KRC code, after the first 15 to 17 years.
+Does not include many minor changes
+
 
 85May~10-14.    Dave Paige visits Flagstaff. We create new directory 
 	[hkieffer.krc.mars] in which MARS version of code is put. MARS version 
@@ -6,7 +9,7 @@ evolve.txt  Notes on evolution of KRC code
 	  After Dave left, found that TDISK had not had JLAT change, 
 	hence was not writing LATCOM to disk.
 	Made new plot version, starting with 84jun comet version, but with 
-	almost entire revision using NCAR_1 routines, includeing new
+	almost entire revision using NCAR_1 routines, including new
 	MCURVE1, CONREC1 and GO1.  Never got all the bugs out.
 
 85Jun24-28  Paul Weissman visit. Found error in COMA2, otherwise no changes
@@ -14,14 +17,14 @@ evolve.txt  Notes on evolution of KRC code
 
 85sep05-07 Combine the comet and mars versions into single routines which use 
 	the larger LATCOM. Only external change is reversing the meaning of 
-	LD18.  Major restructureing of TLATS and TDAY to accomodate both comet 
+	LD18.  Major restructuring of TLATS and TDAY to accommodate both comet 
 	and Mars; use LD20 .TRUE. if Mars, .FALSE. if comet.  Other routines 
 	needed no changes. 
 	Revise HELPLIST.
 	Create directory KRC.COM] for the comet-particular stuff. Move older 
 	routines for .KRC] to .KRC.COM]. Move all the routines which support
 	both comet and mars from .KRC.MARS] to .KRC].
-	Delete plot routines dateing from 1984 which used the smaller LATCOM.
+	Delete plot routines dating from 1984 which used the smaller LATCOM.
 
 85oct14	Add COMMON FILCOM of file names; print these in TPRINT.
 	Change meaning of FROST4 and AFRO4 for comet.
@@ -38,7 +41,7 @@ evolve.txt  Notes on evolution of KRC code
 87jun30 TDAY: Avoid /0 if DTMJ(JJJ)=0 at "done" test.
 
 87sep11 .MARS] TDAY & TLATS: Special versions for metamorphism.
-	  Use ZLAT(17:19) for input of metamorphism and sublimaion constants.
+	  Use ZLAT(17:19) for input of metamorphism and sublimation constants.
 	  Use TT(J,MAXN3) to transfer metamorphism rate.
 	  TYEAR: version of TLATS which averages daily insolation and includes
 	    PORB in the insolation calculation. Uses AVEDAY.
@@ -56,25 +59,25 @@ evolve.txt  Notes on evolution of KRC code
 	TPRINT: redo some formats.
 	TDAY: Add error report if convergence is unstable.
 	KRC: set IOERR=IOPM rather than IOSP.
-	  Force parameter print thru call to TPRINT(2) if TDAY(1) error occurs.
+        Force parameter print through call to TPRINT(2) if TDAY(1) error occurs.
 	.MARS]TLATS:  now includes variance tests.
 
-88sep08	.MARS]TDAY: Test moveing layer T limit tests and metamorph from N24 
+88sep08	.MARS]TDAY: Test moving layer T limit tests and metamorph from N24 
 	into each time loop; so that they are done 1536 instead of 40 times
 	per "day". Negligible effect; <.01 degree in TMETA.
 
 97fall-98summer Incorporate one-layer atmosphere with many parameters that can
-be turned to mimic Haberle-Jakosky model. Wrote LaTex description. Build TES
-lookup code for computation of thermal inertia from TES observations; this
+be tuned to mimic Haberle-Jakosky model. Wrote LaTeX description. Build TES
+look-up code for computation of thermal inertia from TES observations; this
 interfaces with Mike Mellon model set.
 
 1997sep  idlkrc.f  Build this IDL interface to call KRC.
 
 98sep01-07 Add section to TDISK for output of bin5 files type 51 and 52. Minor
 code cleanup, avoiding divide-by-zero if atmosphere parameters were zero Make
-krc/moon version of TLATS and TDAY by removing all atmosphere code, and
+KRC/moon version of TLATS and TDAY by removing all atmosphere code, and
 including eclipse section in TLATS; commons left the same even though
-atm. results not calculated.
+atmosphere results not calculated.
 
 1999dec krc.f tcard.f Add option to continue from current condition
 
@@ -84,14 +87,14 @@ atm. results not calculated.
 Surface T
 
 2002jul Major change. Incorporate Delta-Eddington atmosphere. Found that double
-precision required within deding2.f
+precision is required within deding2.f
 
 2002aug04 tdisk.f Add output file type 53=(combo at 1 lat, 2+80 seasons, 10
 cases). Recode logic
 
 2002nov01 tseas.f  Have DJU5 increment by current DELJUL for each season
 
-2004jul06 tdisk.f  Add file style 54.
+2004jul06 tdisk  Add file style 54  Add the Common  HATCOM
 
 2004sep28 porb.f Change name of called routine ROTATE to ROTVEC to avoid library
 conflicts
@@ -101,3 +104,109 @@ code would run at ASU
 
 2004sep30-Oct5 tday.f tdisk.f Add storage of surface downward fluxes every hour
 on last day. Revise file style 52 to include them (and a spare variable).
+
+2005nov18 tlats  Add optional solar zenith angle limit
+
+2005nov19 tprint Add print of depth to top of 2nd layer
+
+2005dec28 tlats  Fix bug using ZENLIM. Additional comments
+
+2006jan25 tlats  Modify SKYFAC from linear with slope to (1+cos s)/2
+
+2006apr12 tdisk  Change file style 54 to have both 1am and 1pm surface Temp.
+
+2006apr22 tdisk  Allow flexible number of cases for output file type 52 and 54
+
+2006apr30 tdisk  Add TTB4 to type 54 output
+
+2006sep09 tcard  Correct error:  REAL*4 LSUBS should have been ALSUBS
+
+2006sep09  Allow seasonally variable albedo and TauD. 
+  three new routines: seasalb, seastau, readtxt360; 
+  and changes in tseas and tcard and filcom.inc
+
+2008oct02-25
+Found error in calculation of planetary temperature; was using 
+  hemispheric integral 1-BETA instead of exp(-Tau_IR); so in effect using tau 
+  that was too large by factor of tau_eff/ Tau_IR.
+Modify: krc.f tseas.f tlats.f tday.f tdisk.f tprint.f tcard.f
+ krccom.inc daycom.inc
+Use slope azimuth as a flag for a pit of slope SLOPE.
+Put in proper SKYFAC for conical pit.
+Allow for Snow formation in cold atmosphere and fall to surface.
+Move MAXBOT from daycom.inc to krccom.inc. 
+Replace ID22(1) and (2) with KVALB and KVTAU.
+Move AMW fixed value in tlats.f into krccom in place of ABRAMP
+  move other physical and hardware-dependent constants into krc and krccom.
+Add output file type 56 in tdisk.
+Replace dual use of GGT by using new DTMAX for daily convergence.
+Major modification of output Type 52.
+Use IDOWN as season index at which to read some changes
+TMN4Y(
+
+2008nov11-2009feb
+Add temperature-dependant conduction option
+  Use L10 as logical variable for k-of-T
+  Lengthen KRCCOM and move some inputs around 
+  recode tday to have constant and T-dependant options
+ Update IDL routines that deal with KRCCOM 
+Remove max # seasons restriction.
+
+2009apr22
+Begin ability to forecast deep layers based on storage of midnight values.
+
+Scheme 1. [Coded, but not refined. Mostly a stub] Store at integral years prior
+to forecast season index. If have 3 or more values, use EPREAD; should be safe
+to use on all layers. Because of possible jump perturbation on the first day,
+best to not have that be one of the stored dates. Does nothing if IDISK2=0.  [To
+remove, delete TMN4Y from hatcom, delete call to TYEARP in TSEAS, remove
+tyearp.o from sources in Makefile]
+
+Scheme 2.[Not implimented] Rolling storage of all seasons for the past year. At
+forecast season; evaluate thermal delay to surface and make [complicated]
+forecast.
+
+2010jan11 Go to IMPLICIT NONE in all major routines
+Change names in krccom  PI>>PIVAL  RAD>>RADC  to improve search uniqeness
+Move TINT call from tlats to tseas so as to remove 1-season delay in SUMF
+Add D-line writes to fortran units for study of KofT differences.
+
+2010apr21 Update 3 routines that deal with the 4 input lines related to
+temperature-dependent properties: tprint, tcard, tday , giving the extension .f2
+and the older versions extension .f1. Make soft links of .f to the .f2 version
+Also make soft link for krccom.inc to krcccom.inc2 As of this date, the base
+version of KRC has the temperature-dependent option, invoked by setting
+
+ Add option of 3rd integer on first input line. If not 0, then will read a card
+ of 6 debug flags, IDB1 to IBD6, which are contained in units.inc and all are
+ initialized as 0 in TCARD(1)
+
+2010sep04  In tday; remove the 0.9 pad on N3 limit of DELJUL/PERIOD
+
+2011 july-ish Develop movie version, KRCm, to speed up Phils calculation of
+spining thermal planet; achieved factor of 3800. Requires use of soft links to
+multiple versions of some routines
+ 
+2012 mar Develop no-atmosphere capability, which uses average annual insolation
+for initial temperature estimates; changes restricted to TLATS and TDAY. Write
+OBLIP and AVEYEAR. Discover many versions of porbcm.inc and some porb--.f;
+replace all current use except -/krc/porb/ with softlinks. No-atmosphere is
+triggered by PTOTAL of 1 [Pascal] or less. Include '|<dbug' on D-lines.
+
+Incorporate CLIMTAU that sllow read of zonal/seasonal dust and ice opacities
+
+2012 Mar 3 06:07:45 Very scary, after many crashes (typical exceeding MAXN4) and
+ debugs, added a print statement to TDISK and it ran. Removing the compilier
+ option -fdefault-integer-8 seems to have fixed the problems.
+
+2012may11 Temporary calculation of magnitude of energy lost from system when
+Tatm falls below saturation but there is no cap to which to add the
+snowfall. Use FLOST in krccom and TTX4 in latcom. Then comment out code in TSEAS
+but leave the few statements in TDAY and TLATS.
+
+2012jun02 Compute cosine of incidence on level and slopes using vector algebra.
+This removes the restriction that slope normals should not be tilted past the 
+spin axis, and is exact for large slopes. A few new subroutines for vector 
+algebra.
+
+\end{verbatim}

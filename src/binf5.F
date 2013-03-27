@@ -67,6 +67,7 @@ C2004jul12 HK add arch-type for Mac.
 C 2008mar31 HK Replace  SWAPBYTER4 with SWAPBYTE4
 C           and  Replace C## with D for conditional compile
 C           and temporary firmcode machine architecture   << BEWARE
+C 2011oct23 HK Two continuation lines; replace leading tab with 5 spaces
 C_End
 
 	INTEGER*4 IERR		! return code from pio routines
@@ -85,7 +86,7 @@ C_End
 	INTEGER*4 IDL(10)		! array to contain idl size values
 	CHARACTER*120 BUF
 	CHARACTER*6 ARCH(MAXARC) /'sparc ','alpha ','ppc   ','x86   '
-      1 ,'x86_64','unknow'/		!hardware architecture
+     1 ,'x86_64','unknow'/		!hardware architecture
 C  IDARCH index =                   1      2       3=mac
 	INTEGER*4 BARCH(MAXARC) / 1,2,2 ,2 ,2,0 / ! byte-order type (arbitrary)
 	CHARACTER*6 ARCHCPU
@@ -208,7 +209,7 @@ D	   write(*,*)'LOC,ND1=',LOC,ND1	!###
 
 C decode sizes in first block of header (now equivalenced into  CC)
 	   READ (CC,*,err=330) IDL(1),(IDL(I),I=2,IDL(1)+1)
-	1	, IDL(8),NIT, IDL(10) ! sizes
+     1	, IDL(8),NIT, IDL(10) ! sizes
 	   goto 340
  330	   write(*,*)'Num_Bytes_in_Header not found: Using 512'
 	   READ (CC,*,err=810) IDL(1),(IDL(I),I=2,IDL(1)+1), IDL(8),NIT

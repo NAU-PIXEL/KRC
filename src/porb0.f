@@ -9,10 +9,16 @@ C_END
 
 	REAL P(60)		! blcvk of 60 floats to read
 	EQUIVALENCE (P,PLANUM)	! correspond to start of common
-
+	logical LOP		! debug print
+	LOP=IDB1.GT.3
+	IF (LOP) WRITE(IOSP,*)'PORB0 1'
 	READ(IOIN,33)	! skip the line of PORB runtime
+	IF (LOP) WRITE(IOSP,*)'PORB0 2'
 	READ(IOIN,33) P
+	IF (LOP) WRITE(IOSP,33)p
+	IF (LOP) WRITE(IOSP,*)'PORB0 3'
 33	FORMAT (5G15.7) 
 	PICON=3.141592654 ! ensure value in porbcm set.
+	IF (LOP) WRITE(IOSP,*)'PORB0 4'
 	RETURN
 	END

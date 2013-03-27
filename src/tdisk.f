@@ -8,16 +8,16 @@ C_Vars
 	INCLUDE 'units.inc'
 	INCLUDE 'filcom.inc'
 C_Lims
-	INTEGER MAXDIM
+	INTEGER*4 MAXDIM
 	PARAMETER (MAXDIM=6)	! max number of dimensions needed
-        REAL FFF (KOMMON)	!   the largest of the 5n types
-	INTEGER MMM(MAXDIM)	! to hold cumulative size of each dimension
-        INTEGER JJJ(10)		! sizes to go to  BINF5
-        REAL FRONT(4)		! Leading size integers converted to real
-	INTEGER KASE,KODED	! words/case, file type
+        REAL*4 FFF (KOMMON)	!   the largest of the 5n types
+	INTEGER*4 MMM(MAXDIM)	! to hold cumulative size of each dimension
+        INTEGER*4 JJJ(10)		! sizes to go to  BINF5
+        REAL*4 FRONT(4)		! Leading size integers converted to real
+	INTEGER*4 KASE,KODED	! words/case, file type
 	COMMON /BINCOM/ JJJ,KODED,KASE,FFF ! ensure these are remembered
 C_Args
-	INTEGER KODE		! in. control
+	INTEGER*4 KODE		! in. control
 C  1 = open file.  then see  KREC
 C        will set  LOPN2=.true. if file opened
 C  2 = write a season. appended after  JREC.  KREC ignored
@@ -25,7 +25,7 @@ C  3 = read a season.  input  KREC as record number,  IERR returned as iostat
 C	also, sets record position to append on next write
 C  4 = close the file.  KREC ignored
 C  5 = write a record of  KRCCOM.  KREC ignored
-	INTEGER KREC	!in (when  KODE=1): file status: 0=new  1=old
+	INTEGER*4 KREC	!in (when  KODE=1): file status: 0=new  1=old
 C_Desc
 C Can write several styles of binary files; controled by K4OUT. See helplist.txt
 C The two basic families are Direct access files containing combinations of
@@ -67,29 +67,30 @@ C 2008sep30-oct15  HK Add type 56, Revise type 51 and 52, remove type 53
 C 2009feb23  HK  Recode all bin5 outputs
 C 2010jan12  HK  Use  IMPLICIT  NONE
 C 2010apr21  HK  Write notice of writing record only if count <=  IDISK2
+C 2012feb26  HK  Remove unused variables  apr04 minor cleanup
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
-
 C JJJ are the IDL SIZE sent to BIN5 files;  JJJ[1]= dimensionality
 C MMj are the number of words in the j'th dimension
-C ie MM1 =JJJ[2], MM2=MM1*JJJ[3] etc   OR MM4,MM5 used as saved other values
-
+C ie MM1 =JJJ[2], MM2=MM1*JJJ[3] etc   OR MM4 used as saved other values
 C Direct write will zero-fill unused part of record
 	CHARACTER CSTAT*3
 C Make arrays that overlay each of the major   Commons
-	REAL COMKRC(NWKRC),COMLAT(NWLAT),COMDAY(NWDAY)
+	REAL*4 COMKRC(NWKRC),COMLAT(NWLAT),COMDAY(NWDAY)
 	EQUIVALENCE (COMKRC,ALB),(COMLAT,NDJ4),(COMDAY,XCEN) ! first word of each
-
         CHARACTER*30 HEADER /'KRC-tes custom save'/
-        INTEGER HEADLEN /30/
-        INTEGER JREC		! the 1-based output record number
-        INTEGER I,I2,I4,IDX,IOS,IRET,J,JOUT,K,KOFF,NWTOT,NRECL
-	INTEGER HEAD,NDX,ND4,MASE,MM1,MM2,MM3,MM4,MM5 ! multiple array dimensions
-	INTEGER NSOUT		! number of seasons expected to be output
-
-	SAVE IDX,NDX,JREC,KOFF,MASE,MMM ! insure these 
+	REAL*4 RASE
+        INTEGER*4 HEADLEN /30/
+        INTEGER*4 JREC		! the 1-based output record number
+        INTEGER*4 I,I2,I4,IDX,IOS,IRET,J,JOUT,K,NWTOT,NRECL
+	INTEGER*4 HEAD,NDX,ND4,MASE,MM1,MM2,MM3,MM4 ! multiple array dimensions
+	INTEGER*4 NSOUT		! number of seasons expected to be output
+	SAVE IDX,NDX,JREC,MASE,MMM ! insure these 
 	SAVE FRONT,NSOUT	! remain defined
 C
- 991	IF (IDB3.NE.0) WRITE(IOSP,*)'TDISKa ',KODE,KREC,NCASE,J5,K4OUT
+ 31	 FORMAT(A,5I7)  !<dbug
+ 	IF (IDB3.NE.0) WRITE(IOSP,*)'TDISKa ',KODE,KREC,NCASE,J5,K4OUT
+	IF (IDB3.GE.2) WRITE(IOSP,31)'TDISKa N3,N4+',N3,N4,N5,J5,MASE !<dbug
+	IF (IDB3.GE.3) WRITE(*   ,31)'TDISKa N3,N4+',N3,N4,N5,J5,MASE !<dbug
 	GOTO (100,200,300,400,500),KODE
 C
 C request file name and open file			1  1  1  1  1  1  1  1
@@ -146,7 +147,6 @@ C Solaris: is longwords, since file is unformatted (default for direct access)
 	    JJJ(4) = N4		! dimen of latitudes
 	    JJJ(5) = NSOUT	!  number of seasons to come.
 	    HEAD   =5*NSOUT	!  Extra words in case header
-	    WRITE(IOPM,*)'N4=',n4
 	  ELSEIF (K4OUT.EQ.54) THEN
 	    JJJ(1) = 4		! # of dimensions
 	    JJJ(2) = NSOUT	! expected total seasons
@@ -170,12 +170,11 @@ C Solaris: is longwords, since file is unformatted (default for direct access)
 	     GOTO 9
 	  ENDIF
 D	  WRITE(IOSP,13)K4OUT,JJJ
- 13	  FORMAT ('Initiated custom output: K4OUT=',I3,/'JJJ=',10I6)
+D 13	  FORMAT ('Initiated custom output: K4OUT=',I3,/'JJJ=',10I6)
 C at this point, jbb(2:n) contain the dimension needed for data.
 C need to update next to last for NDX, and compute the number of cases possible
-	  WRITE(IOPM,*) 'N4,jjj=',n4,jjj
 	  IDX=JJJ(1)-1		! dimension that has extra size
-	  WRITE(IOPM,*)'IDX=',idx
+	  WRITE(IOPM,*)'IDX=',IDX
 CC	  IF (IDX.LT.2) THEN STOP ! ensure enough dimensions for this scheme
 	  MMM(1)=JJJ(2)		! compute number of words for each dimension
 	  DO J=2,IDX		! up to the largest used
@@ -183,21 +182,22 @@ CC	  IF (IDX.LT.2) THEN STOP ! ensure enough dimensions for this scheme
 	  ENDDO
 	  K=4+NWKRC+HEAD	! Increase case header for standard things
 	  NDX=(K-1)/MMM(IDX-1)+1 ! extra Dim N-1 needed to hold case header
-	  WRITE(IOPM,*)'NDX,K=',NDX,K
+	  WRITE(IOPM,*)'N4,NDX,K=',N4,NDX,K
 	  JJJ(IDX+1)=JJJ(IDX+1)+NDX ! revised this dimension
-	  WRITE(IOPM,*)'Idx,JJJ=',IDX,JJJ
+	  WRITE(IOPM,*)'IDX,JJJ=',IDX,JJJ
 	  WRITE(IOPM,*)'MMM=',MMM
-	  WRITE(IOSP,*)'Idx,JJJ=',IDX,JJJ
+	  WRITE(IOSP,*)'IDX,JJJ=',IDX,JJJ
 	  WRITE(IOSP,*)'MMM=',MMM
 	  KASE=MMM(IDX-1)*JJJ(IDX+1) ! # words in a case
-	  MASE=KOMMON/KASE	! # cases that could be accomodated
+	  RASE=FLOAT(KOMMON)/FLOAT(KASE) ! # cases that could be accomodated
+	  MASE=IFIX(RASE)	! # cases that could be accomodated
 	  KODED=K4OUT		! transfer into Common
 	  FRONT(1)=FLOAT(NWKRC)	! first 4 words are sizes used
 	  FRONT(2)=FLOAT(IDX)	! 1-based index of dimension with extra values
 	  FRONT(3)=FLOAT(NDX)	! Number of those extra
 	  FRONT(4)=FLOAT(NSOUT)	! not used yet
-	  WRITE(IOSP,*),'KOMMON,KASE,MASE,MTOT='
-     &          ,KOMMON,KASE,MASE,KASE*MASE
+	  WRITE(IOSP,*),'KOMMON,KASE,RASE,MASE,MTOT='
+     &          ,KOMMON,KASE,RASE,MASE,KASE*MASE
 	  JREC=0		! records written thus far = none
 	  LOPN2=.TRUE.
 	  IF (MASE.LT.1) LOPN2=.FALSE. ! KASE larger than KOMMON
@@ -230,7 +230,6 @@ C write next record (internal record count)		2  2  2  2  2  2  2  2
 	  ENDIF 
 	  GOTO 9
 	ENDIF
-
 C get here if type 5x  !---------------------------------------
 D	  WRITE(IOSP,*)'TDISKb ',kode,krec,ncase,j5,' jd,jjj',jdisk,JJJ
 	IF (NCASE.GT.MASE) GOTO 9 ! no room left for storage
@@ -425,7 +424,7 @@ C       output parameters once                          5  5  5  5  5  5  5  5
 	   IF (IDB3.GE.3) WRITE(IOSP,*)'TDISKc  KREC=',KREC,LOPN2,IOD2,I
 	   WRITE (IOD2,REC=I) COMKRC
 	ELSE 
-      WRITE (IOERR,*) 'TDISK:5,wrong conditions: k4out,jrec=',k4out,jrec
+      WRITE (IOERR,*) 'TDISK:5,wrong conditions: k4out,jrec=',K4OUT,JREC
 	ENDIF
 	
  9	CONTINUE

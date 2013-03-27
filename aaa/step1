@@ -1,42 +1,34 @@
 ###################################
 # Script and comments for making a distribution package of the KRC thermal
 # model file system see the file AAREADME for additional description
-# Step 1 includes making a directory structure,already done once,
+# Step 1 includes making a directory structure, already done once,
 # and constructing the step2 and step3 script files
 #
 #_Hist 2006jan25 Hugh Kieffer Evolve from ROLO distribution system
 # 2006jan25 Hugh Kieffer   Not running under Suse 9.3
 # 2006apr12 HK Have running under Suse9.3
 # 2009may11 HK Using CentOS 5.2 on 64-bit hardware
+# 2011oct17 HK Move aaa to ~/krc/aaa  and move DIST to a work disk
+# 2013jan25 HK Divide idl directory into two
 ###################################
 
 set FAM='/home/hkieffer/krc'    # family to be distributed
-set DIST='/Dist'		# generic name for distribution directory top
-set RTOP=$FAM$DIST		# Top of the specific distribution tree
+set RTOP='/work2/DistKRC'		# Top of the distribution tree 
+#        note , this could be shared between projects
+# set BIG='/work1/krc/'		# Large files, rarely backed up
+
 echo "RTOP="$RTOP
 
-# Actions which would wipe out the permanent parts of this Distribution 
-# system are commented out. The aaa subdirectory contains all
-#  the results of designing this system!    NEVER delete it.
+# The FAM/aaa subdirectory contains all
+#  the results of designing this system!   NEVER delete it.
 
-cd $FAM
-#mkdir Dist  # Top if distribution system
 cd $RTOP
-#mkdir aaa	# scripts to build distribution set and install it at new site
-
+mkdir aaa	# scripts to build distribution set and install it at new site
 mkdir doc	# documentation
-mkdir idl	# IDL code related to running krc
+mkdir idl1	# IDL code essential to reading KRC type 50+ files
+mkdir idl2	# IDL code handy for some KRC-related work.
 mkdir src	# source code and include files and Makefile (as soft links)
 mkdir run	# binary executable, input files, test print files
 mkdir run/output	# binary files output by runs
-
-
-########## Ensure that the Guides are the latest version  ## Temp. deactivated
-cd ~/xtex/tes/krc/
-latex jpap 			# process the .tex file	
-latex jpap			#   twice to resolve references
-dvips -o q.ps jpap		# convert to postscript
-ps2pdf q.ps krcpap.pdf		# and to pdf
-
-
+mkdir addon	# make-up files missing in step 3
 exit

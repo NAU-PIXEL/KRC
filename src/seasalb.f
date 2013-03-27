@@ -17,13 +17,13 @@ C for each positive date request . does linear interpolation, with wrap around.
 C output will be negative if error occured
 C_Hist  Hugh_Kieffer  2006sep09
 C 2011jul31 HK  Use  FINTERP rather than  RNDEX (which was failing) and RNTERP
+C 2012feb26 HK Remove unused variables
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
 
 C local variables
-      CHARACTER*80 RBUF
       REAL XXX(MROW)            ! holds the table of  Ls in degrees
       REAL YYY(MROW)            ! holds albedo on that date
-      INTEGER I,KK              ! number of defined dates
+      INTEGER KK                ! number of defined dates
       REAL G,OUT
       REAL FINTERP              ! called function
       INTEGER READTXT360        ! called function
@@ -47,7 +47,7 @@ D        ENDDO
           OUT=FINTERP(G,XXX,KK,YYY)   ! linear interpolation 
       ENDIF
 
- 9    SEASALB=OUT
+      SEASALB=OUT
 D     WRITE (*,*) 'SEASALB lsub,g,out=', LSUB,G,OUT
       RETURN
       END

@@ -12,6 +12,7 @@ C_Calls  0
 C_Hist  83Dec05  Hugh_H_Kieffer
 C	87dec15  HHK convert from exhaustive search to binary search
 C 2011jul31 HK Replace search code with NumRec LOCATE algorithm
+C 2011oct23 HK Fix 4 bugs
 C_End
 	REAL F
 	INTEGER  JL,JM,JU
@@ -23,7 +24,7 @@ C NumRec LOCATE  algorithm:
 	INC = XX(N).GT.XX(1)	! true if table is increasing
  10	IF (JU-JL.GT.1) THEN	! need to narrow range further
 	   JM=(JU+JL)/2		! middle point
-	   IF (INC .EQV. (X.GT.XX(JM))) THEN 
+	   IF (INC .EQV. (XIN.GT.XX(JM))) THEN 
 	      JL=JM
 	   ELSE
 	      JU=JM
@@ -34,12 +35,12 @@ C at this point, JL is the index at lower end of interval containing X
 C JL = 0 or N means X is outside the table
 	IF (JL.EQ.0) THEN	! request below end of table
 	   RNDEX=1.00001	! return safely inside lower end
-	   GOTO,9
+	   GOTO 9
 	ELSEIF (JL.EQ.N) THEN	! request above end of table
 	   RNDEX=FLOAT(N)-.0001 ! return safely below upper end
-	   GOTO,9
+	   GOTO 9
 	ELSE
-	   F = (X-XX(JL))/(XX(JU)-XX(JL)) ! fractional way into the interval
+	   F = (XIN-XX(JL))/(XX(JU)-XX(JL)) ! fractional way into the interval
 	   RNDEX = FLOAT(JL) + F ! real index
 	ENDIF
 
