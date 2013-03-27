@@ -21,7 +21,7 @@ LIBDIRS=
 CLIB=./cfiles/libhk_cisis.a
 
 # system dependencies
-OBJECTS1 = krc.o tseas.o tlats.o tday.o tcard.o tprint.o tdisk.o  albvar.o alsubs.o aveday.o aveyear.o binf5.o catime.o climtau.o co2pt.o datime.o deding2.o eccanom.o epred.o evmono3.o finterp.o idarch.o orbit.o porb0.o porb.o readtxt360.o rndex.o rotmsp.o rotv.o rotvec.o rterp.o seasalb.o seastau.o sigma.o tint.o vaddsp.o vcros.f vfdot.o vfmag.o vlpres.o vrotv.o white1.o xtreme.o 
+OBJECTS1 = krc.o tseas.o tlats.o tday.o tcard.o tprint.o tdisk.o  albvar.o alsubs.o aveday.o aveyear.o binf5.o catime.o climtau.o co2pt.o datime.o deding2.o eccanom.o epred.o evmono3.o finterp.o bigend.o idarch.o orbit.o porb0.o porb.o readtxt360.o rndex.o rotmsp.o rotv.o rotvec.o rterp.o seasalb.o seastau.o sigma.o tint.o vaddsp.o vcros.f vfdot.o vfmag.o vlpres.o vrotv.o white1.o xtreme.o 
 
 OBJECTSM = mkrc.o  mlats.o tday.o tcard.o tprint.o tdisk.o epred.o \
            porb0.o tint.o albvar.o co2pt.o vlpres.o aveday.o porb.o orbit.o \
@@ -131,6 +131,7 @@ vrotv.o: vrotv.f
 white0.o: white0.f 
 white1.o: white1.f
 xtreme.o: xtreme.f
+bigend.o: bigend.f
 ymd2jd.o: ymd2jd.f
 
 .PHONY: clean
