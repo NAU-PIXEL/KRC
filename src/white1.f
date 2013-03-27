@@ -11,6 +11,7 @@ C_bugs
 C no warning if input was too long to fit in output
 C_Hist
 C  98may10  Hugh_h_Kieffer  original version
+C 2009may16 HK replace CHAR("011) with CHAR(9)
 C_end
       logical last              ! prior character was white
       character*1 c             ! current character
@@ -22,7 +23,7 @@ C_end
       j=0                       ! # characters output thus far
       do i=1,lss
          c=ss(i:i)              ! current character
-         if (c.eq.' ' .or. c.eq.CHAR("011)) then ! have blank or TAB
+         if (c.eq.' ' .or. c.eq.CHAR(9)) then ! have blank or TAB
             if (.not.last) then ! if last was blank, do nothing
                j=j+1
                ww(j:j)=' ' ! output the one blank separator

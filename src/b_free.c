@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "isistypes.h"
 #include "binding.h"
 
 
-void b_free(char *mem)
+void b_free(CHAR *mem)
 /*********************************************************************
 *_Title b_free Frees memory allocated by b_alloc
 *_Nobinding

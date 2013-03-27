@@ -13,8 +13,8 @@ Any other files that must be edited: copy them into Dist/aaa and edit there
 
 
  - step2 Script file to build accumulate all the source code and files needed to
- make and run the executable application. Will will also build the LaTeX
- documents to Postscript and pdf.
+ make and run the executable application. [[ Will also build the LaTeX
+ documents to Postscript and pdf.] Do by hand]
 
  - sysdef.rules    System-dependant rules for Make. 
    May need to edit for your local system environment
@@ -25,21 +25,33 @@ Any other files that must be edited: copy them into Dist/aaa and edit there
 
 ---------------  End  ONLY FOR THE FIRST DISTRIBUTION  End ----------------
 
+For a new release:
+If any new routines or new input files:
+  Add these to the soft links in step2
+  Update the Make file
+
 
 Execute the /home/hkieffer/krc/Dist/step2 script, which empties the build
 area, creates directories and copies files into the build area
 
   DO NOT REMOVE FILES FROM   ~/krc/Dist/aaa/ 
 
+  RENAME the prior distribution tar file to archive it
+
 Execute the /home/hkieffer/krc/Dist/step3 script, which will move to one
 directory above the construction directory and Tar the entire code set,
 following the symbolic links
 
-Send  AAreadme and krcdist.tar  to the customer
+Send  AAinstall krcdist.tar  to the customer
 
-	TESTING DONE 2006jan25 (not required to make distribution set)
+	TESTING 
 
-none yet. 
+Test the build:
+ cd ~/krc/impl
+untar the Dist file
+Follow the directions of AAinstall
+
+once all works well, run step 3b to include the executable krc
 
 Final:  Delete the intermediate LaTeX files
 	Delete all the *.o files

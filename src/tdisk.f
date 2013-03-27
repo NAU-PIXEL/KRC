@@ -1,19 +1,21 @@
 	SUBROUTINE TDISK (KODE,KREC)
-C	implicit none
-C_Titl  TDISK  save/read results at the end of a season  VERSION  FOR  BINF5
+C_Titl  TDISK  save/read results at the end of a season.  Version  for  BINF5
 C_Vars
-	INCLUDE 'krccom.inc'
+	INCLUDE 'krccom.inc'	! has IMPLICIT NONE
 	INCLUDE 'latcom.inc'
 	INCLUDE 'daycom.inc'
 	INCLUDE 'hatcom.inc'
 	INCLUDE 'units.inc'
 	INCLUDE 'filcom.inc'
 C_Lims
-        PARAMETER (KOMMON=583200) ! words for Type 52, which is
-        REAL*4 FFF (KOMMON)	!   the largest of the 5n types
-        INTEGER*4 JBB(10)	! sizes to go to  BINF5
-	INTEGER*4 KASE,KODED	! words/case, file type
-	COMMON /BINCOM/ JBB,KODED,KASE,FFF
+	INTEGER MAXDIM
+	PARAMETER (MAXDIM=6)	! max number of dimensions needed
+        REAL FFF (KOMMON)	!   the largest of the 5n types
+	INTEGER MMM(MAXDIM)	! to hold cumulative size of each dimension
+        INTEGER JJJ(10)		! sizes to go to  BINF5
+        REAL FRONT(4)		! Leading size integers converted to real
+	INTEGER KASE,KODED	! words/case, file type
+	COMMON /BINCOM/ JJJ,KODED,KASE,FFF ! ensure these are remembered
 C_Args
 	INTEGER KODE		! in. control
 C  1 = open file.  then see  KREC
@@ -21,8 +23,8 @@ C        will set  LOPN2=.true. if file opened
 C  2 = write a season. appended after  JREC.  KREC ignored
 C  3 = read a season.  input  KREC as record number,  IERR returned as iostat
 C	also, sets record position to append on next write
-C  4 = close the file
-C  5 = write a record of  KRCCOM
+C  4 = close the file.  KREC ignored
+C  5 = write a record of  KRCCOM.  KREC ignored
 	INTEGER KREC	!in (when  KODE=1): file status: 0=new  1=old
 C_Desc
 C Can write several styles of binary files; controled by K4OUT. See helplist.txt
@@ -31,51 +33,63 @@ C the COMMON arrays, and bin5 files of specific variables and arrays.
 C The bin5 files have K4OUT=50+; the parameter statements above set the 
 C maximum allowed sizes, but they are written dense to the requested array
 C sizes, and BINF5 writes only the utilized part of the storage allocated.
-C
+C 2008oct22 All bin5 files have 4 indices and KRCCOM [and other vectors) in the 
+C first few latitudes or seasons. The indices are always: NWKRC, 
+C     1-based index of the dimension that has the extra leading values, 
+C     how many extra are used, and spare
 C_Hist ~1975 Hugh Kieffer Original version; evolved over 20 years
 C 93mar03 ecisneros ported code to unix platform
 C		          converted include filenames to lowercase.
-C 97feb11  HHK get file name only from common
-C 97aug03  HHK add short form output  97sep08 accomodate  TPF,ALAT,ELEV
-C 98may26  HHK  NRECL in bytes for  Linux
-C 98aug31  HHK include custom  bin5 file capablity 
+C 97feb11  HK  Get file name only from common
+C 97aug03  HK  Add short form output  97sep08 accomodate  TPF,ALAT,ELEV
+C 98may26  HK  NRECL in bytes for  Linux
+C 98aug31  HK  Include custom  bin5 file capablity 
 C                   51=(30 layers, 2 min/max,  5 lat, 40 seasons,  5 cases)
-C     The last 2 layers for min are: TpMin, L_sub_s ; for max are: TpMax, DJU5
-C 98nov16  HHK add  52=(24 hours,   Tsurf/Tp, 10 lat, 80 seasons, 10 cases)
-C 99nov24  HHK move setting  LOPN2 false at 400
-C 2002aug04 HHK Add 53=(combo  at 1 lat, 2+80 seasons, 10 cases). Recode logic
-C 2002aug15 HK Increase season size
-C 2003may25 HK Increase MD23 from 10 to 19. Use NDx consistently for K4OUT=52
-C 2003jun10 HK Fix indexing for seasons for type 53
-C 2003aug27 HK Fix indexing error
-C 2004jul06 HK Add file style 54. [GO to  IMPLICIT NONE. NOPE]
-C 2004Oct05 HK Revise style 52; add Down fluxes and spare
-C 2005aug04 HK Add first version of type 55
-C 2005nov16 HK Set ncase=0 after a file close so next would start at 1
-C 2006apr12 HK Change file style 54 to have both 1am and 1pm surface Temp..
-C 2006apr22 HK Allow flexible number of cases for  output file type 52 and 54
-C 2006may04 HK Remove the parameter statements for each type. Add BINCOM
-C_Bugs
-C all but last dimension of fff ideally would be dynamically allocated
+C  The last 2 layers for min are:  TpMin,L_sub_s; for max are:  TpMax,DJU5
+C 1998nov16  HK  Add  52=(24 hours,   Tsurf/Tp, 10 lat, 80 seasons, 10 cases)
+C 1999nov24  HK  Move setting  LOPN2 false at 400
+C 2002aug04  HK  Add 53=(combo  at 1 lat, 2+80 seasons, 10 cases). Recode logic
+C 2002aug15  HK  Increase season size
+C 2003may25  HK  Increase  MD23 from 10 to 19. Use NDx consistently for  K4OUT=52
+C 2003jun10  HK  Fix indexing for seasons for type 53
+C 2003aug27  HK  Fix indexing error
+C 2004jul06  HK  Add file style 54.
+C 2004Oct05  HK  Revise style 52; add Down fluxes and spare
+C 2005aug04  HK  Add first version of type 55
+C 2005nov16  HK  Set ncase=0 after a file close so next would start at 1
+C 2006apr12  HK  Change file style 54 to have both 1am and 1pm surface  Temp..
+C 2006apr22  HK  Allow flexible number of cases for  output file type 52 and 54
+C 2006may04  HK  Remove the parameter statements for each type. Add  BINCOM
+C 2006Oct16  HK  Add two convergence items into output file type 52
+C 2008mar31  HK  Ensure all INTEGER are INTEGER before successful 63-bit compile
+C 2008apr13  HK  Add spaced TMIN and TMAX to Type 52
+C 2008sep30-oct15  HK Add type 56, Revise type 51 and 52, remove type 53
+C 2009feb23  HK  Recode all bin5 outputs
+C 2010jan12  HK  Use  IMPLICIT  NONE
+C 2010apr21  HK  Write notice of writing record only if count <=  IDISK2
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
 
-C	REAL*4 ALB
+C JJJ are the IDL SIZE sent to BIN5 files;  JJJ[1]= dimensionality
+C MMj are the number of words in the j'th dimension
+C ie MM1 =JJJ[2], MM2=MM1*JJJ[3] etc   OR MM4,MM5 used as saved other values
+
 C Direct write will zero-fill unused part of record
 	CHARACTER CSTAT*3
-	REAL*4 COMKRC(NWKRC),COMLAT(NWLAT),COMDAY(NWDAY)
-	EQUIVALENCE (COMKRC,ALB),(COMLAT,NDJ4),(COMDAY,X)
+C Make arrays that overlay each of the major   Commons
+	REAL COMKRC(NWKRC),COMLAT(NWLAT),COMDAY(NWDAY)
+	EQUIVALENCE (COMKRC,ALB),(COMLAT,NDJ4),(COMDAY,XCEN) ! first word of each
 
         CHARACTER*30 HEADER /'KRC-tes custom save'/
         INTEGER HEADLEN /30/
-        INTEGER JREC,KOFF,NWTOT,NRECL,I,I2,IOS,J,K,ND1,ND3,ND4,IRET
-C JREC is the 1-based output record number
-	INTEGER MM2,MM3,MM4,MM5,MTOT ! multiple array dimensions. Reused
+        INTEGER JREC		! the 1-based output record number
+        INTEGER I,I2,I4,IDX,IOS,IRET,J,JOUT,K,KOFF,NWTOT,NRECL
+	INTEGER HEAD,NDX,ND4,MASE,MM1,MM2,MM3,MM4,MM5 ! multiple array dimensions
 	INTEGER NSOUT		! number of seasons expected to be output
 
-	REAL*4 ASOLH(MAXNH),AH,TPMIN,TPMAX
-	SAVE KOFF,MASE,ND1,ND3,ND4,JREC,MM2,MM3,MM4,MTOT ! insure these remain defined
+	SAVE IDX,NDX,JREC,KOFF,MASE,MMM ! insure these 
+	SAVE FRONT,NSOUT	! remain defined
 C
-C	write(iosp,*)'TDISK called with kode,case,j5=',kode,case,j5
+ 991	IF (IDB3.NE.0) WRITE(IOSP,*)'TDISKa ',KODE,KREC,NCASE,J5,K4OUT
 	GOTO (100,200,300,400,500),KODE
 C
 C request file name and open file			1  1  1  1  1  1  1  1
@@ -90,105 +104,104 @@ CC	  WRITE (IOPM,*) ' File for saving results?'
 	  WRITE (IOPM,*) ' File to start (and continue) from ?'
 	ENDIF
 C     recl may be bytes or longwords, depending upon  OS and compiler options.
-C Solaris: it is longwords, since file is unformatted (default for direct access)
-	IF (K4OUT.LE.50) THEN	! Open direct-access output file
+C Solaris: is longwords, since file is unformatted (default for direct access)
+	IF (K4OUT.LT.50) THEN	! Open direct-access output file
 	  IF (K4OUT.LT.0) THEN	!  K4OUT is negative
 	    NWTOT=2*MAXNH*MAXN4 !  TSF  &  TPF only
 	  ELSEIF (K4OUT.EQ.0) THEN
 	    NWTOT=NWKRC+NWLAT	!  KRCCOM & LATCOM
-	  ELSE			!  K4OUT is 1:50
+	  ELSE			!  K4OUT is 1:49
 	    NWTOT=NWKRC+NWDAY	!  KRCCOM & DAYCOM
 	  ENDIF
 	  NRECL=4*NWTOT		!  or  NRECL=NWTOT  ! depends upon compiler <<<<
 	  OPEN (UNIT=IOD2,FILE=FDISK,ACCESS='DIRECT',STATUS=CSTAT
-	1      ,RECL=NRECL,ERR=191,IOSTAT=IOS)
+     &      ,RECL=NRECL,ERR=191,IOSTAT=IOS)
+	  LOPN2=.TRUE.
+	  JREC=0		! no records written yet
 	  WRITE(IOSP,110)CSTAT,FDISK,NWTOT, NRECL,DAYTIM
 	  WRITE(IOERR,110)CSTAT,FDISK,NWTOT, NRECL,DAYTIM
  110	  FORMAT (/'0TDISK:  Opened ',A,' direct access file = ',A
-	1      /8X,'Record length in R*4 & NRECL = ',2I6,3X,'NOW = ',5A4)
+     &      /8X,'Record length in R*4 & NRECL = ',2I6,3X,'NOW = ',5A4)
 	ELSE			! setup for BIN5 file
-	  JBB(5) = 0		!
-	  JBB(6) = 0		!
-	  JBB(7) = 0		!
-	  JBB(8) = 4		! set type as  REAL*4
-	  JBB(9) = HEADLEN	! header length
-	  IF (K4OUT.EQ.51) THEN !
-	    JBB(1) = 5		! # of dimensions
-	    JBB(2) = 30		! layers. Some may be empty
-	    JBB(3) = 2		! min/max
-	    JBB(4) = 5		! latitudes  Some may be empty
-	    JBB(5) = 40		! seasons  Some may be empty
-	    JBB(6) = 5		! cases. Some may be empty
-	    MM1=JBB(2)
-	    MM2=MM1*JBB(3)	! # words / latitude
-	    MM3=MM2*JBB(4)	! # words / season
-	    KASE=MM3*JBB(5)	! # words in a case
-	    MASE=JBB(6)		! max number of cases allowed
+	  JJJ(4) = 0		!
+	  JJJ(5) = 0		!
+	  JJJ(6) = 0		!
+	  JJJ(7) = 0		!
+	  JJJ(8) = 4		! set type as  REAL
+	  JJJ(9) = HEADLEN	! header length
+	  NSOUT=N5-JDISK+1 ! number of seasons to output
+	  IF (K4OUT.EQ.51) THEN 
+	    ND4=N4		! remember how many latitudes in first case
+	    JJJ(1) = 5		! # of dimensions
+	    JJJ(2) = N24	! Size of Dim. 1: # hours output
+	    JJJ(3) = 2		! Size of Dim. 2: 2 temperature
+	    JJJ(4) = N4		! Size of Dim. 3: latitudes
+	    JJJ(5) = NSOUT	!  number of seasons to come.
+	    HEAD   =5*NSOUT	! Extra words in case header
 	  ELSEIF (K4OUT.EQ.52) THEN 
-C For hourly conditions:  revised 2004jul22  and 2004Oct06
-C a Lat is 24*6 words = 144  First "season" contains: 
-C  Lats 1:2 contain KRCCOM (203 words in space for 288)
-C  Lats 3 contain DJU5 (up to # seasons in space of 144)
-C  Lats 4 contain SUBS (L_s) for each season. " "
-C  Lats 5 contain PZREF. " "
-	    MD24=81		! 1+ # seasons . Minimum of 2. None empty
-	    ND4=MIN(N4,MD24)	! remember how many latitudes to store
-	    JBB(1) = 5		! # of dimensions
-	    JBB(2) = MAXNH	! hours; 24 Fixed
-	    JBB(3) = 6		! surface & planetary & Atmosphere Temperature
-	    JBB(4) = MAX(ND4,5)	! # latitudes. At least first season packing
-	    JBB(5) = N5-JDISK+2 ! 1+ number of seasons to come.
-c	    JBB(6) = 5		! cases . Minimum of 1. None empty. Temporary
-	    ND1=JBB(2)		! offset between items
-	    MM3=JBB(2)*JBB(3)	! # words in a latitude
-	    MM4=MM3*JBB(4)	! # words in a season
-	    KASE=MM4*JBB(5)	! # words in a case
-	    MASE=0		! TBD
-	    CALL R2R (0.,FFF,-KASE) ! insure first case initialized to zero
-	  ELSEIF (K4OUT.EQ.53) THEN 
-	    IF (N4.NE.1) WRITE(IOSP,*)'ERROR: Expect J4=1 for K4OUT=53'
-	    JBB(1) = 3		! # of dimensions
-	    JBB(2) = 1+2*MAXNH+2*MAXN1+MAXNH ! combined
-	    JBB(3) = 82		! seasons (first 2 hold KRCCOM) Some may be empty
-	    MASE = 10		! cases. Some may be empty
- 	    JBB(4) = MASE	!
-	    KASE=JBB(2)*JBB(3)
+	    ND4=N4		! remember how many latitudes in first case
+	    JJJ(1) = 5		! # of dimensions
+	    JJJ(2) = N24	! # hours output
+	    JJJ(3) = 7		! 3 temperature, 2 fluxes, 2 layers
+	    JJJ(4) = N4		! dimen of latitudes
+	    JJJ(5) = NSOUT	!  number of seasons to come.
+	    HEAD   =5*NSOUT	!  Extra words in case header
+	    WRITE(IOPM,*)'N4=',n4
 	  ELSEIF (K4OUT.EQ.54) THEN
-C for Heat flow. Save surface temperture and heat flow at midnight
-C as function of season and latitude.  Store KRCCOM in the first latitude
-C Output file will be only as large as used.
-	    JBB(1) = 4		! # of dimensions
-	    JBB(2) = MAXN5	! max # seasons [740]  Else might fail for 'continue' mode
-	    JBB(3) = 5		! Tsur 1am, Tsur 1pm, heat flow, frost, Tbot
-	    JBB(4) = N4+1	! # latitudes +1
-	    ND1=JBB(2)
-	    MM2=JBB(2)*JBB(3)	! # words in a latitude
-	    KASE=MM2*JBB(4)	! # words in a case
-	    MASE=0		! TBD
-	    CALL R2R(0.,FFF,-KASE) ! insure first case initialized to zero
+	    JJJ(1) = 4		! # of dimensions
+	    JJJ(2) = NSOUT	! expected total seasons
+	    JJJ(3) = 5		! the items
+            JJJ(4) = N4		! # latitudes 
+	    HEAD=NSOUT		! extra words in case header
 	  ELSEIF (K4OUT.EQ.55) THEN
-C for seasonal studies at one latitude, [seasons,koff+items,cases]
-C KRCCOM stored as prepended items.  Output file will be only as large as used.
-C THIS MODE DOES NOT SUPPORT CONTINUATION RUNS
-	    JBB(1) = 3		! # of dimensions
-	    JBB(2) = N5-JDISK+1	! # seasons to store
-	    KOFF=(NWKRC-1)/JBB(2)+1 ! # items req to hold KRCCOM
-C In next line, the constant is the number of items stored in section 200 and is 
-	    JBB(3) = KOFF+10	! VARIABLE betweens codings:  DJU5, Tsur ...
-	    MM1=JBB(2)		! size of first dimension
-	    KASE=MM1*JBB(3)	! # words in a case
-	    MASE=0		! TBD
-	    CALL R2R(0.,FFF,-KASE) ! insure first case initialized to zero
+	    JJJ(1) = 3		! # of dimensions
+	    JJJ(2) = NSOUT	! # seasons to store
+	    JJJ(3) = 9		!  constant must agree with # items stored 
+	    HEAD=NSOUT
+	  ELSEIF (K4OUT.EQ.56) THEN
+	    JJJ(1) = 4		! # of dimensions
+	    JJJ(2) = 2*N24+N1+3	! # words in a latitude
+	    JJJ(3) = N4		! # latitudes
+	    JJJ(4) = NSOUT	! number of seasons to come.
+	    HEAD=5*NSOUT	! words in case header
+          ELSE
+	     WRITE (IOERR,*)' TDISK Invalid K4OUT fatal: ',K4OUT
+	     LOPN2=.FALSE.
+	     GOTO 9
 	  ENDIF
-	   WRITE(IOSP,13)K4OUT,JBB
- 13	   FORMAT ('Initiated custom output: K4OUT=',I3,/'JBB=',10I6)
+D	  WRITE(IOSP,13)K4OUT,JJJ
+ 13	  FORMAT ('Initiated custom output: K4OUT=',I3,/'JJJ=',10I6)
+C at this point, jbb(2:n) contain the dimension needed for data.
+C need to update next to last for NDX, and compute the number of cases possible
+	  WRITE(IOPM,*) 'N4,jjj=',n4,jjj
+	  IDX=JJJ(1)-1		! dimension that has extra size
+	  WRITE(IOPM,*)'IDX=',idx
+CC	  IF (IDX.LT.2) THEN STOP ! ensure enough dimensions for this scheme
+	  MMM(1)=JJJ(2)		! compute number of words for each dimension
+	  DO J=2,IDX		! up to the largest used
+	     MMM(J)=MMM(J-1)*JJJ(J+1) !
+	  ENDDO
+	  K=4+NWKRC+HEAD	! Increase case header for standard things
+	  NDX=(K-1)/MMM(IDX-1)+1 ! extra Dim N-1 needed to hold case header
+	  WRITE(IOPM,*)'NDX,K=',NDX,K
+	  JJJ(IDX+1)=JJJ(IDX+1)+NDX ! revised this dimension
+	  WRITE(IOPM,*)'Idx,JJJ=',IDX,JJJ
+	  WRITE(IOPM,*)'MMM=',MMM
+	  WRITE(IOSP,*)'Idx,JJJ=',IDX,JJJ
+	  WRITE(IOSP,*)'MMM=',MMM
+	  KASE=MMM(IDX-1)*JJJ(IDX+1) ! # words in a case
+	  MASE=KOMMON/KASE	! # cases that could be accomodated
+	  KODED=K4OUT		! transfer into Common
+	  FRONT(1)=FLOAT(NWKRC)	! first 4 words are sizes used
+	  FRONT(2)=FLOAT(IDX)	! 1-based index of dimension with extra values
+	  FRONT(3)=FLOAT(NDX)	! Number of those extra
+	  FRONT(4)=FLOAT(NSOUT)	! not used yet
+	  WRITE(IOSP,*),'KOMMON,KASE,MASE,MTOT='
+     &          ,KOMMON,KASE,MASE,KASE*MASE
+	  JREC=0		! records written thus far = none
+	  LOPN2=.TRUE.
+	  IF (MASE.LT.1) LOPN2=.FALSE. ! KASE larger than KOMMON
 	ENDIF
-	KODED=K4OUT ! transfer into Common
-	IF (MASE.EQ.0) MASE=KOMMON/KASE	! # cases that could be accomodated
-	MTOT=KASE*MASE
-	WRITE(IOSP,*),'KOMMON,KASE,MASE,MTOT=',KOMMON,KASE,MASE,MTOT
-	JREC=0			! records written thus far = none
-	LOPN2=.TRUE.
 	GOTO 9
 C
 191	WRITE (IOERR,*) ' TDISK:1, ERROR OPENING FILE. IOSTAT=',IOS
@@ -198,7 +211,7 @@ C
 	GOTO 9
 C
 C write next record (internal record count)		2  2  2  2  2  2  2  2
- 200	IF (K4OUT.LE.50) THEN !...............................................
+ 200	IF (K4OUT.LT.50) THEN !---------------------------------------------..
 	  IF (LOPN2) THEN	! save current values
 	    JREC=JREC+1
 	    I=JREC		! may be incremented by the  WRITE command
@@ -206,135 +219,171 @@ C write next record (internal record count)		2  2  2  2  2  2  2  2
 	      WRITE(IOD2,REC=I)TSF,TPF
 	    ELSEIF (K4OUT.EQ.0) THEN
 	      WRITE(IOD2,REC=I)COMKRC,COMLAT
-	    ELSE		! K4OUT=1:50
+	    ELSE		! K4OUT=1:49
 	      WRITE(IOD2,REC=I)COMKRC,COMDAY
 	    ENDIF
 	    I=LNBLNK(FDISK)	! last non-blank character in file name
-	    WRITE(IOSP,210)J5,JREC,SUBS,FDISK(1:I)
+	    IF (JREC.LT.IDISK2) WRITE(IOSP,210)J5,JREC,SUBS,FDISK(1:I)
  210	    FORMAT(' TDISK wrote: J5 rec Ls File ',2I4,F7.2,1X,A)
 	  ELSE
 	    WRITE (IOERR,*) ' TDISK:2, WRITE, BUT NO FILE OPEN'
 	  ENDIF 
 	  GOTO 9
 	ENDIF
+
+C get here if type 5x  !---------------------------------------
+D	  WRITE(IOSP,*)'TDISKb ',kode,krec,ncase,j5,' jd,jjj',jdisk,JJJ
 	IF (NCASE.GT.MASE) GOTO 9 ! no room left for storage
-	IF (K4OUT.EQ.51) THEN ! .........................................
-	  ND1=MIN(N1,MM1-2)	! save room for 2 items
-	  ND3=MIN(N4,JBB(4))	! # lats to save
-	  JREC=J5-JDISK+1	! 1-based count of this record
-	  IF (JREC.LE.JBB(5)) THEN ! proceed only if room for this season
-	    DO J4=1,ND3		! do each latitude
-	      CALL XTREME (TPF(1,J4),1,N24,TPMIN,TPMAX) ! get planetary limits
-	      I=1+(J4-1)*MM2+(JREC-1)*MM3+(NCASE-1)*KASE ! first of this set
-	      CALL R2R (TIN(1,J4),FFF(I),ND1) ! transfer layer minima
-	      FFF(I+MM1-2) =TPMIN
-	      FFF(I+MM1-1) =SUBS
-	      I=I+MM1		! offset to maxima
-	      CALL R2R (TAX(1,J4),FFF(I),ND1) ! transfer layer minima
-	      FFF(I+MM1-2) =TPMAX
-	      FFF(I+MM1-1) =DJU5
-	    ENDDO
-	  ENDIF
-	ELSEIF (K4OUT.EQ.52) THEN !...................
-	  JOUT=J5-JDISK		! 0-based season count after start to disk
-	  I=(NCASE-1)*KASE+1	! first word for this case
-	  IF (JOUT.EQ.0) THEN	! jrec used to insure done only once
-	    CALL R2R (ALB,FFF(I),NWKRC) ! into first lat.
-	    IF (N24.NE.ND1 .OR. N4.GT.ND4 
-	1	 .OR. N5-JDISK+2.NE.JBB(5)) THEN
-	      WRITE (IOERR,*)
-	1	   'Change of NHOUR, NLAT, or #to Disk not allowed for K4OUT=52'
-	      WRITE (IOERR,*)N24,ND1, N4,ND4 ,N5-JDISK+1,JBB(5)
-	      GOTO 9
+	JOUT=J5-JDISK		! 0-based season count after start to disk
+	JREC=JOUT+1		! 1-based count of this record
+	IF (JREC.GT.NSOUT) GOTO 9 ! beyond allocated season range
+	I=(NCASE-1)*KASE+1	! first word for this case
+	IF (JOUT.EQ.0) then	! first season of this case
+	   CALL R2R(0.,FFF(I),-KASE) ! zero the case
+	   CALL R2R (FRONT,FFF(I),4) ! first 4 words are sizes used
+	   CALL R2R (ALB,FFF(I+4),NWKRC) ! followed by KRCCOM
+	ENDIF
+	I4=I+4+NWKRC      ! first word in prefix after standard case header
+	MM1=MMM(1)		! may be needed several times in 5x sections
+	MM2=MMM(2)
+	MM3=MMM(3)
+	MM4=MMM(4)
+	IF (K4OUT.EQ.51) THEN !---------------------------------------
+C For Global temperatures: 2008oct16
+C [N24,2,Nlat,nseas+x,ncase]   First x "seasons" of each case contains: 
+C   Float of NWKRC & nlay & nlat & nseas, KRCCOM, DJU5(nseas),SUBS(nseas)
+C   ,PZREF(nseas), TAUD(nseas), SUMF(nseas)
+C True seasons contain for every hour: TSF,TPF
+	  MM4 = MIN(N1-1,MM1-2) ! compute # layers to store
+	  IF (JOUT.EQ.0) THEN	! insure done only once per case 
+	    J=N5-JDISK+1+NDX	! season dimension required 
+	    IF (N24.NE.JJJ(2) .OR. N4.GT.JJJ(4) .OR. J.NE.JJJ(5)) THEN
+	       WRITE (IOERR,*)
+     &  'Change of NHOUR, NLAT, or #to Disk not allowed for K4OUT=51'
+	       WRITE (IOERR,*)N24,MM1, N4,JJJ(4) ,J,JJJ(5)
+	       GOTO 9
 	    ENDIF
 	  ENDIF
-	  IF (JOUT.LE.JBB(5)-2 ) THEN
-	    J=I+JOUT		! first word for this case/season in header
-	    FFF(J+2*MM3) =DJU5	! date for this case and season
-	    FFF(J+3*MM3) =SUBS
-	    FFF(J+4*MM3) =PZREF
-	    J=I+MM4*(JOUT+1)	! season offset, +1 for header stuff
-	    DO J4=1,ND4		! do each latitude (for which there is room)
-	      I=J+(J4-1)*MM3
-	      CALL R2R (TSF(1,J4),FFF(I)          ,ND1) ! copy one day
-	      CALL R2R (TPF(1,J4),FFF(I+ND1)      ,ND1)
-	      CALL R2R (TAF(1,J4),FFF(I+ND1+ND1)  ,ND1)
-	      CALL R2R (DOWNVIS(1,J4),FFF(I+3*ND1),ND1)
-	      CALL R2R (DOWNIR (1,J4),FFF(I+4*ND1),ND1)
-	    ENDDO
-	  ENDIF
-	ELSEIF (K4OUT.EQ.53) THEN ! ...................................
-	    JREC=J5-JDISK+1
-	    IF (JREC.EQ.1) THEN ! first output season of a case. Save KRCCOM
-C KRCCOM is 203 4-byte words, and MD31 is 133, so requires 2 seasons
-C  and has 63  extra words
-	      I=1+(NCASE-1)*KASE ! first two "seasons" are  KRCCOM
-C	      write(iosp,*)'case,j5,I=',case,j5,I
-	      CALL R2R (ALB,FFF(I),NWKRC) ! transfer KRCCOM
-	    ENDIF
-	    IF (JREC.LE.JBB(3)-2) THEN
-	      I=1+(JREC+1)*JBB(2)+(NCASE-1)*KASE ! append seasons after KRCCOM
-C	      write(iosp,*)'case,j5,I=',case,j5,I
-	      FFF(I) =FROST4(1) ! predicted final frost
-	      I=I+1
-	      CALL R2R (TSFH,FFF(I),MAXNH)
-	      I=I+MAXNH
-	      CALL R2R (TPFH,FFF(I),MAXNH)
-	      I=I+MAXNH
-	      CALL R2R (TMIN,FFF(I),MAXN1)
-	      I=I+MAXN1
-	      CALL R2R (TMAX,FFF(I),MAXN1) ! total 109 words
-	      I=I+MAXN1
-	      AH = FLOAT(N2)/FLOAT(N24) ! time steps between saving results
-	      DO J=1,N24
-		K=FLOAT(J)*AH +.5 ! time step nearest each "hour"
-		ASOLH(J)=ASOL(K) ! transfer from full time array
-	      ENDDO
-	      CALL R2R (ASOLH,FFF(I),MAXNH) ! total 133 words
-	    ENDIF
-	ELSEIF (K4OUT.EQ.54) THEN	! ......
-C need to save surface temperature and heatflow for all lats at each season
-	    I=1+(NCASE-1)*KASE	! first word for this case
-C       At first output season of each case, save KRCCOM as the first "latitude
-C   KRCCOM is 203 4-byte words long
-C  [ season, items,latitude,case]
-	    JOUT=J5-JDISK	! output season offset
-	    IF (JOUT.EQ.0)  CALL R2R (ALB,FFF(I),NWKRC) ! into first lat.
-	    IF (JOUT.LT.JBB(2)) THEN ! within storage room
-	      J=I+ND1+ND1+JOUT 	! "Frost" area for fake latitude, first case
-	      FFF(J)=DJU5	! save the season
-	      K=I+JOUT		! base index of first real lat. at this season
-	      I2=1+N24/2	! index of noon
-	      DO J=1,N4		! each latitude
-		I=K+J*MM2	! location in first vector for this latitude
-		FFF(I)      =TSF(1,J)  ! surface temperature 1am
-		FFF(I+ND1)  =TSF(I2,J) ! surface temperature 1pm
-		FFF(I+ND1+ND1)    =HEATMM(J) ! surface heat flow
-		FFF(I+ND1+ND1+ND1)=FROST4(J) ! frost budget
-		FFF(I+4*ND1)      =TTB4(J)   ! T bottom 
-	      ENDDO
-	    ENDIF
-	ELSEIF (K4OUT.EQ.55) THEN	! ......
-	    I=1+(NCASE-1)*KASE	! first word for this case
-C At first output season of each case, save KRCCOM as the first several seasons.
-C  [ koff+seasons, items,case]
-	    JOUT=J5-JDISK	! output season offset
-	    IF (JOUT.EQ.0)  CALL R2R (ALB,FFF(I),NWKRC) ! into early "seasons"
-	    IF (JOUT.LT.MM1) THEN ! within storage room
-	      J=I+KOFF*MM1+JOUT		! Skip over KRCCOM and earlier seasons
-	      I2=1+N24/2	! index of noon
-	      FFF(J      )=DJU5	     ! save the season
-	      FFF(J+  MM1)=TSF(1,1)  ! surface temperature 1am
-	      FFF(J+2*MM1)=TSF(3,1)  ! surface temperature 3am
-	      FFF(J+3*MM1)=TSF(I2,1) ! surface temperature 1pm
-	      FFF(J+4*MM1)=7.	     ! spare
-	      FFF(J+5*MM1)=TPF(1,1)  ! TOA bolo temperature 1am
-	      FFF(J+6*MM1)=TPF(I2,1) ! TOA bolo temperature 1pm
-	      FFF(J+7*MM1)=HEATMM(1) ! surface heat flow
-	      FFF(J+8*MM1)=FROST4(1) ! frost budget
-	      FFF(J+9*MM1)=TTB4(1)   ! T bottom 
-	    ENDIF
-	ENDIF			!...............................................
+	  J=I4+JOUT		! loc of this seasons DJU5
+	  FFF(J) =DJU5		! date for this case and season
+	  FFF(J+NSOUT) =SUBS
+	  FFF(J+NSOUT+NSOUT) =PZREF
+	  FFF(J+3*NSOUT) =TAUD
+	  FFF(J+4*NSOUT) =SUMF
+	  J=I+MM3*(NDX+JOUT)	! first word of this case, season
+	  DO J4=1,N4		! do each latitude
+	      I=J+(J4-1)*MM2 ! first word of this case, season, latitude
+	      CALL R2R (TSF(1,J4),FFF(I)          ,MM1) ! copy one day
+	      CALL R2R (TPF(1,J4),FFF(I+MM1)      ,MM1)
+	   ENDDO
+	ELSEIF (K4OUT.EQ.52) THEN !------------------------------------
+C For hourly conditions:  revised 2004jul22  and 2004Oct06 and 2008oct15
+C [N24,7,Nlat,x+nseas,ncase]   First x "seasons" of each case contains: 
+C   Float of Front+KRCCOM, DJU5(nseas),SUBS(nseas)
+C   ,PZREF(nseas), TAUD(nseas), SUMF(nseas)
+C True seasons contain for every hour: TSF,TPF,TAF,DOWNVIS,DOWNIR
+C  and float(NDJ4)+ DTM4 + TTA4+ Tmin(Nlay-) Omitting virtual first layer
+C  and    FROST4+ AFRO4+ HEATMM+ Tmax(Nlay-) " " "
+C the Nlay- are as many layers as fit within the number of Hours
+	   MM4 = MIN(N1-1,MM1-2) ! compute # layers to store
+	   IF (JOUT.EQ.0) THEN	! insure done only once per case 
+	     J=N5-JDISK+1+NDX	! season dimension required 
+	     IF (N24.NE.JJJ(2) .OR. N4.GT.JJJ(4) .OR. J.NE.JJJ(5)) THEN
+	       WRITE (IOERR,*)
+     &   'Change of NHOUR, NLAT, or #to Disk not allowed for K4OUT=52'
+	       WRITE (IOERR,*)N24,MM1, N4,JJJ(4) ,J,JJJ(5)
+	       GOTO 9
+	     ENDIF
+	   ENDIF
+	   J=I4+JOUT		! loc of this seasons DJU5
+	   FFF(J) =DJU5		! date for this case and season
+	   FFF(J+NSOUT) =SUBS
+C	   write(*,*)'t1', subs
+	   FFF(J+NSOUT+NSOUT) =PZREF
+	   FFF(J+3*NSOUT) =TAUD
+	   FFF(J+4*NSOUT) =SUMF
+	   J=I+MM3*(NDX+JOUT)	! first word of this case, season
+	   DO J4=1,N4		! do each latitude
+	     I=J+(J4-1)*MM2	! first word of this case, season, latitude
+	     CALL R2R (TSF(1,J4),FFF(I)          ,MM1) ! copy one day
+	     CALL R2R (TPF(1,J4),FFF(I+MM1)      ,MM1)
+	     CALL R2R (TAF(1,J4),FFF(I+MM1+MM1)  ,MM1)
+	     CALL R2R (DOWNVIS(1,J4),FFF(I+3*MM1),MM1)
+	     CALL R2R (DOWNIR (1,J4),FFF(I+4*MM1),MM1) ! item 5
+	     K=I+5*MM1		! first index of item 6
+	     FFF(K)=FLOAT(NDJ4(J4)) ! # days to compute solution 
+	     FFF(K+1)=DTM4(J4)	! rms temperature change on last day
+	     FFF(K+2)=TTA4(J4) 
+	     CALL R2R (TIN(2,J4),FFF(K+3),MM4)
+	     K=K+MM1		! first index of item 7
+	     FFF(K)=FROST4(J4)	! Frost at midnight
+	     FFF(K+1)=AFRO4(J4) ! frost albedo
+	     FFF(K+2)=HEATMM(J4)  
+	     CALL R2R (TAX(2,J4),FFF(K+3),MM4)
+	   ENDDO
+D	   WRITE(iosp,*)'JOUT,J,I,K',JOUT,J,I,K
+	ELSEIF (K4OUT.EQ.54) THEN	!------------------------------------
+C for Heat flow. [seasons, 5 items, x+latitudes, cases]
+C Save surface temperature and heat flow at midnight
+C   as function of season and latitude.
+C Items are: Tsur 1am, Tsur 1pm, heat flow, frost, Tbot
+C  First x "latitudes" of each case contains: 
+C     Float of Front+KRCCOM, DJU5(nseas)
+	   FFF(I4+JOUT)=DJU5	! save the season in header
+	   K=I+(NDX-1)*MM2+JOUT ! base index of 0 real lat. at this season
+	   I2=1+N24/2		! index of noon
+	   DO J=1,N4		! each latitude
+	      I=K+J*MM2		! location in first vector for this latitude
+	      FFF(I)      =TSF(1,J) ! surface temperature 1am
+	      FFF(I+MM1)  =TSF(I2,J) ! surface temperature 1pm
+	      FFF(I+MM1+MM1)    =HEATMM(J) ! surface heat flow
+	      FFF(I+MM1+MM1+MM1)=FROST4(J) ! frost budget
+	      FFF(I+4*MM1)      =TTB4(J) ! T bottom 
+	   ENDDO
+	ELSEIF (K4OUT.EQ.55) THEN	! ------------------------------
+C for seasonal studies at one latitude, [seasons,x+9 items,cases]
+C Items: Ts 1am, Ts 3am, Ts 1pm, spare, Tp 1am, Tp 1pm, heat flow, frost, T_bot.
+C  First x "items" of each case contains: 
+C     Float of Front+KRCCOM, DJU5(nseas)
+	   FFF(I4+JOUT)=DJU5	! save the season in the header
+	   J=I+(NDX-1)*MM1+JOUT ! base index of 0 real item at this season
+	   I2=1+N24/2		  ! index of noon
+	   FFF(J+  MM1)=TSF(1,1)  ! surface temperature 1am
+	   FFF(J+2*MM1)=TSF(3,1)  ! surface temperature 3am
+	   FFF(J+3*MM1)=TSF(I2,1) ! surface temperature 1pm
+	   FFF(J+4*MM1)=DJU5	  ! spare   DJU5 is redundant with prefix
+	   FFF(J+5*MM1)=TPF(1,1)  ! TOA bolo temperature 1am
+	   FFF(J+6*MM1)=TPF(I2,1) ! TOA bolo temperature 1pm
+	   FFF(J+7*MM1)=HEATMM(1) ! surface heat flow
+	   FFF(J+8*MM1)=FROST4(1) ! frost budget
+	   FFF(J+9*MM1)=TTB4(1)	  ! T bottom 
+        ELSEIF (K4OUT.EQ.56) THEN ! ------------------------------
+C (TSF+TPF+TMN4+3,latitudes,x+seasons, cases)
+C For each latitude, surface and planet temperature every hour, 
+C   plus for each layer, midnight temp.
+C   plus frost, heatflow, midnight atm temp
+C Header contains KRCCOM plus, sub-array(seasons,5) containing:
+C    djul, L-sub-s, global pressure, tauD, total_frost
+	   J=I4+JOUT
+	   FFF(J)=DJU5		! load as if an additional season
+	   FFF(J+NSOUT)=SUBS
+	   FFF(J+2*NSOUT)=PZREF
+	   FFF(J+3*NSOUT)=TAUD
+	   FFF(J+4*NSOUT)=SUMF
+	   K=I+MM2*(NDX+JOUT)	! Skip over KRCCOM and earlier seasons
+	   DO J=1,N4		! each latitude
+	     I=K+(J-1)*MM1	! location in first vector for this latitude 
+	     CALL R2R (TSF(1,J),FFF(I) ,N24) ! every hour
+	     I=I+N24 
+	     CALL R2R (TPF(1,J),FFF(I) ,N24) ! every hour
+	     I=I+N24
+	     CALL R2R (TMN4(1,J),FFF(I) ,N1) ! every layer at midnight
+	     I=I+N1
+	     FFF(I)  =FROST4(J)	! predicted frost amount kg/m^2.
+	     FFF(I+1)=HEATMM(J) ! Mean upward heat flow into surface
+	     FFF(I+2)=TTA4(J)	! predicted final atmosphere temperature 
+	   ENDDO
+        ENDIF			!---------------------------------------------
 	GOTO 9
 C
 C read requested record (external record control)	3  3  3  3  3  3  3  3
@@ -352,12 +401,10 @@ C read requested record (external record control)	3  3  3  3  3  3  3  3
 C
 C close the file					4  4  4  4  4  4  4  4
  400	IF (LOPN2) then
-	  IF (K4OUT.GT.50) THEN ! save custom array
-	    IF (K4OUT.EQ.52) JBB(6) = NCASE 
-	    IF (K4OUT.EQ.54) JBB(5) = NCASE  
-	    IF (K4OUT.EQ.55) JBB(4) = NCASE 
-	    WRITE (IOSP,*)'JBB=',JBB
-	    CALL BINF5 ('W',FDISK,HEADER,JBB,FFF,IRET) ! others equivalenced
+	  IF (K4OUT.GE.50) THEN ! save custom array
+	    JJJ(IDX+2) = NCASE
+	    WRITE (IOSP,*)'JJJ=',JJJ
+	    CALL BINF5 ('W',FDISK,HEADER,JJJ,FFF,IRET) ! others equivalenced
 	    WRITE (IOSP,*)'Wrote bin5 file: type and iret= ',K4OUT,IRET
 	    WRITE (IOSP,*)'  File name=',FDISK
 	  ELSE			! close direct access file, or message
@@ -366,20 +413,22 @@ C close the file					4  4  4  4  4  4  4  4
 	  ENDIF
 	  LOPN2=.FALSE.
 	ELSE ! not open
-	  IF (K4OUT.LE.50) WRITE (IOERR,*)' TDISK:4, no file was open'
+	  IF (K4OUT.LT.50) WRITE (IOERR,*)' TDISK:4, no file was open'
 	ENDIF
 	NCASE=0			! ensure next file indexing start at 1 
-	CALL R2R(0.,FFF,-MTOT) ! ensure possible next set initialized to zero
 	GOTO 9
 C       
 C       output parameters once                          5  5  5  5  5  5  5  5
  500	IF (K4OUT.LT.0 .AND. JREC.EQ.0) THEN
 	   JREC=1
-	   I=JREC		! need  NWKRC+2*MAXN4=203 items
-	   WRITE (IOD2,REC=I) COMKRC,ALAT,ELEV
+	   I=JREC		! need room for NWKRC items
+	   IF (IDB3.GE.3) WRITE(IOSP,*)'TDISKc  KREC=',KREC,LOPN2,IOD2,I
+	   WRITE (IOD2,REC=I) COMKRC
 	ELSE 
       WRITE (IOERR,*) 'TDISK:5,wrong conditions: k4out,jrec=',k4out,jrec
 	ENDIF
 	
- 9	RETURN
+ 9	CONTINUE
+	IF (IDB3.GE.3) WRITE(IOSP,*)'TDISKx  KREC=',KREC
+	RETURN
 	END

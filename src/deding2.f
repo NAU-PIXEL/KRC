@@ -53,7 +53,7 @@ C_End
 C1	DATA PI/3.1415926/,TT/.6666666667/	! pi, 2/3
 C1	DATA EXPMAX,VLARGE/46.05,1.0E20/	! large exponent & real number
 C1	REAL vv(2,2),BB(2)	! matrix and right-hand side
-C1	INTEGER INDX(2)		! used by ludcmp
+C1	INTEGER*4 INDX(2)		! used by ludcmp
 	REAL*8 PI/3.141592653589793D0/	! pi
 	REAL*8 ZERO  /0.D0/	! DOUBLE PRECISION CONSTANTS
 	REAL*8 ONE   /1.D0/

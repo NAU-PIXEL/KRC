@@ -7,6 +7,7 @@
 #_Hist 2006jan25 Hugh Kieffer Evolve from ROLO distribution system
 # 2006jan25 Hugh Kieffer   Not running under Suse 9.3
 # 2006apr12 HK Have running under Suse9.3
+# 2009may11 HK Using CentOS 5.2 on 64-bit hardware
 ###################################
 
 set FAM='/home/hkieffer/krc'    # family to be distributed
@@ -32,10 +33,10 @@ mkdir run/output	# binary files output by runs
 
 ########## Ensure that the Guides are the latest version  ## Temp. deactivated
 cd ~/xtex/tes/krc/
-latex krc 			# process the .tex file	
-latex krc 			#   twice to resolve references
-dvips -o krc.ps krc		# convert to postscript
-ps2pdf krc.ps krc.pdf		# and to pdf
+latex jpap 			# process the .tex file	
+latex jpap			#   twice to resolve references
+dvips -o q.ps jpap		# convert to postscript
+ps2pdf q.ps krcpap.pdf		# and to pdf
 
 
 exit

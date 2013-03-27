@@ -1,8 +1,11 @@
 #include <stdio.h>
 #include <string.h>
-#include "binf5.h"
+#include "isisdef.h"
+#include "isistypes.h"
+#include "u.h"
 
-void u_move4(int nlongs, int ibuf[], int obuf[])
+
+void u_move4(INT4 nlongs, INT4 ibuf[], INT4 obuf[])
 /***********************************************************************
 *_Title	u_move4 Transfers longs from one buffer to another (very fast)
 *_Args	Type	Variable	I/O	Description
@@ -20,13 +23,12 @@ void u_move4(int nlongs, int ibuf[], int obuf[])
 *	 July 16, 1991 Steve Wampler USGS, Flagstaff rewritten in C
 *        Jan 11 1993 KJB - Ported to ANSI C ISIS system
 *	 Mar 10 1995 Trent Hare - changed to isistypes
-* 2002mar04  KB & HK  minimize ISIS dependcies
 *_End
 ***********************************************************************/
 {
 
   if (ibuf != obuf) {
-    (void) memmove((void *) obuf, (void *) ibuf, (size_t) nlongs*4);
+    (void) memmove((void *) obuf, (void *) ibuf, (size_t) nlongs*sizeof(INT4));
   }
   return;
 

@@ -1,16 +1,18 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "isistypes.h"
 #include "binding.h"
 
-char *b_alloc(int nelem, int esize)
+
+CHAR *b_alloc(INT4 nelem, INT4 esize)
 /*********************************************************************
 *_Title b_alloc Allocate memory for elements of a specified size
 *_Nobinding
 *_Args  Type  Name       I/O   Description
-*_Parm  int  nelem;      I    Number of elements to allocate memory
+*_Parm  INT4  nelem;      I    Number of elements to allocate memory
 *                              For
-*_Parm  int  esize;      I    Size of each element in bytes
-*_Parm  char  *b_alloc;   O    Address of allocated memory
+*_Parm  INT4  esize;      I    Size of each element in bytes
+*_Parm  CHAR  *b_alloc;   O    Address of allocated memory
 
 *_Desc  b_alloc returns the address of enough allocated memory to 
 *       store nelem elements of esize bytes per element.  If this 
@@ -28,5 +30,5 @@ char *b_alloc(int nelem, int esize)
 /****************************************************************
   Allocate the memory
 *****************************************************************/
-  return ((char *) malloc(B_MAX(B_MINIMUM_MEMORY, (nelem * esize))));
+  return ((CHAR *) malloc(B_MAX(B_MINIMUM_MEMORY, (nelem * esize))));
 }

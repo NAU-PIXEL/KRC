@@ -1,13 +1,15 @@
 #include <stdio.h>
 #include <string.h>
-#include "binf5.h"
+#include "isisdef.h"
+#include "isistypes.h"
+#include "u.h"
 
 
-void u_move1(int nbytes, void* ibuf, void* obuf)
+void u_move1(INT4 nbytes, void * ibuf, void *obuf)
 /**********************************************************************
 *_Title	u_move1 Transfers bytes from one buffer to another (very fast)
 *_Args	Type	Variable	I/O	Description
-*_Parm  int     nbytes;          I      Number of bytes to transfer
+*_Parm  INT4    nbytes;          I      Number of bytes to transfer
 *_Parm  void	*ibuf;           I      Input buffer
 *_Parm	void  	*obuf;           O      Output buffer
 *

@@ -1,0 +1,10 @@
+gfortran produces warnings:
+
+ In file tcard.f:52
+
+     & ,'SPEC_HEAT','DENSITY','CABR','AMW','ABRPHA','PTOTAL','FANON' !7 
+       1
+Warning: initialization string truncated to match variable at (1)
+HK: seems to have defined the entire array properly
+
+

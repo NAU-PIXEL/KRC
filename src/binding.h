@@ -1,3 +1,4 @@
+#include "isistypes.h"
 /******************************************************************
 *_Title binding.h Binding include file
 *_Args NONE
@@ -22,7 +23,7 @@ extern "C" {
 
 #define B_MAXIMUM_SIZE                           65535
 #define B_MINIMUM_MEMORY                            80
-#define B_STRING_MAX(slen) ((((int) slen) < 0) ? 0 : ((int) slen))
+#define B_STRING_MAX(slen) ((((INT4) slen) < 0) ? 0 : ((INT4) slen))
 
 #define B_MAX(x, y)          (((x) > (y)) ? (x) : (y))
 #define B_MIN(x, y)          (((x) < (y)) ? (x) : (y))
@@ -36,12 +37,12 @@ extern "C" {
 /***********************************************************
   declare binding utility functions
 ************************************************************/
-  extern char *b_alloc(int nelem, int esize);
-  extern char *b_c2fstr(int nstr, char cstr[], int istrlen, char fstr[],
-                        int ostrlen, int keep_pad) ;
-  extern char *b_f2cstr(int nstr, char fstr[], int istrlen, int keep_pad,
-                        char cstr[], int ostrlen);
-  extern void b_free(char *mem);
+  extern CHAR *b_alloc(INT4 nelem, INT4 esize);
+  extern CHAR *b_c2fstr(INT4 nstr, CHAR cstr[], INT4 istrlen, CHAR fstr[],
+                        INT4 ostrlen, INT4 keep_pad) ;
+  extern CHAR *b_f2cstr(INT4 nstr, CHAR fstr[], INT4 istrlen, INT4 keep_pad,
+                        CHAR cstr[], INT4 ostrlen);
+  extern void b_free(CHAR *mem);
 
 #ifdef __cplusplus
 }

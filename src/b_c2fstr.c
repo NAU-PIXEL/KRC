@@ -1,34 +1,35 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include "isistypes.h"
 #include "binding.h"
 
 
-char *b_c2fstr(int nstr, char cstr[], int istrlen, char fstr[],
-               int ostrlen, int keep_pad)
+CHAR *b_c2fstr(INT4 nstr, CHAR cstr[], INT4 istrlen, CHAR fstr[],
+               INT4 ostrlen, INT4 keep_pad)
 /*********************************************************************
 *_Title b_c2fstr Reformat C strings to FORTRAN strings
 *_Nobinding
 *_Args  Type  Name                 I/O  Description
-*_Parm  int  nstr;                 I   Number of C strings to copy
-*_Parm  char  cstr[nstr][istrlen];  I   Array of C strings.  If this
+*_Parm  INT4  nstr;                 I   Number of C strings to copy
+*_Parm  CHAR  cstr[nstr][istrlen];  I   Array of C strings.  If this
 *                                       is a NULL pointer then no 
 *                                       conversion of strings is
 *                                       performed.
-*_Parm  int  istrlen;              I   Length of each C string
+*_Parm  INT4  istrlen;              I   Length of each C string
 *                                       in the "cstr" array
-*_Parm  char  fstr[nstr][ostrlen];  O   Address of FORTRAN string array
+*_Parm  CHAR  fstr[nstr][ostrlen];  O   Address of FORTRAN string array
 *                                       where to copy strings to.  If 
 *                                       NULL, then "nstr" strings each
 *                                       with length "ostrlen" will be
 *                                       allocated to accomodate the
 *                                       C strings
-*_Parm  int  ostrlen;              I   Length of each reformatted
+*_Parm  INT4  ostrlen;              I   Length of each reformatted
 *                                       FORTRAN type string
-*_Parm  int  keep_pad;             I   Specifies FORTRAN padding.
+*_Parm  INT4  keep_pad;             I   Specifies FORTRAN padding.
 *                                       (Included for consistancy - 
 *                                        not used at present)
-*_Parm  char  *b_c2fstr;            O   Address of memory region that
+*_Parm  CHAR  *b_c2fstr;            O   Address of memory region that
 *                                       contains the reformated FORTRAN
 *                                       strings.  If cstr == NULL, then 
 *                                       the strings are initialized to 
@@ -60,12 +61,12 @@ char *b_c2fstr(int nstr, char cstr[], int istrlen, char fstr[],
 *_End
 **********************************************************************/
 {
-  register char *mem;         /* Memory pointer */
-  register char *fp, *cp;     /* FORTRAN and C string pointers, respectively */
-  register int i, j;         /* Loop counters */
-  register int len;          /* String lengths */
+  register CHAR *mem;         /* Memory pointer */
+  register CHAR *fp, *cp;     /* FORTRAN and C string pointers, respectively */
+  register INT4 i, j;         /* Loop counters */
+  register INT4 len;          /* String lengths */
 
-  char errbuf[256];           /* Error buffer */
+  CHAR errbuf[256];           /* Error buffer */
 
 /*****************************************************************
   Check for invalid string size

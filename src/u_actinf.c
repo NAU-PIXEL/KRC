@@ -3,7 +3,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <sys/resource.h>
-#if !defined(RUSAGE_SELF) || defined(Solaris)
+#if !defined(RUSAGE_SELF) || (defined(Solaris) && !defined(__GNUC__))
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/signal.h>
@@ -50,6 +50,9 @@ INT4 u_actinf(INT4 *con_tsec, INT4 *con_tms, INT4 *cpu_tsec, INT4 *cpu_tms,
 *       Jun 09 1997 Kris Becker - Fixed conditional for resource query
 *                                 that SUN's Solaris upgrade from5.4 to 5.5
 *                                 broke
+*       Dec 08 2003 KJB - Port to Solaris 9 using GNU compilers requires
+*                         no compilation of previous Solaris specific
+*                         junk namely unistd.h, fcntl.h, etc...
 *_End
 ************************************************************************/
 {
@@ -67,12 +70,16 @@ INT4 u_actinf(INT4 *con_tsec, INT4 *con_tms, INT4 *cpu_tsec, INT4 *cpu_tms,
 /* Open the process file */
   (void) sprintf(proc,"/proc/%ld", (long) getpid());
   if ((fid = open(proc, O_RDONLY)) == -1) {
+    (void) sprintf(errbuf,"Error getting process id");
+    (void) u_error("UACTINF-PIDERR", errbuf, -1, 1);
     *ret = -1;
     return (-1);
   }
 
 /* Get the process information */
   if (ioctl(fid, PIOCUSAGE, &process) == -1) {
+    (void) sprintf(errbuf,"Error getting process resource information");
+    (void) u_error("UACTINF-RSCERR", errbuf, -2, 1);
     *ret = -2;
     return (-2);
   }

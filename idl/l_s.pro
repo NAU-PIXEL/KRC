@@ -1,39 +1,45 @@
-function l_s, arg, kode=kode
+function l_s, arg, aud, kode=kode
 ;_Titl  L_S  Convert Martian season L_s <-> Julian day
 ; arg	in.	DEPENDS upon kode:  May be scaler or array
-;		kode =0 or absent: julian day, full double precision, 
-;		    or single precision offset from J2000.
+;		kode =0 or absent: julian day OR offset from J2000.
+;                         Switches at arg[0] 1000000.
 ;		Kode = 1:   days from start of Martian year
 ;		Kode = 2:   L_s aerographic longitude of the sun, in degrees. 
 ;		   should be in 0 to 360.  May be scaler or array
-;		Kode = 3:  integer or deciaml year, e.g.,1998.7
+;		Kode = 3:  integer or decimal year, e.g.,1998.7
+; aud   out_    fltarr(2)  Heliocentric AU and sub-solar latitude
 ; 		
 ; kode	in_	Controls action
-;	kode=0 Convert full Julian day , or day offset from J2000, to L_s
+;	kode=0 Convert full Julian day , or day offset from J2000, to L_s Default
 ;	kode=1 convert days from start of Martian year (L_s=0) to L_s
 ;	kode=2 Convert L_s to days into a martian year
 ;	kode=3 Find nearest full julian day of L_s=0 for requested year
 ; func.	out.	Kode=0,1  Aerographic longitude of the sun, in degrees.
 ;		Kode=2	  Days (of 86400 seconds) from prior L_s=0
 ;		Kode=3    Full julian day of previous L_s=0
+;_Calls   LS2AU
 ;_Desc
 ;     kode 1 and 2 are inverse of each other
 ;_Hist 97dec17 Hugh Kieffer original version
 ;   97dec31 HHK include modulo so the results are always 0 to 360.
 ; 2000dec22 HHK Derive from L_sub_s, Add kode=1,2,3 options
 ; 2003jul17 HK Fix so this will handle long-integer full Julian date
+; 2008apr08 HK Set so dates <1.E6 are considered offset from J2000
+; 2011aug13 HK Add optional parameter  aud
 ;_End
 
 if not keyword_set (kode) then kode=0
 jd2000=2451545.D0               ; Julian day of J2000, 2000jan01 noon GMT
-jdy=2450322.34D0                ; start of mars year circa 1986aug26
+jdy=2450322.34D0                ; start of mars year circa 1996aug26
+jdy=2450322.2981763617D0 ; http://www-mars.lmd.jussieu.fr/mars/time/mars_date_to_earth_date.html
+; 2450322.3307D0 yields Ls=0 here
+
 myear=686.98D0                  ; days in a martian year
 
 case kode of
     0: begin                    ; from absolute date to L_s
       k=size(arg,/type)
-      if k eq 5 then jd=arg else if k eq 4 then jd=arg+jd2000  $   ; get full Ju
-               else  jd=double(arg)       
+      if arg[0] gt 1.e6 then jd=double(arg) else jd=arg+jd2000  ; get full Ju
       mday=jd-jdy               ; days since start of mars year circa 1986aug26
       goto,getls & end
 
@@ -45,6 +51,7 @@ a= [ -10.328371,    57.296001,   -10.688416,   -3.2931221,  -0.62748339 $
      ,  -5.0168313, -0.050566287,  -0.41753547 ]
 f=a(0) +a(1)*x +a(2)*cos(x-a(3)) + a(4)*cos(2.*x-a(5)) + a(6)*cos(3.*x-a(7))
 f=ZERO360(f)                    ; avoid ge 360.
+lsd=f 
 end 
 
 2: begin ; from degrees L_s to days since start of a Mars year
@@ -52,6 +59,7 @@ end
 a= [19.717923, 109.33317, 20.417421, -3.4731399, -0.70853928 $
     , -5.3719812, 0.029281483, -0.92372042]
 f= a(0) + a(1)*x + a(2)*cos(x-a(3)) + a(4)*cos(2.*x-a(5)) + a(6)*cos(3.*x-a(7))
+    lsd=arg
 end
 
 3: begin ; find full JD of prior start of Mars year
@@ -59,10 +67,32 @@ end
     x= day + (jd2000-jdy)       ; days from  start of a mars year
     x=floor(x/myear)            ; smaller integer
     f=jdy+x*myear               ; JD that was on the start of a Mars year
+    lsd=0.
 end
+; 4 and 5 are test of alsubs.f routine. Results, roundoff
+4: begin   ; from Mars Day-of-year to L_s
+        x=double(arg)/686.98D0    ; fractional martian year
+        x=x*2.0D0*3.1415926536D0 ; radians from start of martian year  
+        f= -10.328371D0 +57.296001D0*x -10.688416D0*cos(x+3.2931221D0) $
+           -0.62748339D0*cos(2.*x+5.0168313D0) $
+            -0.050566287D0 *cos(3.*x+0.41753547D0)
+        lsd=f
+    end
+5: begin  ; from degrees L_s to days since start of a Mars year
+        x=0.017453292520D0*arg  ; convert degrees to radians
+        f= 19.717923D0 + 109.33317D0*x + 20.417421D0*cos(x+3.4731399D0) $
+           -0.70853928D0*cos(2.*x+5.3719812D0) $
+           + 0.029281483D0*cos(3.*x+0.92372042D0)
+    lsd=arg
+      END
 
 else: message,'Called with illegal Kode'
 endcase
+
+if n_params() ge 2 then begin ; compute AU and Sdec
+    dau=LS2AU(lsd,slat)
+    aud=[dau,slat]
+endif
 
 return,f
 end
@@ -98,3 +128,17 @@ end
 ;a= [       19.717923       109.33317       20.417421
 ;      -3.4731399     -0.70853928      -5.3719812
 ;     0.029281483     -0.92372042
+
+
+; 2011 Aug 5 10:20:50 concepts ------------------------
+
+; High precision 1. using DPephem
+; get mars pole orientation at date
+; get approximate date of ls=0
+; get mars position 1/4 MY before and after
+;  use this to derive orbit pole
+; cross spin axis with orbit poel to get rising node
+; find time when planet ws there. 
+
+; 2: using mean orbit.
+ ; ALREADY DONE IN LSUBSGEN

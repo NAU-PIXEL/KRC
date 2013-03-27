@@ -1,14 +1,15 @@
 	SUBROUTINE ALBVAR (Q1, ALBV)
-C INPUTS:
-C Q1 = AVERAGE (OVER A DAY) SOLAR FLUX ( DIRECT AND DIFFUSE) 
-C   INCIDENT ON A FLAT SURFACE
-C OUTPUTS
-C ALBV = EFFECTIVE HEMISPHERIC ALBEDO OF FROST DEPOSIT
-C	?? SHOULD PHASE FUNCTION BE HERE??
+C_Titl ALBVAR Compute frost albedo as linear function of insolation
+C_Vars
 	INCLUDE 'krccom.inc'
-C GETS INDEPENDANT PARAMETERS FROM KRCCOM
-	EQUIVALENCE (AF1,FD(29)), (AF2,FD(30))
-C
+C_Args:
+      REAL Q1    ! IN. average (over a day) solar flux ( direct and diffuse) 
+C   incident on a flat surface
+      REAL ALBV  ! OUT.  effective hemispheric albedo of frost deposit
+C	?? should phase function be here??
+C 2005dec28 HK Change to use of IMPLICIT NONE. But here no change needed
+C_END
+
 	ALBV = AF1 + AF2*Q1
 	RETURN
 	END
