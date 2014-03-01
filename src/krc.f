@@ -6,18 +6,16 @@ C_Vars
 	INCLUDE 'daycom.inc'
 	INCLUDE 'units.inc'
 	INCLUDE 'filcom.inc'
-C_Hist	85oct01  Hugh_H_Kieffer
-C	87nov22  HHK  send errors to screen, force parameter print if error.
-C	93mar03  ECisneros converted include filename to lowercase, also
-C		           replace assign statement with an open statement,
-C			   and changed iokey variable from -4 to 5
-C	93mar04  ECisneros removed excess code at end of program, and added
-C		           check for ieee exceptions. previous version was
-C			   running but giving ieee exception.
-C 97jan30  HHK correct zero initialize
-C 97feb11 revise commons and much alogorithm
-C 97jul07 from calories to  SI units
-C 99dec07  HHK add option to continue from current condition
+C_Hist	85oct01  Hugh_H_Kieffer  Initial version circa 1969 at UCLA
+C 87nov22  HHK  send errors to screen, force parameter print if error.
+C 93mar03  ECisneros Convert include filename to lowercase. Replace assign 
+C   statement with an open statement, changed iokey variable from -4 to 5
+C 93mar04  EC Removed excess code at end of program; add check for IEEE 
+C   exceptions. previous version was running but giving IEEE exception.
+C 97jan30  HHK Correct zero initialize
+C 97feb11  HHK Revise commons and much alogorithm
+C 97jul07  HHK From calories to  SI units
+C 99dec07  HHK Add option to continue from current condition
 C 2002mar07 HHK Add option for "one-point" rapid runs for Surface T
 C 2006mar22 HHK Minor: change default input file to   krc.inp
 C 2009mar05 HK Minor cleanup
@@ -25,15 +23,16 @@ C 2010jan11 HK Change to use of IMPLICIT NONE
 C 2013jan16 HK Eliminate the multiple use of IR. Jan31: add version number 2.1.2
 C 2013Feb16 HK Remove unused PORBCM
 C 2013jul24 HK Start using new PORB system to fix Ls problems of v2.1.2 
+C 2014jan27 HK If fatal error, try next case rather than terminating run.
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
 
 	REAL ELAPSED,TIMES(2)	! declare the types of DTIME()
 	INTEGER IOD, IQ, IRC,IRD,IRS,KREC
-	INTEGER IOST		!? returned by OPEN
+	INTEGER IOST		! returned by OPEN
 	CHARACTER*80 CBUF	! temporary use
 	REAL TOTIME		! Total Elapsed Time 
 
-	VERSIN='KRCv2.2.4'	! set version number 2013sep03
+	VERSIN='KRCv2.3.0'	! set version number 2014jan25
 C			zero out some commons
 	CALL R2R (0.,ALB, -NWKRC) !  KRCCOM
 	CALL R2R (0.,NDJ4,-NWLAT) !  LATCOM
@@ -128,7 +127,12 @@ C that value, and action will fall out the bottom of the season loop
 D	write(*,*)'TSEAS return IQ,IRS,N5,krec=',IQ,IRS,N5,krec !<<< debug
 	IF (LONE) CALL TPRINT(9) ! print results at requested one-point
 
-	IF (IRS.NE.1 .AND. N5.GT.0) GO TO 170	! stop on error in seasonal run
+	IF (IRS.NE.1 .AND. N5.GT.0) THEN ! There was a fatal error
+! GO TO 170	! stop on error in seasonal run  Changed 2014jan27
+	   WRITE(IOPM,*)'Case had FATAL error. Will try next case'
+	   WRITE(IOSP,*)'Case had FATAL error. Will try next case'
+	ENDIF
+
 	CALL TCARD (2,IRC)		! read set of parameter changes
 
 D	WRITE(IOSP,*)'TCARD 2 IR=',IRC,krec  !<<< Debug
@@ -144,11 +148,8 @@ D	WRITE(IOSP,*)'TCARD 2 IR=',IRC,krec  !<<< Debug
 C
  170	IF (LOPN2) CALL TDISK (4,KREC)	! all done: close disk files
 
-C	check for ieee exceptions raised
-C	see page 127 in sun fortran manual, numerical computation guide
-C???	CALL CHKMATH(IOSP)
-
  9	WRITE (IOSP,*)'     END KRC   Total time [s]=',totime
+ 	WRITE (IOPM,*)'     END KRC   Total time [s]=',totime
  	STOP
 
 C error section

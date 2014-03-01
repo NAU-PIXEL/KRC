@@ -8,7 +8,7 @@
 ;    SETWIND  SUBTITLE  TOOTHB
 ;_Hist 2013sep03 Hugh Kieffer
  common SETCOLOR_COM2, kcc,linecol,kkc,kkl,kkp,fixkkc,fixkkl,fixkkp,kink,scex1
-;_End        .rnew krcvtest
+;_End        .rnew krcvtest 
 
 ptitl='krcvtest' & prior=['q','q']
 homedir=getenv('MYHOME')        ; get current home
@@ -20,15 +20,22 @@ idltop=getenv('IDLTOP')         ; top of current IDL run directory
 ;if homedir eq '/u/hkieffer/' then krcdat='/work/hkieffer/krc/test/' ; Mac
 
 labf=['VerA=new DIR ',' " case file',' " multi-type stem',' " OnePoint [.prt]' $
-,'spare','VerB=prior DIR',' " case file',' " multi-type stem' $
-,' " OnePoint [.prt]','spare','DIR for IDL output'] 
-parf=[krcdat,'V222test1','V222test2','V222Mone','---' $
-,krcdat,'Vntest1','V211test2','V1Mone','---',idltop] 
+,'DIR for prt','VerB=prior DIR',' " case file',' " multi-type stem' $
+,' " OnePoint [.prt]','DIR for prt','DIR for IDL output','Output onePoint set'] 
+parf=[krcdat,'V222test1','V222test2','V222Mone','/home/hkieffer/krc/tes/' $
+,krcdat,'Vntest1','V211test2','V1Mone','---',idltop,'grid.one'] 
+
+parf[1]='V224str2'  & parf[5]=parf[0] ; 2014jan22
+parf[9]=parf[4] & parf[3]='Mone' & parf[8]='Moneq'
 parf0=parf
 
 labi=['Flag: DJUL is oldstyle','@46 # seasons','@46 N hours','@522 item index' $
-,'@71 rows in OnePoint']
-pari=[0,20,6,1,23]
+,'@71 rows in OnePoint','@77 max output rows','season/year','+Case','-Case']
+pari=[0,20,6,1,1152,2000,40, 11,12]
+
+labj=['@72 X   | Location','Y start  | and spacing','Delta Y  | of legend' $
+,'Line len | normalized']
+parj=[.1,.93,-.025,.08]
 
 lab52=['Hour','item','Lat.','Season','Case'] ; dimensions of type52
 
@@ -40,9 +47,8 @@ labl=['Tsurf & 1', 'Tbolo & 2','Tatm & 3','4 & _h',   '5 & GCM',     '6=spare']
 thkk=replicate(1.,6)
 linn=[0,2,3,4,5,1] & nlin=n_elements(linn)
 
+str0=string(indgen(16),form='(i2)')
 str1=string(indgen(16)+1,form='(i2)')
-tcase=['AtmTconFcon','AtmTdepFcon','AtmTconFvar' $ ; standard test cases
-,'noAtmTcon','noAtmTvar','noAtmTuni']
 
 hsk=['M','S','I','X','MA','N']  ;  kodes for desired stats
 hfmt=['f6.3','f5.3','f8.3','f7.3','f7.3','i6'] ;  blanks will be trimmed
@@ -51,12 +57,14 @@ des52=['Surface kinetic','TOA Bolometric','Atmosphere','Down-going Vis' $
 ,'Down-going IR'] ; labels
 dj2000=2451545.D0               ; JD of epoch J2000
 k24=dj2000-2440000.              ; Offset for KRC before 2013
+
+it1=0 ; insurance
 ;===============================================================================
 kite=' ' & komit=0   &  paw=-1 ; type definitions
 prior=['1','1']                 ;impossible values, to initiate MAKE99
 text='dum_text' & ytext='dum_ytext' & text2='dum_up' ; subtitle place holders
 lkon=0B
-kons=[860,20,200,203,207,21,22,29,252]  ; required for definitions; read one file
+kons=[860,20]  ; required for definitions;
 kon=123 & goto,dokon           ; do them immediately
 
 ;===============================================================================
@@ -85,7 +93,7 @@ case kon of ;...................................................................
 
 110: parf=parf0 ; Reset names to default
 
-111: kons=[200,202,207,21,22,29,252] ; Reread VerA group 2 cases
+111: kons=[200,202,207,21,22,29,252,253] ; Reread VerA group 2 cases
 
 112: kons=[41,-1,411,-1,42,43,-1,44,-1,45,-1,46] ; Test cases
 
@@ -97,22 +105,24 @@ case kon of ;...................................................................
 
 116: kons=[61,-1,62,63] ; Compare versions
 
-117: begin & kons=[200,202,207,21,22,29,252,26,201,207,252,62,63]
+117: begin & kons=[200,202,207,21,22,29,252,26,201,207,252,62,63] ;
 parf=parf0
 parf[6]=parf[1] & parf[7]=parf[2] ; Version B is latest in distro  output
 parf[8]=parf[3]
 parf[0]=krcsrc ; Version A becomes new run
 parf[3]='Mone'
 end
+
+118: kons=[432,43,435,-1,44,-1,445] ; look at effect of atm
 ;..................................................................
 
 123: begin & lkon=1b & kkon=-1  ;- Start auto-script 
 lastkon=n_elements(kons)-1 & end ; last preset command
 
 11: GETPSN,'File names',parf,labs=labf,/align ;- Modify File names parf
-14: GETPAN,'pari',pari,-1,999,labs=labi ;- Modify integers pari
+14: GETPAN,'pari',pari,0,0,labs=labi ;- Modify integers pari
 
-18: begin & help,ifile,ttt,tth,uuu,vvv,ts ; Help, and print cases
+18: begin & help,ifile,ttt,tth,uuu,vvv,tsz,tsm ; Help, and print cases
 if n_elements(cased) gt 1 then PRINTJCOLS,cased,1,len=65 & end
 
 188: if n_elements(itemv) lt 1 then print,'Need to do @252' else begin ;+ contents
@@ -121,7 +131,7 @@ if n_elements(cased) gt 1 then PRINTJCOLS,cased,1,len=65 & end
   help,ggg & print,'(item,latitude,season,case)' & print,'itemg = ',itemg
   help,uuu & print,'(nlat,item,case)' & print,'itemu = ',itemu
   help,vvv & print,'(season,item,case)' & print,'itemv = ',itemv
-help,kcom,/struct & end
+print,'KRCCOM is in kcom:' & help,kcom,/struct & end
 
 19: begin & i=7 ; Print input portion of selected KRCCOM arrays REQ 20,21
 GETP,'+1=floats +2=integers +4=logicals',i,0,7
@@ -136,7 +146,8 @@ end
 203: begin & igrp=2 & verg='2' & end ; Set to case group 2
 
 207: begin & i=5*iver  ; set input file stem
-stem=parf[i]+parf[i+igrp]
+stem=parf[i+igrp]         ; core of the KRC file name
+fame=parf[i]+stem         ; input file name without extension
 sfile=verr+verg
 end
 
@@ -151,7 +162,7 @@ numkl=n_elements(labKl) & lastl=numkl-1
 end
 
 21: begin  ; Open file to determine locations of krccom
-front=READKRCCOM(stem+'.t52',khold) 
+front=READKRCCOM(fame+'.t52',khold) 
 if n_elements(front) lt 5 then goto,halt
 print,'khold=',khold
 kcom1=READKRCCOM(1,khold) ; get first case
@@ -166,10 +177,10 @@ cased[0]=parf[1]+' Base' & end
 
 23: KRCCOMLAB, pari[9],kcom.fd,kcom.id,kcom.ld,fclab,iclab,lclab ;+ Print krccom
 
-232:  KRCCOMLAB, pari[9] $ ; Difference 2 KRCCOM's  REQ 26
+232: KRCCOMLAB, pari[9] $ ; Difference 2 KRCCOM's  REQ 26
 ,kcom.fd-kcomh.fd,kcom.id-kcomh.id,kcom.ld-kcomh.ld,fclab,iclab,lclab
 
-252: begin & ifile=stem+'.t52' ; Open/Read/Close type 52 file
+252: begin & ifile=fame+'.t52' ; Open/Read/Close type 52 file
 kcom=READKRC52(ifile,ttt,uuu,vvv,itemt,itemu,itemv,ddd,ggg,itemd,itemg,vern=vern)
 help,ttt,uuu,vvv,ddd,ggg,vern,kcom
 siz=size(kcom)
@@ -179,14 +190,38 @@ nlat=sizt[3] & nseas=sizt[4] & ncase=sizt[5]
 print,'Nseas, nlat, ncase=',nseas,nlat,ncase
 alat=uuu[0:nlat-1,0,0]          ; latitudes for first case
 slat=ST0(alat,/nojoin)          ; lats as string
+sour=ST0((24./nhour)*(findgen(nhour)+1),/nojoin)
+scase='Case '+str1[0:ncase-1]   ; 1-based case numbers
 djmm=vvv[*,0,0]                 ; DJUL
 lsv =vvv[*,1,0]                 ; LSUBS
 dfl0=(djmm-151.269) mod 686.99161 ; days from Ls=0
 tsur=reform(ttt[*,0,0,*,0])       ; Tsurf [hour, season]
+xx=shift(lsv,-1)-lsv              ; large negative at the last of each year
+ii=where(xx lt 0,j)               ; locations of last-of-year
+leny=0                            ; year lenght, if none found
+if j gt 1 then begin              ; have more than a full year
+   leny=ii[j-1]-ii[j-2]           ; seasons in the last year
+   jy1=nseas-leny                 ; first season of the final year
+endif else if j eq 1 then begin                  ; at most one Ls=0 crossing
+   ya=min(abs(lsv[0:nseas-2]-lsv[nseas-1]),i) ; look for earlier season ~= last
+   print,'min seperation of season similar to last',ya
+   leny=nseas-i
+   jy1=i+1                      ; first season of the final year
+endif else jy1=0                ; no Sl=0 crossing; take all seasons
+print,'Seasons/year, start of last year: leny,jy1=',leny,jy1
 end
 
-26: begin & siz=size(ttt) & if siz[0] ne 5 then goto,halt ; tth=ttt etc.
-tth=ttt & uuh=uuu & kcomh=kcom & caseh=cased & sizh=sizt
+253: begin                      ; specific case names
+if stem eq 'V224str1' then scase= ' Pt='+['546','200','100','50','10','5','2','none']
+if stem eq 'V224str2' then scase= ' Pt='+['10000','5000','2000','1000','500','200','100','50','20','10','5','2','none']
+if stem eq 'V224str5' then scase= ' Pt='+['10000','5000','2000','1000','500','200','100','50','20','10','5','2', '1.01','none']
+if stem eq 'V222test1' then scase=['AtmTconFcon','AtmTdepFcon','AtmTconFvar','noAtmTcon','noAtmTvar','noAtmTuni']
+if stem eq 'try2' or stem eq 'try8' or stem eq 'try5' then scase=['29','18','19','20','21','22','23','25','27']
+end
+
+26: begin & siz=size(ttt) ; hold current set. tth=ttt etc. 
+if siz[0] ne 5 then goto,halt
+tth=ttt & uuh=uuu & kcomh=kcom & caseh=cased & sizh=sizt & scash=scase
 ifh=ifile & vvh=vvv & lsh=lsv & ddh=ddd & ggh=ggg & verh=vern & tsh=tsur & end
 
 266: help,ifh,ifile,lsh,lsv $ ; Help latest and hold
@@ -195,6 +230,7 @@ ifh=ifile & vvh=vvv & lsh=lsv & ddh=ddd & ggh=ggg & verh=vern & tsh=tsur & end
 29: q= READKRCCOM(-1,khold)     ; Close the KRC unit
 
 ; 44444444444444444444444444444444 test between cases
+; Ver 222 cases
 ; 0: With atmosphere, properties constant with T
 ; 1: With atmosphere, properties T-dependent
 ; 2: With atmosphere, soil properties constant with T, frost properties variable
@@ -202,52 +238,85 @@ ifh=ifile & vvh=vvv & lsh=lsv & ddh=ddd & ggh=ggg & verh=vern & tsh=tsur & end
 ; 4: No atmosphere, properties T-dependent
 ; 5: No atmosphere, properties T-dependent, but constant
 
-41: begin                       ; Test Ls
+41: begin                       ; Test Ls  Requires more than one case
 yy=reform(vvv[*,1,*]) ; Ls [season,case]
+siz=size(yy) & if siz[0] ne 2 then goto,halt ; only one case
 ya=MEAN_STD2(yy,std=yb) ; statistics across cases
 xa=min(yb,max=xb) ; range of changes between cases
 print,'Range of change of Ls between cases:',xa,xb
 plot,yy[*,0],xtit='Season index [0-based]',ytit='Ls for case 0', title=ifile
 end
 
-411: begin & mjd=djmm           ; Check Ls against LSAM
+411: begin & mjd=djmm           ; Check Ls against LSAM REQ 252
 if pari[1] then mjd=djmm-k24 ; adjust older version to j2000
 lsam=LSAM(mjd,myn,aud)
 plot,mjd,PM180(lsv-lsam),xtit='MJD  '+ifile,ytit='Ls from vvv-LSAM'
 end
 
-42: begin                       ; Confirm convergence days
+42: begin                       ; Confirm convergence days 
 ndj4=reform(ggg[0,*,*,*])
 xa=min(ndj4,max=xb)
 print,' NDJ4: min,max=',xa,xb
+plot,ndj4, psym=1,xtit='Lat * season * case', ytit='Number of convergence days'
+jj=histogram(ndj4,omin=i1,omax=i2)
+Print,'Distribution of NDJ4'
+for i=i1,i2 do print,i,hi[i-i1]
 end
 
-43: begin                       ; Plot hourly Ts near equator for 2 seasons
-SETCOLOR,init=860 ; 10 colors on black
-t1=reform(ttt[*,0,nlat/2,*,*]) ;[hour,season,case] Tsur at equator
-q=min(abs(lsv-251.),i1) ; find index nearest perihelion, which is at Ls=251
-q=min(abs(lsv-71.),i2)  ;    "    "     "      aphelion, which is at Ls=71
+431: it1=0 ; Set to Tsur
+
+432: read,it1,prompt='First index in ttt 0=Ts 2=Ta etc > ' ; Set to any item in ttt
+
+43: begin & qt=itemt[it1]                     ; Plot hourly Ts near equator for 2 seasons
+i1=jy1
+t1=reform(ttt[*,it1,nlat/2,i1:*,*]) ;[hour,season,case]  at equator
+q=min(abs(lsv[i1:*]-251.),i1) ; find index nearest perihelion, which is at Ls=251
+q=min(abs(lsv[i1:*]-71.),i2)  ;    "    "     "      aphelion, which is at Ls=71
 ii=[i1,i2] 
 t1=t1[*,ii,*] ; only two seasons
 t2=transpose(t1,[0,2,1]) ; [hour,case,season]
 t3=reform(t2,nhour,2*ncase) ; [hour, case*season]
-qq='Case '+str1[0:ncase-1]
-q=[qq+(' Seas '+strtrim(ii[0],2)),qq+(' Seas '+strtrim(ii[1],2))]
-CLOT,t3,q,titl=['Hour index','Ts at equator',ifile],locc=[.45,.5,-.03,.08]
+q=[scase+(' Seas '+strtrim(ii[0],2)),scase+(' Seas '+strtrim(ii[1],2))]
+CLOT,t3,q,titl=['Hour index',qt+' at equator. Last Year',ifile],locc=[.45,.5,-.03,.08]
+qs=string(lsv[ii],form='(f5.1)')
 Print,'Seasons and Ls=',ii, lsv[ii]
 end
 
-44: begin  ; Display central latitude seasonal behaviour
-t1=reform(ttt[nhour/2,0,*,*,*]) ;[lat,season,case] Tsur at noon equator
-t2=transpose(t1,[1,2,0])  ;[season,case,lat] 
-t3=reform(t2,nseas*ncase,nlat)
-CLOT,t3,slat,loc=[.38,.45,-.03,.08],titl=['season*case','Tsur at noon',ifile]
-PLOTSECT,'Case '+str1[0:ncase-1],.21,cs=1.5
-if ncase eq 6 then PLOTSECT,tcase,.16,cs=1.5
+433: begin & read,i,j,prompt='Season and lat index > ' ; Plot hourly one lat,season  REQ 43 
+t2=reform(ttt[*,it1,j,i,*]) ; [hour,case]
+CLOT,t2,scase,titl=['Hour index.   Season='+strtrim(i,2)+'  Ls='+strtrim(lsv[i],2) $
+,qt+' at lat='+slat[j],ifile],locc=[.45,.5,-.03,.08]
 end
 
-45: begin                        ; No atm, T:const - T:uniform
-t1=ttt[*,*,*,*,5]-ttt[*,*,*,*,3] ; Prop=constant - Prop=uniform
+435: begin & print,' pre-dawn and Midday values for ',qt ; Print midday REQ 43
+j=nhour/2 & k=nhour/6
+for i=0,2*ncase-1 do print, i, t3[k,i],t3[j,i],q[i],form='(i3,2g12.5,2x,a)' & end
+
+436: begin & print,' Midday values for ',qt ; Plot midday REQ 43
+plot,t3[j,*],xtit='case',ytit= ' Midday values for '+qt,psym=-4 
+xa=(2*ncase-1)/2. & oplot,[xa,xa],!y.crange,line=1 ; season dividing line
+xyouts,.25,.5,'Ls= '+qs[0],/norm,chars=2.
+xyouts,.75,.5,'Ls= '+qs[1],/norm,chars=2.& end
+
+44: begin  & qt=itemt[it1]  ; Display central latitude seasonal behaviour
+t1=reform(ttt[nhour/2,it1,*,*,*]) ;[lat,season,case] Tsur at noon equator
+t2=transpose(t1,[1,2,0])  ;[season,case,lat] 
+t3=reform(t2,nseas*ncase,nlat)
+CLOT,t3,slat,loc=[.38,.45,-.03,.08],titl=['season*case',qt+' at noon',ifile]
+PLOTSECT,scase,.21,cs=1.5
+PLOTSECT,str0[1:ncase],.16,cs=1.5
+end
+
+445:begin & read,j,prompt='Lat index > '   ; CLOT one latitude REQ 43 then 44
+j=(j>0)<(nlat-1)
+CLOT,t2[*,*,j],scase,loc=1,titl=['Season Index',qt+' near Noon','Lat. index '+strtrim(j,2)]
+print,'Lat= ',slat[j], alat[j] 
+i=nseas/2 & print,'Values at season: index and Ls=', i,lsv[i]
+for k=0,ncase-1 do print,k,t2[i,k,j],'  ',scase[k]  & end
+
+45: begin & k1=pari[7] & k2=pari[8] ; Difference two cases
+cdtit=scase[k1]+'-'+scase[k2]
+t1=ttt[*,*,*,*,k1]-ttt[*,*,*,*,k2] ; Prop=constant - Prop=uniform
 j=n_elements(t1)
 for i=0,4 do begin 
    xx=(t1[*,i,*,*])
@@ -260,11 +329,12 @@ for i=0,4 do begin
 endfor
 end
 
-46: begin ; Tatm-TnoAtm
+46: begin  & k1=pari[7] & k2=pari[8] ; Difference two cases
+cdtit=scase[k1]+'-'+scase[k2]
 ; For NoAtm cases, Tplan, Tatm, DownIR, FROST4 ,AFRO4 are meaningless
 jj=[0,3]                        ; Tsur and DownVis
 nsp=pari[1] & nhp=pari[2]       ; Number of seasons and hours to plot
-t1=reform(ttt[*,jj,*,*,0]-ttt[*,jj,*,*,3]) ; Atm - NoAtm for  T:constant
+t1=reform(ttt[*,jj,*,*,k1]-ttt[*,jj,*,*,k2]) ; TTT difference
 n1=n_elements(t1)               ; [hour,item,lat,season] item =Tsur, DownVis
 t2=transpose(t1,[0,3,2,1])      ; [hour,season,lat,item]
 ii=(nseas/nsp)*indgen(nsp)      ; subset nsp seasons
@@ -276,7 +346,7 @@ print,'Hours plotted:',ii
 ;t3=reform(t2,nhour*nseas*nlat,2) ; [hour*season*lat,item]
 t3=reform(t2,nhp*nsp*nlat,2) ; [hour*season*lat,item]
 CHART,t3,psy=3,parti=itemt[jj],dlin=2,xtit='hour * season * latitude' $
-,titl='Atm. - NoAtm. '+ifile
+,titl=cdtit+' '+ifile
 PLOTSECT,slat,.51, cs=2.
       PAUSE,-1
 for j=0,n_elements(jj)-1 do begin 
@@ -285,7 +355,7 @@ for j=0,n_elements(jj)-1 do begin
    xa=total(abs(xx))/n1
    print,itemt[i],' MAR=',xa
    if xa gt 1.E-6 then begin 
-      HISTFAST,xx,xlab='Delta '+itemt[i]+' for atm-noAtm'
+      HISTFAST,xx,xlab='Delta '+itemt[i]+' for '+cdtit
       PAUSE,-1
    endif
 endfor
@@ -294,13 +364,13 @@ end
 ; 55555555555555555555555555555555 test between file types
 ; Read type 52, -1 and 0 for the same model
 
-50:  begin & fun0=READKRC1(stem+'.t0',fcoz,icoz,lcoz, lsz $  ; Read type 0
+50:  begin & fun0=READKRC1(fame+'.t0',fcoz,icoz,lcoz, lsz $  ; Read type 0
 ,tsz,tpz,  ktype=0,/verb,ddd=dd0,lab=labd,desc=desc)
 siz=size(fun0) & if siz[0] ne 2 then goto,halt
 slat0=string(fun0[*,0],form='(f6.1)')
 end
 
-51: begin & funm=READKRC1(stem+'.tm1',fcom,icom,lcom, lsm $ ; Read type -1
+51: begin & funm=READKRC1(fame+'.tm1',fcom,icom,lcom, lsm $ ; Read type -1
 ,tsm,tpm,  ktype=-1,/verb)
 siz=size(funm) & if siz[0] ne 2 then goto,halt
 slatm=string(funm[*,0],form='(f6.1)')
@@ -380,8 +450,11 @@ aa=HSTATS(qt,['M','S','I','X']) & print,'Tp -1',aa,form=fmt
 end 
 
 ; 66666666666666666666666666666666 tests between versions
-61: plot,djmm,PM180(lsv-lsh),xtit='MJD  '+ifile,ytit='lsv-lsh' $ ; Plot LS-LSH
+61: begin & yy=PM180(lsv-lsh); Plot LS-LSH
+qt=max(abs(yy)) & print,'Maximum difference in Ls is:',qt
+if qt ne 0 then plot,djmm,yy,xtit='MJD  '+ifile,ytit='lsv-lsh' $
 ,titl=ifile+' - '+ifh
+end
 
 62: begin & i=nhour/2 & j=nlat/2 ; Plot Tsur noon equator
 xx=tth[i,0,j,*,0] ; noon equator case zero 
@@ -429,31 +502,127 @@ if i le 0 then print, 'All NDJ4 the same' else begin
 endelse
 end
 
-; 77777777777777777777777777777777 Test one-point mode
-71: begin & kfile=parf[0]+parf[4]+'.prt' ; Test one-point mode
-mrow=pari[4]
-sss=READTXTCOL(kfile,nskip=-1,ncol=12,mrow=mrow)
-siz=size(sss) & if siz[0] ne 2 then goto,halt
-if siz[1] lt mrow then begin
-   print,'Fewer OnePoint rows than expected:',siz[1],mrow
-   print,'Adjust @14 item 4'
-   goto,halt
-endif else print,'OnePoint VerA rows read=',siz[1]
-ppa=float(sss[*,1:11]) 
-kfile=parf[5]+parf[8]+'.prt'
-sss=READTXTCOL(kfile,nskip=-1,ncol=12,mrow=mrow)
-siz=size(sss) & if siz[0] ne 2 then goto,halt
-if siz[1] ne mrow then goto,halt
-print,'OnePoint VerB rows read=',siz[1]
-ppb=float(sss[*,1:11]) 
-qq=ppb[*,0:8]-ppa[*,0:8] ; difference
-xa=min(qq,max=xb)
-print,'Range of OnePoint input differences',xa,xb
-if xb-xa gt 1.e-3 then goto,halt
-t1=ppb[*,9:10]-ppa[*,9:10]
-ya=min(qq,max=yb)
-print,'Range of OnePoint output T differen',ya,yb
+66: begin ; Estimate Atm Radiative time
+; krccom values are for the last latitude at the end of the first season
+; for the first case
+beta=kcom.fd[86-1] & sigsb=kcom.fd[95-1]
+pres=kcom.fd[72-1]
+tatmj=kcom.fd[76-1]
+grav=kcom.fd[47-1]
+atmcp=kcom.fd[48-1]
+radtime=atmcp*(pres/grav)/(beta*sigsb*tatmj^3) ; radiation time in secs
+raday=radtime/(2.71828*86400.); relaxation time in days
+print,'Radiation time,sec=',radtime,'  Relaxation in days=',raday
 end
+
+662: print,3182.48/(27.9546-alog(pres)) ; T of P for CO2 SET PRES
+
+
+; 77777777777777777777777777777777 Test one-point mode
+71: begin & kfile=parf[4]+parf[3]+'.prt' ; Test one-point mode
+mrow=pari[4] ; Most rows to read
+sss=READTXTCOL(kfile,nskip=-1,ncol=12,mrow=mrow)
+siz=size(sss) & if siz[0] ne 2 then goto,halt
+numA = siz[1]
+if numa ge mrow then print,'There may be more than the rows read=',numa
+ppa=float(sss[*,1:11])          ; convert all numeric to float
+tppa=ppa[*,9:10]                ; just the 2 output columns
+kfile=parf[9]+parf[8]+'.prt' ;------------------------------- 2nd file 
+sss=READTXTCOL(kfile,nskip=-1,ncol=12,mrow=mrow)
+siz=size(sss) & if siz[0] ne 2 then goto,halt
+if siz[1] ne numa then goto,halt ; require number of rows read be the same
+print,'OnePoint rows read=',numa
+ppb=float(sss[*,1:11])  
+tppb=ppb[*,9:10]
+qq=tppb-tppa                    ; difference: File B -A
+xa=min(qq,max=xb)
+print,'Range of OnePoint T differences',xa,xb
+ya=MEAN_STD(qq,std=yb)
+print,'B-A Mean and stdDev=',ya,yb
+ya=MEAN_STD(abs(qq),std=yb)
+print,'abs(B-A) Mean and stdDev=',ya,yb
+xa=MEAN_STD(qq[*,1]-qq[*,0],std=xb)
+print,'Delta (Tp-Ts) Mean and stdDev=',xa,xb
+end
+
+72: begin & nspy=pari[6]; Check annual trends
+if nseas mod nspy ne 0 then goto,halt 
+nyr=nseas/nspy ; years of run 
+read,k,prompt='Hour index > ' & k=(k>0)<(nhour-1)
+read,i,prompt='Reference case > ' & i=(i>0)<(ncase-1)
+t12=reform(ttt[k,0,*,*,*]); hottest hour     [lat,season,case]
+t12=transpose(t12,[1,2,0]) ;  [season,case,lat]
+t12=reform(t12,nspy,nyr*ncase,nlat,/over) ; [season,year*case,lat]
+t12r=   fltarr(nspy,nyr*ncase,nlat) ; [season,year*case,lat]
+i1=nyr*i+nyr-1                      ; index of last year of case i
+for j=0,nlat-1 do begin
+   xx=t12[*,i1,j]                ; last year of first case
+   t12r[*,*,j]=AVALG(t12[*,*,j],xx,'-')
+   endfor
+t12r=reform(t12r,nseas,ncase,nlat,/over) 
+again72: read,j,prompt='Lat index, -=done > '
+if j lt 0 then goto,ask ; done
+j=j<(nlat-1)
+CLOT,t12r[*,*,j],scase,locc=parj[0:3],titl=['Season index:  '+strtrim(nspy,2) $
++' /year' ,'Ts relative to last year for first case',stem+':  hour='+sour[k] $
++' Lat='+slat[j]]
+plots, !x.crange,[0.,0.],line=1    
+goto,again72     
+end
+
+76: begin ; generate pressure input series
+ppp=[10000.,5000,2000,1000,500,200,100,50,20,10,5,2,1.01, 0.5]
+qq=10.^(.5*findgen(13)) ;very wide P range
+x1=555. & y1=0.11             ; one point on relation
+xfu=5.                        ; factor for 1/2 of full change
+xlin=100.                     ; independent value below which relation is linear
+ccc=LINATAN(ppp,x1,y1,5.,100.,cln=cln) ; crude band model , downwelling coef.
+for j=0,n_elements(ppp)-1 do begin 
+   x=ppp[j]                     ; P total
+   print,'1 12 ',ppp[j],' ''PTOTAL''  / ' ; firm-code list
+   print,'1  9 ',ccc[j],' ''CABR''  / '  ; crube band model
+   print,'1 17 ',ppp[j]*0.3/546.,' ''TAUD''  / ' ; linear with P
+   print,'0/   end of case'
+endfor
+print,'0 /  End of Run'  
+end
+
+77: begin & kmax=pari[5] ; Generate a large grid .one file
+ ofile=parf[0]+parf[11]
+openw,lun,ofile,/get_lun
+printf,lun,'Generated in krcvtest.pro @ 77'
+fmt=       '(i2 ,f6.1, f6.1, f6.2,f5.1,f5.2,  f7.1,f5.2,f5.1,f5.0,i7)'
+;                     F6.1,F6.1,F6.2,F5.1,F5.2,F7.1,F5.2,F5.1,F5.0,A20)
+printf,lun,'C_END  Ls   Lat  Hour Elev  Alb Inerti Opac Slop Azim'     
+;            11   0.0 -10.0 20.00  1.0 0.20  400.0 0.20 15.0  90.
+k=0
+for c8 = 0.,16.,15.  do begin      ; Slop  2
+    c9 = 45.  ; Azim
+for c1 = 0.,359., 70. do begin     ; Ls    6
+for c2 = -40.,41.,40. do begin     ; lat   3 
+for c3 = 7., 14., 6.5 do begin     ; Hour  2
+for c4 = -3.,0,2.     do begin     ; Elev  2
+for c5 = 0.20, 0.35, 0.1 do begin ; Albedo 2
+for c6 = 100., 800., 500. do begin ; Inertia 2
+for c7 = 0.2, 0.31,0.1 do begin  ; Opac    2
+   k=k+1 
+   printf,lun,11,c1,c2,c3,c4,c5,c6,c7,c8,c9,k,form=fmt 
+   if k ge kmax then goto,done77
+endfor & endfor & endfor & endfor & endfor & endfor & endfor & endfor
+done77: free_lun,lun
+print,'Last index=',K
+end
+
+78: begin  ; SHOWBYTES for start of parf[0+11]
+ofile=parf[0]+parf[11]
+openr,lun,ofile,/get_lun
+aaa=bytarr(300)
+readu,lun,aaa
+SHOWBYTES,aaa
+stop
+point_lun,lun,0
+end
+; grip.one shows no extra bytes, LF at end of each line
 
 else: begin & KON91,ptitl,prior,hold,kon,kons,kitel ;=KON99 < needed by MAKE99
       if kon eq 99 then begin 

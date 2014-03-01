@@ -98,7 +98,7 @@ case kon of ;...................................................................
 
  0: stop 
 
-110: kons=[854,20,21,22,29,251,252,23,255,31,32] ; first file
+110: kons=[854,20,21,22,29,251,252,23,255,431,432,434] ; first file
 
 111: kons=[21,22,29,251,252]    ; reread first file
 
@@ -110,7 +110,11 @@ case kon of ;...................................................................
 
 114: parf=['/work1/krc/mars/','Vwebls','.t52','v22ls','---'] ; V1, V2
 
-115: begin & parf[1]='syl1a' & end ; Piqueux
+;115: begin & parf[1]='syl1a' & end ; Piqueux
+115: begin & kons=[20,21,22,29,251,252,23,232,255 $  ; InSight
+,431,432,460,461,-1,462,-1,4622,-1,463,-1,464,-1,233,-1,465]
+ parf[1]='InsHP3'
+end
 
 116: begin & parf[1]='testic' ; set to shallow ice
 parf[3]='testid' & parr[13]=28. & end
@@ -176,6 +180,26 @@ cased[0]=parf[1]+' Base' & end
 
 23: KRCCOMLAB, pari[9],kcom.fd,kcom.id,kcom.ld,fclab,iclab,lclab ;+ Print krccom
 
+232: begin ; Read atm dust and ice in one bin5
+BIN5,'Rb','/work1/mars/opacity/THEMIS1yearDustIce',headtaud,tauds,exc=exc,/verb
+sizc=size(tauds)                ; size for climate
+if exc ne 1 or sizc[0] ne 3 then goto,halt
+nucx=sizc[1] & nucy=sizc[2]
+dells=360./ nucx & dellat=180./ nucy
+lstau=dells*indgen(nucx) +dells/2. ; Ls at each point
+end
+
+233: begin & alat=uuu[jl,0,0] ; Extract Tau's for current latitude
+fy=(alat+90.)/dellat+.5 ; real index into bins
+i=fix(fy) & q=fy-i
+taud=(1.-q)*tauds[*,i,0]+ q*tauds[*,i+1,0] ; dust opacity
+taui=(1.-q)*tauds[*,i,1]+ q*tauds[*,i+1,1] ; ice opacity
+ya=min([taud,taui],max=yb)
+plot,lstau,taud,yran=[0.,yb],xtit='Ls',ytit='Opacity at latitude='+ST0(alat) $
+,title=' TES and THEMIS opacities averages over several Mars Years'
+oplot,lstau,taui,line=2
+end
+
 251: begin   & filet=parf[1]    ; Set file 1 name
 ifile=parf[0]+filet+parf[2] & end
 
@@ -193,6 +217,7 @@ djmm=vvv[*,0,0]                 ; DJUL
 lsv =vvv[*,1,0]                 ; LSUBS
 dfl0=(djmm-151.269) mod 686.99161 ; days from Ls=0
 tsur=reform(ttt[*,0,0,*,0])       ; Tsurf [hour, season]
+hourk=(findgen(nhour)+1)*(24./nhour) ; hours of output
 end
 
 255:  begin ; Print date,Ls,sdec  REQ 23 ,252
@@ -240,23 +265,23 @@ lsam=LSAM(mjd,myn,aud)
 plot,mjd,PM180(lsv-lsam),xtit='MJD  '+ifile,ytit='Ls from vvv-LSAM'
 end
 
-271: plot,djmm,PM180(lsv-lsubh),xtit='MJD  '+ifile,ytit='lsv-lsabh'; plot LS-LSH
+271: plot,djmm,PM180(lsv-lsubh),xtit='MJD  '+ifile,ytit='lsv-lsabh'; plot LS-LSH REQ 26
 
-28: begin & qd=vvv[*,0]-vvh[*,0] ; delta date
+28: begin & qd=vvv[*,0]-vvh[*,0] ; delta date  REQ 26
 xa=min(qd,max=xb)
  print,'DJul-djul_H  Range=',xa,xb
 plot,qd-qd[0] & end
 
-281: begin & th=reform(tth[*,0,0,*,0]) ; Delta Ts  
+281: begin & th=reform(tth[*,0,0,*,0]) ; Delta Ts  REQ 26 
 plot,tsur-tsh,xtit='index  hour*season',ytit='Delta Ts', titl=ifile+'-'+ifh
 end
 
-282: begin ; Thigh/Ls 
+282: begin ; Thigh/Ls  REQ 26
 plot,lsv,tsur[12,*],xtit='Ls from vvv',ytit='Tc:H=13',psym=4 
 oplot,lsubh,tsh[12,*],psym=6
 end
 
-283: begin & dv=reform(ttt[*,3,0,*,0]) ; plot noon down Vis
+283: begin & dv=reform(ttt[*,3,0,*,0]) ; plot noon down Vis REQ 26
  dvh=reform(tth[*,3,0,*,0])
 ya=min([dv[11,*],dvh[11,*]],max=yb)
  plot,dv[11,*],yran=[ya,yb] ; l noon
@@ -264,145 +289,6 @@ oplot,dvh[11,*],line=2
 end
 
 29: q= READKRCCOM(-1,khold)     ; close the unit
-
-31: begin ; ttt --> ccc Extract specific latitude and season
-if sizt[0] ne 5 then goto,halt
-jl=(pari[4]>0)<(nlat-1)
-if jl ne pari[4] then print,'WARNING: Lat index constrained'
-js=(pari[5]>0)<(nseas-1)
-if js ne pari[5] then print,'WARNING: Season index constrained'
-selec=MAKEKEYVAL([itemu,itemv],[reform(uuu[jl,*]),reform(vvv[js,*])])
-ccctit=filet+MAKEKEYVAL(['Lat','L_s'],[alat[jl],vvv[js,1]])
-ccc=reform(ttt[*,0:litm,jl,js,*],/over) 
-print,selec & end
-
-312: begin & sizh=size(tth) ;+ tth --> ccc
-if sizh[0] ne 5 then goto,halt
-jlh=(pari[4]>0)<(sizh[3]-1)
-jsh=(pari[5]>0)<(sizh[4]-1)
-if jlh ne pari[4] then print,'WARNING: Lat index constrained'
-if jsh ne pari[5] then print,'WARNING: Season index constrained'
-seleh=MAKEKEYVAL([itemu,itemv],[reform(uuh[jlh,*]),reform(vvh[jsh,*])])
-cchtit=fileh+MAKEKEYVAL(['Lat','L_s'],[uuh[jlh,0],vvh[jsh,1]])
-cch=reform(tth[*,0:litm,jlh,jsh,*],/over) 
-print,seleh & end
-
-32: begin & sizc=size(ccc) ; ccc ---> yyy Extract single case
-if sizc[0] eq 2 then ncase=1 else if sizc[0] eq 3 then ncase=sizc[3] $
- else goto,halt
-jc=(pari[6]>0)<(ncase-1) 
-if jc ne pari[6] then print,'WARNING: Case index constrained'
-casey=' '+cased[jc]
-yyy=ccc[*,*,jc] & yyytit=ccctit & end ; case description
-
-322: begin & sizc=size(cch) ;+ from cch
-if sizc[0] eq 2 then ncase=1 else if sizc[0] eq 3 then ncase=sizc[3] $
- else goto,halt
-jc=(pari[6]>0)<(ncase-1) 
-if jc ne pari[6] then print,'WARNING: Case index constrained'
-casey=' '+caseh[jc]
-yyy=cch[*,*,jc]   & yyytit=cchtit & end ; case description
-
-;---------------------------------------------------------------------
-301: begin & jc=pari[6] ; Plot Tk for 5 firm-code latitudes
-ii=[2,5,9,13,16] ; latitudes
-ni=n_elements(ii)
-qd=reform(ttt[*,0,ii,*,jc])
-qc=qd[*,*,*,0]
-qb=transpose(qc,[0,2,1])
-qb=reform(qb,nhour*nseas,ni,/over)
-CLOT,qb,slat[ii],locc=[.33,.92,-.03,.08] $
-,titl=['hour*season','Surface T', parf[1]+' Case='+strtrim(jc,2)+': '+cased[jc]]
-end
-
-
-302: begin & jc=pari[6] ;+ oplot
-qd=reform(ttt[*,0,ii,*,jc])
-qc=qd[*,*,*,0]
-qb=transpose(qc,[0,2,1])
-qb=reform(qb,nhour*nseas,ni,/over)
-CLOT,qb,slat,locc=[.33,.92,-.03,.08],oplot=-2
-end
-
-307: begin  ; read fort79
- sss=readtxtcol('~/krc/tes/fort.79', nskip=0,ncol=5,mrow=2000)
-siz=size(sss)
-fff=float(sss)
-n2=kcom.id[1]                  ; times per day
-nj=siz[1]/n2                    ; number of whole days
-CHART,fff,parti=['HaVis','TotSurf','DIRECT','DIFFUSE','BOUNCE']
-pause,-1
-ffr=reform(fff[*,1],n2,nj) & help,ffr
-clot,ffr,locc=1
-oplot,fff[0:n2-1,1],line=2
-ya=min(ffr[*,4]-ffr[*,0],max=yb)
-print,'Day1,case2-day1; min,max=',ya,yb
-end
-
-33: begin   & nkc=kcc[2] & nkl=kcc[3]      ; Plot day T's
-topt='KRC Diurnal temperatures: '+yyytit+casey
-if parr[9] gt parr[8] then yran=parr[8:9] else begin  
-    ya=min(yyy,max=yb)
-    yran=[ya,yb]
-endelse
-xx=(1.+findgen(nhour))*(24./nhour) ; times of day
-k33=0                           ; count of overplots that may come
-plot,xx,xx,xran=[0.,25.],yran=yran,/nodata,color=kcc[8] $ 
-,xtit='Hour',ytit='Temperature',titl=topt
-thk=parr[10]
-for  i=0,2 do begin 
-    clr=!binc[clrr[i]]
-    HOPLOT,xx,yyy[*,i],linn[i],color=clr,thick=thk
-    CURVEGUIDE,i,des52[i],linn[i],locc=parg[8:11],color=clr,thick=thk
-endfor
-CURVEGUIDE,k33,yyytit,linn[0],locc=parg[4:7],color=!binc[clrr[0]]
-print,'title,kon,k33 = ',yyytit,kon,k33
-end
-
-34: begin & k33=k33+1 & thk=parr[11];+ Oplot yyy 
-for  i=0,2 do HOPLOT,xx,yyy[*,i],linn[i],color=!binc[clrr[i]],thick=thk
-CURVEGUIDE,k33,yyytit,linn[0],locc=parg[4:7],color=!binc[clrr[0]],thick=thk
-print,'title,kon,k33 = ',yyytit,kon,k33
-end
-
-35: for k=0, ncase-1 do begin ; Oplot all other cases by color
-    if k ne jc then begin
-        k33=k33+1               ; then oplot all other cases 
-        clrk=kkc[k33 mod nkc]   ; color
-        for  i=0,2 do  hoplot,xx,ccc[*,i,k],linn[i],color=clrk
-        CURVEGUIDE,k33,'Case '+strtrim(k+1,2),0,locc=parg[4:7],color=clrk
-    endif
-endfor
-
-36: begin  ; Plot Seasonal T's
-plot,ttt[*,0,jl,*,jc],/nodata,xtit='Hour & season' $ ; orange
-,ytit='Temperature',titl=filet+' Lat index=',jl,color=kcc[8]
-for i=0,2 do oplot,ttt[*,i,jl,*,jc],color=!binc[clrr[i]]
-end
-
-37: begin & print,ccctit ; Print table for GCM comparison
-fmt='(i3,5f10.2)'
-print,'Fluxes in W/m^2'
-print,'hour Surf_kin TOA_bright T_atm_kin  DownVis    DownIR'
-for n=0,nhour-1 do print,n+1,ccc[n,*,jc],format=fmt
-end
-
-38: begin & j2=pari[11]; Chart trend for any item/lat
-qq=reform(ttt[*,j2,jl,*,*],nhour,nlat,nseas,ncase,/over) ; extract 1 item
-q=reform(qq,nhour*nseas,ncase,/over)
-qq=tit52[j2]+' @ Lat & Elev = '+ST0(uuu[jl,*])
-if parr[9] gt parr[8] then yran=parr[8:9] else yran=0
-if pari[12] eq 0 then parti=0 else parti=cased
-CHART,q,xtit='hour * season',titl=qq,range=yran,dlin=1,parti=parti
-qq=MEAN_STD2(q,/one) & print,'Means = ',qq
-end
-
-40: begin & sizc=size(ttt) ; movie through all of ttt T's
-for k=0,sizc[5]-1 do begin
-    for j=0,sizc[3]-1 do begin 
-        plot,ttt[*,0,j,k1:*,k],titl=slat[j]+' '+cased[k]
-        PAUSE,-1
-endfor & endfor  & end
 
 41:  KRCCOMLAB, pari[9] $ ; difference 2 KRCCOM's
 ,kcom.fd-kcomh.fd,kcom.id-kcomh.id,kcom.ld-kcomh.ld,fclab,iclab,lclab
@@ -415,7 +301,220 @@ CHART,q3,parti=titc,xtit='Hour * Case',title='Difference @ '+selec
 for i=0,ncase-1 do print,'case',i,' = ',cased[i]
 end
 
-44: begin & j=3; Extreme T comparison REQUIRES 33
+;432     ttt [hour,item,lat,season,case]
+;432     y4  [hour,item,    season,case]  lat=jl=pari[4]
+;432     ccc [hour,item,           case]  season=js=pari[5]
+;461 y3=Tsur [hour,         season,case]
+;462      c2 [hour,                case]
+;463      yy [hour,         season,case]  item=itm
+;463      yyd[season,2,case]  min/max of item= itm
+
+431: begin & xa=1.1 & read,xa,prompt='Ls desired? > ' ; find season index
+q=min(abs(lsv-xa),js) & pari[5]=js & end
+
+432: begin ; ttt --> ccc Extract specific latitude and season
+if sizt[0] ne 5 then goto,halt
+jl=(pari[4]>0)<(nlat-1) ; lat index
+if jl ne pari[4] then print,'WARNING: Lat index constrained'
+js=(pari[5]>0)<(nseas-1) ; season index
+if js ne pari[5] then print,'WARNING: Season index constrained'
+;selec=MAKEKEYVAL([itemu,itemv],[reform(uuu[jl,*,0]),reform(vvv[js,*])])
+selec=MAKEKEYVAL([itemu],reform(uuu[jl,*,0]))
+y4=reform(ttt[*,0:litm,jl,*,*],/over) ; y4 is [hour,item,season,case]
+y4tit=filet+' '+MAKEKEYVAL([itemu],reform(uuu[jl,*,0]))
+ccc=reform(y4[*,*,js,*],/over) ; ccc is [hour,item,case]
+ccctit=y4tit+' Ls='+string(lsv[js],form='(f5.1)')
+print,ccctit & end
+
+433: begin & sizh=size(tth) ;+ tth --> ccc
+if sizh[0] ne 5 then goto,halt
+jlh=(pari[4]>0)<(sizh[3]-1)
+jsh=(pari[5]>0)<(sizh[4]-1)
+if jlh ne pari[4] then print,'WARNING: Lat index constrained'
+if jsh ne pari[5] then print,'WARNING: Season index constrained'
+seleh=MAKEKEYVAL([itemu,itemv],[reform(uuh[jlh,*]),reform(vvh[jsh,*])])
+cchtit=fileh+MAKEKEYVAL(['Lat','L_s'],[uuh[jlh,0],vvh[jsh,1]])
+cch=reform(tth[*,0:litm,jlh,jsh,*],/over) 
+print,seleh & end
+
+434: begin & sizc=size(ccc) ; ccc ---> yyy Extract single case
+if sizc[0] eq 2 then ncase=1 else if sizc[0] eq 3 then ncase=sizc[3] $
+ else goto,halt
+jc=(pari[6]>0)<(ncase-1) 
+if jc ne pari[6] then print,'WARNING: Case index constrained'
+casey=' '+cased[jc]
+yyy=ccc[*,*,jc] & yyytit=ccctit & end ; case description
+
+435: begin & sizc=size(cch) ;+ from cch
+if sizc[0] eq 2 then ncase=1 else if sizc[0] eq 3 then ncase=sizc[3] $
+ else goto,halt
+jc=(pari[6]>0)<(ncase-1) 
+if jc ne pari[6] then print,'WARNING: Case index constrained'
+casey=' '+caseh[jc]
+yyy=cch[*,*,jc]   & yyytit=cchtit & end ; case description
+
+436: begin   & nkc=kcc[2] & nkl=kcc[3]      ; Plot day T's
+topt='KRC Diurnal temperatures: '+yyytit+casey
+if parr[9] gt parr[8] then yran=parr[8:9] else begin  
+    ya=min(yyy,max=yb)
+    yran=[ya,yb]
+endelse
+k33=0                           ; count of overplots that may come
+plot,lsv,lsv,xran=[0.,25.],yran=yran,/nodata,color=kcc[8] $ 
+,xtit='Hour',ytit='Temperature',titl=topt
+thk=parr[10]
+for  i=0,2 do begin 
+    clr=!binc[clrr[i]]
+    HOPLOT,xx,yyy[*,i],linn[i],color=clr,thick=thk
+    CURVEGUIDE,i,des52[i],linn[i],locc=parg[8:11],color=clr,thick=thk
+endfor
+CURVEGUIDE,k33,yyytit,linn[0],locc=parg[4:7],color=!binc[clrr[0]]
+print,'title,kon,k33 = ',yyytit,kon,k33
+end
+
+437: begin & k33=k33+1 & thk=parr[11];+ Oplot yyy 
+for  i=0,2 do HOPLOT,xx,yyy[*,i],linn[i],color=!binc[clrr[i]],thick=thk
+CURVEGUIDE,k33,yyytit,linn[0],locc=parg[4:7],color=!binc[clrr[0]],thick=thk
+print,'title,kon,k33 = ',yyytit,kon,k33
+end
+;---------------------------------------------------------------------
+441: begin & jc=pari[6] ; Plot Tk for 5 firm-code latitudes
+ii=[2,5,9,13,16] ; latitudes
+ni=n_elements(ii)
+qd=reform(ttt[*,0,ii,*,jc])
+qc=qd[*,*,*,0]
+qb=transpose(qc,[0,2,1])
+qb=reform(qb,nhour*nseas,ni,/over)
+CLOT,qb,slat[ii],locc=[.33,.92,-.03,.08] $
+,titl=['hour*season','Surface T', parf[1]+' Case='+strtrim(jc,2)+': '+cased[jc]]
+end
+
+442: begin & jc=pari[6] ;+ oplot
+qd=reform(ttt[*,0,ii,*,jc])
+qc=qd[*,*,*,0]
+qb=transpose(qc,[0,2,1])
+qb=reform(qb,nhour*nseas,ni,/over)
+CLOT,qb,slat,locc=[.33,.92,-.03,.08],oplot=-2
+end
+
+447: begin  ; read fort79
+ sss=readtxtcol('~/krc/tes/fort.79', nskip=0,ncol=5,mrow=2000)
+siz=size(sss)
+fff=float(sss)
+n2=kcom.id[1]                  ; times per day
+nj=siz[1]/n2                    ; number of whole days
+CHART,fff,parti=['HaVis','TotSurf','DIRECT','DIFFUSE','BOUNCE']
+pause,-1
+ffr=reform(fff[*,1],n2,nj) & help,ffr
+CLOT,ffr,locc=1
+oplot,fff[0:n2-1,1],line=2
+ya=min(ffr[*,4]-ffr[*,0],max=yb)
+print,'Day1,case2-day1; min,max=',ya,yb
+end
+
+451: for k=0, ncase-1 do begin ; Oplot all other cases by color
+    if k ne jc then begin
+        k33=k33+1               ; then oplot all other cases 
+        clrk=kkc[k33 mod nkc]   ; color
+        for  i=0,2 do  hoplot,xx,ccc[*,i,k],linn[i],color=clrk
+        CURVEGUIDE,k33,'Case '+strtrim(k+1,2),0,locc=parg[4:7],color=clrk
+    endif
+endfor
+
+452: begin  ; Plot Seasonal T's
+plot,ttt[*,0,jl,*,jc],/nodata,xtit='Hour & season' $ ; orange
+,ytit='Temperature',titl=filet+' Lat index=',jl,color=kcc[8]
+for i=0,2 do oplot,ttt[*,i,jl,*,jc],color=!binc[clrr[i]]
+end
+
+453: begin & print,ccctit ; Print table for GCM comparison
+fmt='(i3,5f10.2)'
+print,'Fluxes in W/m^2'
+print,'hour Surf_kin TOA_bright T_atm_kin  DownVis    DownIR'
+for n=0,nhour-1 do print,n+1,ccc[n,*,jc],format=fmt
+end
+
+454: begin & j2=pari[11]; Chart trend for any item/lat
+qq=reform(ttt[*,j2,jl,*,*],nhour,nlat,nseas,ncase,/over) ; extract 1 item
+q=reform(qq,nhour*nseas,ncase,/over)
+qq=tit52[j2]+' @ Lat & Elev = '+ST0(uuu[jl,*])
+if parr[9] gt parr[8] then yran=parr[8:9] else yran=0
+if pari[12] eq 0 then parti=0 else parti=cased
+CHART,q,xtit='hour * season',titl=qq,range=yran,dlin=1,parti=parti
+qq=MEAN_STD2(q,/one) & print,'Means = ',qq
+end
+
+455: begin & sizc=size(ttt) ; movie through all of ttt T's
+for k=0,sizc[5]-1 do begin
+    for j=0,sizc[3]-1 do begin 
+        plot,ttt[*,0,j,k1:*,k],titl=slat[j]+' '+cased[k]
+        PAUSE,-1
+     endfor & endfor  & end
+
+460: cases=['I=250. I=500 below .12m, ','uniform I=250','Siegler: I=77 I=500 below .061 m','uniform I=77','I=250/500 Climate Tau','I=250 Climate Tau','I=77/500 Climate Tau','I=77 Clmate Tau'] ; Firmcode case titles (for HP3)
+
+461: begin & cased=cases ; season plot for one lat,
+y3=reform(y4[*,0,*,*]) ; y3 is Tsur[hour,season,case]
+y2=reform(y3,nhour*nseas,ncase)
+CLOT,y2,cases,locc=1,titl=['hour*season','Tsurf',y4tit ]
+end
+
+462: begin & itm=0 & read,itm,prompt='Item index for ttt? > '  ; one lat,one season REQ 461
+itm=(itm>0)<4  ; ccc is [hour,item,case]
+c2=reform(ccc[*,itm,*])  ; c2 is [hour,case]
+xx=(findgen(nhour)+1.)*(24./nhour) ; KRC hours
+CLOT,c2,cases,xx=xx,locc=1,titl=['hour',tit52[itm],ccctit ]
+end
+
+4622: begin & i=ncase/2 ; Delta due to climate versus hour index
+ d2=c2[*,i:*]-c2[*,0:i-1]
+CLOT,d2,cased[0:ncase/2-1],xx=hourk,locc=[.4,.5,-.03,.1] $
+,titl=['hour',tit52[itm]+'  Delta due to Climate Tau',ccctit]
+end
+
+463: begin  ; seasonal min/max for all cases  REQ 462
+yy=reform(y4[*,itm,*,*]) ; yy is [hour,season,case]
+yyd=fltarr(nseas,2,ncase)
+for k=0,ncase-1 do begin
+   qq=yy[*,*,k]
+   for j=0,nseas-1 do begin
+      ya=min(qq[*,j],max=yb) ; diurnal min/max
+      yyd[j,*,k]=[ya,yb]
+   endfor
+endfor 
+q=['Min T. ','Max T. ']+cased
+qq=transpose(yyd,[0,1,2])
+CLOT,reform(qq,nseas,2*ncase),[cased,cased],locc=1 $
+,titl=['season index','Min and Max for '+tit52[itm],y4tit]
+end
+
+464: begin ; annual min.max for one case REQ 463
+read,j,k,prompt='2 Case indices? x - for only one > '
+j=(j>0)<(ncase-1)
+if k lt 0 then begin            ; only one case
+   qq=yyd[*,*,j]
+   q=['Min T. ','Max T. ']+cased[j]
+endif else begin
+   k=k<(ncase-1)
+   qq=yyd[*,*,[j,k]] ; yyd[season,2,case]
+   qq=reform(qq,nseas,4)
+   q=['Min T. ','Max T. ']+cased[j]
+   q2=['Min T. ','Max T. ']+cased[k]
+   q=[q,q2]
+endelse
+CLOT,qq,q,xx=lsv,locc=1  $
+,titl=['season Ls','Min and Max for  '+tit52[itm],y4tit]
+end
+
+465: begin & i=ncase/2; Climate effect on T @hour vrs season  REQ 463
+dd=yy[*,*,i:*]-yy[*,*,0:i-1]
+read, i,prompt='Hour index? > ' & i=(i>0)<(nhour-1) 
+dd1=reform(dd[i,*,*]) & help,dd1
+CLOT,dd1,cased[0:ncase/2-1],locc=[.15,.5,-.03,.1] $
+,titl=['season index',tit52[itm]+' at hour='+ST0(hourk[i]),y4tit+'  Delta due to Climate Tau' ]
+end
+ 
+47: begin & j=3  ; Extreme T comparison REQUIRES 33
 krcs=fltarr(3,j,ncase)
 kdel=fltarr(3,j,ncase)
 kmg =fltarr(3,j,ncase)
@@ -439,7 +538,7 @@ print,' GCM cases' & print,qa & print,qb
 for k=0,kames-1 do print,fames[k],gcms[*,0:2,k],format=fmt
 end
 
-45: begin  ; Stats on 6th item
+471: begin  ; Stats on 6th item
 ndjt=reform(ttt[0,5,*,*,*]) & ndjh=reform(tth[0,5,*,*,*])
 dtmt=reform(ttt[1,5,*,*,*]) & dtmh=reform(tth[1,5,*,*,*])
 q=HSTATS(ndjh,hsk,lab=lab) 
@@ -453,17 +552,24 @@ print,'DTMt ',MAKEKEYVAL(lab,q,fmt=hfmt)
 histfast,dtmt-dtmh
 end
 
-46: begin & kons=[20,21,252,461] ; KONS for Vicki Hamilton  INCOMPLETE?
+472: begin & siz=size(ddd); Plot diurnal magnitude for each layer, one Lat REQ 432
+nlay=siz[1]
+tmin=reform(ddd[*,0,jl,*,*],nlay,nseas*ncase) ; [layer,season*case]
+tmax=reform(ddd[*,1,jl,*,*],nlay,nseas*ncase) ; [layer,season*case]
+CLOT,transpose(tmax-tmin),/ylog,'layer'+string(indgen(nlay)+2,form='(i2)') $
+,locc=1,titl=['season * case','Tmin-tmax',y4tit]
 end
 
-461: begin ; CLOT Ts for first lat, all seasons
+48: begin & kons=[20,21,252,461] ; KONS for Vicki Hamilton  INCOMPLETE?
+end
+
+481: begin ; CLOT Ts for first lat, all seasons
 n24=kcom.id[5] ; output times per sol
-xx=(findgen(n24)+1)*(24./n24) ; hours of output
-CLOT,reform(ttt[*,0,0,*,0]),string(lsv),xx=xx,locc=[.15,.93,-.023,.05] $
+CLOT,reform(ttt[*,0,0,*,0]),string(lsv),xx=hourk,locc=[.15,.93,-.023,.05] $
 ,titl=['Hour','Tsurf','TEsts for Vicki Hamilton using KRC version '+vern]
 end
 
-462: begin &  mrow=81; read and plot VH 2006 values
+482: begin &  mrow=81; read and plot VH 2006 values
 sss=READTXTCOL('/home/hkieffer/krc/vh/gts_ti150_2006.prt' $
 ,nskip=9,ncol=12,mrow=mrow)
 ii=[1,3,10,11] ; cols desired

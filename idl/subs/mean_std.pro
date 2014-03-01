@@ -5,13 +5,15 @@ function mean_std,xx,wei=wei,nan=nan,double=double, STD=std
 ; nan	in_	If set, treats NAN's as missing data
 ; double in_    Flag: Do totals in double precision
 ; std	out_	Standard deviation;  set to -1. if too few points
-; func. out.    Mean
+; func. out.    Mean.  It is possible that this is not finite
 ;_Hist 98jul05 Hugh Kieffer 99feb01 more robust
 ; 2000feb06 HHK add weight option
 ; 2001jan05 HHK add NAN option
 ; 2001dec17 HK Fix bug of undefined std when input is all NANs
 ; 2005jun22 HK Fix StdDev bug, Did not handle n=2
 ; 2009sep27 HK Add keyword double
+; 2014jan08 HK Add comment that mean (and std) can be not finite in perverse
+;    cases. E.g., total exceeds valid numerical range   
 ;_Desc
 ; Weight is squared for weighting in the variance sum
 ;_End
@@ -31,11 +33,11 @@ if keyword_set( nan ) then begin
 endif                           ; else, all are good, proceed normally
 
 
-if n gt 1 then begin
-    if not keyword_set(wei) then mean=total(xx,doub=db)/float(n) else begin
-        if n_elements(wei) ne n then message,'wei must be same size as xx'
-        mean = total(wei*xx,doub=db)/total(wei,doub=db)
-    endelse
+if n gt 1 then begin ;  must sum to get average
+   if not keyword_set(wei) then mean=total(xx,doub=db)/float(n) else begin
+      if n_elements(wei) ne n then message,'wei must be same size as xx'
+      mean = total(wei*xx,doub=db)/total(wei,doub=db)
+   endelse    
 endif else begin ; only one point supplied
   if n eq 1 then mean=xx[0]  else message,'xx undefined' ; <error handling
 endelse

@@ -41,6 +41,7 @@ C 2012mar27  HK  Incorporate  CLIMTAU
 C 2012oct31 HK Minor format changes. Increment NRUN upon new file
 C 2013jan29 HK@ASU Remove ability of switch to keyboard input. Eliminate error loop
 C 2013jul24 HK Begin use of Version2 PORB system
+C 2014jan21 HK If asked to restart, first call TDISK to close any open output file
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
 
 	INTEGER LNBLNK ! intrinsic function, need this because of implicit  L
@@ -57,7 +58,9 @@ C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
         CHARACTER*6 TITI(NIDR) 
         CHARACTER*6 TITL(NLDR) 
 
-        INTEGER I,IG,IIIN,ILEN,IREAD,JERR,KEEP,KOUNT,NEW,KDB
+        INTEGER KOUNT ! number of changes cards read for this call
+
+        INTEGER I,IG,IIIN,ILEN,IREAD,JERR,KEEP,NEW,KDB
 
 	DATA TITF /'ALBEDO','EMISS','INERTIA','COND2','DENS2','PERIOD' !6
      & ,'SPEC_HEAT','DENSITY','CABR','AMW','ABRPHA','PTOTAL','FANON'   !7
@@ -147,7 +150,7 @@ C  READ a set of parameter change cards  (IQ = 2)
  167	   FORMAT (' Changed>>',2I4,G12.4,1X,A,2x,A)
 	   IF (IG.GT.3) WRITE (IOSP,167) IG,IREAD,XREAD,TEXT(1:ILEN)
 	ENDIF
-	GO TO (210,220,230,240,250,260,270,280,100,300,310,320,330), IG
+	GO TO (210,220,230,240,250,260,270,280,290,300,310,320,330), IG
 C               1   2   3   4   5   6   7   8   9   10  11  12  13
 C IG=Type     Meaning                                     Valid Index
 C
@@ -170,7 +173,7 @@ C           For this type, 9 values must appear in a rigid format
 C   12   Set of 2*4 coefficents for T-dep. conductivity.  List-directed IO
 C   13   Set of 2*4 coefficents for T-dep. specific heat. List-directed IO 
 C For 12 and 13, 8 white-space-separated coefficients must follow after 
-C the type on the same line, with no interveening index or text 
+C the type on the same line, with no interveneing index or text 
 
 210	IF (IREAD.LT.1 .OR. IREAD.GT.NFDR) GOTO 295
 	FD(IREAD)=XREAD		!  IG=1: change  REAL parm
@@ -200,7 +203,7 @@ C	IF (IREAD.EQ.12) NCASE=0 ! JDISK: 2009mar reason lost
 270	READ (TEXT,'(20A4)',END=160) TITLE !  IG=7: change  TITLE
 	GO TO 160
 
- 280	IF (IREAD.EQ.22) THEN	! IG=8 Read file name
+280	IF (IREAD.EQ.22) THEN	! IG=8 Read file name
 	  FVALB=TEXT		! move file name into common
 	  I=SEASALB(-999.)	! read data file
 	  KVALB=0		! set flag off
@@ -224,8 +227,11 @@ C	IF (IREAD.EQ.12) NCASE=0 ! JDISK: 2009mar reason lost
 	write(*,*)'TCARD_280',IREAD, I, KVALB,KVTAU
 	GOTO 160
 
- 295	WRITE(IOERR,*)'Invalid change index: ',RBUF
+ 295	WRITE(IOERR,*)'Invalid change index: ',RBUF ! 2nd value out of range for the type
 	GOTO 160
+
+ 290    CALL TDISK (4,0)	! must close disk file if one is open
+	GOTO 100		! read complete new input set
 
  300	FINPUT=TEXT(1:ILEN)	! 10. name of one-point input file
 	IRET=4			! flag for switch to new input file
@@ -263,20 +269,20 @@ C
 	N1PIB = N1		! set lowest layer used in calculations
 	IF (IB.GE.1) N1PIB=N1+1 !   :condition for constant  T_bottom
 	IF (N1.LT.2   .OR. N1PIB.GT.MAXN1) THEN
-	   NEW = MAXN1/2	! insure within dimen
+	   NEW = MAXN1/2	! ensure within dimen
 	   WRITE (IOERR,388) 'N1',N1,NEW
  388	   FORMAT (/1X,A,' invalid. Input and reset = ',2I6)
 	   N1 = NEW
 	   N1PIB = N1		! must reset 
 	   IF (IB.GE.1) N1PIB=N1+1 !
 	ENDIF
-	IF (IC.LT.3 ) THEN ! may not change first physical layer
+	IF (IC2.LT.3 ) THEN ! may not change first physical layer
 	   NEW=999	
-	   WRITE (IOERR,388) 'IC',IC,NEW
-	   IC = NEW
+	   WRITE (IOERR,388) 'IC',IC2,NEW
+	   IC2 = NEW
 	ENDIF
 	IF (N2.LT.32 .OR. N2.GT.MAXN2) THEN
-	   NEW = MAXN2/2	! insure within dimen
+	   NEW = MAXN2/2	! ensure within dimen
 	   WRITE (IOERR,388) 'N2',N2,NEW
 	   N2 = NEW
 	ENDIF
@@ -286,25 +292,25 @@ C
 	   N3 = NEW
 	ENDIF
 	IF (N4.LT.1  .OR. N4.GT.MAXN4) THEN
-	   NEW = MAXN4/2	! insure within dimen.
+	   NEW = MAXN4/2	! ensure within dimen.
 	   WRITE (IOERR,388) 'N4',N4,NEW
 	   WRITE (IOERR,*) '^ This may cause Latitude read failure.'
 	   N4 = NEW
 	ENDIF
 	IF (N24.LT.2  .OR. N24.GT.MAXNH) THEN
-	   NEW = 24		! insure within dimen.
+	   NEW = 24		! ensure within dimen.
 	   WRITE (IOERR,388) 'N24',N24,NEW
 	   N24 = NEW
 	ENDIF
-	NMOD = MAX(NMOD,1)	! insure positive modulo
-	IF (DRSET.LT.0. .OR. DRSET.GT.0.) THEN ! insure reasonable
+	NMOD = MAX(NMOD,1)	! ensure positive modulo
+	IF (DRSET.LT.0. .OR. DRSET.GT.0.) THEN ! ensure reasonable
  389	  FORMAT (/1X,A,' invalid. Input and reset = ',2g12.5)
 	  QF=0.
 	  WRITE (IOERR,389) 'DRSET',DRSET,QF
 	  DRSET=QF
 	ENDIF
 
- 390	IF (TAUD.LT.0.) THEN	! insure physically valid
+ 390	IF (TAUD.LT.0.) THEN	! ensure physically valid
 	  QF=0.
 	  WRITE (IOERR,389) 'TAUD',TAUD,QF
 	  TAUD=QF

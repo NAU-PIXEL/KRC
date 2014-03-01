@@ -86,7 +86,7 @@ idx=front[1] & ndx=front[2]
 
 itemt=['Tsurf','Tplan','Tatm','DownVIS','DownIR'];each hour,lat,season,case
 if not t52 then itemt=itemt[0:1] ; Type 51 has only 2 items
-itemu=['alat','elev']           ; each lat, case ; 
+itemu=['Lat.','elev']           ; each lat, case ; 
 itemv=['DJU5','SUBS','PZREF','TAUD','SUMF'] ; each season,case
 itemd=['Tmin','Tmax']           ; each layer,lat,season,case  t52 only
 numt=n_elements(itemt)

@@ -1,4 +1,8 @@
 \documentclass[draft]{article}  % See Skeleton.tex for examples of many things
+% epstopdf fig.eps       TO convert .eps fig to pdf
+% pdflatex  file[.tex]   TO generate .pdf
+% dvipdfm krcCor.dvi     TO Produce PDF files directly from DVI files
+
 % see definc.sty for other page format settings
 %\usepackage{epsfig}
 %\usepackage{definc}  % Hughs conventions
@@ -7,14 +11,20 @@
 \parindent=0.em \parskip=1.ex %  no indent & paragraph spacing
 
 \title{KRC planetary surface temperatures: Helplist}
-\author{Hugh H. Kieffer  \ \ File=-/krc/helplist.tex Version 2.2.1 2013aug04}
+\author{Hugh H. Kieffer  \ \ File=-/krc/helplist.tex Version 2.2.4 2014jan23}
 
 % local definitions
 %\newcommand{\short}{full}    % begin & end un-numbered equations
 \newcommand{\qi}{\\ \hspace*{2.em}}      % indent 1
 \newcommand{\qii}{\\ \hspace*{4.em}}     % indent 2
 \newcommand{\qiii}{\\ \hspace*{6.em}}    % indent 3
+
+\newcommand{\np}{\textbf}  % name of program or routine
 \newcommand{\nf}{\textit}  % name of file
+\newcommand{\nv}{\texttt}  % name of code variable in text
+\newcommand{\nvf}{\mathtt} % name of code variable in equation
+\newcommand{\nj}{\textsf}  % name of input parameter in text
+\newcommand{\njf}{\mathsf} % name of input parameter in equation
 
 \begin{document}
 \maketitle
@@ -34,6 +44,15 @@ Thermal model for analysis of Mars infrared mapping, J. Geophys. Res. Planets,
 The evolution of KRC code is contained in:  evolve.txt 
 
 A crude diagram of the call architecture is in:  flow.txt 
+
+\subsection{Notation use here}
+The following fonts styles have been partially implemented: 
+\qi File names are shown as \nf{file}. 
+\qi Program and routine names are shown as \np{PROGRM [,N]} 
+\qii where \np{N} indicates a major control index. 
+\qi Code variable names are shown as \nv{variab} and within equations as $\nvf{variab}$.  
+\qi Input parameters are shown as \nj{INPUT} and within equations as $\njf{INPUT}$
+
 
 \section{METHOD}
 
@@ -370,9 +389,10 @@ The 4 required items are:
 \begin{verbatim}
     1: Type (integer): see table below
     2: Index in array (integer): as listed in Input File table above
-    3: New value, numeric: will read as real and convert. 0.=false.
-    4: Reason, text string within single quotes:
-   [ after a / (forward slash) nothing is read, so you can use for comments]
+    3: New value, numeric:  0.=false. Will read as real and convert as needed.
+    4: File name or a reason:  Text string within single quotes; or a /
+         Missing quote may cause run failure.
+   [after a / (forward slash) nothing is read, so you can use for comments]
 \end{verbatim}
 The print file will list each change as read, followed by the title of the
 changed item. It is a good idea to look at this print to be sure you changed
@@ -392,7 +412,7 @@ what you intended.
    8   Text becomes new disk or season-variation file name
          if index=22, call SEASALB to read variable ALBEDO
          if index=23, call SEASTAU to read variable TAUD
-	 if index=24, call CLIMTAU to read Mars climate
+         if index=24, call CLIMTAU to read Mars climate
    9   Complete new set of input follows                   any
   10   Text becomes new One-Point input file name
   11   This is a set of parameters for "one-point" model 
@@ -403,7 +423,6 @@ what you intended.
 
 For Type 12 and 13, 8 white-space-separated coefficients must follow after 
 the type on the same line, with no intervening index or text 
-
 
 For Type 8, SEASALB and SEASTAU read 2-column, white-separated text files. \\
 To start variable albedo, use input card: 
@@ -438,6 +457,14 @@ rm allinc.txt \\
 cat krccom.inc latcom.inc daycom.inc hatcom.inc filcom.inc units.inc porbcm.inc $>$ allinc.txt 
               
 \section{Error Returns} %_______________________
+\subsection{Tday Blowup} %------------------------------------
+There are two triggers:
+\qi  (ADELN.GT.0.8):  $\frac{ | \Delta T |}{T} > 0.8$ 
+\qi (TSUR.GT.TBLOW): tblow $= \frac{\langle S \rangle}{\epsilon \sigma}$
+
+In either case, control goes to 340 in TDAY; iteration is terminated and several values are sent to the print file. TDISK is called to output the current season and to close the file. TPRINT is called to print out the full input set and the latest daily convergence.   
+
+\subsection{Other errors: INCOMPLETE} %---
 \vspace{-3.mm} 
 \begin{verbatim}
  "Parameter error in TDAY(1)" : Convergence factor < .8 classic. 
@@ -493,10 +520,7 @@ next-to-last dimension is increased to allow room for the prefix to be embedded
 in the bin5 array.  KRC input items that would change any of the bin5 dimensions
 are not allowed to change between cases. Each dimension is adjusted to the
 necessary size. Each case has the same structure; this simplifies coding
-although some items are then present redundantly. The number of cases allowed is
-set by the size of case one, and printed as MASE at the end of the first case in
-the print output. Cases beyond the maximum that can be stored will be executed,
-but not saved.
+although some items are then present redundantly.
 
 The first 4 words of the prefix, and of thus of the bin5 array, are:
 \vspace{-3.mm} 
@@ -545,7 +569,39 @@ It is best to ensure that output file does not already exist. If the file
 already exists, new output may be written in same area, even if larger than
 needed.
 
- 
+\subsection{Maximum sizes} %---------------------------
+Values for latest version of KRC in this section are in square brackets. All are
+firm-coded in krccom.inp
+
+For any run, even without recorded output, there are three limits:
+\qi maximum number of layers, N1 [30]  
+\qi maximum number of times of day, N2 [1536]
+\qi maximum number of iteration days, N3 [16]
+
+For all file output types, there are two more limits:
+\qi The number of latitudes N4 [37] 
+\qi  Number of stored hours N24 [48]. 
+\\ All of these are checked and limited in TCARD before a run starts.
+
+MAXN5 and MAXN6 are not limits for standard KRC.
+
+\subsubsection{Type 0 and 1 files} %.....
+For type 0 and -1 files, each recorded season is a logical record, so there is
+no limit to the number of seasons allowed.
+
+\subsubsection{Type 52 files} %.....
+
+For type 52, the primary limit is the total Real*4 words available to accumulate
+results into a bin5 array; this is the parameter KOMMON in krccom.inp, currently
+set at 10000000. The size needed for one case is approximately:  
+N24*7*N4*(N5-JDISK+3).
+
+All five limits mentioned above are in effect.
+
+The number of cases allowed is set by the size of case one, and printed as MASE
+at the end of the first case in the print output. Cases beyond the maximum that
+can be stored will be executed, but not saved.
+
 \section{Handy things} %_______________________
 
 The first "hour" in printout and output arrays is 1/24 (strictly, 1/N24) of a
@@ -686,19 +742,20 @@ blank lines!
 \vspace{-3.mm} 
 \begin{verbatim}
 The fields (after the 11) in the one-point input are:
-	Ls 	L_sub_S season, in degrees
-	Lat	Aerographic latitude in degrees
-	Hour	Local time, in 1/24'ths of a Martian Day
-	Elev	Surface elevation (relative to a mean surface Geoid), in Km
-	Alb	Bolometric Albedo, dimensionless
-	Inerti	Thermal Inertia, in SI units
-	Opac	Atmospheric dust opacity in the Solar wavelength region
-	Slop_	Regional slope, in degrees from horizontal
-	Azim	Azimuth of the down-slope direction, Degrees East of North.
+     Ls      L_sub_S season, in degrees
+     Lat     Aerographic latitude in degrees
+     Hour    Local time, in 1/24'ths of a Martian Day
+     Elev    Surface elevation (relative to a mean surface Geoid), in Km
+     Alb     Bolometric Albedo, dimensionless
+     Inerti  Thermal Inertia, in SI units
+     Opac    Atmospheric dust opacity in the Solar wavelength region
+     Slop_   Regional slope, in degrees from horizontal
+     Azim    Azimuth of the down-slope direction, Degrees East of North.
+     Title   From 1 to 20 characters, must not be entirely blank
 
 The two additional columns in the output file are:
-  	TkSur	Surface kinetic temperature
-	TbPla	Planetary bolometric brightness temperature
+     TkSur     Surface kinetic temperature
+     TbPla     Planetary bolometric brightness temperature
 \end{verbatim}
 
 Try running the binary file first. If that fails, a Makefile is provided to
@@ -918,6 +975,16 @@ The kind of resetting is controlled by IB. In TCARD, if IB$>$0, then N1PIB=N1+1,
 else N1PIB=N1.  T(N1+1) is not reset in the time calculations. In TDAY, for each
 time step, the temperature of the lower boundary is set equal to T(N1PIB), which
 results in either zero heat flow (IB=0) or a constant temperature.
+
+\subsection{Temperature scaling for KofT} 
+\nv{TOFF} and \nv{TMUL} are firm-coded in \nf{tday} as 220 and 0.01. These are appropriate for Mars.
+They may be made input parameters in later versions to address Mercury-like planets
+
+\subsection{No atmosphere flag}
+\np{tseas.f} contains: LATM=PTOTAL.GT.1. \ so a pressure of 1.0Pa or less is
+treated as zero atmosphere. The \nv{LATM} flag is used only in \np{tlats} and
+\np{tday}
+
 
 \subsection{Seasonal variation of albedo or opacity or ``climate''}%-----------
 

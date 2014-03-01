@@ -26,6 +26,8 @@ C 2012feb26  HK  Remove unused variables
 C 2012feb29  HK  Add test for NAN's  UNSUCCESSFUL
 C 2012mar01  HK  Include logical switches for atmosphere. 
 C 2012apr24  HK  Tiny cleanup  May10: add FLOST calculation
+C 2013dec04  HK Make write of SAFE2 conditional on IDB2
+C 2014jan23  HK Change executable IC to IC2 so it is easily found
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
 C
 C new variables for k(T)
@@ -67,7 +69,7 @@ D	integer*4 ihist(mhist)	!<dbug
 C
 	SAVE KTT,TOFF,TMUL
 C
-	IF (IDB2.GE.5) WRITE(IOSP,*) 'TDAY IQ,J4=',IQ,J4,jjo
+	IF (IDB2.GE.5) WRITE(IOSP,*) 'TDAY IQ,J4=',IQ,J4,JJO
 	IRET=1
 	GOTO (100,200), IQ
 C
@@ -109,7 +111,7 @@ C
 C temporary  QK=cond  QR=dens*specific heat
 C  IC is first of lower material, including the virtual layer
 	DO  J=1,N1P1
-	  IF(J.LT.IC) THEN
+	  IF(J.LT.IC2) THEN
 	    QK(J)=COND
 	    QR(J)=DENS*SPHT
 	  ELSE
@@ -175,23 +177,23 @@ C
 	QQ=CONVF		! input safety factor
 	IF (QQ.LT.0.8) QQ=1.	! avoid unstable binary time division
 	SAFE2=2.*QQ		! safety convergence factor
-	IF (IC .LE. N1-2) THEN	! check safety at first modified layer
-	   QQ=BLAY(IC)**2/(SAFE2*DTIM* DIFFI(IC)) ! extra safety factor
+	IF (IC2 .LE. N1-2) THEN	! check safety at first modified layer
+	   QQ=BLAY(IC2)**2/(SAFE2*DTIM* DIFFI(IC2)) ! extra safety factor
 	  IF (QQ .LT. 1.) THEN ! must increase layer thickness
-	    DO J=IC,N1 ! set layer  IC just stable for local diffusivity
-	      BLAY(J)= RLAY**(J-IC) * SQRT(SAFE2*DTIM *DIFFI(J) )
+	    DO J=IC2,N1 ! set layer  IC just stable for local diffusivity
+	      BLAY(J)= RLAY**(J-IC2) * SQRT(SAFE2*DTIM *DIFFI(J) )
 	    ENDDO
 	    KM=0		! allow no time doubling above this layer
 	  ELSE ! allow upper layer changes
 	    KM=LOG(QQ)/LOG(2.) ! max # of doublings before  IC
 	  ENDIF
 	ENDIF
-	  WRITE(*,*)'SAFE2,actual+',SAFE2,QQ,KM1,KM,KKK,DTIMI
+	IF (IDB2.GE.2) WRITE(*,*)'SAFE2,actual+',SAFE2,QQ,KM1,KM,DTIM
 C
 	DO J=2,N1		! layer loop
 	  XCEN(J)= XCEN(J-1)+ (BLAY(J)+BLAY(J-1))/2. ! center depth
 	  SCONVG(J)=BLAY(J)**2/(2.*DTIMI* DIFFI(J)) ! Safety factor
-	  IF (J.EQ.IC) KM=KM1	! remove constraint on upper layers
+	  IF (J.EQ.IC2) KM=KM1	! remove constraint on upper layers
 	  IF (K.LT.KM .AND. J.GT.2 .AND. MOD(KKK,2).EQ.0 
      &    .AND. SCONVG(J).GT. SAFE2) THEN ! increase time step
 	    DTIMI=2.*DTIMI
@@ -214,7 +216,7 @@ C for constant conductivity
 C T-dependent conductivity
 	  FBI(J)=  BLAY(J+1)/BLAY(J)   !kt 
 	  FAC7=DENS		! temporary use of FAC7
-	  IF (J.GE.IC ) FAC7=DENS2 ! for upper/lower density
+	  IF (J.GE.IC2 ) FAC7=DENS2 ! for upper/lower density
 	  FCI(J)= 2.* DTIMI /(FAC7 * BLAY(J)**2) !kt
 D 125	  FORMAT(1X,I4,E12.5,f10.1,F8.5,f10.5, F9.6,2F8.5,F9.5,2E12.5)
 D	  WRITE(41,125)J,DIFFI(J),DTIMI, BLAY(J),SCONVG(J)  !dbw
@@ -262,7 +264,7 @@ D	write(iosp,*) 'FAC9,DTAFAC=',FAC9,DTAFAC,EMTIR,FAC82
 	DO J=1,N1		! save  T each layer at start of first day
 	  TT1(J,1)=TTJ(J)
 	ENDDO
-	IK2=MIN0(N1+1,IC-1)	! number of upper layers 2010jan20 KN >> N1
+	IK2=MIN0(N1+1,IC2-1)	! number of upper layers 2010jan20 KN >> N1
 	LKOW=IK2.LT.N1+1	! true if there are lower layers
 	IK3=IK2+1		! first of lower layers
 	IK4=N1+1-IK2		! number of lower layers
@@ -322,21 +324,21 @@ C
 C  -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v- layer loops v-v-v-v-v-v-v-v-v-v-v-v-v-
 C
 	 IF (LKOFT) THEN	!kt section ----------------------
-	   CALL EVMONO3(CCKU,IK2,TTJ,TOFF,TMUL, KTT) !kt get thermal conductivity
-	   CALL EVMONO3(CCPU,IK2,TTJ,TOFF,TMUL, VTT) !kt get specific heat
-	   IF (LKOW) THEN
-	      CALL EVMONO3(CCKL,IK4,TTJ(IK3),TOFF,TMUL,KTT(IK3)) !" lower
-	      CALL EVMONO3(CCPL,IK4,TTJ(IK3),TOFF,TMUL,VTT(IK3)) !" lower
+	   CALL EVMONO3(CCKU,IK2,TTJ,TOFF,TMUL, KTT) ! get thermal conductivity
+	   CALL EVMONO3(CCPU,IK2,TTJ,TOFF,TMUL, VTT) ! get specific heat
+	   IF (LKOW) THEN	! There are lower layers
+	      CALL EVMONO3(CCKL,IK4,TTJ(IK3),TOFF,TMUL,KTT(IK3)) ! " lower
+	      CALL EVMONO3(CCPL,IK4,TTJ(IK3),TOFF,TMUL,VTT(IK3)) ! " lower
 	   ENDIF
-	   FBK=RLAY		!kt F_B_i * F_k_i for virtual layer
-	   DO  J=2,KN		!kt
-	      FBKL=FBK		!kt
-	      FBK= FBI(J)*KTT(J)/KTT(J+1) !kt F_B_i * F_k_i 
-	      FA1J=FCI(J)*KTT(J)/(VTT(J)*(1.+FBK)) !kt eq F1
-	      FA3J=(1.+FBK)/(1.+1./FBKL)  !kt eq F3
-	      DTJ(J)= FA1J* (TTJ(J+1)-(1.+FA3J)*TTJ(J)+FA3J*TTJ(J-1)) !kt diffusion
+	   FBK=RLAY		! F_B_i * F_k_i for virtual layer
+	   DO  J=2,KN		! kt
+	      FBKL=FBK		! kt
+	      FBK= FBI(J)*KTT(J)/KTT(J+1) ! F_B_i * F_k_i 
+	      FA1J=FCI(J)*KTT(J)/(VTT(J)*(1.+FBK)) ! eq F1
+	      FA3J=(1.+FBK)/(1.+1./FBKL)  ! eq F3
+	      DTJ(J)= FA1J* (TTJ(J+1)-(1.+FA3J)*TTJ(J)+FA3J*TTJ(J-1)) !  diffusion
 D	      IF (JJJ.EQ.2) WRITE(26,126)JJ,J,FBK,FA1J,FA3J,DTJ(J)
-	   ENDDO		!kt
+	   ENDDO		! kt
 D 126	   FORMAT(1X,2I3,F10.6,F12.6,F11.6,E13.5)
 	   FAC7=KTT(2)/XCEN(2)
 	ELSE        ! original constant conductivity ----------------------
@@ -351,6 +353,8 @@ D	   if (kn.eq.n1) write(43,343)jj,jjj,j5,kn,fac7,(dtj(j),j=2,kn) !dbw
 D 343	   format(i4,i3,i4,i3,32f12.7)
 C
 C -^-^-^-^-^-^-^-^-^-^-^-^-^-^-^- end of layer loops ^-^-^-^-^-^-^-^-^-^-^
+
+C Three possible boudary conditions. 1) Atm with frost 2) Just Atm 3) No atm.
         IF (LFROST) THEN	!+-+-+-+ surface temperature is frost-buffered
 	   ATMRAD= FAC9*TATMJ**4 ! hemispheric downwelling  IR flux
 	   QA = AFNOW + (ALB-AFNOW)*EXP(-EFROST/FROEX) ! albedo for frost layer
@@ -437,7 +441,7 @@ C
 	ENDIF
 	TSUR4=TSUR**4
 C
-	IF (LATM) THEN		!v-v-v-v-v  with atmosphere
+	IF (LATM) THEN		!v-v-v-v-v  Adjust atmosphere temperatire
 	   TATM4=TATMJ**4
 C       2002jul12  ADGR was downwelling  IR flux; becomes solar heating
 	   HEAT=ADGR(JJ)+FAC9*(EMIS*TSUR4-2.*TATM4) ! net atm. heating flux
@@ -551,6 +555,8 @@ C
 	J3=JJJ
 	CALL TPRINT (7)		! print message and  TTJ
 	WRITE(IOSP,*) 'DELT,TATMJ,TBLOW=',DELT,TATMJ,TBLOW
+	CALL TDISK(2,I)		! write current season
+	CALL TDISK(4,I)		! close the file
 	CALL TPRINT (2)		! print full input set
 	CALL TPRINT (4)		! print daily convergence
 C

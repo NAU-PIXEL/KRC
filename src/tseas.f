@@ -5,14 +5,11 @@ C_Vars
 	INCLUDE 'latcom.inc'
 	INCLUDE 'hatcom.inc'
 	INCLUDE 'units.inc'
-        REAL  PCOM1(22),SLP,BLIP,PHFXX(3),PCOM2(33)
-	COMMON /PORBCM/ PCOM1,SLP,BLIP,PHFXX,PCOM2 ! only SLP, PHFXX used
-
 C_Args
 	INTEGER IQ ! in. 1 = start from scratch
-C		           2 = restart  from disk
-C			   3 = continue from current conditions
-	INTEGER IR		! return from lower routine
+C		         2 = restart from disk
+C		         3 = continue from current conditions
+	INTEGER IR		! return code from lower routine
 C_Desc
 C if IQ =3, then continuing from existing model, and adopt its last date
 C_Hist 97feb11  Hugh_Kieffer  USGS_Flagstaff
@@ -26,6 +23,7 @@ C 2010jan12 HK Use IMPLICIT NONE, move TINT call from TLATS to TSEAS
 C 2011aug07 HK Change test to call PORB from N5.GT.0
 C 2012mar02 HK Add atmosphere flag, remove unused labels
 C 2012mar27  HK	 Test on KVTAU changed from .GE.0 to EQ.1
+C 2014jan24  HK  Compute date with multiply rather than repeated adds
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
 
 C 
@@ -46,14 +44,14 @@ C
 C	   IF (IQ .EQ. 1) then ! ryped
 	  J5=0			! initialize season counter
 	  ITIM0=TIME()		! save starting time 
-	  DJU5=DJUL-DELJUL      ! set date to -1 season
 	  SUMF=0.		! global seasons frost
 	ENDIF
 	BUF(1)=0.	! flag for  TINT to compute areas
 
 C  ----------------------------new season loop loop loop------------
 C
-100	J5=J5+1
+100	DJU5=DJUl+FLOAT(J5)*DELJUL	! current julian date
+	J5=J5+1			! increment season index
 	IF (LSC .OR. J5.EQ.IDOWN) THEN !  LSC  invokes changes at each season
 	  CALL TCARD (2,IR)	! read parameter change cards
 	  IF (IR.GE.4) RETURN	! either 1-point or end-of-data
@@ -61,7 +59,7 @@ D         write (*,*)'TSEAS: ',J5,N5,LOPN2,IDOWN,IR !<< ,KVALB,alb
 	  CALL TDAY (1,IR)	! re-initialize day computations
 	  IF (IR.NE.1) RETURN
 	ENDIF
-	DJU5=DJU5+DELJUL	! increment julian date
+C	DJU5=DJU5+DELJUL	! increment julian date
 	IF (MOD(J5,NMOD).EQ.0) THEN	! notify terminal
 	  ITIM = TIME ()
 	  ITIM=ITIM-ITIM0

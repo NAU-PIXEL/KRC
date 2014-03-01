@@ -9,14 +9,16 @@ PRO kirin, src=src, dat=dat, ver=ver, prn=prn, diss=diss
 ;_Desc
 ; Because of different response for different shells, this version ASSUMES that 
 ; if the host if not hulk3, it is at ASU.
+; For new installation, edit the lines with <<<
 ;_Calls  SETCOLOR
 ; 2013oct01 Hugh Kieffer  Derive from init.pro, adding many keywords
+; 2013nov15 HK Ensure idltop ends with a /.  Firm-code test for stop
 ;_End
 
 common TVFAST_COM, safe ; intarr(3) [X,Y Display pixel limits, backing]
 
 cpu=getenv('HOST')              ; get current cpu, Will return null is undefined
-if strlen(cpu) eq 0 then cpu='undefi' ;<<<1 Force in case HOST is not defined
+if strlen(cpu) eq 0 then cpu='undefi' ; Force in case HOST is not defined
 
 myhome=getenv('HOME')+'/'       ; Get home directory
 
@@ -24,12 +26,17 @@ cd,current=curd                 ; get current directory
 
 ; some common defaults
 idltop=curd                     ; Top of IDL source tree
+i=strlen(idltop)                ; string length
+q=strmid(idltop,i-1,1)          ; last character
+if q ne '/' then idltop=idltop+'/' ; ensure that it ends with a /
+
 retain=2     ; Default backing store option; set to IDL provides. See IDL manual
 win=[1280,1000]                 ; Common display size
 vera='krcCurrent'               ; version of KRC
 if keyword_set(ver) then vera=ver ; "
 if curd eq '/work/work1/build/idl' then cpu='test' ; Special code for a test build on H3
 
+print,'CPU is: ',cpu
 case cpu of
   'hulk3': begin               ; CR primary computer
       solib=idltop+'externals/ftnwrap64.so' ; shared object library
@@ -47,13 +54,13 @@ case cpu of
    'test': begin ; test build of distro
       capk='/work1/build/'       ; /K/: top of the build area
       idltop=capk+'idl/'
-      solib=idltop+'extern/ftnwrap64.so'
-      krcdist=capK              ; <<< top of KRC
-      prjdat=krcdist+'big/'     ;<<< Project large files
-      prjsrc=krcdist+'run/'     ;<<< Project other files
-      outid=vera                ;<<<
-      mybw='HP_Laserjet_3330'   ;<<< B&W printer
-      myclr='q'                 ;<<< Color printer 
+      solib=idltop+'extern/ftnwrap64.so' ; 
+      krcdist=capK              ; top of KRC
+      prjdat=krcdist+'big/'     ; Project large files
+      prjsrc=krcdist+'run/'     ; Project other files
+      outid=vera                
+      mybw='HP_Laserjet_3330'   ; B&W printer
+      myclr='q'                 ; Color printer 
 end
   else: begin              ; assumes ASU test environemnt
      idltop='/mars/common/rsi/idl71/bin/idl/' ; <<< IDL execution 
@@ -61,9 +68,9 @@ end
      krcdist='/mars/u/saadat/krc/krcDist222b/'; <<< top of KRC
      prjdat=krcdist+'krcdevtestprotocall/new/' ;<<< Project large files
      prjsrc=krcdist+'/run.org/'                ;<<< Project other files
-     outid=vera                                ;<<<
+     outid=vera                               
      mybw='q'                   ;<<< B&W printer
-     myclr='q'                                 ;<<< Color printer 
+     myclr='q'                  ;<<< Color printer 
      end
 endcase
 
@@ -117,6 +124,6 @@ print,'PROJDAT=',prjdat
 print,'Printer names: MYBW=',mybw,'  MYCLR=',myclr
 print,'Monitor size=',win
 
-stop
+if 2 gt 3 then stop  ;<<< Modify this NEVER test if want to stop here
 return
 end

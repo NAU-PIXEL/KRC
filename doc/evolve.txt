@@ -1,6 +1,15 @@
 evolve.txt  Notes on evolution of KRC code, after the first 17 years.
 Newest on top.  Does not include many minor changes
 ............................................................................
+
+2014jan27 Distro 2.3.0 . If fatal error, rather than terminating run, KRC will
+try the next case. Ensure disk files closed for unusual sequences.
+
+2013nov13 Distro of version 2.2.4 sent to ASU but named krc222f there. This is
+the last of several variations on 2.2.2 that dealt only with the makefile, IDL
+routines, and tiny format changes. All calculations are the same in all varients
+of 2.2.2 and 2.2.4
+
 2013aug30  Fix logic in tdisk when changing between file types. 
 
 2013aug26 Revise PORB system to accomodate exoplanets and a format for asteroids

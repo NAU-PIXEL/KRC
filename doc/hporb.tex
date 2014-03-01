@@ -118,7 +118,7 @@
 %\parindent=0.em \parskip=1.ex % paragraph spacing
 
 \title{The KRC Planetary ORBit (PORB) System}
-\author{Hugh H. Kieffer  \ \ File=~/krc/porb.tex 2013aug25}
+\author{Hugh H. Kieffer  \ \ File=~/krc/Doc/hporb.tex 2014jan24}
 
 % local definitions
 %\newcommand{\short}{full}    % begin & end un-numbered equations
@@ -140,25 +140,27 @@ This file largely documents the design of PORB. It should not be needed by
 the general KRC user. A separate document \nf{PUG.tex} and its derivatives are a
 Users Guide to the PORB system.
 
-\section{Introduction} The modernization of the PORB system to use J2000 dates and orientation and to address a wide range of objects has required several revisions, primarily is how $L_S$ is calculated. To avoid confusion in Version 2 with version1 routines that did similar things, some routine names have been changed:
+
+
+\section{Introduction} The modernization of the PORB system to use J2000 dates and orientation and to address a wide range of objects has required several revisions, primarily is how $L_S$ is calculated. To avoid confusion in Version 2 with version 1 routines that did similar things, some routine names have been changed:
 \qi PORB1 $\Rightarrow$ PORBIG: create the geometry arrays for a KRC input file 
 \qi PORB $\Rightarrow$ PORBIT: compute values at a specific date 
 
 The main program \np{porbmn} is basically a pre-processor to generate the
 geometry matrix used by KRC. The default output of \np{porbmn} is a file
 \nf{PORBCM.mat} which concatonates new 7-lines matricies on the bottom; any
-7-line set can be pasted into a KRC version 2.2.1 or later input file.
+7-line set can be pasted into a KRC version 2.2.1 or later KRC input file.
 
 There are several coordinate orientation systems involved, listed in \S \ref{code}. To minimize repetative calculations, the version 2 PORB system works largely in the F (orbital plane) coordinate system. 
 
 \section{Source files} %------------------------------------------------
 Files that can be read by the PORB system cover four catagories, each file has its own format:
-\qi Planets:  one file for orbits and another for spin-axes
-\qi Minor (or small) bodies: orbits and spin-axis direction for each object. Two versions.
+\qi Planets:  One file for orbits and another for spin-axes
+\qi Minor (or small) bodies: Orbits and spin-axis direction for each object. Two versions.
 \qi Comets: Orbit size specified by perihelion distance. 
 \qi ExoPlanets: Orbit specified by semi-major axis, period and eccentricity. Relative orientation of the body spin axis specified by obliquity and Ls at periapsis.
 
-All these files are read by \np{porbel.f}, which outputs 
+All these files are read by \np{porbel.f} 
 
 \subsection{Planets} 
 
@@ -567,7 +569,7 @@ $L_S$, the difference between my older routines and new versions are quite small
 \subsubsection{Introduction} %------------------------------------------------
  Allison and McEwen \cite{Allison00} developed $L_S$ as a function of date based
  on Mars pole orientation derived from Pathfinder data (which agrees with IAU
- 2009) and the VSOP87 ephemerides (which is within \Em4\qd ~heliocentric
+ 2009) and the VSOP87 ephemerides (which is within \Em4 \ \qd ~heliocentric
  position of the latest JPL ephemeris for Mars [page 221.8 left]).  They
  evaluated these data for a period of $\pm 67$ Mars Years (MY) from 2000.0;
  1874:2127.  They provide as Equation 14 the generation of MJD4 $\equiv$
@@ -646,27 +648,43 @@ anomaly as a vector: $\qv{PHF} $. Rotate the negative of this to get vector from
 the planet to the Sun in the season system, $ \qv{HPB}= \mathbf{BF} \ast
 -\qv{PHF} $. The latitude is the sub-solar latitude.
 
-\subsection{Form for KRC  \ \ OBSOLETE}
-All Mars years are the same. $L_s = f(x)$ where $x=2 \pi$ (MJD-d0) modulo
-Year. Or, MJD=d0+Year*f(x) where x=$L_S$ in radians. The $a_o$ term should
-handle small offsets. Derive Year $\equiv$ Mars mean tropical year from
-separation of the extreme $L_S=0$ times from Allison for whatever period is
-chosen.
-\subsubsection{Output KRC and readkrc}
+\subsection{Form for KRC system}
+Running PORBMN produces the geometry block as text:
+\qi calls PORBIG which
+\qii calls PORBEL to read orbital elements file and convert \nv{DSJA}  to period.
+\qiii Fundamental constant used is: SIDYR=365.256363004  ! siderial year in days
+\qii Calculations done in REAL*8 but returned in REAL*4
+\qii PORBEL has no access to common, returns all values as arguments
+\qi  PORBIG fills common 
+\qi  PORBIO writes common as a block of text into a file
+\qii Default file name is PORBCM.mat
+
+\vspace{2.mm}
+
 Within KRC, Ls is computed in TSEAS based on true anomaly derived from PORB
 planet position and the Ls at periapsis; TSEAS uses the day of each season and
 does not consider convergence days. Because KRC version 2 uses modern pole
 direction and mean orbit, these should be within the magnitude of planetary
-perturbations of LSAM
+perturbations of the full Allison and McEwen version in LSAM.
 
-The onePoint mode computes starting date using alsubs.f to get JD from Ls.
-In version 2.2.1, alsubs.f is virtually identical to lsubs.pro
+KRC program: normal mode:
+\\ KRC calls PORB0 to read the geometry matrix into common
+\\ TSEAS call PORBIT with DJU5 to produce $L_S \equiv $ SUBS, SDEC, DAU
+\qi PORBIT accesses porbcm and converts DJU5 to Time from periapsis  
+\qii then calls ORBIT with TPER and PERIOD to get heliocentric radius and Cartesian coord. in the orbital plane. 
+\qiii Calls ECCANOM to solve Kepler's equation for eccentric anomaly
+\qii  ORBIT uses SMA to compute the position in the orbital plane
+\qi PORBIT uses the Cartesian coordinates to get the true anomaly in radians, TAR
+\qii $L_S$ is angle from True anomaly at spring equinox,TAV, converted to degrees
 
-READKRC52 computes Ls using L\_S (pre version 2) or LSUBS (version 2+) which use
-a cosine series to approximate the effect of orbital eccentricity; these
-approximations have residuals typically less than 0.05 degree or 0.1 day,
- 
-There are several coordinate orientation systems involved, listed in \S \ref{code}.
+The onePoint mode calls PORBIT to convert $L_S$ to a modified Julian date, then computes the starting date.
+
+\subsubsection{Preparation }
+There are several coordinate orientation systems involved, listed in \S \ref{code}. 
+
+Derive Year $\equiv$ Mars mean tropical year from
+separation of the extreme $L_S=0$ times from Allison for whatever period is
+chosen.
 
 \section{Common porbcm.inc}  %_________________________________________
 

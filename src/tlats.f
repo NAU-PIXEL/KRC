@@ -328,7 +328,7 @@ C
 	   TSEQ4=BETA*TAEQ4+AVEI/(SIGSB*AVEE) ! equilib T_s^4
 	   TEQUIL = AMAX1( TSEQ4,1.e4)**0.25 ! equilib T_s, min of 10.
 	   IF (TEQUIL.LT.TFNOW) TEQUIL=TFNOW
-	ELSE
+	ELSE			! no atmosphere
 	   BETA=0.
 C       start using annual average insolation
 	   QA=1./(SQRT(1.-ECC**2)) ! average orbit insolation factor
@@ -359,7 +359,14 @@ C
 	   TTJ(N1PIB)=TBOT
 	   TTS(1)=TEQUIL
 	   TTB(1)=TEQUIL
-	   IF (LATM) TATMJ=TAEQ4**0.25
+	   IF (LATM) THEN
+	      TATMJ=TAEQ4**0.25 ! starting Atm T
+C       Approximate radiation time constant	   
+	      QA=ATMCP*(PRES/GRAV)*TATMJ ! heat in the atm
+     &	   / (BETA*SIGSB* TAEQ4)         !  /IR radiation rate 
+	      qs=QA/(2.71828*86400.) ! 1/e about right for Mars, convert to days
+	   IF (LQ1) PRINT *,'Radiation time, sec',QA 
+     &	   ,'  Relaxation time, days',QS
 	ELSE			! start with final value from previous season
 	   DO  I=1,N1PIB
 	      TTJ(I)=TMN4(I,J4)

@@ -11,7 +11,7 @@ Version 222 default values. 19 latitudes with mean Mars elevations
       RLAY      FLAY     CONVF     DEPTH     DRSET       DDT       GGT     DTMAX
     1.2000     .1800    2.0000       0.0       0.0     .0020       0.1       0.1
       DJUL    DELJUL  SOLARDEC       DAU     LsubS    SOLCON      GRAV     AtmCp
-  -1222.69   17.1745      00.0     1.465        .0     1368.     3.727     735.9
+  -1222.69 17.174822      00.0     1.465        .0     1368.     3.727     735.9
     ConUp0    ConUp1    ConUp2    ConUp3    ConLo0    ConLo1    ConLo2    ConLo3
   0.038640 -0.002145  0.002347 -0.000750  2.766722 -1.298966  0.629224 -0.527291
     SphUp0    SphUp1    SphUp2    SphUp3    SphLo0    SphLo1    SphLo2    SphLo3

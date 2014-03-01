@@ -19,9 +19,7 @@ dvipdf krcV3.dvi		# and to pdf
 
 cd ~/krc
 
-latex hporb			# has references
-bibtex hporb
-latex hporb
+latex hporb			# has references included
 latex hporb
 dvipdf hporb.dvi		# and to pdf
 

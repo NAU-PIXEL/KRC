@@ -16,7 +16,7 @@ C                                Pole is J2000 equatorial
      &,ZBAB      ! 11  "     "       Right Ascension, degree in J2000 eq.
      &,WDOT      ! 12 Siderial rotation rate;/ degrees/day  
      &,W0        ! 13 Position of prime meridian at 2000.0, degree
-C Above are input  Below are  derived    
+C Above are from orbital element tables  Below are derived    
       Real*4 OPERIOD ! 14 Period of the orbit (days)
      &,TJP	 ! 15 J2000 Date of perihelion
      &,SIDAY     ! 16 Siderial rotation period of body (hours)

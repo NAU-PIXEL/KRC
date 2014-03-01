@@ -15,11 +15,11 @@ PRO clot,yyy,txt,xx=xx,locc=locc,xran=xran,yran=yran,titl=titl,oplot=oplot $
 ; oplot in_ flag.      If set, overplots: ranges and titl ignored 
 ;                        Offset in SETCOLOR line index -=none
 ;                      Number of curves set by yyy
-; oplot modes:
-; -9 or less: more data; use same line set, no addition to legend
-; -n: alternate values. use line type -n, show within existing legend
-; +n: more curves, offset line index, add more items to legend
-; 100+n: n=line style and  new set of labels
+;       oplot modes:
+;        -9 or less: more data; use same line set, no addition to legend
+;        -n: alternate values. use line type -n, show within existing legend
+;        +n: more curves, offset line index, add more items to legend
+;       100+n: n=line style and  new set of labels
 ; bw    in_ Intarr(m)  Line type. If m>2, does in black and white
 ; ksym  in_ Int        Symbol to use as well as line. Will use abs-value
 ;                      If negative, will suppress the line

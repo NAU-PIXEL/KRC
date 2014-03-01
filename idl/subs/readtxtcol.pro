@@ -112,6 +112,7 @@ endelse
 
 point_lun,-ilun,pos             ; remember the position after header
 
+;_________________________________________________________________
 while not (eof(ilun) or (nr ge nm1)) do begin ; each line of table
     readf,ilun, buf             ; read additional lines
     if !dbug ge 8 then print,buf
@@ -142,7 +143,7 @@ dagain:
 ;           print,buf & stop
            goto,dagain
        endif
-   endif
+    endif  ; ---- kode eq 2
    pp=str_sep(buf,sep)          ; divide string at each separator
    if findcol then begin
        ncol=n_elements(pp)      ; count the number of pieces
@@ -165,13 +166,13 @@ dagain:
            print,buf & stop
            goto, done
        endelse
-   endif
+    endif ; ----- n lt ncol
 
    nr = nr+1                    ; increment row count
    j=n<ncol                     ; ignore extra words
    xx[nr,*]=pp[0:j-1]		; store one row
 empty:
-endwhile
+endwhile ; ____________________________________________________________
 done:
 if nr lt maxrow-1 then xx=xx[0:nr,*] ; extract only the part defined
 

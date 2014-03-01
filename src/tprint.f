@@ -79,7 +79,7 @@ C
         WRITE (IOSP,214) (ID(I),I=1,NID)
 214     FORMAT ( '0        N1        N2        N3        N4        N5'
      &, '       N24        IB        IC'/1X,8I10
-     &/'      NRSET      NMHA      NRUN     JDISK    [IDOWN    FlxP14'
+     &/'      NRSET      NMHA      NRUN     JDISK     IDOWN    FlxP14'
      &, '    FlxP15     KPREF'/1X,8I10
      &/'      K4OUT     JBARE     Notif    IDISK2',/1X,4I10)
 
@@ -101,11 +101,11 @@ C
         WRITE(IOSP,260) COND,Q2,DIFFU,SCALE
 260     FORMAT (' Conductiv.=',1PE10.3,'  Dens*Cp=',E10.3,'  Diffu.='
      &,E10.3,'  Scale=',E10.3)
-        IF (IC.GE.3 .AND. IC.LE.N1-1) then
+        IF (IC2.GE.3 .AND. IC2.LE.N1-1) then
           Q2=DENS2*SPHT2
           Q4=SQRT(Q2*COND2)     ! inertia
-          Q6=XCEN(IC-1)+BLAY(IC-1)/2. ! depth to top of 2nd material
-          WRITE(IOSP,262),IC,Q6,Q4
+          Q6=XCEN(IC2-1)+BLAY(IC2-1)/2. ! depth to top of 2nd material
+          WRITE(IOSP,262),IC2,Q6,Q4
  262      FORMAT(' Beginning at layer ',I3,'  At ',F8.4
      &,' m.   Inertia=',F8.1)
           Q4=COND2/Q2           ! diffusivity
@@ -122,8 +122,8 @@ C2345 789 123456789 123456789 123456789 123456789 123456789 123456789 72________
         DO 270 I=1,N1
                 Q2 = BLAY(I)/SCALE ! thickness in units of surface scale
                 Q4 = XCEN(I)/SCALE    ! center-depth in units of scale
-                IF (I.GT.1 .AND. I.LT.IC) Q6=Q6+BLAY(I)*DENS
-                IF (I.GE.IC) Q6=Q6+BLAY(I)*DENS2 ! layer-center columnar mass
+                IF (I.GT.1 .AND. I.LT.IC2) Q6=Q6+BLAY(I)*DENS
+                IF (I.GE.IC2) Q6=Q6+BLAY(I)*DENS2 ! layer-center columnar mass
 270             WRITE(IOSP,280) I,Q2,BLAY(I),q4,XCEN(I),q6,SCONVG(I)
 280     FORMAT (I5,F10.4,F10.4,F10.4,f10.4,F10.3,F8.3)
         WRITE(IOSP,290) (N1K(K),K=1,KKK)

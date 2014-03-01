@@ -17,9 +17,11 @@ PRO init, op=op
 ; 2010nov09 HK Add section for macLaptop
 ; 2011may26 HK Add option flag to avoid always prompt for spice
 ; 2013sep29 HK For use with KRC at ASU
+; 2014jan10 HK increase common safe to 6 elements for compatibity with SETWIND
 ;_End
 
-common TVFAST_COM, safe ; intarr(3) [X,Y Display pixel limits, backing]
+common TVFAST_COM, safe ; intarr(6) [X,Y Display pixel limits, backing] for TVFAST
+;                 then 3:5 same, used by SETWIND
 
 cpu=getenv('HOST')              ; get current cpu, Will return null is undefined
 if strlen(cpu) eq 0 then cpu='undefi' ;<<<1 Force in case HOST is not defined
@@ -45,6 +47,7 @@ case cpu of
       prjdat='/work/work1/krc/test/'      ; Project large files
       prjsrc=myhome+'cr/BOLI/'  ; Project other files
       specdir='/work/work1/mars/miebin/' ; Primary ice spectral models
+      win=[2550,1220]; Dell 30"
       end
   'hkieffer': begin      ; MAC laptop
       solib=idltop+'externals/ftnwrap64.so' ; shared object library
@@ -102,7 +105,7 @@ if keyword_set(op) then begin   ; prompt for options
 endif
 
 window,0,retain=retain          ; Open default window with backing store option
-safe=[win,retain]               ; Init display size and backing store in Common
+safe=[win,retain, 800,640,retain] ; Init display size and backing store in Common
 SETCOLOR,init=0                 ; Start the colors. Will define !binc
 a=!dtor*30. & c=cos(a) &  s=sin(a)          ;| Define psym=8 as
 usersym,[0.,c,-c,0.]*1.4,[-1.,s,s,-1.]*1.4  ;| inverted triangle

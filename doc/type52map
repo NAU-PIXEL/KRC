@@ -34,7 +34,7 @@ The 7 items are:
   TTA4     Predicted final atmosphere temperature   
   TIN(2:n) Minimum hourly layer temperature, starting with first real layer
         n is the smaller of: N1    (the number KRC computed  
-                             N24-2 (the number that fit in this file)   
+                             N24-2 (limit of what fits in this file)   
 7) packed with: 
   FROST4   Predicted frost amount, [kg/m^2]
   AFRO4    Frost albedo (at the last time step)
@@ -78,4 +78,35 @@ versions of KRC reserve 10 M words for the bin5 array. So, for example, with
 N24=24, 19 latitudes and 50 stored seasons, up to 61 cases can be saved in one
 run.
 
+In the IDL readkrc52 routine, these are expanded into 5 arrays and 
+a structure. The dimensions here are typical; produced in krcvtest @188
 
+TTT             FLOAT     = Array[24, 5, 3, 120, 8]
+(hour,item,latitude,season,case)
+itemt =  Tsurf, Tplan, Tatm, DownVIS, DownIR
+
+DDD             FLOAT     = Array[21, 2, 3, 120, 8]
+(layer,item,latitude,season,case)
+itemd =  Tmin, Tmax
+
+GGG             FLOAT     = Array[6, 3, 120, 8]
+(item,latitude,season,case)
+itemg =  NDJ4, DTM4, TTA4, FROST4, AFRO4,, HEATMM
+
+UUU             FLOAT     = Array[3, 2, 8]
+(nlat,item,case)       Values often the same for each case
+itemu =  Lat., elev
+
+VVV             FLOAT     = Array[120, 5, 8]
+(season,item,case)   First 2 item values often the same for each case
+itemv =  DJU5, SUBS, PZREF, TAUD, SUMF
+
+KRCCOM is in kcom:  readkrc52 returns values for the first case
+** Structure <cdcab8>, 7 tags, length=1020, data length=1020, refs=1:
+   FD              FLOAT     Array[96]
+   ID              LONG      Array[40]
+   LD              LONG      Array[20]
+   TIT             BYTE      Array[80]
+   DAYTIM          BYTE      Array[20]
+   ALAT            FLOAT     Array[37]
+   ELEV            FLOAT     Array[37]

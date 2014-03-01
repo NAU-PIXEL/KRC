@@ -43,11 +43,11 @@ ln -s /home/hkieffer/xtex/tes/krc/HeatOfT.pdf . #  T-dependent materials
 ln -s /home/hkieffer/xtex/themis/cement.pdf . 	# Particulate model
 ln -s /home/hkieffer/krc/helplist.tex  .	# Helplist source
 ln -s /home/hkieffer/krc/helplist.pdf  .	# KRC Users Guide
-ln -s /home/hkieffer/krc/hporb.tex . 	# source for PORB doc
-ln -s /home/hkieffer/krc/hporb.pdf . 	# PORB documentation
-ln -s /home/hkieffer/krc/PUG.tex .
-ln -s /home/hkieffer/krc/PUG.pdf .   # PORB USers Guide
-ln -s /home/hkieffer/krc/PUG.html .
+ln -s /home/hkieffer/krc/Doc/hporb.tex . 	# source for PORB doc
+ln -s /home/hkieffer/krc/Doc/hporb.pdf . 	# PORB documentation
+ln -s /home/hkieffer/krc/Doc/PUG.tex .
+ln -s /home/hkieffer/krc/Doc/PUG.pdf .   # PORB USers Guide
+ln -s /home/hkieffer/krc/Doc/PUG.html .
 ln -s /home/hkieffer/krc/VER/Vtest.tex .
 ln -s /home/hkieffer/krc/VER/Vtest.pdf .  # Description of KRC version tests
 ln -s /home/hkieffer/krc/type52map .
@@ -83,8 +83,8 @@ ln -s /home/hkieffer/krc/tes/master5x.inp .  # output all type 5x binary files
 ln -s /home/hkieffer/krc/tes/mast37.inp .        # 37 latitudes and mean elevations
 ln -s /home/hkieffer/krc/tes/Mone.inp .	     # krc input for one-point
 ln -s /home/hkieffer/krc/tes/oneA.one .      # one-point input table 
-ln -s /home/hkieffer/krc/tes/mkrc.inp .      #  sample for mkrc 
-ln -s /home/hkieffer/krc/tes/RQ36.inp .      # specific asteroid, no atmosphere
+# ln -s /home/hkieffer/krc/tes/inp/mkrc.inp .      #  sample for mkrc 
+ln -s /home/hkieffer/krc/tes/inp/RQ36.inp .      # specific asteroid, no atmosphere
 #ln -s /home/hkieffer/krc/tes/valb1.tab .     # sample seasonal albedo input
 #ln -s /home/hkieffer/krc/src/krc krc64   	# executable for 64-bit hardware
 #ln -s /home/hkieffer/krc/src/mkrc mkrc64   	# executable for 64-bit hardware
@@ -235,7 +235,7 @@ cd $RTOP/idl
 rm -f *
 ln -s /home/hkieffer/krc/aaa/idlPath .    # set the IDL path
 ln -s /home/hkieffer/idl/krc/kirin.pro .  # initialize IDL for KRC
-ln -s /home/hkieffer/idl/TES/KRC/krcvtest.pro . # Test KRC versions
+ln -s /home/hkieffer/idl/krc/krcvtest.pro . # Test KRC versions
 echo "done copy from idl"
 
 cd $RTOP/idl/extern   # items for Shared Object Library
@@ -336,14 +336,14 @@ ln -s /home/hkieffer/idl/krc/makekrcval.pro . # definekrc delast0
 ln -s /home/hkieffer/idl/krc/krchange.pro .   # readkrccom  makekrcval
 ln -s /home/hkieffer/idl/krc/krccomlab.pro .  # none
 ln -s /home/hkieffer/idl/krc/krclayer.pro .   # none
-# ln -s /home/hkieffer/idl/TES/KRC/krcsizes.pro .
+# ln -s /home/hkieffer/idl/krc/krcsizes.pro .
 ln -s /home/hkieffer/idl/krc/readkrc52.pro .  # bin5  readkrccom
-ln -s /home/hkieffer/idl/TES/KRC/readkrc53.pro .  # bin5 definekrc  krchange
-ln -s /home/hkieffer/idl/TES/KRC/readkrc54.pro .  # bin5
-ln -s /home/hkieffer/idl/TES/KRC/readkrc56.pro .  # bin5
-ln -s /home/hkieffer/idl/TES/KRC/readkrc1.pro .   # none
+ln -s /home/hkieffer/idl/krc/readkrc53.pro .  # bin5 definekrc  krchange
+ln -s /home/hkieffer/idl/krc/readkrc54.pro .  # bin5
+ln -s /home/hkieffer/idl/krc/readkrc56.pro .  # bin5
+ln -s /home/hkieffer/idl/krc/readkrc1.pro .   # none
 ln -s /home/hkieffer/idl/krc/readkrccom.pro . # definekrc
-ln -s /home/hkieffer/idl/TES/KRC/examt52.pro .  # Example program: refers to routines outside idl1
+ln -s /home/hkieffer/idl/krc/examt52.pro .  # Example program: refers to routines outside idl1
 echo "done copy of idl/krc"
 
 cd $RTOP/idl/subs    # not updated after about 2012 march

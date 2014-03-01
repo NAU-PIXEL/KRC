@@ -76,12 +76,15 @@ pro make99, id,prior, hold, maxk=maxk,all=all,get=get,ofile=ofile,comf=comf
 ; 2007aug16 HK Clarify test for KON99 to cover KON91
 ; 2008aug20 HK For distributions, allow top IDL level to have no .pro files
 ; 2010feb24 HK Fix  comf  to utilize string entry
-; 2010sep21 HK Minor comment changes 
+; 2010sep21 HK Minor comment changes
+; 2013nov15 HK ensure link is defined 
 ;_END
 
+maxd=5                        ; maximum directory descent
+;^^^^^^^^^^^^^  firm-code
 on_ioerror, bad
 
-errs=''
+errs='' & link=-1               ; ensure defined
 if not keyword_set(maxk) then maxk=200 
 if n_elements(prior) lt 2 then prior=[';','0'] ; impossible idl routine name
 dbug=(maxk mod 10) eq 7
@@ -116,6 +119,7 @@ hold=strarr(maxk)
 kkon=lonarr(maxk)
 kh=-1                           ; count of output guide lines
 k=-1                            ; count of kon  values
+kd=-1  ; current level below idltop
 ; Find source file; search progressively lower directories.
 ; Use of any explicit letters in mask requires the proper level of /* .
 ; Here, start at top IDL level, and find all .pro files at that level
@@ -124,13 +128,14 @@ k=-1                            ; count of kon  values
 ; To work with Distributions, allow for the case where the top IDL level
 ; may have no .pro files.
 top=getenv('IDLTOP') ; top='/home/hkieffer/idl/'
-m1='*.pro'                      ; highest IDL soruce level
+m1='*.pro'                      ; highest IDL source level
 m=m1                            ; start there
-again: 
+again: kd=kd+1                  ; increment directory level
 q=findfile(top+m,count=nq)
 ;;print,'m,nq=',m,nq
 if nq eq 0 and m ne m1 then begin
-    print,'Could not find source for ',id
+    print,' Could not find source for ',id
+    print,'IDLTOP and dir level=',idltop,kd
     goto,error
 end
 i=where( strpos(q,'/'+id+'.pro') ge 0,ni) ; index location of the sought file
@@ -461,12 +466,16 @@ endif
 if dbug then stop
 if strlen(errs) lt 2 then return
 
-error:
+error: j=1
 print,'>>>>>>>>  MAKE99 error: ',errs
-print,'Any key to go' & i=get_kbrd(1)
+read,j,prompt=' enter 0 to stop, else 1 to return > '
+if j eq 0 then stop
 return
 
-bad: print,'MAKE99 read error: line,err_string=',link,!err_string
-stop
+bad: j=1
+print,'MAKE99 read error: line,err_string=',link,!err_string
+read,j,prompt='Enter 0 to stop, else 1 to return > '
+if j eq 0 then stop
+return
 
 end

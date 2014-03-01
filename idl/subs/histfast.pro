@@ -45,15 +45,27 @@ pro  histfast,aa,sigin=sigin,bisin=bisin,xlab=xlab,linear=linear,sub=sub $
 ;_End
 
 ;on_error,2 ; to handle the "Array has a corrupted descriptor: H1" upon return
+
+
 sizea=SIZE(aa) & wordtype = sizea[sizea[0]+1] ; size of input array
 isint=wordtype le 3 or wordtype ge 12; some form of integer
 nin=sizea[sizea[0]+2]             ; number of input elements
+
+if keyword_set(xlab) then xtit=xlab else xtit='X value'
 
 bad=where(finite(aa) eq 0,nbad) ; count of all non-finite points
 if nbad gt 0 then begin
     if nin-nbad gt 0 then begin ; some finitie
         ff=aa[where(finite(aa))] ; create array of only finite points
         mean=MEAN_STD(ff,std=sd) ; only finite elements
+        if finite(mean) eq 0 then begin
+           a1=min(ff,max=a2)
+           print,'HISTFAST: ',xtit,' mean is not finite' 
+           print,'Min and max of finite=',min(ff,max=a1),a1
+           b1=mean & b2=a2 & bsize=-1. & j1=0 & j2=0 & nbin=1 
+           message,'; may need to swap_endien.',/con
+           goto,done 
+        end
 ;;    aa[bad]=mean
     endif else begin            ; no finite
         sd=-1.
@@ -61,10 +73,7 @@ if nbad gt 0 then begin
     endelse
 endif else mean=MEAN_STD(aa,std=sd) ; faster than a histogram & its statistics
 
-
-if keyword_set(xlab) then xtit=xlab else xtit='X value'
-
-if sd le 0. then begin
+if sd le 0. then begin ; constant or no finite
        print,'HISTFAST: ',xtit,':     All',nin,' items =',mean 
        b1=mean & b2=mean & bsize=-1. & j1=0 & j2=0 & nbin=1 ; define for used=
        a1=mean & a2=mean

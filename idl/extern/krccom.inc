@@ -21,7 +21,7 @@ C        PARAMETER (KOMMON=4*1056720) ! 4-byte words: Type 52: 48 hours, 37 lats
 C        PARAMETER (KOMMON=5000000) ! 4-byte words: Type 52: 34 hours, 36 lats,80 seasons 10 cases
          PARAMETER (KOMMON=10000000) ! 4-byte words
 
-      INTEGER N1,N2,N3,N4,N5,  N24,IB,IC,NRSET,NMHA               !  1:10
+      INTEGER N1,N2,N3,N4,N5,  N24,IB,IC2,NRSET,NMHA              !  1:10
      &,NRUN,JDISK,IDOWN,I14,I15,  KPREF,K4OUT,JBARE,NMOD,IDISK2   ! 11:20
      &,KOLD,KVALB,KVTAU,ID24(4),  NFD,NID,NLD                     ! 21:30
      &,N1M1,NLW,JJO,KKK,N1PIB,  NCASE,J2,J3,J4,     J5		  ! 31:40
@@ -72,9 +72,9 @@ Cset   *seas       ----seas-------
 Cset   -----------lats--------- tint ---lats-------      ---lats----
      6,DJU5,DAM,EFROST,DLAT,COND,  DIFFU,SCALE,PIVAL,SIGSB,RADC	      ! :96
 Cset   seas lat day2   lats -------day1------- --main------
-     7,N1,N2,N3,N4,N5,  N24,IB,IC,NRSET,NMHA                      !  1:10
+     7,N1,N2,N3,N4,N5,  N24,IB,IC2,NRSET,NMHA                     !  1:10
      8,NRUN,JDISK,IDOWN,I14,I15,  KPREF,K4OUT,JBARE,NMOD,IDISK2   ! 11:20
-     9,KOLD,KVALB,KVTAU,ID24,  NFD,NID,NLD                     ! 21:30
+     9,KOLD,KVALB,KVTAU,ID24,  NFD,NID,NLD                        ! 21:30
 Cset             ----card---
      A,N1M1,NLW,JJO,KKK,N1PIB,  NCASE,J2,J3,J4,     J5		  ! 31:40
 Cset   ---day1- lat ----day1-    main -day2- lats  seas

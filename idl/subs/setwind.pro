@@ -31,8 +31,8 @@ case kon of
  898: ppp[3:4]=[2550,1520]      ; Maximum for Dell 30" with borders
  899: begin                     ; guide
 print,'890+  0= create window 0:  2=2  3=3    1=set backing  9=this Guide'
-print,' Set size:  4=5/4old   5=5/4mid   6=square  7=5/4big    8=DellMax'
-print,'window,1,r=2  640:512    800:640   800:800  1200:960    2550:1220'
+print,' Set size:   4=5/4old   5=5/4mid   6=square  7=5/4big    8=DellMax'
+print,'window,1,r=2  640:512    800:640    800:800  1200:960    2550:1220'
  end
 else: message,'invalid kon'
 endcase
