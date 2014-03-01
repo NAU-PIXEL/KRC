@@ -32,7 +32,7 @@ C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
 	CHARACTER*80 CBUF	! temporary use
 	REAL TOTIME		! Total Elapsed Time 
 
-	VERSIN='KRCv2.3.0'	! set version number 2014jan25
+	VERSIN='KRCv2.3.2'	! set version number 2014feb26
 C			zero out some commons
 	CALL R2R (0.,ALB, -NWKRC) !  KRCCOM
 	CALL R2R (0.,NDJ4,-NWLAT) !  LATCOM
@@ -64,7 +64,9 @@ C			open files: input, print, save
  50	FINPUT = 'krc.inp'	! default input file name
 	WRITE (IOPM,*)'?* Input file name or / for default =',FINPUT
 	READ (IOKEY,*,ERR=50,end=9) FINPUT
+C	print *,'FINPUT=',FINPUT 
 	OPEN (UNIT=IOIN,FILE=FINPUT,STATUS='OLD',err=81)
+C	print *,'FINPUT2=',FINPUT 
 
 CC	call U_std_init ('krc','1997-09-09','invoke traps') ! to invoke traps
 

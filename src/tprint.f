@@ -7,7 +7,7 @@ C_Vars
         INCLUDE 'units.inc'
         INCLUDE 'filcom.inc'
 C_Args
-        INTEGER IQIN  ! in. what to print: 
+        INTEGER*4 IQIN  ! in. what to print: 
 C   +=also page title first       calling routine line number as of 2010jan22 
 C 1=+ program description            krc.f:95IF(LP1
 C 2=+ all parameters & depth table   krc.f:97IF(LP2   tcard.f:283beforeStop
@@ -33,11 +33,13 @@ C 2009may10 HK add TITONE as one-point comment field
 C 2012feb26 HK Remove unused variables
 C 2013jan30 HK Print version number
 C 2013feb21 HK Remove leading carridge control characters from format statements
+C 2014feb13 HK Correct depth table labeling from mass being as layer center
+C 2014feb25 HK Set most variables to *4.
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
 C
-        INTEGER I,J,J3P1,K,IQ
-        INTEGER IPG /0/
-        REAL Q2,Q4,Q6,TOUTO
+        INTEGER*4 I,J,J3P1,K,IQ
+        INTEGER*4 IPG /0/
+        REAL*4 Q2,Q4,Q6,TOUTO
 D        WRITE(IOSP,*)'TPRINT CALLED ',IQIN  !debug
 
 	IQ = IQIN
@@ -114,8 +116,8 @@ C
         ENDIF
         WRITE(IOSP,265)
  265    FORMAT(
-     &'         ___THICKNESS____   _______CENTER_DEPTH_____ CONVERGENCE'
-     &/' LAYER     scale    meter     scale    meter   kg/m^2   factor')
+     &'         ___THICKNESS____    __CENTER_DEPTH__    Total  Converg.'
+     &/' LAYER    scale     meter     scale     meter   kg/m^2  factor')
 C       123456789 123456789 123456789 123456789 123456789 123456789 123456789
 C2345 789 123456789 123456789 123456789 123456789 123456789 123456789 72________
         Q6=0.
@@ -207,6 +209,7 @@ C
      &,'       DAU       L_S JULIAN DAY    J5   two from KRCCOM'
      &/1X,3F10.4,F10.2, F10.5,2F10.2,I7,2X,2G10.4)
         GO TO (99,99,300,99,500,600,99,99,99) ,IQ
+C              1   2   3  4   5   6  7  8  9
 C
 C Print one line of "one-point" results
 C

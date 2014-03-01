@@ -1,9 +1,9 @@
 C_Titl  LATCOM.INC   common for latitude-dependant items in  KRC
-      INTEGER NWLAT   ! size of common in 4-byte words
+      INTEGER*4 NWLAT   ! size of common in 4-byte words
       PARAMETER (NWLAT= (9+ 3*MAXN1 + 2*MAXNH) *MAXN4) ! 
 C_arg: all are set in  TLATS
-      INTEGER NDJ4(MAXN4) ! # days to compute solution for each latitude
-      REAL DTM4(MAXN4)	 ! rms temperature change on last day
+      INTEGER*4 NDJ4(MAXN4) ! # days to compute solution for each latitude
+      REAL*4 DTM4(MAXN4)	 ! rms temperature change on last day
      &,TST4(MAXN4)	 ! predicted equilibrium temperature of ground
      &,TTS4(MAXN4)	 ! predicted mean surface temperature for each latitude
      &,TTB4(MAXN4)	 ! predicted mean bottom temperature
@@ -29,5 +29,6 @@ C 2002aug15 HK NWLAT is computed, = 2793
 C 2004jul07 HK Move dimension-defining parameters from other commons into KRCCOM
 C 2009feb   HK With MAXN1=30, MAXNH=48, MAXN4=37, NWLAT is 7215
 C 2010jan12 HK Change to IMPLICIT NONE assumed to be in KRCCOM
+C 2014feb25 HK Specify all word lengths as *4
 C_End _______________________________________________________________________
 

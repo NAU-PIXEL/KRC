@@ -1,5 +1,5 @@
 PRO clot,yyy,txt,xx=xx,locc=locc,xran=xran,yran=yran,titl=titl,oplot=oplot $
-,bw=bw,ksym=ksym,tsiz=tsiz,abso=abso,_extra=e
+,abso=abso,yr2=yr2,bw=bw,ksym=ksym,tsiz=tsiz,_extra=e
 ;_Titl  CLOT  Color plot of related curves
 ; yyy   in. array(n,m=numCurves)  Data to plot
 ; txt   in_ strarr(m)  Labels for curves. Default is 0-based count
@@ -8,10 +8,10 @@ PRO clot,yyy,txt,xx=xx,locc=locc,xran=xran,yran=yran,titl=titl,oplot=oplot $
 ;           fltarr(5)  [xloc,off,size,thick,over] for LABEL_CURVE  
 ;              if absent, no guide. If less then 4 use [0.15,0.92,-0.04,0.08]
 ; xran  in_ fltarr(2)  X plot limits:  Default is automatic. Ignored for oplot
-; yran  in_ fltarr(2)  Y plot limits:  Default is automatic. Ignored for oplot
-;                     if values are equal, auto-scales each curve onto 0:1
+; yran  in_ fltarr(2)  Y plot limits:  Default: full range. Ignored for oplot
+;            If values are equal,uses full range of dataset
+;            If [0] gt [1], normalizes each curve onto 0:1 
 ; titl  in_ strarr(3)  Lables for x,y axes and top. Ignored for oplot
-; abso  in  flag  If set, plots absolute value, with symbol where negative
 ; oplot in_ flag.      If set, overplots: ranges and titl ignored 
 ;                        Offset in SETCOLOR line index -=none
 ;                      Number of curves set by yyy
@@ -20,6 +20,9 @@ PRO clot,yyy,txt,xx=xx,locc=locc,xran=xran,yran=yran,titl=titl,oplot=oplot $
 ;        -n: alternate values. use line type -n, show within existing legend
 ;        +n: more curves, offset line index, add more items to legend
 ;       100+n: n=line style and  new set of labels
+; abso  in_ flag  If set, plots absolute value, with symbol where negative
+; yr2   in_ fltarr(2)  Yrange for 2nd plot on right half in one call.
+;                          Ignored if values are equal
 ; bw    in_ Intarr(m)  Line type. If m>2, does in black and white
 ; ksym  in_ Int        Symbol to use as well as line. Will use abs-value
 ;                      If negative, will suppress the line
@@ -36,6 +39,7 @@ PRO clot,yyy,txt,xx=xx,locc=locc,xran=xran,yran=yran,titl=titl,oplot=oplot $
 ; 2012feb06 HK Add keyword abso
 ; 2013apr01 HK Make default X value Long so will handle >32767 properly
 ; 2013may12 HK Include _extra in  all data plot commands
+; 2014feb03 HK Add keyword yr2
 common SETCOLOR_COM2, kcc,linecol,kkc,kkl,kkp,fixkkc,fixkkl,fixkkp,kink,scex1
 ;_End
 
@@ -58,6 +62,8 @@ endif else begin                ; fixed line style
 endelse
 
 if not keyword_set(tsiz) then tsiz=0
+if n_elements(yr2) lt 2 then yr2=[0,0]       ; dual plot, Y magnified on right
+dod = yr2[0] ne yr2[1] ; ignore if values the same
 
 dol= not idop and kok ge 5 and abs(loc2[2]) gt .3  ; put label on each curve
 dog= kok ge 1 and idop gt -5 and not dol      ; do curve Guide
@@ -76,26 +82,41 @@ if siz[0] eq 2 then ny=siz[2] else ny=siz[1]
 np=n_params() ; 
 if np lt 2 then txt=strtrim(indgen(ny),2) ; curve numbers
 
-if n_elements(xx) lt nx then xv=lindgen(nx) else xv=xx[0:nx-1]
-
-if n_elements(xran) lt 2 then begin 
+if n_elements(xx) lt nx then xv=lindgen(nx) else xv=xx[0:nx-1] ; x values
+if n_elements(xran) lt 2 then begin ; set X range
     xa=min(xv,max=xb)
     xran=[xa,xb]
-end
-if n_elements(yran) lt 2 then begin ; need to set Y range
-    ya=min(yyy,max=yb,/nan)
-    if ya gt 0 then doa=0B       ; ther are no negative values
-    if doa then ya=min(abs(yyy),max=yb,/nan)
-    yran=[ya,yb]
-end
+ end
 
-don=yran[0] eq yran[1] ; input nil Y range, do normalization
-if don then yrn=[0,1.] else yrn=yran
+don=0 ; set to not auto-scale each
+if n_elements(yran) lt 2 then yran=[-1.,-1.]; Yran absent; set to auto-scale
+if yran[0] eq yran[1] then begin            ; equal, use full dataset rance 
+   ya=min(yyy,max=yb,/nan)
+   if ya gt 0 then doa=0B       ; there are no negative values
+   if doa then ya=min(abs(yyy),max=yb,/nan)
+endif else if yran[0] gt yran[1] then begin ; min>max, normalize onto 0,1
+   don=1                                    ; set the normalization flag
+   ya=0. & yb=1. 
+endif else begin
+         ya=yran[0] & yb=yran[1] ; use the input values
+endelse
+yrn=[ya,yb]                     ; yrange to use
+xmarg=[10,3]                    ; the default xmargin
+if dod then begin               ; must double X plot range
+   dx=(xb-xa)/(nx-1.)           ; delta X value
+   xa2=xb+dx                    ; gap to right half
+   xran[1]=xa2+(xb-xa)          ; new top of xrange
+   xd=xv+(xa2-xa)               ; right side
+   fff=SCALELIN(yr2,vv=yrn)
+   xmarg=[10,8]
+endif
 
 if not keyword_set(titl) then titl=['Count','Constant scale','CLOT']
 
 if not dop then plot,xv,xv,xran=xran,yran=yrn,/nodata $
-,xtit=titl[0],ytit=titl[1],title=titl[2],_extra=e
+,xtit=titl[0],ytit=titl[1],title=titl[2],xmargin=xmarg,_extra=e
+
+if dod then axis,yaxis=1,yrange=yr2,ystyle=1,ticklen=-.02 ; right scale
 
 if doa then begin 
     plots,.82,.02,psym=8,/norm,_extra=e
@@ -115,7 +136,10 @@ for k=0,ny-1 do begin
         ii=where(yy lt 0.,jn)   ; all negative points
         yy=abs(yy)
     endif
-    if idop ge 1 or not dop then gtex=txt[k] else gtex=''  
+    if idop ge 1 or not dop then gtex=txt[k] else gtex='' 
+
+    if dod then yd=(yy-fff[0])*fff[1] ;  re-scale for right plot
+ 
     if don then begin ; auto-scale
         ya=min(yy,max=yb)
         if ya ne yb then yy= (yy-ya)/(yb-ya) ; scale onto [0,1]
@@ -129,7 +153,12 @@ for k=0,ny-1 do begin
         j=lin ; for use by  CURVEGUIDE
         if ksym ge 0 then oplot,xv,yy,line=lin,color=clr,_extra=e ; plot data line
         if ksya ne 0 then  oplot,xv,yy,psym=ksya,color=clr,_extra=e ; add symbol
-        if jn gt 0 then for i=0,jn-1 do plots,xv[ii],yy[ii],color=clr,psym=8 ,_extra=e
+    if jn gt 0 then for i=0,jn-1 do plots,xv[ii],yy[ii],color=clr,psym=8,_extra=e
+        if dod then begin ; plot again on the right
+           if ksym ge 0 then oplot,xd,yd,line=lin,color=clr,_extra=e 
+           if ksya ne 0 then  oplot,xd,yd,psym=ksya,color=clr,_extra=e
+    if jn gt 0 then for i=0,jn-1 do plots,xd[ii],yd[ii],color=clr,psym=8,_extra=e
+        endif
   if dog then CURVEGUIDE,k2,gtex,lin,locc=loc2,color=clr,ksym=ksya,charsize=tsiz
         if dol then LABEL_CURVE, gtex,xv,yy,loc2[0],off=loc2[1],size=loc2[2] $
                        ,thick=loc2[3],over=loc2[4],color=clr
@@ -141,8 +170,16 @@ for k=0,ny-1 do begin
         if dog then CURVEGUIDE,k2,gtex,lin,locc=loc2,ksym=ksya,charsize=tsiz
         if dol then LABEL_CURVE,gtex,xv,yy,loc2[0],off=loc2[1],size=loc2[2] $
                        ,thick=loc2[3],over=loc2[4]
+        if dod then begin ; plot again on the right
+           oplot,xd,yd,line=lin
+           if ksya ne 0 then  oplot,xd,yd,psym=ksya,_extra=e ; add symbol 
+           if jn gt 0 then for i=0,jn-1 do plots,xd[ii],yd[ii],psym=8,_extra=e 
+           if dol then LABEL_CURVE,gtex,xd,yd,loc2[0],off=loc2[1],size=loc2[2] $
+                          ,thick=loc2[3],over=loc2[4]
+        endif
     endelse
-endfor
+ endfor
+
 if !dbug ge 7 then stop
 ; help,yyy,txt,xv,locc,xran,yran,titl,oplot,bw,ksym,oplot
 ; help, np,idop,dop,koff,kfix,dog,loc2,ksy,k2,lin,j

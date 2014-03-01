@@ -1,28 +1,23 @@
-# Makefile for KRC distribution  2012nov22
+# Makefile for KRC distribution  2014feb26 
 
-# Set up some shell-level specific variables
 SHELL=/bin/csh
 
-FC=gfortran  # NEWER    
-#FC=g77 -pipe   # OLDER then get unrecognized command line option "-fd-lines-as-comments"   -xld  set to compile D lines ??
-
-# -fd-lines-as-comment is listed as gfortran option: http://gcc.gnu.org/onlinedocs/gfortran/Option-Summary.html#Option-Summary  
-
-FFLAGS= -O  -fno-automatic -fno-second-underscore -fargument-alias -fd-lines-as-comments
+FC=gfortran 
+FFLAGS= -fno-automatic -fno-second-underscore -fargument-alias -fd-lines-as-comments
 # -fbounds-check
 # -Wall
 LD=gfortran
 
+# ------------ Libraries -------------------------
+
 SYSLIBS =  -lg2c -lc -lm
 
-#  library groups
 HHKLIB=/work1/build/  # top of libraries to use
 LIBDIRS=-L$(HHKLIB)
 
 CLIB=./cfiles/libhk_cisis.a
 
-# system dependencies
-#OBJECTS1 = krc.o tseas.o tlats.o tday.o tcard.o tprint.o tdisk.o  albvar.o alsubs.o aveday.o aveyear.o binf5.o catime.o climtau.o co2pt.o datime.o deding2.o eccanom.o epred.o evmono3.o finterp.o idarch.o orbit.o porb0.o porb.o readtxt360.o rndex.o rotmsp.o rotv.o rotvec.o rterp.o seasalb.o seastau.o sigma.o tint.o vaddsp.o vcros.f vfdot.o vfmag.o vlpres.o vrotv.o white1.o xtreme.o 
+#------------- system dependencies -------------
 
 OBJECTSM = mkrc.o  mlats.o tday.o tcard.o tprint.o tdisk.o epred.o \
            porb0.o tint.o albvar.o co2pt.o vlpres.o aveday.o porb.o orbit.o \
@@ -31,10 +26,6 @@ OBJECTSM = mkrc.o  mlats.o tday.o tcard.o tprint.o tdisk.o epred.o \
 	  binf5.o catime.o datime.o rndex.o rotmsp.o rterp.o sigma.o \
 	vaddsp.o white1.o xtreme.o
 
-#OBJECTSP = porbmn.o porbio.o porb.o porb1.o porbqq.o orbit.o eccanom.o \
-#          obliq.o oblip.o ephemr.o spcrev.o caldate.o porbel.o ymd2jd.o \
-#	 ang360.o b2b.o caldat.o datime.o julday.o mprint.o mprod3.o rotax.o rotdia.o rotvec.o
-   
 OBJ6 = krc.o tseas.o tlats.o tday.o tcard.o tprint.o tdisk.o epred.o porb0.o \
  tint.o albvar.o co2pt.o vlpres.o aveday.o porbit.o orbit.o eccanom.o  \
  deding2.o idarch.o seasalb.o seastau.o sigma.o readtxt360.o finterp.o evmono3.o aveyear.o \
@@ -81,8 +72,6 @@ porbmn.o: porbmn.f   porbcm.inc
 porbqq.o: porbqq.f   porbcm.inc
 porbig.o: porbig.f   porbcm.inc
 porbit.o: porbit.f   porbcm.inc
-
-
 
 # no additional dependancies
 albvar.o: albvar.f

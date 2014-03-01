@@ -6,10 +6,10 @@ C_Vars
 	INCLUDE 'hatcom.inc'
 	INCLUDE 'units.inc'
 C_Args
-	INTEGER IQ ! in. 1 = start from scratch
+	INTEGER*4 IQ ! in. 1 = start from scratch
 C		         2 = restart from disk
 C		         3 = continue from current conditions
-	INTEGER IR		! return code from lower routine
+	INTEGER*4 IR		! return code from lower routine
 C_Desc
 C if IQ =3, then continuing from existing model, and adopt its last date
 C_Hist 97feb11  Hugh_Kieffer  USGS_Flagstaff
@@ -22,18 +22,21 @@ C 2009apr22 HK Add call to TYEAR
 C 2010jan12 HK Use IMPLICIT NONE, move TINT call from TLATS to TSEAS
 C 2011aug07 HK Change test to call PORB from N5.GT.0
 C 2012mar02 HK Add atmosphere flag, remove unused labels
-C 2012mar27  HK	 Test on KVTAU changed from .GE.0 to EQ.1
-C 2014jan24  HK  Compute date with multiply rather than repeated adds
+C 2012mar27 HK Test on KVTAU changed from .GE.0 to EQ.1
+C 2014jan24 HK Compute date with multiply rather than repeated adds
+C 2014feb05 HK LKEY true will compute date of first season 
+C 2014feb25 HK Specify most variables as *4
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
 
 C 
-	INTEGER I,J,IRL,ITIM0,ITIM,KREC
+	INTEGER*4 I,J,IRL,KREC
 	REAL*4 TANOM ! related to PORBIT
 
 	INTEGER TIME	! system function, time in seconds since 1970
 	REAL SEASALB,SEASTAU	! functions called
-	REAL BUF(MAXN4)	! fractional surface area in each latitude zone
-	REAL*4 QLOST
+	REAL*4 BUF(MAXN4)	! fractional surface area in each latitude zone
+	REAL*4 QLOST,TIME1,TIME2,TIME3
+	REAL*4 DJONE ! first date
 	DATA BUF(1) /0./
 	LOGICAL LATM
 
@@ -41,16 +44,25 @@ C
  	IF (IDB1.NE.0) WRITE(IOSP,*)'MSEASa',IQ,IR,J5,LSC,N5,LONE
 
 	IF (IQ .EQ. 1) THEN 	! if start of a model
-C	   IF (IQ .EQ. 1) then ! ryped
 	  J5=0			! initialize season counter
-	  ITIM0=TIME()		! save starting time 
+C System_Clock is millisec or finer
+C DTIME is real seconds
+C CPU_TIME is real with resolution microseconds
+	  CALL CPU_TIME(TIME1)
 	  SUMF=0.		! global seasons frost
 	ENDIF
 	BUF(1)=0.	! flag for  TINT to compute areas
 
+	IF (LKEY) THEN
+	   CALL PORBIT(2,DJU5,DJUL,SDEC,DAU) ! DJU5 will be the MJD for Ls=DJUL
+	   DJONE=DJU5-(JDISK-1)*DELJUL ! starting date to reach Ls at Jdisk
+	ELSE
+	   DJONE=DJUL		! starting date as input
+	ENDIF
+
 C  ----------------------------new season loop loop loop------------
 C
-100	DJU5=DJUl+FLOAT(J5)*DELJUL	! current julian date
+100	DJU5=DJONE+FLOAT(J5)*DELJUL	! current julian date
 	J5=J5+1			! increment season index
 	IF (LSC .OR. J5.EQ.IDOWN) THEN !  LSC  invokes changes at each season
 	  CALL TCARD (2,IR)	! read parameter change cards
@@ -59,12 +71,11 @@ D         write (*,*)'TSEAS: ',J5,N5,LOPN2,IDOWN,IR !<< ,KVALB,alb
 	  CALL TDAY (1,IR)	! re-initialize day computations
 	  IF (IR.NE.1) RETURN
 	ENDIF
-C	DJU5=DJU5+DELJUL	! increment julian date
-	IF (MOD(J5,NMOD).EQ.0) THEN	! notify terminal
-	  ITIM = TIME ()
-	  ITIM=ITIM-ITIM0
-	  WRITE(IOPM,115) ITIM,'start',J5,N5
- 115	  FORMAT(1X,I5,' seconds at ',A,' of season ',I4,' of ',I4)
+	IF (MOD(J5,NMOD).EQ.0) THEN ! notify terminal
+	   CALL CPU_TIME(TIME2)
+	   TIME3=TIME2-TIME1
+	   WRITE(IOPM,115) TIME3,'start',J5,N5
+ 115	   FORMAT(1X,F9.3,' seconds at ',A,' of season ',I4,' of ',I4)
 	ENDIF
 	IF (LPORB) CALL PORBIT (1, DJU5,SUBS,SDEC,DAU)  ! Get current Ls, AU and sub-solar lat
 C
@@ -92,10 +103,10 @@ C Check if more seasons and no blowup
 	IF (J5.LT.N5 .AND. IRL.NE.2) GO TO 100
 C  ---------------------------------------------------------------------
 	IF (.NOT.LONE) THEN
-	  ITIM = TIME ()
-	  ITIM=ITIM-ITIM0
-	  WRITE(IOPM,115) ITIM,'end',J5,N5
-	  WRITE(IOSP,115) ITIM,'end',J5,N5
+	   CALL CPU_TIME(TIME2)
+	   TIME3=TIME2-TIME1
+	  WRITE(IOPM,115) TIME3,'end',J5,N5
+	  WRITE(IOSP,115) TIME3,'end',J5,N5
 	ENDIF
 	IR=IRL
 C	write(*,*)'s2', subs

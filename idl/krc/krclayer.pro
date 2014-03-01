@@ -1,18 +1,21 @@
-function krclayer, fd,id,ld, ii
-;_Titl  KRCLAYER  Compute center depth of KRC layers
-; fd   in.  KRCCOM floats
-; id   in.  KRCCOM integers
-; ld   in.  KRCCOM logicals
-; ii   out. indices in Type 52 item 5 layers
-; func. out. fltarr of layer center depths, in meters
+function krclayer, fd,id,ld
+;_Titl  KRCLAYER  Compute and print KRC layer depth table from KRCCOM values
+; fd     in.  KRCCOM floats
+; id     in.  KRCCOM integers
+; ld     in.  KRCCOM logicals
+; func. out. fltarr (N1,7) of:  0=thickness in local scale  1=thickness in m
+; 2=Center depth in Top scale   3=Center depth in m   4=Mass above layer center 
+; 5=Mass above layer bottom     6=Depth to bottom in local scale
 ;_Calls  none
 ;_Hist 2008apr13 Hugh Kieffer Convert Fortran from tday.f and tdisk.f
+; 2014feb13 HK Omit obsolete layer indices. Add total mass above bottom of layer
 ;_End
 
 ; indices here are 1 less than in KRC helplist
 n1    =id[0]
 N2    =id[1]
 IC    =id[7]
+N24   =id[5]
 SKRC  =fd[2]
 COND2 =fd[3]
 DENS2 =fd[4]
@@ -58,14 +61,16 @@ IF IC GT 2  AND IC LT N1-1 then begin
     print,ic,q6,ti2,form=fmt2    ; IC announcement
     print,COND2,Q2,diff2,scal2, form=fmt1 ; lower layer properties
 ENDIF
-print,'        ___THICKNESS____     ______CENTER_DEPTH________    BOTTOM '
-print,' LAYER  LocScale   meter   TopScale     meter    kg/m^2   LocScale'
+print,'        ___THICKNESS____     ______CENTER_DEPTH________   _____BOTTOM______ '
+print,' LAYER  LocScale   meter   TopScale     meter    kg/m^2    kg/m^2   LocScale'
 
 q6=0.                           ; mass above center of layer
 rhop=0.                         ; density of prior layer                       
 rho=0.                          ; density of current layer
 scale=scal1                     ; top layer properties
 sumd=0.                         ; thermal scales above bottom of layer
+burd=0.                         ; mass burden above bottom of the layer
+out=fltarr(n1,7)                 ; array to be returned
 for I=0,N1-1 do begin
     if i eq 1 then rho=dens
     if i eq ic-1 then begin
@@ -77,30 +82,20 @@ for I=0,N1-1 do begin
     if i ge 1 then begin 
         Q6=Q6+0.5*(TLAY[I-1]*rhop+TLAY[I]*rho) ; layer-center columnar mass
         sumd=sumd+q2
+        burd=burd+TLAY[I]*rho
     endif
-    print,I+1,Q2,TLAY[I],q4,X[I],q6,sumd $
-      ,form='(I5,F10.4,F10.4,g10.4,f10.4,G10.3,f10.3)'
+    print,I+1,Q2,TLAY[I],q4,X[I],q6,burd,sumd $
+      ,form='(I5,F10.4,F10.4,g10.4,f10.4,2G10.3,f10.3)'
     rhop=rho                    ; will be density of prior layer
+    out[i,*]=[Q2,TLAY[I],q4,X[I],q6,burd,sumd]
 endfor
 ;        print,'Bottom layers for time doubling:  ',N1K[0:kkk], form='(a,10I5)'
 
 
 ; Compute the layer indices used for Type 52. Algebra same as in tdisk.f
 ; Last step is to subtract 1 to make 0-based.
-NI52=11                         ; room for layers
-ii=intarr(ni52)                 ; to hold indices
-J=1<((N1-1)/NI52)               ; smaller interval, at least 1
-I=N1-1-J*NI52                   ; number of larger intervals, might be negative
-K=NI52-(0>I)                    ; number of smaller intervals
-help,j,i,k
-if k gt 0 then for I=0,K-1 do II[i]=(1+J*(I+1))<N1 $; load with smaller intervals
-else begin
-    ii[0]=1+j
-    k=1
-endelse
-IF K LT NI52 THEN for I=K,NI52-1 do II[I]=II[K-1]+(J+1)*(I+1-K) ; load with larger intervals
-print,'ii=',ii                  ;-------------------- temp
-ii=ii-1                         ; convert to zero-based
+NI52=N24                         ; room for layers
+Print,' Lowest layer that would be stored in Type 52 is',N24+1
 
-return,x
+return,out
 end

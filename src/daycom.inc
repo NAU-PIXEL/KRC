@@ -1,10 +1,10 @@
 C_Titl  DAYCOM.INC   common for layer and time items in  KRC
-      INTEGER NWDAY
+      INTEGER*4 NWDAY
 	PARAMETER (NWDAY = 5*MAXN1 + MAXN1P + (5+MAXN1)*MAXN3
      &  + 3*MAXN2 + 2*MAXNH + MAXBOT) ! size of this common in 4-byte words
 C_Desc
 C  ASOL &  ADGR are set in  TLATS, the rest are set in  TDAY
-      REAL XCEN(MAXN1)	! Depth at layer centers [m]
+      REAL*4 XCEN(MAXN1)	! Depth at layer centers [m]
      &, SCONVG(MAXN1)	! Classical convergence factor for each layer
      &, BLAY(MAXN1)	! Layer thicknesses [m]
      &, TMIN(MAXN1)	! Minimum layer temperatures of day on the hour
@@ -21,7 +21,7 @@ C  ASOL &  ADGR are set in  TLATS, the rest are set in  TDAY
      &, TOUT(MAXN2)	! Surface temperatures of solution at each time of day
      &, TSFH(MAXNH)	! Hourly surface temperatures at solution
      &, TPFH(MAXNH)	! Hourly planetary temperatures at solution
-      INTEGER N1K(MAXBOT)	! Binary time division layers
+      INTEGER*4 N1K(MAXBOT)	! Binary time division layers
 
       COMMON /DAYCOM/ XCEN, SCONVG, BLAY, TMIN, TMAX, TTJ, TT1
      &, TTS, TTB, TTA,DTMJ, FRO, ASOL, ADGR, TOUT, TSFH, TPFH, N1K
@@ -35,5 +35,6 @@ C 2004jul07 HK Move dimension-defining parameters from other commons into KRCCOM
 C 2008oct02 HK Move MAXBOT and MAXN1P from here to KRCCOM
 C 2008nov13 HK Change names: X->XCEN  T->TTJ  TT->TT1  TLAY->BLAY
 C 2010jan12 HK Change to IMPLICIT NONE assumed in krccom
+C 2014feb25 HK Specify all word lengths as *4
 C_End __________________________________________________________________________
   

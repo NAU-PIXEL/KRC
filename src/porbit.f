@@ -3,7 +3,7 @@ C_TITLE	 PORBIT  Converts between date and Ls. Also returns DAU and Sdec
 C_VARS
       INCLUDE 'porbcm.inc'      ! has IMPLICIT NONE
 C_ARGS	
-      INTEGER KODE  ! in.  1= T to Ls.  2= Ls to T
+      INTEGER*4 KODE  ! in.  1= T to Ls.  2= Ls to T
       REAL*4 TMJD   ! in/out. request time in days relative to J2000.0		
       REAL*4 LSUBS  ! out/in. planetocentric longitude of the Sun, degree	
       REAL*4 SDEC   ! out. Sub-solar latitude, degree
@@ -18,7 +18,7 @@ C    delete intermediate history
 C 2013jul24 HK Revise from PORB to KRC version 2 system
 C_END
 C
-      INTEGER I,K
+      INTEGER*4 I,K
       REAL*4 T,P,Q,R,TAR           ! scalars
       REAL*4 ANOM,EA,CTA,STA         ! scalars for inverse
       REAL*4 HPFXX(3)           ! vectors

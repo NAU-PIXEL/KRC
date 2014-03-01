@@ -1,54 +1,38 @@
-# Makefile for [abbreviated) IDL externals   AMD 64-bit Linux
-#_Hist  2007aug20 Hugh Kieffer
-# 2008mar28 HK  Add in more routines
-# 2012aug15 HK Incorporate some SOFA routines and library
-#            -Wall probably not necessary
-# 2013jul15 HK Incorporate hratlsq which used NumRec Library
-# 2013aug29 HK Incorporate kratlsq R*8 version with 2 modes
-##########################################################################
+# Makefile for IDL externals for KRC users
+#_Hist 2014feb27 HK Derive from Hugh's idl/externals/Makefile
+#########################################################################
 
 # Set up some shell-level specific variables
-SHELL=/bin/sh  # do not use csh or bash 
-RM=/bin/rm -f  # removal forced
+SHELL=/bin/csh 
 
-# Set up compiler flags
-LIMOS=Linux_x86_64   # current operating system
-
-#  These are the GNU C compiler flags.  No preprocessor commands
-# -D is a flag to state that something is defined=True. (Compiler directives)
+#  These are the GNU C compiler flags.
 CC= gcc -pipe  
-CFLAGS= -Wall -fPIC -Dunix -D$(LIMOS)
-
+CFLAGS= -fPIC -Wall   # -m32
 #  These are the FORTRAN compiler flags
-FC=g77
-FC_OPT=-O2 -fPIC -fvxt # optimize, relocatable,  Linux extended support
-EXTRA_FFLAGS=-ftypeless-boz -fno-automatic -fno-second-underscore \
-	     -fargument-alias -Dunix -D$(LIMOS)
-FFLAGS= $(FC_OPT) $(EXTRA_FFLAGS)
+FC=gfortran
+#FC=g77
+FFLAGS= -fno-automatic -fno-second-underscore -fargument-alias -fd-lines-as-comments -fPIC  # -m32
 
-#  Special load flags.  These flags are utilized in all builds, whether
-#  they are FORTRAN or C
+#  Special load flags, utilized in all builds, whether FORTRAN or C
 LD=gcc
-#LDFLAGS= -shared -fPIC  # -Wl,--whole-archive
-LDFLAGS= -shared -fPIC -Wall # -Wl,--whole-archive  << try 1
+LDFLAGS= -shared -fPIC --whole-archive   # -m32   # -Wall -Wl
+# whole archive only needed if refer to .a libs
 
-# Special library MACROS
-AR=ar
-ARFLAGS=-rvs
-RANLIB=/bin/echo
+# Special library MACROS for .a libraries  There are none built here
+# AR=ar   # archinve.. moves .o into .a    No harm 
+# ARFLAGS=-rvs
+# RANLIB=/bin/echo  # nedded for .a lib
 
+#------------- Libraries and paths-------------------------
 # Include files paths
 INCLUDES=-I.   # in this directory
 
 # L are Library directores that always are searched in
 # l are libraries to include  -lc==libc.a  etc. 
-LIBDIRS=-L. -L/home/hkieffer/linux/lib  # Code Library directories
-#HLIB=-lhk_fmath -lhk_fgeom -lhk_futil -lhk_fchar -lhk_fNumRec -lhk_rad
-#HLIB=-lhk_fNumRec 
+LIBDIRS=-L.  # -L/home/hkieffer/linux/lib  #<<< last is for NumRec
 SYSLIBS = -lg2c -lc -lm  
 
-
-#  Set up suffixes and special ISIS targets for those suffixes     
+#  Set up how to process each source file type. 
 .SUFFIXES:           # clean out any prior
 .SUFFIXES: .o .c  .f
 .c.o: 
@@ -56,35 +40,29 @@ SYSLIBS = -lg2c -lc -lm
 .f.o: 
 	$(FC) $(FFLAGS) $(INCLUDES) -c $<
 
-# binding routines in this directory   Do ls -1 *w.c   Delete ex* or skel*
-# Then change w.c to w.o
-OBJSW= ccor2dw.o con4w.o deding1w.o deding2w.o dpephemw.o elevatew.o eqoftimew.o errdelw.o ertiaw.o filterspectrumw.o fl1w.o idlkrcw.o maproj_dpw.o maprojw.o miedpw.o modinitw.o moonephw.o mseasw.o planckw.o  rndexw.o tifovw.o vlpresw.o c2t06bw.o hratlsqw.o kratlsqw.o
+#------------------- target dependencies -------------------
 
-# source routines   copy OBJSW  Change w.o to .o
-OBJS= ccor2d.o con4.o deding1.o deding2.o dpephem.o elevate.o eqoftime.o errdel.o ertia.o filterspectrum.o fl1.o idlkrc.o maproj_dp.o maproj.o miedp.o modinit.o mooneph.o mseas.o planck.o rndex.o tifov.o vlpres.o c2t06b.o hratlsq.o kratlsq.o  
+# Binding routines in this directory.   Then change w.c to w.o
+OBJSW= ccor2dw.o con4w.o deding1w.o deding2w.o dpephemw.o elevatew.o eqoftimew.o errdelw.o ertiaw.o  fl1w.o miedpw.o modinitw.o mseasw.o planckw.o  rndexw.o tifovw.o vlpresw.o
 
-# routines not in reference libraries that are called only from Fortran
+# Source routines   copy OBJSW  Change w.o to .o
+OBJS= ccor2d.o con4.o deding1.o deding2.o dpephem.o elevate.o eqoftime.o errdel.o ertia.o fl1.o miedp.o modinit.o mseas.o planck.o rndex.o tifov.o vlpres.o  
+
+# Routines not in reference libraries that are called only from Fortran
 OBJI = averag.o const.o fsizer2.o interp.o split.o state.o dspline.o dsplint.o
-
-# Wiscombe Cray routines  = errmsg.f mieapx.f rkronq.f
-# qabapxh.o qabapx.o qexapx.o qprapx.o 
-# qabapxhw.o qabapxw.o qexapxw.o qprapxw.o
-# mieapx.o: mieapx.f qprapxw.c qabapxw.c qexapxw.c qabapxhw.c 
-# mieapxh.o: mieapxh.f qprapxw.c qexapxw.c qabapxhw.c 
 
 OBJSALL=  $(OBJI) $(OBJSW) $(OBJS) # concatonate objects
 
-EXES = ftnwrap.so
-ftnwrap64.so:	$(OBJSALL)
+#------------- Actions -----------------------------
+
+# machines running in 64-bit mode, IDL must be in same mode
+ftnwrap64.so:	$(OBJSALL)    
 	$(LD) $(LDFLAGS)   -o $@ $(OBJSALL) $(LIBDIRS) \
-	 -lhk_fmath -lsofa -lhk_fNumRec $(SYSLIBS)
+	$(SYSLIBS)
+#	 -lhk_fNumRec $(SYSLIBS)
 
-# A call to make will build all the executables that are out of date
-all:    $(EXES)
-
-# A call to 'make Clean' removes all the executable and object files
 clean:
-	-$(RM) $(EXES) $(OBJSALL) so_locations
+	-unalias rm; rm -f *.o ftnwrap64.so
 
 #----------- routine dependancies --------------
 
@@ -107,11 +85,3 @@ modinit.o: modinit.f modcom.inc
 elevate.o: elevate.f errcom.inc
 
 errdel.o: errdel.f errcom.inc
-
-idlkrc.o: idlkrc.f krccom.inc latcom.inc daycom.inc units.inc filcom.inc
-
-#/home/hkieffer/src/for/NumRec/spline.o: /home/hkieffer/src/for/NumRec/spline.f
-#/home/hkieffer/src/for/NumRec/splint.o: /home/hkieffer/src/for/NumRec/splint.f
-
-#c2t06bw.o: c2t06bw.c
-#iau_C2T06Aw.o: iau_C2T06Aw.c

@@ -2,7 +2,7 @@ C_Titl  KRCCOM.INC  common for input and transfer variables
 C_Limitations 
 	IMPLICIT NONE ! none-the-less, try to code with usage
 C IMPLICIT REAL (A-H,O-Z), INTEGER (I,J,K,M,N), LOGICAL*4 (L) !std.,+L
-      INTEGER MAXN1,MAXN2,MAXN3,MAXN4,MAXN5,MAXN6,MAXNH,MAXBOT
+      INTEGER*4 MAXN1,MAXN2,MAXN3,MAXN4,MAXN5,MAXN6,MAXNH,MAXBOT
      &,MAXN1P,NUMFD,NUMID,NUMLD,NWKRC,KOMMON
 C Here are all the dimension-defining parameters for items in any common
 	PARAMETER (MAXN1 =30)	   ! dimension of layers
@@ -21,12 +21,12 @@ C        PARAMETER (KOMMON=4*1056720) ! 4-byte words: Type 52: 48 hours, 37 lats
 C        PARAMETER (KOMMON=5000000) ! 4-byte words: Type 52: 34 hours, 36 lats,80 seasons 10 cases
          PARAMETER (KOMMON=10000000) ! 4-byte words
 
-      INTEGER N1,N2,N3,N4,N5,  N24,IB,IC2,NRSET,NMHA              !  1:10
+      INTEGER*4 N1,N2,N3,N4,N5,  N24,IB,IC2,NRSET,NMHA              !  1:10
      &,NRUN,JDISK,IDOWN,I14,I15,  KPREF,K4OUT,JBARE,NMOD,IDISK2   ! 11:20
      &,KOLD,KVALB,KVTAU,ID24(4),  NFD,NID,NLD                     ! 21:30
      &,N1M1,NLW,JJO,KKK,N1PIB,  NCASE,J2,J3,J4,     J5		  ! 31:40
 
-      REAL ALB,EMIS,SKRC,COND2,DENS2, PERIOD,SPHT,DENS,CABR,AMW          ! 1:10
+      REAL*4 ALB,EMIS,SKRC,COND2,DENS2, PERIOD,SPHT,DENS,CABR,AMW          ! 1:10
      2,ABRPHA,PTOTAL,FANON,TATM,TDEEP, SPHT2,TAUD,DUSTA,TAURAT,TWILI ! 11:20
      3,ARC2,ARC3,SLOPE,SLOAZI,TFROST, CFROST,AFROST,FEMIS,AF1,AF2    !   :30
      4,FROEXT,FD32,RLAY,FLAY,CONVF, DEPTH,DRSET,DDT,GGT,DTMAX        !   :40
@@ -39,12 +39,12 @@ C        PARAMETER (KOMMON=5000000) ! 4-byte words: Type 52: 34 hours, 36 lats,8
       LOGICAL*4 LP1,LP2,LP3,LP4,LP5,  LP6,LPGLOB,LVFA,LVFT,LKOFT   !  1:10
      &,LPORB,LKEY,LSC,LNOTIF,LOCAL,   LD16,LD17,LD18,LD19,LONE	   ! 11:20
 
-       REAL CCKU(4),CCKL(4),CCPU(4),CCPL(4) ! coef of K & Cp, Upper/Lower layers
-       REAL TITLE(20),DAYTIM(5)	 ! these two make up 100 bytes	
-       REAL ALAT(MAXN4)	   ! latitude in degrees. set in  TCARD
-       REAL ELEV(MAXN4)    ! elevation in km. set in  TCARD
-       REAL    FD(NUMFD)
-       INTEGER ID(NUMID)
+       REAL*4 CCKU(4),CCKL(4),CCPU(4),CCPL(4) ! coef of K & Cp, Upper/Lower layers
+       REAL*4 TITLE(20),DAYTIM(5)	 ! these two make up 100 bytes	
+       REAL*4 ALAT(MAXN4)	   ! latitude in degrees. set in  TCARD
+       REAL*4 ELEV(MAXN4)    ! elevation in km. set in  TCARD
+       REAL*4    FD(NUMFD)
+       INTEGER*4 ID(NUMID)
        LOGICAL*4 LD(NUMLD)
 
 C_Description.  
@@ -101,5 +101,6 @@ C 2008nov13 HK Add T-dependent conductivity parameters.
 C 2010jan12 HK Change to IMPLICIT NONE  Change  PI>>PIVAL  RAD>>RADC
 C 2010feb17 HK Include CCPx, extending common. Rename 8 items to CCKU,CCKL
 C 2012may10 HK Define FLOST
+C 2014feb25 HK Specify all word lengths as *4
 C_End _______________________________________________________________________
   

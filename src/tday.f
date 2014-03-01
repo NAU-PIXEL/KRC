@@ -6,8 +6,8 @@ C_Vars
 	INCLUDE 'hatcom.inc'
 	INCLUDE 'units.inc'
 C_Args
-	INTEGER IQ !in. 1=initialization   2=day computations
-	INTEGER IRET !out. 1=normal return  2=numerical blowup
+	INTEGER*4 IQ !in. 1=initialization   2=day computations
+	INTEGER*4 IRET !out. 1=normal return  2=numerical blowup
 C_Hist	97feb11  Hugh_Kieffer  USGS_Flagstaff major revision
 C 1998sep04  HK  move setting  N1PIB to  TCARD, minor code cleanup
 C 2000jan22  HK  Adjust layer thickness if required for stability and
@@ -28,35 +28,36 @@ C 2012mar01  HK  Include logical switches for atmosphere.
 C 2012apr24  HK  Tiny cleanup  May10: add FLOST calculation
 C 2013dec04  HK Make write of SAFE2 conditional on IDB2
 C 2014jan23  HK Change executable IC to IC2 so it is easily found
+C 2014feb25 HK Set most variables to *4.
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
 C
 C new variables for k(T)
-	REAL FBI(MAXN1),FCI(MAXN1),FKI(MAXN1) !kt layer factors
-	REAL KTT(MAXN1P)	!kt thermal conductivity of each layer
-	REAL VTT(MAXN1P)	!kt specific heat of each layer
-	REAL FBK,FBKL,FA1J,FA3J !kt temporary factors
+	REAL*4 FBI(MAXN1),FCI(MAXN1),FKI(MAXN1) !kt layer factors
+	REAL*4 KTT(MAXN1P)	!kt thermal conductivity of each layer
+	REAL*4 VTT(MAXN1P)	!kt specific heat of each layer
+	REAL*4 FBK,FBKL,FA1J,FA3J !kt temporary factors
 	LOGICAL LKOW ! true if there are lower layers of different properties
 	INTEGER IK2,IK3,IK4 ! layer indices for kofT
-	REAL TOFF/220./		!kt TEMPERATURE SCALING
-	REAL TMUL/0.01/		!kt TEMPERATURE SCALING
+	REAL*4 TOFF/220./		!kt TEMPERATURE SCALING
+	REAL*4 TMUL/0.01/		!kt TEMPERATURE SCALING
 
-	REAL FA1(MAXN1), FA2(MAXN1), FA3(MAXN1),DTJ(MAXN1) ! each max # layers
-	REAL KJ(MAXN2)	 ! bottom layer for calculations at each time step
-        REAL QK(MAXN1P),QR(MAXN1P),TAVE(MAXN1),DIFFI(MAXN1)
+	REAL*4 FA1(MAXN1), FA2(MAXN1), FA3(MAXN1),DTJ(MAXN1) ! each max # layers
+	REAL*4 KJ(MAXN2)	 ! bottom layer for calculations at each time step
+        REAL*4 QK(MAXN1P),QR(MAXN1P),TAVE(MAXN1),DIFFI(MAXN1)
 C allow temporary shared space
         EQUIVALENCE (ASOL,QK)      ! QK used only during initialization
         EQUIVALENCE (TOUT,QR,TAVE) ! QR used only during initialization
                ! TOUT used only on last day 
                ! TAVE used only when LRSET True, which is never the last day
 C
-        INTEGER I,II,IH,IP,J,JJ,JJH,JJJ,JJP,JRSET,J3P1,K,KN,KM,KM1
-     &, N1P1,N1PBM1
+        INTEGER*4 I,II,IH,IP,J,JJ,JJH,JJJ,JJP,JRSET,J3P1,K,KN
+     & ,KM,KM1, N1P1,N1PBM1
 C
-        REAL ABRAD,ADEL,ADELN,AH,AP,ATMRAD,CPOG,DELT,DFROST,DTAFAC
+        REAL*4 ABRAD,ADEL,ADELN,AH,AP,ATMRAD,CPOG,DELT,DFROST,DTAFAC
      &,DTIM,DTIMI,DTM,EMTIR,FAC3,FAC4,FAC45,FAC5,FAC6,FAC6F,FAC7,FAC8
      &,FAC82,FAC9,FEMIT,FROEX,HEAT,HEATFM,PERSEC,POWER,SAFE2
      &,SHEATF,SNOW,TATM4,TBOTM,TRSET,TSUR,TSURM,TS3,TSUR4,ZD,FCJ
-	REAL QA,QB,QQ ! temporary use
+	REAL*4 QA,QB,QQ ! temporary use
 D	REAL NAN  ! for testing if NAN
 	LOGICAL LDAY		! this will [normally] be the last iteration day
 	LOGICAL LFROST		! frost is present on the ground. 

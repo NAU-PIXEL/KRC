@@ -1,6 +1,6 @@
 C_Titl  HATCOM.INC   common to store post-2003 items in  KRC
 C     nwhat= 1+(3+4*maxnh+maxn6*maxn1)*maxn4 ! size of this common	
-      REAL HEAT1M	    ! Mean upward heat flow into surface on last day
+      REAL*4 HEAT1M	    ! Mean upward heat flow into surface on last day
      &, HEATMM(MAXN4)	    !  " " for all latitudes <W m^-2>
      &, TEXTRA(MAXN4,2)     ! Extrapolation in surface/bottom temperature
      &, TAF(MAXNH,MAXN4)    ! final hourly atmosphere temperature, not predicted
@@ -17,5 +17,6 @@ C_Hist 2004jul05 Hugh Kieffer
 C 2004Oct05 HK Add DOWNVIS and DOWNIR
 C 2009apr22 HK Add TMN4Y
 C 2010jan12 HK Change to IMPLICIT NONE assumed in krccom
+C 2014feb25 HK Specify all word lengths as *4
 C_End __________________________________________________________________________
 

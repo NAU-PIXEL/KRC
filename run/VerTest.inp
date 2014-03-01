@@ -1,5 +1,5 @@
  0 0 / KOLD: season to start with;  KEEP: continue saving data in same disk file
-Version standard test cases. This for version 2.2.2  Short run for major options
+Version standard test cases. This for version 2.2.2+  Short run for major options
     ALBEDO     EMISS   INERTIA     COND2     DENS2    PERIOD SPEC_HEAT   DENSITY
        .25      1.00     200.0      2.77     928.0    1.0275      647.     1600.
       CABR       AMW   [ABRPHA    PTOTAL     FANON      TATM     TDEEP   SpHeat2
@@ -37,7 +37,7 @@ Latitudes: in 10F7.2  _____7 _____7 _____7 _____7 _____7 _____7 _____7
    24.62296       0.000000      -1.240317       0.000000       0.000000    
    0.000000      0.3244965      0.8559126      0.4026359     -0.9458869    
   0.2936298      0.1381285       0.000000     -0.4256703      0.9048783 
-8 0 0 './V222test1.t52' / Disk file name for Run 1
+8 0 0 './V231btest1.t52' / Disk file name for Run 1
 1 42  1.0275 'DELJUL' / every sol   
 2 3  1 'N3' / no daily iteration
 1 39 99.  'GGT' / avoid iteration for convergence
@@ -102,13 +102,13 @@ Latitudes: in 10F7.2  _____7 _____7 _____7 _____7 _____7 _____7 _____7
 2 11 2 'NRUN' / account for earlier input sets 
 3 8 1 'LVFA' / use variable frost albedo 
 3 9 1 'LVFT' / use variable frost temperature 
-8 0 0 './V222test2.t52' / Disk file name for Run 1
+8 0 0 './V231btest2.t52' / Disk file name for Run 1
 0 / 
 2 17 0 'K4OUT' / file type 
-8 0 0 './V222test2.t0' / Disk file name 
+8 0 0 './V231btest2.t0' / Disk file name 
 0/
 2 17 -1 'K4OUT' / file type
-8 0 0 './V222test2.tm1' / Disk file name
+8 0 0 './V231btest2.tm1' / Disk file name
 0/  
 0/  ======================= end of run
 

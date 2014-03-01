@@ -13,9 +13,11 @@ PRO kirin, src=src, dat=dat, ver=ver, prn=prn, diss=diss
 ;_Calls  SETCOLOR
 ; 2013oct01 Hugh Kieffer  Derive from init.pro, adding many keywords
 ; 2013nov15 HK Ensure idltop ends with a /.  Firm-code test for stop
+; 2014feb01 HK Increase   TVFAST_COM, safe  to 6 items for compatibility
 ;_End
 
-common TVFAST_COM, safe ; intarr(3) [X,Y Display pixel limits, backing]
+common TVFAST_COM, safe ; intarr(6) [X,Y Display pixel limits, backing] for TVFAST
+;                 then 3:5 same, used by SETWIND
 
 cpu=getenv('HOST')              ; get current cpu, Will return null is undefined
 if strlen(cpu) eq 0 then cpu='undefi' ; Force in case HOST is not defined
@@ -111,7 +113,7 @@ if i eq 0 then begin            ; no, so define it
 endif
 
 window,0,retain=retain          ; Open default window with backing store option
-safe=[win,retain]               ; Init display size and backing store in Common
+safe=[win,retain, 800,640,retain] ; Init display size and backing store in Common
 SETCOLOR,init=0                 ; Start the colors. Will define !binc
 
 a=!dtor*30. & c=cos(a) &  s=sin(a)          ;| Define psym=8 as

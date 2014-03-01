@@ -1,0 +1,240 @@
+Keystroke guide to build of new version KRC on H3
+
+in /work2/:
+  mv krcdist.tar.gz krc231.tar.gz  << edit the version number
+
+
+
+cd /work1/build
+      check DIR, then empty it by: rm -Rf *
+tar -xzf /work2/krc230.tar.gz  << edit the version number
+
+in /work1/build, do: source ~/krc/uniq/step6
+
+go the the “src/cfiles” directory.
+make all
+
+go the the “src” directory.
+make krc
+make porbmn
+
+go into the “idl/extern” directory
+make ftnwrap64.so
+
+cd into "run"  directory
+ln -s ../src/krc . 
+ln -s ../src/porbmn .
+
+kens 230 executable is 149899
+
+
+----- FIXES YET NEEDED
+
+new version of .so makefile
+remove 2 test print of FINPPUT from krc
+
+NOte. If files are not in current directory, surround in single quotes.
+
+
+^^^  FIXES YET NEEDED
+NOtes on Feb25
+
+H3 krc run in build/run/  is OK with VerTest.inp
+H3 krc run in krc/tes will not take  /work1/build/run/VerTest.inp 
+ but will take '/work1/build/run/VerTest.inp'
+Result looks OK
+ IG=           3   RBUF=3 10 1 'LkofT' / T-dependent properties                                         
+ IG=           0   RBUF=0/                                                                              
+ Case  1  DTIME: total, user, system=    0.6339    0.6319    0.0020
+
+Program received signal SIGSEGV, Segmentation fault.
+0x0000003194c89d08 in _wordcopy_fwd_aligned () from /lib64/libc.so.6
+Missing separate debuginfos, use: debuginfo-install compat-libf2c-34-3.4.6-19.el6.x86_64 glibc-2.12-1.107.el6.x86_64 libgcc-4.4.7-4.el6.x86_64 libgfortran-4.4.7-4.el6.x86_64
+(gdb) where
+#0  0x0000003194c89d08 in _wordcopy_fwd_aligned () from /lib64/libc.so.6
+#1  0x0000003194c83b42 in memmove () from /lib64/libc.so.6
+#2  0x0000000000412ff3 in datime_ ()
+#3  0x00000000004023e7 in MAIN__ ()
+#4  0x0000000000418c7a in main ()
+(gdb) 
+================
+DAYTIM is krccom.inc:43:       REAL TITLE(20),DAYTIM(5) 
+used at 
+          
+krc.f:79:       CALL DATIME (DAYTIM)
+krc.f:120:        CALL DATIME (DAYTIM)  ! reset th
+tdisk.f:128:      WRITE(IOSP,110)CSTAT,FDISK,ITOP,NWTOT, NRECL,DAYTIM
+tdisk.f:129:      WRITE(IOERR,110)CSTAT,FDISK,ITOP,NWTOT, NRECL,DAYTIM
+tprint.f:198:        WRITE(IOSP,810) TITLE,VERSIN,NRUN,NCASE,DAYTIM,IPG
+
+
+TITLE used 
+tcard.f:121:      READ (IOIN,'(20A4)'     ,END=430) TITLE
+tcard.f:203:270 READ (TEXT,'(20A4)',END=160) TITLE !  IG=7: change  TITLE
+tprint.f:198:        WRITE(IOSP,810) TITLE,VERSIN,NRUN,NCASE,DAYTIM,IPG
+
+Plan: Define title as character*80,  daytim as character*20
+
+*4 done for
+krc  tseas tlats tday 
+
+rebuild 2.3.2
+
+
+DEBUGGER
+gdb krc
+run
+[input the file names]
+where [ or  backtrace]
+quit   to exit
+
+...
+     0.625 seconds at start of season  660 of  670
+     0.635 seconds at end of season  670 of  670
+ IG=           3   RBUF=3 10 1 'LkofT' / T-dependent properties                                         
+ IG=           0   RBUF=0/                                                                              
+ Case  1  DTIME: total, user, system=    0.6359    0.6349    0.0010
+
+Program received signal SIGSEGV, Segmentation fault.
+0x0000003194c89d08 in _wordcopy_fwd_aligned () from /lib64/libc.so.6
+Missing separate debuginfos, use: debuginfo-install compat-libf2c-34-3.4.6-19.el6.x86_64 glibc-2.12-1.107.el6.x86_64 libgcc-4.4.7-4.el6.x86_64 libgfortran-4.4.7-4.el6.x86_64
+(gdb) where
+#0  0x0000003194c89d08 in _wordcopy_fwd_aligned () from /lib64/libc.so.6
+#1  0x0000003194c83b42 in memmove () from /lib64/libc.so.6
+#2  0x0000000000412ff3 in datime_ ()
+#3  0x00000000004023e7 in MAIN__ ()
+#4  0x0000000000418c7a in main ()
+
+
+Try using H3 Makefile
+
+Ken:
+
+ Did a lot of explicit variable typing in 
+ datime.f  tseas.f   tlats.f   tcard.f   tprint.f   krc.f
+
+recompile on H3, runs VerTest.inp fine
+
+Make new distro here, build it in clean area
+Run on VerTest.inp falus in the same place. 
+Run it under gdb, after fault, backtrace produces identical output:
+#0  0x0000003194c89d08 in _wordcopy_fwd_aligned () from /lib64/libc.so.6
+#1  0x0000003194c83b42 in memmove () from /lib64/libc.so.6
+#2  0x0000000000412ff3 in datime_ ()
+#3  0x00000000004023e7 in MAIN__ ()
+#4  0x0000000000418c7a in main ()
+
+In build .run, make clean, then compile KRC with
+make -f ~/krc/src/Makefile krc
+This krc runs Vertest.inp just fine.
+
+Looking at the two Makefiles, after removing all comments, 
+
+The distro+uniq version has
+SHELL=/bin/csh
+FC=gfortran 
+FFLAGS= -O -fno-automatic -fno-second-underscore -fargument-alias -fd-lines-as-comments
+LD=gfortran
+SYSLIBS =  -lg2c -lc -lm
+HHKLIB=/work1/build/  # top of libraries to use
+LIBDIRS=-L$(HHKLIB)
+CLIB=./cfiles/libhk_cisis.a
+
+
+The H3 version has: 
+SHELL=/bin/csh
+HHKOS=Linux_ix86 
+FC=gfortran
+FFLAGS= -g  -fno-automatic -fno-second-underscore -fargument-alias -fd-lines-as-comments
+HHKLIB=/home/hkieffer/linux/lib 
+SYSLIBS = -L /usr/lib64  -lg2c -lgfortran -lc -lm 
+LIBDIRS=-L$(HHKLIB)
+HLIB=-lhk_fmath -lhk_fgeom -lhk_futil -lhk_fchar -lhk_fNumRec # -lhk_rad
+CLIB=-lhk_cisis
+
+[hkieffer@hulk3 src]$ gcc --version
+gcc (GCC) 4.4.7 20120313 (Red Hat 4.4.7-4)
+
+
+The -g  and -O options are in gcc
+ -fargument-alias is not in gFortran nor gcc
+
+-g
+    Produce debugging information in the operating system's native format (stabs, COFF, XCOFF, or DWARF 2). GDB can work with this debugging information.
+
+    On most systems that use stabs format, -g enables use of extra debugging information that only GDB can use; this extra information makes debugging work better in GDB but probably makes other debuggers crash or refuse to read the program. If you want to control for certain whether to generate the extra information, use -gstabs+, -gstabs, -gxcoff+, -gxcoff, or -gvms (see below).
+
+    GCC allows you to use -g with -O. The shortcuts taken by optimized code may occasionally produce surprising results: some variables you declared may not exist at all; flow of control may briefly move where you did not expect it; some statements may not be executed because they compute constant results or their values are already at hand; some statements may execute in different places because they have been moved out of loops.
+
+    Nevertheless it proves possible to debug optimized output. This makes it reasonable to use the optimizer for programs that might have bugs.
+
+    The following options are useful when GCC is generated with the capability for more than one debugging format.
+
+
+
+-fno-automatic
+    Treat each program unit (except those marked as RECURSIVE) as if the SAVE statement were specified for every local variable and array referenced in it. Does not affect common blocks. (Some Fortran compilers provide this option under the name -static or -save.) The default, which is -fautomatic, uses the stack for local variables smaller than the value given by -fmax-stack-var-size. Use the option -frecursive to use no static memory. 
+
+
+-fsecond-underscore
+    By default, GNU Fortran appends an underscore to external names. If this option is used GNU Fortran appends two underscores to names with underscores and one underscore to external names with no underscores. GNU Fortran also appends two underscores to internal names with underscores to avoid naming collisions with external names.
+
+    This option has no effect if -fno-underscoring is in effect. It is implied by the -ff2c option.
+
+    Otherwise, with this option, an external name such as MAX_COUNT is implemented as a reference to the link-time external symbol max_count__, instead of max_count_. This is required for compatibility with g77 and f2c, and is implied by use of the -ff2c option. 
+
+-fd-lines-as-comments
+    Enable special treatment for lines beginning with d or D in fixed form sources. If the -fd-lines-as-code option is given they are treated as if the first column contained a blank. If the -fd-lines-as-comments option is given, they are treated as comment lines.
+
+CONSIDER ADDING 
+-fimplicit-none
+    Specify that no implicit typing is allowed, unless overridden by explicit IMPLICIT statements. This is the equivalent of adding implicit none to the start of every procedure. 
+
+-Wall
+    Enables commonly used warning options pertaining to usage that we recommend avoiding and that we believe are easy to avoid. This currently includes -Waliasing, -Wampersand, -Wsurprising, -Wintrinsics-std, -Wno-tabs, -Wintrinsic-shadow and -Wline-truncation. 
+-------------------------------
+ fgrep -in precision *.f
+then:  Replace all DOUBLE PRECISION with REAL*8 
+ for alsubs.f
+Only other executable occurances are: hratlsq.f kratlsq.f
+
+
+FORTRAN Non-standard use:
+
+In order to have the run-time and the purpose line (2nd line in input file) be carried into the output files, they are stored in REAL*4 variables DAYTIM(5) and TITLE(20) respectively, both of which are in  COMMON /KRCCOM/ which is coded in krccom.inc
+
+DAYTIM is returned by datime.f and printed in tprint.f and tdisk.f as 5A4
+ datime.f uses the routine B2B to load the return value.
+
+TITLE is read in tcard.f as 20A4 and printed in tprint.f as 20A4
+===============================
+FFLAGS= -g -O  -fno-automatic -fno-second-underscore -fd-lines-as-comments -Wall 
+All compile, but lots of: Warning: Nonconforming tab character at (1)
+ as expected for -Wall
+
+catime.f:(.text+0x12): undefined reference to `G77_time_0'
+catime.f:(.text+0x33): undefined reference to `G77_ctime_0'
+catime.f:(.text+0x4e): undefined reference to `s_copy'
+catime.f:(.text+0x6d): undefined reference to `s_copy'
+catime.f:(.text+0x8c): undefined reference to `s_copy'
+/home/hkieffer/linux/lib/libhk_futil.a(datime.o): In function `datime_':
+datime.f:(.text+0x12): undefined reference to `G77_time_0'
+datime.f:(.text+0x33): undefined reference to `G77_ctime_0'
+datime.f:(.text+0x4e): undefined reference to `s_copy'
+/home/hkieffer/linux/lib/libhk_fchar.a(white1.o): In function `white1_':
+white1.f:(.text+0xa6): undefined reference to `s_copy'
+white1.f:(.text+0xf5): undefined reference to `s_copy'
+
+=================
+in build, with /uniq/Makefile, get 
+286688 Feb 25 19:01 krc*
+
+run of 14 Feb 25 19:03:47   Total time [s]=   5.9630933 
+
+14 Feb 26 09:59:24  Vert2 V231c  5.9770913
+------------
+using 
+FFLAGS= -fno-automatic -fno-second-underscore -fargument-alias -fd-lines-as-comments
+make clean,   make krc
+179451 Feb 26 10:44 krc*
+2014 Feb 26 10:47:33  Vert2 V231c Total time [s]=   5.9810901 

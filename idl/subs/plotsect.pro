@@ -1,11 +1,13 @@
 PRO plotsect, lab, yf,  xv=xv, cs=cs
 ;_Titl  PLOTSECT Plot section lines and titles when several things on one abcissa
-; lab in. strarr(N) of section labels
-; yf  in_ float fraction fo way up for labels
-; xv  in_ fltarr(N-1) of X values of the separations. Default is uniform
-; c   in_ float. Charactersize of labels. Default is 1.5
+; lab in. strarr(N)    Section labels
+; yf  in_ float        Fraction of way up for labels
+; xv  in_ fltarr(N-1)  X values of the separations. Default is uniform
+; cs  in_ float        Charactersize of labels. Default is 1.5
+;_Hist  2013sep01 Hugh Kieffer  When can't find any prior vrsion
+ ;_End
 
-nlab=n_elements(lab)
+nlab=n_elements(lab)          ; number of section
 
 pxr=!x.crange                   ; primary x-range
 pyr=!y.crange         
@@ -16,14 +18,14 @@ endif else xx=[pxr[0],xv[0:nlab-1],pxr[1]]
 
 xc=(xx+shift(xx,-1))/2.        ; center of each section
 
-if not keyword_set(cf) then cf=1.5
-cf=(cf>.5)<6.                   ; reasonable limits
+if not keyword_set(cs) then cs=1.5
+cs=(cs>.5)<6.                   ; reasonable limits
 yf=(yf>0.) < 1.                 ; reasonable limits
 
-for j=1,nlab-1 do plots,xx[j],pyr,line=1
+for j=1,nlab-1 do plots,xx[j],pyr,line=1 ; vertical dots separating sections
 
-ya=pyr[0]+yf*(pyr[1]-pyr[0])
-for j=0,nlab-1 do xyouts,xc[j],ya,lab[j],align=.5,charsiz=cs
+ya=pyr[0]+yf*(pyr[1]-pyr[0])    ; Y values for lables
+for j=0,nlab-1 do xyouts,xc[j],ya,lab[j],align=.5,charsiz=cs ; each lable
 
 return
 end

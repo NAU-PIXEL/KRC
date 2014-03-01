@@ -113,9 +113,9 @@ CC	  WRITE (IOPM,*) ' File for saving results?'
 C     recl may be bytes or longwords, depending upon  OS and compiler options.
 C Solaris: is longwords, since file is unformatted (default for direct access)
 	IF (K4OUT.LT.50) THEN	! Open direct-access output file
-	  IF (K4OUT.LT.0) THEN	!  K4OUT is negative
+	  IF (K4OUT.LT.0) THEN	!  K4OUT is negative  .tm1
 	    NWTOT=2*MAXNH*MAXN4 !  TSF  &  TPF only
-	  ELSEIF (K4OUT.EQ.0) THEN
+	  ELSEIF (K4OUT.EQ.0) THEN                  ! .t0
 	    NWTOT=NWKRC+NWLAT	!  KRCCOM & LATCOM
 	  ELSE			!  K4OUT is 1:49
 	    NWTOT=NWKRC+NWDAY	!  KRCCOM & DAYCOM
@@ -223,9 +223,9 @@ C write next record (internal record count)		2  2  2  2  2  2  2  2
 	  IF (LOPN2) THEN	! save current values
 	    JREC=JREC+1
 	    I=JREC		! may be incremented by the  WRITE command
-	    IF (ITOP.LT.0) THEN ! K4OUT negative
+	    IF (ITOP.LT.0) THEN ! K4OUT negative  .tm1
 	      WRITE(IOD2,REC=I)TSF,TPF
-	    ELSEIF (ITOP.EQ.0) THEN
+	    ELSEIF (ITOP.EQ.0) THEN      ! .tm0
 	      WRITE(IOD2,REC=I)COMKRC,COMLAT
 	    ELSE		! K4OUT=1:49
 	      WRITE(IOD2,REC=I)COMKRC,COMDAY

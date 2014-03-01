@@ -15,7 +15,8 @@ C     2012may09  HK Add century and drop leading and trailing blanks
 C_END
 	CHARACTER*24 STRING     ! to hold  return
 	CHARACTER*24 CTIME      ! Intrinsic function
-	INTEGER J,TIME
+	INTEGER*4 J
+	INTEGER*4 TIME ! system function
         BYTE IBUF(20)
 
 	J=TIME()                ! get system time

@@ -2,7 +2,7 @@
 
 % epstopdf fig.eps       TO convert .eps fig to pdf NOPE
 % latex  file[.tex]      TO generate .dvi
-% pdflatex  file[.tex]   TO generate .pdf   NOPE no figs here 
+% pdflatex  file[.tex]   TO generate .pdf   NOPE losses  figs 
 % then  dvipdf Vtest.dvi To generate .pdf
 
 % see definc.sty for other page format settings
@@ -27,15 +27,17 @@
 \newcommand{\cf}{$\Leftarrow$} % comes from 
 %\newcommand{\igc}[1]{\includegraphics[trim=2.5mm 4.3mm 0.5mm 0.mm,c
 %                                         bottom right  top  left
-\newcommand{\igc}[1]{\includegraphics[trim=2.5mm -20.mm 6.5mm 4.mm,clip,angle=90,width=175.mm]{#1.eps}} 
+\newcommand{\igc}[1]{\includegraphics[trim=2.5mm -20.mm 6.5mm 4.mm,clip,angle=90,width=175.mm]{#1.eps}}
+
+\newcommand{\igh}[1]{\includegraphics[trim=2.5mm -20.mm 6.5mm 4.mm,clip,angle=90,width=110.mm]{#1.eps}}  % fit two on page
 
 
 \begin{document}
 \maketitle
 \tableofcontents
-; \hrulefill .\hrulefill
-%\listoffigures
+\listoffigures
 %\listoftables
+; \hrulefill .\hrulefill
 
 \section{Preamble / Mechanics}
 This document is a guide to testing different versions and installations of KRC using the \np{krcvtest.pro} IDL program; it
@@ -69,6 +71,8 @@ Colors figures will show colors better on a monitor than the color-on-white figu
 \qi [@88  to add subtitle]
 \qi @82  to close output file. Should rename cidl.eps.
 
+KRC output files should be: chmod 644
+
 \subsection{Notation use here}
 
 File names are shown as \nf{file}. 
@@ -78,6 +82,44 @@ Code variable names are shown as \nv{variab} and within equations as $\nvf{varia
 b}$.  
 Input parameters are shown as \nj{INPUT} and within equations as $\njf{INPUT}$.
 
+
+\hrulefill  From initial .tex \hrulefill
+
+ Run A, input file \nf{v212a.inp}. Cases start with master input file for Version 2.1.2
+ modified to have the debug line, a new title and three latitudes. Change lines
+ set the season step DELJUL to exactly 8 sols and to record all 100
+ seasons. There is a single material, The three latitudes are chosen to include the
+ greatest seasonal variation, the equator, and one within the north season
+ cap. It still uses the version 2.1.1 geometry matrix.
+
+ Case 1 is the default, case 2 'k(T)' has temperature-dependent properties and case 3  '2mat' has 2 layers to T-constant materials.
+
+Cases 3,4,5 are as above but with no season prediction, achieved by setting two convergence parameters small.
+
+Cases 7,8,9 are as 4:6 but with no atmosphere, achieved by setting the total pressure small.
+
+
+Tests within Version 2.1.2 == V212
+
+Tests between file 1= V212 and file2=V211
+
+@123 runs initial kons = [151,21,22,23] read two files specified by @11
+\nv{parf} and does statistics on the difference for each of the major arrays and
+the number of convergence days. Values should be small, ideally all zero.
+
+
+@112,123 runs kons=[221,222,223,225,227,226,4] reads KRCCOM and print changes on
+cases relative to the base. @4 print the firm-coded case IDs, which should be
+short-form equivalence to @226
+
+@15 setting \nv{pari}[1:2] to 0 and 3 differences the base case against no prediction. Then @42 creates the differences and does statistics.   Values should be small although the extremes may be large due to polar cap formation 
+
+
+/work1/krc/test/av211.t52  noP-Default
+           Mean       StdDev      Minimum      Maximum
+ttt    0.0966156      2.23823     -1.10490      96.2280
+ddd    0.0595693      1.79502     -1.04358      90.5065
+ggg     0.439765      1.66330     -15.6621      30.1145
 
 \hrulefill .\hrulefill
 
@@ -93,7 +135,7 @@ files in the distro. for two versions of KRC, with Version A being the lastest
 version and Version B being a prior version.  Comparisons between different file
 types (0,-1,52) are coded for Version A only.
 
- @117 should set Version A to results computed with the new installation and
+ @117, @123 should set Version A to results computed with the new installation and
  version B to the latest results in the distro. @110 will reset the names to
  their default values.
 
@@ -147,7 +189,7 @@ Build a KRC distribution, including the shared object library
 
 \subsection{KRC runs}
 Edit the output file names in  \nf{VerTest.inp}  appropriately. Run the latest version of KRC on this input file.
-\qi Output files from runs on earlier KRC versions should be available in the distribution.  If not, then run an older version of KRC  on VerTest.inp after changing on ly the output file names.
+\qi Output files from runs on earlier KRC versions should be available in the distribution.  If not, then run an older version of KRC  on VerTest.inp after changing only the output file names.
 
 These should create files of the following sizes with similar names:
 \vspace{-3.mm} 
@@ -167,6 +209,7 @@ Run both versions of KRC on Mone.inp, with different print file names
 \subsection{IDL} 
 Set the IDL path
 \\ edit \np{kinin.pro} for the current environment
+\qi  Should need to do the above 2 steps only once at your installation.
 \\ start IDL
 \\ do:  kirin
 
@@ -184,7 +227,7 @@ Monitor size=    1280    1000
 Do: .rnew krcvtest
 
 \subsection{OnePoint mode} %------------------------------------------------
-Run KRC (latest version) with the input file \nf{Mone.inp}, which refers to \nf{oneA.one}. You may want to edit the  ??
+Run KRC (latest version) with the input file \nf{Mone.inp}, which refers to \nf{oneA.one}; you can add lines to  \nf{oneA.one} if you wish.
 
 Run prior version of KRC, e.g.,  krc12nov30 with its matching OnePoint file, i.e. \nf{V1Mone.inp} , which should refer to \nf{oneA.one} 
 
@@ -193,7 +236,7 @@ Run prior version of KRC, e.g.,  krc12nov30 with its matching OnePoint file, i.e
 KRC will not open a new direct-access file if it already exists, so if redoing a run, must first remove older files with the desired names.
 
 The V2.2.4 distribution also contains test files for Version 2.1.1
-\section{Files output by KRC and input to the test program \label{finput}} %----------
+\section{Binary files output by KRC and input to the test program \label{finput}} %----------
 
 The input file \nf{-/run/VerTest.inp} contains effectively four 'runs' of KRC. The first 'run' has 8 cases output into a single type 52 file. Then next three 'runs' are a single global case repeated three times and output to 3 different types of file.
 
@@ -261,18 +304,20 @@ Ver or Version refers to the Version of KRC, at time of this document 2.2.2 .
 \subsection{Files  @11} %...............................................
 \vspace{-3.mm} 
 \begin{verbatim}
-File names
-  0 VerA=new DIR       = /work/work1/krc/test/
-  1  " case file       = V222test1
-  2  " multi-type stem = V222test2
-  3  " OnePoint [.prt] = V222Mone
-  4 spare              = ---
-  5 VerB=prior DIR     = /work/work1/krc/test/
-  6  " case file       = Vntest1
-  7  " multi-type stem = V211test2
-  8  " OnePoint [.prt] = V1Mone
-  9 spare              = ---
- 10 DIR for IDL output = /home/hkieffer/idl/
+File names  
+0 VerA=new DIR        = /work/work1/krc/test/
+  1  " case file        = V224str2
+  2  " multi-type stem  = V222test2
+  3  " OnePoint [.prt]  = Mone
+  4 DIR for prt         = /home/hkieffer/krc/tes/
+  5 VerB=prior DIR      = /work/work1/krc/test/
+  6  " case file        = Vntest1
+  7  " multi-type stem  = V211test2
+  8  " OnePoint [.prt]  = Moneq
+  9 DIR for prt         = /home/hkieffer/krc/tes/
+ 10 DIR for IDL output  = /home/hkieffer/idl/
+ 11 Output onePoint set = grid.one
+
 \end{verbatim}
 \subsection{Default sequence} %------------------------------------------------
 default: kons=[860,20,200,203,207,21,22,29,252]
@@ -492,7 +537,9 @@ magnified difference VerB-VerA is plotted relative to T=280. See figure
 \ref{p62}
 
 \begin{figure}[!ht] \igc{p62}
-\caption[Seasonal Equator Noon] {Ts near midday and near the equator as a function of time (season index). Version A; solid; version B, dashed color. Magnified difference:  100*(VerB-VerA)+280. 
+\caption[Seasonal Equator Noon] {Ts near midday and near the equator as a
+  function of time (season index). Version A; solid; version B, dashed
+  color. Magnified difference: 100*(VerB-VerA)+280.
 \label{p62} } \end{figure}
 
 @63 Prints statistics on the difference for all the items in the type 52
@@ -532,8 +579,65 @@ After @117, do @11 to check/correct the file names.  Then @123 will execute the
 \end{verbatim}
   
  MOVE @26 Will save the VerA Type 52 arrays
+\section{Standard Report}%___________________________________________
+ @11 to set files names
+\\ @111,123 to read one version
+\\ @131,123 to generate Report on one version
+\\ Last 3 lines for @55 are Type 0 - Type 52
 
-\appendix
+@132,123 
+
+Type -1 contains a single krccom, so DJUL and LSUBS for each season are computed in readkrc1.pro; LSUBS assumes the target is Mars and uses the A\&M algorithm. Thus, there will be small differences from the other types.
+
+\subsection{Example} %-
+PARTIAL EXAMPLE
+\vspace{-3.mm} 
+\begin{verbatim}
+krcvtest Report 2014Jan29 09:40:26
+Last read= /work/work1/krc/test/V230test1
+Held file= -none-
+@411 Ls t   0.045   0.013
+@45  AtmTconFcon-noAtmTcon
+Item in ttt Mean     Std    mean_ABS_std
+    Tsurf   8.651  12.118  11.255   9.747
+    Tplan  26.738  30.395  35.667  19.148
+     Tatm   0.560  20.114  16.346  11.734
+  DownVIS -21.603  23.847  21.603  23.847
+   DownIR   2.163  11.626   9.451   7.108
+Ls  t0-t52: Ave and StDev  -0.045   0.013
+Ls tm1-t52: Ave and StDev   0.000   0.000
+@55   What        Mean      StdDev     Minimum     Maximum
+   Ts 0--1     0.00000     0.00000     0.00000     0.00000
+   Tp 0--1     0.00000     0.00000     0.00000     0.00000
+  Ts 52--1     0.00000     0.00000     0.00000     0.00000
+  Tp 52--1     0.00000     0.00000     0.00000     0.00000
+      DTM4     0.00000     0.00000     0.00000     0.00000
+    FROST4     0.00000     0.00000     0.00000     0.00000
+     AFRO4     0.00000     0.00000     0.00000     0.00000
+\end{verbatim}
+
+\section{Specific tests}%___________________________________________
+
+2014jan27 RUn verTest.inp identical to V 222 except for file names now V230
+
+Change DELJUL from 17.1744 to 17.174822 to be closer to 1/40 MarsYear.
+Run output file V230b
+
+\subsection{Stress test 1}%___________________________________________
+
+ I have run KRC for pressures from 1.01 to 10,000 Pa with three points per
+ decade (1,2,5). I built a crude band model for the blockage by CO2 gas (CABR)
+ and scaled the dust opacity (TAUD) linear with pressure. Model were run for 3
+ years, recording all seasons, and 3 latitudes (-30,0,30) with 20 layers.
+
+Results for Tsurf, Tatm, DownVis and DownIR vary smoothly with PTOTAL.
+
+Tsurf and DownVIs appear to trend nicely into the no-Atmosphere result, which is
+defined as P less than or equal to 1.0 Pa.
+
+   
+
+\appendix  %==================================================================
 
 \section{Actions} %_______________
 List by doing  @992.  Short form by @99
@@ -599,11 +703,22 @@ Plus the actions provided by KON91
 81/82=start/endClrEps  8=newPS 80=restart 87=close 88=subtitle 9=plotPS
 MAKE99: 991=Expand current kons   992/995=1-line each   994=expand all
 \end{verbatim}
+\section{Algorithms} %___________________
+\subsection{Locating the last year} %-----------------------------------------
+Objective: find start of the last [partial] year.
+\\ Assume $L_S$ is increasing. Find all jumps in $L_S$ of $\le -180$. 
+\qi 0: Single ramp, may be virtually full year
+\qi 1: Could be anything up to nearly two full years.
+\qii Use longer ramp to estimate $ \Delta L_S$; calc estimated toal lenght in years
+\qi 2 or more: Interval between last two is a year 
 
 
 \end{document} %===============================================================
 % ===================== stuff beyond here ignored =============================
 
+
+\begin{figure}[!ht] \igc{p62}
+\caption[] { \label{p62} } \end{figure}
 
 \bibliography{mars}   %>>>> bibliography data
 \bibliographystyle{plain}   % alpha  abbrev
@@ -613,6 +728,6 @@ MAKE99: 991=Expand current kons   992/995=1-line each   994=expand all
 \section{Cookbook \label{cook}} %______________________________
 \vspace{-3.mm}
 \begin{verbatim}
-        A Cookbook to generating test files 
+    A Cookbook to generating test files 
 \end{verbatim}
 

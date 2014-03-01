@@ -1,20 +1,21 @@
 function readkrc1, file,fcom,icom,lcom, lsubs,ts,tp,  ktype=ktype $
-                  , maxs=maxs,verb=verb ,ddd=ddd,lab=lab,desc=desc
+         , maxs=maxs,verb=verb, dates=dates ,ddd=ddd,lab=lab,desc=desc
 ;_Titl   READKRC1  Read KRC direct access files
 ; file	in.	String. file path name
 ; fcom	out	KRCCOM floating values, first season See KRCCOMLAB.pro
 ; icom	out	KRCCOM integer  values, first season
 ; lcom	out	KRCCOM logical  values, first season
-; lsubs	out	fltarr(seasons) L_sub_s computed here based on krccom
+; lsubs	out	fltarr(seasons) L_sub_s. For type -1 computed here assuming Mars
 ; ts	out	Surface     kinetic temperature (hour,lat,season)
 ; tp	out	Planetary bolometic temperature (hour,lat,season)
-; ktype	in_	Integer: KRC disk file kode  K4OUT
-;     -1: TSF+TSP     With the first record being KRCCOM+filler (called by TSEAS)
-;      0: KRCCOM+LATCOM   INCOMPLETE
+; ktype	in_	Integer: KRC disk file kode  K4OUT. Default is 0
+;     -1: TSF+TSP  With the first record being KRCCOM+filler (called by TSEAS)
+;      0: KRCCOM+LATCOM
 ;     +n (n<50): KRCCOM+DAYCOM  Not handled here!
 ; maxs	in_	Max number of seasons to read, Default = all in file.
 ;                if negative , will return only that 1-based season
 ; verb	in_	If set, will be verbose
+; dates out_    Fltarr(seasons) DJUL at each season; Type -1 computed here 
 ;Next 3 are undefined or meaningless for ktype negative.
 ; ddd	out_	fltarr[ lats, seasons, 6 items]
 ; 	  Items are:
@@ -27,7 +28,8 @@ function readkrc1, file,fcom,icom,lcom, lsubs,ts,tp,  ktype=ktype $
 ; lab	out_	short labels for the 6 items in the function return
 ; desc	out_	descriptions  of the 6 items
 ; func.	out. fltarr (nlat,2)  0]=latitude  1]=elevation used
-; 	  If error occurs, will return -1.
+; 	     If error occurs, will return -1.
+; !dbug: ge 7 stops before return 
 ;_Calls None
 ;_Hist 99dec06 Hugh Kieffer  00jan09 HHK add fclab
 ; 2002mar02 HK Reorder arguments, many no longer keywords. 
@@ -37,12 +39,13 @@ function readkrc1, file,fcom,icom,lcom, lsubs,ts,tp,  ktype=ktype $
 ; 2010apr16 HK Update from readkrc.pro, add !dbug
 ; 2010sep04 HK Allow negative maxs to return single season
 ; 2013aug30 HK Assume DJUL date for distinction of KRC Versions
+; @014jan29 HK Add keyword dates. Claify when this and Ls are calculated here
 ;_End
 
-dv2=5000. ; switch date between assumed Version 1 and 2
+dv2=5000. ; 2013-09-09 12:00   switch date between assumed Version 1 and 2
 ;^^^^^^^^^^^ firmcode
 
-    krc1=DEFINEKRC('KRC',param,nword=nwkrc) ; define structure == krccom
+krc1=DEFINEKRC('KRC',param,nword=nwkrc) ; define structure == krccom
 ; krc1=DEFINEKRC('KRC',param,nword=nwkrc,pid=pid)
 ; n=n_elements(pid) & q=' =param[' & q2='] ; '
 ; for i=0,n-1 do print,pid[i],q,i,q2,param[i],form='(a10,a,i2,a,i5)'
@@ -82,13 +85,13 @@ TPF = fltarr(MAXNH,MAXN4)      ; final hourly planetary temperature
 
 ;--------------------------------------------------------------------
 if not keyword_set(ktype) then ktype=0
-if ktype lt 0 then begin 
-    nwtot=2*MAXNH*MAXN4
-    ihead=1                     ; prepended records
-endif else begin
-    NWLAT= (9+ 3*MAXN1 + 2*MAXNH) *MAXN4 ; size of this latcom in 4-byte words
-    nwtot=nwkrc+nwlat
-    ihead=0
+if ktype lt 0 then begin        ; type -1
+   nwtot=2*MAXNH*MAXN4
+   ihead=1                               ; prepended records
+endif else begin                         ; type 0
+   NWLAT= (9+ 3*MAXN1 + 2*MAXNH) *MAXN4  ; size of this latcom in 4-byte words
+   nwtot=nwkrc+nwlat
+   ihead=0
 endelse
 
 frec=float(len)/(4.*float(nwtot)) ; should equal an integer
@@ -113,6 +116,7 @@ Print,'nread,nsx,maxs=',nread,nsx,maxs
 if nsx ne nread then message,'NumSeas disagree',/con
 nread=(maxs<nsx)<nread ; number of seasons to read
 
+; dates and lsubs will be overwritten below for Type -1
 if djul gt dv2 then begin       ; assume version 1
    dates=(djul-11545.)+ deljul*(findgen(nread)+(jdisk-1)) ; days from J2000
    lsubs=float(L_S(dates))      ; compute Ls (returns dblarr)
@@ -123,8 +127,8 @@ endif else begin                ; assume version 2
 ;   lsubs=lsubs[*,0]             ; drop the A.U and sub-solar latitude
    lsubs=LSAM(dates,myn,aud)        ; uses MJD
 endelse
-ts=fltarr(nhour,nlat,nread) ; Create ararys just the right size for Tsur
-tp=fltarr(nhour,nlat,nread) ;  and Tplan even if nread only one
+ts=fltarr(nhour,nlat,nread) ; Create arrays just the right size for Tsur
+tp=fltarr(nhour,nlat,nread) ;  and Tplan even if read only one
 
 if ktype lt 0 then begin ; ==============================================
    dummy=fltarr(nwtot-nwkrc)    ; filler in first record
@@ -136,6 +140,7 @@ if ktype lt 0 then begin ; ==============================================
       ts[*,*,k]=tsf[0:lasth,0:lastlat] ; surface kinetic temperature
       tp[*,*,k]=tpf[0:lasth,0:lastlat]
    endfor
+
 endif else if ktype eq 0 then begin  ; =======================================
    plab=['DTM4','TST4','TTS4','TTB4','FROST4','AFRO4']
    mpar=n_elements(plab)        ; number of parameters to be extracted

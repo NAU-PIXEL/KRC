@@ -30,3 +30,14 @@ in another window[yellow] callasu
    lt          make sure .gz is there
 
 Send notification email to Ken
+
+------------ to generate big files
+
+1) edit ~/krc/tes/VerTest.inp to update names on output files
+e.g.  V222 --> V230
+run krc: input VerTest.inp, output e.g. V230.prt
+   Total time [s]=   6.0060863 
+
+2) if any changes to default parameters, make them
+ and update output file names, e.g.,  V230  --> V230b
+

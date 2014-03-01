@@ -7,10 +7,10 @@ C_Vars
 	INCLUDE 'filcom.inc'
 	INCLUDE 'units.inc'
 C_Args
-	INTEGER IQ	!in.	1 = read full set and optional changes
+	INTEGER*4 IQ	!in.	1 = read full set and optional changes
 C                                   or start from disk
 C				2 = read change cards
-	INTEGER IRET	!out. status.  1 = normal start
+	INTEGER*4 IRET	!out. status.  1 = normal start
 C			2 = restarted from disk record
 C       		3 = continue from current conditions
 C			4 = Switch to "one-point" mode
@@ -42,6 +42,7 @@ C 2012oct31 HK Minor format changes. Increment NRUN upon new file
 C 2013jan29 HK@ASU Remove ability of switch to keyboard input. Eliminate error loop
 C 2013jul24 HK Begin use of Version2 PORB system
 C 2014jan21 HK If asked to restart, first call TDISK to close any open output file
+C 2014feb25 HK Set most variables to *4.
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
 
 	INTEGER LNBLNK ! intrinsic function, need this because of implicit  L
@@ -50,7 +51,7 @@ C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
 	CHARACTER TEXT*74
 	CHARACTER RBUF*80 ! internal file buffer
 	CHARACTER*8 WHAT ! distinguish what was expected to read 
-	INTEGER NFDR,NIDR,NLDR
+	INTEGER*4 NFDR,NIDR,NLDR
         PARAMETER(NFDR = 64)            ! # of  REAL input variables
         PARAMETER(NIDR = 20)            ! # of  INTEGER input variables
         PARAMETER(NLDR = 20)            ! # of  LOGICAL input variables
@@ -58,9 +59,9 @@ C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
         CHARACTER*6 TITI(NIDR) 
         CHARACTER*6 TITL(NLDR) 
 
-        INTEGER KOUNT ! number of changes cards read for this call
+        INTEGER*4 KOUNT ! number of changes cards read for this call
 
-        INTEGER I,IG,IIIN,ILEN,IREAD,JERR,KEEP,NEW,KDB
+        INTEGER*4 I,IG,IIIN,ILEN,IREAD,JERR,KEEP,NEW,KDB
 
 	DATA TITF /'ALBEDO','EMISS','INERTIA','COND2','DENS2','PERIOD' !6
      & ,'SPEC_HEAT','DENSITY','CABR','AMW','ABRPHA','PTOTAL','FANON'   !7

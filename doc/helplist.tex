@@ -11,10 +11,10 @@
 \parindent=0.em \parskip=1.ex %  no indent & paragraph spacing
 
 \title{KRC planetary surface temperatures: Helplist}
-\author{Hugh H. Kieffer  \ \ File=-/krc/helplist.tex Version 2.2.4 2014jan23}
+\author{Hugh H. Kieffer  \ \ File=-/krc/helplist.tex Version 2.3.1 2014feb25}
 
 % local definitions
-%\newcommand{\short}{full}    % begin & end un-numbered equations
+%\newcommand{\short}{full}    % dummy for format
 \newcommand{\qi}{\\ \hspace*{2.em}}      % indent 1
 \newcommand{\qii}{\\ \hspace*{4.em}}     % indent 2
 \newcommand{\qiii}{\\ \hspace*{6.em}}    % indent 3
@@ -111,6 +111,10 @@ for the prediction routine to work well (it assumes the 3rd derivative to be 0).
 
 \section{INPUT FILE}
 
+KRC asks for the name of an input file, default is \nf{krc.inp}, and an output
+file, default is \nf{krc.prt}. If the desired file is not in the current
+directory, then its name must be surrounded by single quotes.
+
 All parameters for KRC are set by a formatted text file.  An example is
 master.inp , which has default values for a 19 latitude set for a run of three
 martian years, with the last output to disk. Parameter values are listed below
@@ -124,12 +128,12 @@ be left blank or contain the end of the line. The 7 lines following Elevations
 are a geometry matrix for Mars orientation and orbit in 2010, and should not be
 touched; they can be replaced by running PORBMN carefully.
 
-The title lines are skipped, so that you may put comments there carefully
+The parameter title lines are skipped, so that you may put comments there carefully.
 
 The first input line is always KOLD,KEEP (I*), which sets file usage; these are
 described in \S \ref{dbf}. If KOLD=0, then a full set of input values is read.
-\qi  If and only if there is a third non-zero integer, then will read next card as
-  6 debug flags, IDB1 to IBD6, which are normally zero. 
+\qi If and only if there is a third non-zero integer, then KRC will read next
+card as 6 debug flags, IDB1 to IBD6, which are normally zero.
   See \S \ref{debug} below \\
 The next (normally second) line is free text where you can outline the purpose 
 of your run.
@@ -317,7 +321,8 @@ Type 2 Integer Parameters (8I10) ====================================
                56=[packed T hour and depth, latitude,season,case]
 18  JBARE   J5 season count at end of which to set frost amount to 0. 0=never
 19  NMOD    Spacing of season for notification. minimum of 1
-20  IDISK2  Last season to disk for which to print notice
+20  IDISK2  Last season to disk for which TDISK prints notice
+             Note: Special routines MKRC,KRCA and TYEARP use TDISK differently
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 Computed I*4 values
 21  KOLD    Season index for reading starting conditions
@@ -342,7 +347,7 @@ Type 3 Logical Parameters (10L7) ====================================
 
 1   LP1     Print program description. TPRINT(1) 
 2   LP2     Print all parameters and change cards (2)
-3   LP3     Print hourly conditions on last day (3)
+3   LP3     Print hourly conditions on last day (3), every lat, every season
 4   LP4     Print daily convergence summary (4)
 5   LP5     Print latitude summary (5)
 6   LP6     Print TMIN and TMAX versus latitude and layer (6)
@@ -357,7 +362,7 @@ Type 3 Logical Parameters (10L7) ====================================
 14  LNOTIF  spare
 15  LOCAL   Use each layer for scaling depth
 16  LD16    Print hourly table to fort.76 [TLATS] 
-17  LPTAVE  Print <T>-<TSUR> at midnight for each layer [TDAY]
+17  LPTAVE  Print <T>-<TSUR> at midnight for each layer [TDAY] OBSOLETE
 18  LD18    spare
 19  LD19    Output to fort.79 [TLATS] insolation and atm.rad. arrays 
 20  LONE    (Computed) Set TRUE if KRC is in the "one-point" mode
@@ -438,13 +443,13 @@ read a binary array (72 seasons, 36 latitudes, 2=dust/ice) of opacities. The
 sample file \nf{THEMIS1yearDustIce.bin5} is described in section [159] of Ref 1.
  
 \section{Contents of COMMOMS } %_______________________
- COMMON /KRCCOM/ \ Input and transfer variables. See krccom.inc  \\ COMMON
- /DAYCOM/ \ Layer and time-of-day items. See daycom.inc  \\ COMMON /FILCOM/
- \ File names. See filcom.inc  \\ COMMON /HATCOM/ \ Store post-2003
- items. See hatcom.inc  \\ COMMON /LATCOM/ \ Latitude-dependent items. See
- latcom.inc  \\ COMMON /PORBCM/ \ PORB system geometry matrix.  See
- porbcm.inc  \\ COMMON /UNITS/ \ Logical units for I/O and errors.  See
- units.inc  \\
+ COMMON /KRCCOM/ \ Input and transfer variables. See krccom.inc  
+\\ COMMON /DAYCOM/ \ Layer and time-of-day items. See daycom.inc  
+\\ COMMON /FILCOM/ \ File names. See filcom.inc  
+\\ COMMON /HATCOM/ \ Store post-2003 items. See hatcom.inc  
+\\ COMMON /LATCOM/ \ Latitude-dependent items. See latcom.inc  
+\\ COMMON /PORBCM/ \ PORB system geometry matrix.  See porbcm.inc  
+\\ COMMON /UNITS/ \ Logical units for I/O and errors.  See units.inc  \\
 
 
 Because the binding routines to IDL are intolerant of any errors, changes to
@@ -517,10 +522,23 @@ $>$50 Will write custom bin5 file at the end of a run, with dimensionality from
 "prefix" for each case consisting of 4 size integers (converted to Float)
 followed by KRCCOM; after this may come vectors of parameters versus season. The
 next-to-last dimension is increased to allow room for the prefix to be embedded
-in the bin5 array.  KRC input items that would change any of the bin5 dimensions
-are not allowed to change between cases. Each dimension is adjusted to the
+in the bin5 array.   Each dimension is adjusted to the
 necessary size. Each case has the same structure; this simplifies coding
 although some items are then present redundantly.
+
+KRC input items that would increase any of the bin5 dimensions are not allowed
+to change between cases in a file. Decrease in these sizes are allowed, however
+this will leave regions of the file undefined and the only clue will be the
+values in krccom that are stored for each case. Increases to larger than the
+value for the first case will cause an error and closing of the file. This
+restriction is on:
+\qi N5-JDISK: number of output seasons
+\qi N4: number of latitudes
+\qi N24: number of hours output
+
+Although KRC allows the N1, the number of layers, to change between cases the
+IDL type 52 reader \np{readkrc52} will only extract the number in the first
+case, so N1 should not increase between cases.
 
 The first 4 words of the prefix, and of thus of the bin5 array, are:
 \vspace{-3.mm} 
@@ -541,7 +559,10 @@ The 7 items are:  1)=TSF  2)=TPF  3)=TAF  4)=DOWNVIS  5)=DOWNIR
   The number of layers for TIN and TAX is the smaller of: the number computed 
 and that fit here.
 The prefix is identical to Type 51
-
+\end{verbatim} 
+See also Appendix \ref{type52}
+\vspace{-3.mm}
+\begin{verbatim}
     54= (seasons, 5 items, NDX +nlat, cases)
         Items are (0-based index): 
         0= TSF=surface temperature at 1 am, 1= TSF at 13 hours,
@@ -931,8 +952,6 @@ For each case loop, sets IQ=TCARD\_return. If one-point mode, sets IQ=1
 TSEAS uses IQ as key. It this is 1, then sets J5=0 and sets DJU5 to season -1.,
 else, increments J5 and increments DJU5 with current DELDUL. This allows use of
 variable resolution dates. (so J5 never 0 when TCARD(2 called) \\
-If J5 equals IDISK2, then TSEAS calls TCARD(2 to read changes, and proceeds to 
-next season. 
 
 TLATS uses J5 as the key; if it is $<= 1$, then starts from equilibrium
 conditions, else uses predictions from prior season
@@ -1026,5 +1045,20 @@ Tlats
           PCO2G = PCO2M -PCAP ! all changes are pure CO2
 
 \end{verbatim}
+
+\section{Non-standard FORTRAN}
+
+In order to have the run-time and the purpose line (2nd line in input file) be carried into the output files, they are stored in REAL*4 variables DAYTIM(5) and TITLE(20) respectively, both of which are in  COMMON \/KRCCOM\/ which is coded in krccom.inc
+
+DAYTIM is returned by datime.f and printed in tprint.f and tdisk.f as 5A4.
+datime.f gets the time as I*4, uses the intrinsic function CTIME to convert it to CHARACTER and uses the routine B2B to manipulate the individual bytes and to load the return value.
+
+TITLE is read in tcard.f as 20A4 and printed in tprint.f as 20A4
+
+\appendix %=================================================================
+
+\section{Type 52 map \label{type52}}
+\input{type52map}
+
 
 \end{document} %===============================================================
