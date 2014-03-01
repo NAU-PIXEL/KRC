@@ -1,33 +1,34 @@
 	SUBROUTINE DATIME (DATETIME)
-C_TITL  UTIME  Returns current date and time as  _yy-mon-dd_hh:mm:ss_
+C_TITL  DATIME  Returns current date and time as ccyy-mon-dd_hh:mm:ss in 5 4-byte words
 C 
 C_ARGS
 	REAL*4 DATETIME(5)	!out, date/time value
-                                ! in the format _yy-mon-dd_hh:mm:ss_
+                                ! in the format yyyy-mon-dd_hh:mm:ss
 C
-C_DESC  Uses SunPro specific calls to create date/time of the
-C       form " yy-mon-dd hh:mm:ss ". 
+C_DESC 
 C
-C_CALLS  FDATE
+C_CALLS  Intrinsic function TIME  CTIME,   B2B
 C
 C_HIST  97jan30  Hugh_H_Kieffer complete rewrite of older version
 C	98jan22  HHK revise; fdate had changed
+C     2012may09  HK Add century and drop leading and trailing blanks
 C_END
-	character*24 string,ctime     ! to hold fdate return
-	integer j,time
-        byte IBUF(20)
+	CHARACTER*24 STRING     ! to hold  return
+	CHARACTER*24 CTIME      ! Intrinsic function
+	INTEGER J,TIME
+        BYTE IBUF(20)
 
-	j=time()
-	string=ctime(j)
+	J=TIME()                ! get system time
+	STRING=CTIME(J)         ! convert to character
 
 C     123456789012345678901234
 C     www mon dd hh:mm:ss yyyy   from ctime
-C      yy mon dd hh:mm:ss       desired output
+C     yyyy mon dd hh:mm:ss        desired output
 
-        call b2b (string(1:1),ibuf,20) ! move into byte buffer
-        call b2b (string(23:23),ibuf(2),2)
-	ibuf(1)=ichar(' ')
-        call b2b (ibuf,datetime,20)
+        CALL B2B (STRING(21:24),IBUF,4) ! move the year
+        CALL B2B (STRING(4:19),IBUF(5),16) ! move the rest
+        CALL B2B (IBUF,DATETIME,20) ! transfer to R*4 array
 
 	RETURN
 	END
+C potential time intrinsic functions: DATE_AND_TIME IDATE ITIME SECNDS

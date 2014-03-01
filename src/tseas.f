@@ -5,8 +5,8 @@ C_Vars
 	INCLUDE 'latcom.inc'
 	INCLUDE 'hatcom.inc'
 	INCLUDE 'units.inc'
-        REAL  PCOM1(22),SLP,BLIP,PHOXX(3),PCOM2(33)
-	COMMON /PORBCM/ PCOM1,SLP,BLIP,PHOXX,PCOM2 ! only SLP, PHOXX used
+        REAL  PCOM1(22),SLP,BLIP,PHFXX(3),PCOM2(33)
+	COMMON /PORBCM/ PCOM1,SLP,BLIP,PHFXX,PCOM2 ! only SLP, PHFXX used
 
 C_Args
 	INTEGER IQ ! in. 1 = start from scratch
@@ -30,7 +30,7 @@ C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
 
 C 
 	INTEGER I,J,IRL,ITIM0,ITIM,KREC
-	REAL*4 PEA,PEB,HFA,HFB,TANOM ! related to PORB
+	REAL*4 TANOM ! related to PORBIT
 
 	INTEGER TIME	! system function, time in seconds since 1970
 	REAL SEASALB,SEASTAU	! functions called
@@ -68,13 +68,7 @@ D         write (*,*)'TSEAS: ',J5,N5,LOPN2,IDOWN,IR !<< ,KVALB,alb
 	  WRITE(IOPM,115) ITIM,'start',J5,N5
  115	  FORMAT(1X,I5,' seconds at ',A,' of season ',I4,' of ',I4)
 	ENDIF
-	IF (LPORB) THEN	                ! get orbital parameters 
-	  CALL PORB (DJU5,DAU,PEA,PEB,HFA,HFB)  ! FIND CURRENT PLANET POSITION
-	  SDEC = HFA*RADC	        ! CONVERT SOLAR DECLINATION TO DEGREES
-	  TANOM = ATAN2 (PHOXX(2),PHOXX(1))     ! TRUE ANOMOLY
-	  SUBS = MOD(((TANOM+SLP)*RADC)+360.,360.)	! L-SUB-S IN DEGREES
-CC      SUBS=ANG360 ((TANOM+SLP)*RADC)
-	ENDIF
+	IF (LPORB) CALL PORBIT (1, DJU5,SUBS,SDEC,DAU)  ! Get current Ls, AU and sub-solar lat
 C
 	IF (KVALB .GT. 0) ALB=SEASALB(SUBS) ! variable soil albedo
 	IF (KVTAU .EQ. 1) TAUD=SEASTAU(SUBS) ! variable atm. opacity
@@ -84,31 +78,11 @@ C======
 	CALL TLATS (IQ,IRL)		! execute latitude loop
 
 C======
+C If there was a blowup, IRL will be 2  and will exit the season loop 
 
 	IF (N4.GT.8 .AND. LATM) CALL TINT (FROST4, BUF, SUMF) !  MKS units  BUF = normalized area 
 	IF (LP5) CALL TPRINT (5)	! print latitude summary
 	IF (LP6) CALL TPRINT (6)	!  & min and max layer temperature
-
-DCC temporary check on lost energy 2012may10
-DC	QLOST= 0.
-DC	DO I=1,N4
-DC	   IF (TTX4(I).GT.QLOST) THEN
-DC	      QLOST=TTX4(I)
-DC	      J=I		! location of max
-DC	   ENDIF
-DC	ENDDO
-DC	IF (QLOST.GT.0) THEN
-DC	   WRITE(*,*)'J5,J,QLOST=',J5,J,QLOST
-DC 377	   FORMAT(I3,37F9.3)
-DC	   WRITE(77,377) J5,TTX4
-DC	   WRITE(77,377) IFIX(SUBS),FROST4
-DC	ENDIF
-
-C	CALL TYEARP (1,IRY) ! store midnight T for all layers and latitudes
-C	IF (IRY.LT.0) WRITE(IOERR,*)'TYEARP error return=',IRY
-
-C save season result by appending to disk file
-C write  KRCCOM record only if first season and short file form
 C
 C	write (*,*)'j5,jdisk,kold,k4out=',j5,jdisk,kold,k4out
 C	write(*,*)'s1', subs
@@ -116,7 +90,7 @@ C	write(*,*)'s1', subs
      &        .AND. K4OUT.LT.0) CALL TDISK (5,KREC) ! must follow tday(1)
 	IF (J5.GE.JDISK .AND. JDISK .GT.0) CALL TDISK(2,KREC) ! write this season
 C
-C  check if more seasons
+C Check if more seasons and no blowup
 	IF (J5.LT.N5 .AND. IRL.NE.2) GO TO 100
 C  ---------------------------------------------------------------------
 	IF (.NOT.LONE) THEN

@@ -6,7 +6,6 @@ C_Vars
 	INCLUDE 'daycom.inc'
 	INCLUDE 'filcom.inc'
 	INCLUDE 'units.inc'
-C       INCLUDE 'titcom.inc'  
 C_Args
 	INTEGER IQ	!in.	1 = read full set and optional changes
 C                                   or start from disk
@@ -15,7 +14,9 @@ C				2 = read change cards
 C			2 = restarted from disk record
 C       		3 = continue from current conditions
 C			4 = Switch to "one-point" mode
-C			5 = END of data
+C			5 = END of data  OR error reading internal buffer
+C_Desc  Reads all the  kinds of text input to KRC
+C  If an I/O (read) error occurs, will print an error message and STOP
 C_Hist	85sep22  Hugh_H_Kieffer  First version was ~ 1971
 C 87nov22  HK  Put in report if any input item reset
 C 93mar93  ECisneros ported to unix
@@ -26,7 +27,7 @@ C 2006mar22  HK If I/O error on read of full card set, prints all current values
 C 2008oct02  HK  Replace  ID22(1) and (2) with  KVALB and  KVTAU
 C 2008nov13  HK  Add  T-dependent conductivity parameters
 C 2009feb24  HK  Briefly try using titcom.inc and block data for parameter titles
-C 2009may10  HK  Add  TITONE as one-point comment field, Add 1. to start date
+C 2009may10  HK  Add 1. to start date
 C 2010jan12  HK  Use  IMPLICIT NONE
 C 2010feb17  HK  Add T-dependent specific heat 
 C  User can then look to see where zeros start as indication of error location.
@@ -38,10 +39,12 @@ C 2010feb26  HK  -Wall yields 'initialization string truncated to match variable
 C         at  SPEC_HEAT in DATA statement
 C 2012mar27  HK  Incorporate  CLIMTAU
 C 2012oct31 HK Minor format changes. Increment NRUN upon new file
+C 2013jan29 HK@ASU Remove ability of switch to keyboard input. Eliminate error loop
+C 2013jul24 HK Begin use of Version2 PORB system
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
 
 	INTEGER LNBLNK ! intrinsic function, need this because of implicit  L
-	REAL*4 ALSUBS,SEASALB,SEASTAU,CLIMTAU ! functions
+	REAL*4 SEASALB,SEASTAU,CLIMTAU ! functions
 	REAL*4 QB,QF,XREAD	! temporary 
 	CHARACTER TEXT*74
 	CHARACTER RBUF*80 ! internal file buffer
@@ -235,17 +238,8 @@ C	write(*,*)'TCARD setting IRET=4'
      &    ,ALB,SKRC,TAUD,SLOPE,SLOAZI,TITONE
 C                  ls   lat hour Elev  Alb Iner Opac Slop Azim
  3103	FORMAT(2X,F6.1,F6.1,F6.2,F5.1,F5.2,F7.1,F5.2,F5.1,F5.0,A20)
-C       10322.34 =  start of mars year circa 1986aug26, base 2440000
-C  Set starting date so that last season will be at requested L_s
-C 2009may11  Add emperical amount to yield requested L_s 
-C 2011 Aug 5 This due to difference between ALSUBS (which agrees with L_S.pro
-C and thus within .02 deg of lsubsgen.pro) and the PORB system for master.inp 
-C Average over a Mars year of Tseas SUBS- L_s.pro= -.52, StdDev=.075
-C Mean corresponds to offset of 0.9925 days
-	DJUL=10322.34+ALSUBS(2,XREAD)-(N5-1)*DELJUL+0.9925
-D	write(*,*)'TCARD got: ', XREAD,ALAT(1),HOURO,ELEV(1) !<<<debug
-D	1    ,ALB,SKRC,TAUD,SLOPE,SLOAZI,TITONE,djul         !<<<debug
-D	write(*,*)'TCARD returning with IRET=',IRET          !<<<debug
+	CALL PORBIT(2,QB,XREAD,SDEC,DAU) ! QB will be the MJD for Ls=XREAD
+	DJUL=QB-(N5-1)*DELJUL ! starting date
 	GOTO 390 ! skip limit checks that one-point file cannot change
 
  320	WHAT='8-Cond.'
@@ -330,7 +324,7 @@ C
  437    JERR=JERR+1
  436    JERR=JERR+1
  435	JERR=JERR+1
- 434	JERR=JERR+1
+ 434	JERR=JERR+1  
  433	JERR=JERR+1
  432	JERR=JERR+1
  431	JERR=JERR+1

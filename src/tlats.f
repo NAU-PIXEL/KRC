@@ -5,7 +5,7 @@ C_Vars
 	INCLUDE 'latcom.inc'
 	INCLUDE 'daycom.inc'
 	INCLUDE 'hatcom.inc'
-	INCLUDE 'porbcm.inc'	! need only for no-atm version
+	INCLUDE 'porbcx.inc'	! need only for no-atm version
 	INCLUDE 'units.inc'
 C_Args
 	INTEGER IQ		!in. not used
@@ -46,8 +46,6 @@ C
 C
       INTEGER*4 I,IH,IR, J,JE,JJ,JJH,JHOT,J3P1,KODE
       LOGICAL LQ1,LQ2,LATM
-C
-      REAL*4 VFDOT ! Function names with *4
 C
       REAL VLPRES,CO2PT,EPRED ! Function names. Default precision
       REAL AVEDAY,AVEYEAR,CLIMTAU     ! Function names  Default precision
@@ -240,8 +238,8 @@ C  cos3 = cosine of twilight angle onto horizontal
 !         cos2=VDOT(hxx,txx)>0.  ; incidence on tilted
 !         if doa then cos2=cos2+sas*cosi ; add regional reflectance
 	   CALL ROTV( MXX,3,ANGLE, HXX) !VAv  Sun progress thru day
-	   COSI=VFDOT(HXX,FXX)	! cos of incidence angle on horizontal
-	   COS2=VFDOT(HXX,TXX)	! cos of incidence angle onto slope
+	   CALL VDOT(HXX,FXX,COSI)	! cos of incidence angle on horizontal
+	   CALL VDOT(HXX,TXX,COS2)	! cos of incidence angle onto slope
 C;	   COSI= SS  -CC*COS (ANGLE) ! cos of incidence angle on horizontal
 C;	   COS2= SS2 -CC2*COS (ANGLE+RADEAST) ! " " onto slope
 C       Get atmosphere transmission and heating for horizontal surface
@@ -453,8 +451,8 @@ C
 	IF (LD16) THEN
 	   WRITE(76,761)SUBS,DLAT,ALB,SKRC,TAUD,PRES
  761	   FORMAT(/,'      Ls      Lt       A       I    TauD       P'
-     &	    /F8.2,F8.2,F8.3,F8.1,F8.3,F8.2
-     &     //'   Hour      T_K  IR_Inc    Solar T_Planet')
+     & /F8.2,F8.2,F8.3,F8.1,F8.3,F8.2 
+     & //'   Hour      T_K  IR_Inc    Solar T_Planet')
  762	   FORMAT(F7.2,F9.3,F8.3,F9.3,F9.3)
 	   QHS=24./FLOAT(N24)
 	   DO I=1,N24

@@ -143,7 +143,7 @@ extern "C" {
 #ifndef USE_STANDARD_F77
 #define USE_STANDARD_F77 1
 #endif
-#if defined(__i386__) || defined(x86_64) || defined(i686)
+#if defined(__i386__) || defined(x86_64)
 #undef LINUX_IX86_ARCH
 #define LINUX_IX86_ARCH 1
 #endif

@@ -1,0 +1,135 @@
+The KRC OnePoint mode uses two input files. The first is similar to a normal
+full KRC run, with the last effective change line starting with a "10" and the
+4th file being the name of the second input file, the OnePoint file, within
+single quotes; the 2nd and 3rd fields must be present but are ignored. All
+fields on change lines are white-separated.
+
+The "10" in the first field causes KRC to switch to taking input from the file
+specified in the 4th field, so that any remaining lines in the initial input
+files are ignored.
+
+
+ 0 0 / KOLD: season to start with;  KEEP: continue saving data in same disk file
+One-point Master. Default values for all parameters. 
+    ALBEDO     EMISS   INERTIA     COND2     DENS2    PERIOD SPEC_HEAT   DENSITY
+       .25      1.00     200.0       3.4     928.0    1.0275      630.     1600.
+      CABR       AMW   [ABRPHA    PTOTAL     FANON      TATM     TDEEP   SpHeat2
+      0.11      43.5     -0.00     510.0      .055      200.     180.0     1300.
+      TAUD     DUSTA    TAURAT     TWILI      ACR2     [ARC3     SLOPE    SLOAZI
+       0.3       .90       0.5       0.0       0.5     -0.00       0.0       90.
+    TFROST    CFROST    AFROST     FEMIS       AF1       AF2    FROEXT     [FD32
+     146.0   589944.       .65      0.95      0.54    0.0009       50.       0.0
+      RLAY      FLAY     CONVF     DEPTH     DRSET       DDT       GGT     DTMAX
+    1.2000     .1800    2.0000       0.0       0.0     .0020       0.1       0.1
+      DJUL    DELJUL  SOLARDEC       DAU      HLON    SOLCON      GRAV    Atm_Cp
+  10322.34    5.1375      00.0     1.465        .0     1368.     3.727     735.9
+    ConUp0    ConUp1    ConUp2    ConUp3    ConLo0    ConLo1    ConLo2    ConLo3
+     0.013       0.0       0.0       0.0     0.220       0.0       0.0       0.0
+    SphUp0    SphUp1    SphUp2    SphUp3    SphLo0    SphLo1    SphLo2    SphLo3
+     630.0       0.0       0.0       0.0     1300.       0.0       0.0       0.0
+        N1        N2        N3        N4        N5       N24        IB        IC
+        13       384        10         1         3        24         0       999
+     NRSET      NMHA      NRUN     JDISK     IDOWN       I14       I15     KPREF
+         3        24         1         0        -7        45        68         1
+     K4OUT     JBARE      NMOD   [IDISK2                                     end
+         0         0         5        -0                                       0
+    LP1    LP2    LP3    LP4    LP5    LP6 LPGLOB   LVFA   LVFT  LkofT
+      F      F      F      F      F      F      F      F      F      F
+  LPORB   LKEY    LSC  spare  LOCAL   LD16 LPTAVE Prt.78 Prt.79   LONE
+      T      F      F      T      T      F      F      F      F      F
+LATITUDES: in 10F7.2  _____7 _____7 _____7 _____7 _____7 _____7 _____7
+   1.00 -80.00 -70.00 -60.00 -50.00 -40.00 -30.00 -20.00 -10.00   0.00
+Elevations: in 10F7.2 _____7 _____7 _____7 _____7 _____7 _____7 _____7
+   1.00   0.00   0.00   0.00   0.00   0.00   0.00   0.00   0.00   0.00
+  08 Sep 29 10:41:33 =RUNTIME.  IPLAN AND TC=   4.0 0.55000                
+   4.000000      0.5500000      0.8650615      0.3229325E-01   5.000821    
+  0.9340634E-01   1.523671       12882.95       686.9650      0.9229904    
+   5.544495       24.62280       0.000000      0.4093198       0.000000    
+   0.000000       0.000000       0.000000       6.159676      0.4662921    
+  0.4172604E-01  0.6197483       4.381073       0.000000       1.228627    
+  0.6619807       0.000000       1.391099      0.1075499     -0.3195100E-01
+  0.2263214      -1.246176     -0.5861457     -0.8611114E-01  0.8908045    
+  0.4461527     -0.9063585      0.1158813     -0.4063075     -0.4136413    
+ -0.4393618      0.7974096      0.9138050     -0.4049719     -0.3095386E-01
+  0.4054090      0.9140893      0.9184200E-02  0.2457525E-01 -0.2094154E-01
+  0.9994786     -0.3252879     -0.8556869     -0.4024770      0.9456150    
+ -0.2943530     -0.1384504      0.7823110E-07  0.4256245     -0.9048999 
+1  1 0.2502 'Albedo'  / Example of change to base parameters
+10 1 0.1    'oneA.inp' / Name of one-point input file
+[Free text on any length may follow the above line]
+
+
+Example OnePoint Input file
+
+The first two lines are mandatory.  The first line is title/reminder line, and
+may be modified. Second line is a column-title line and is a guide to alignment;
+all values must not extend to the right the last character of their title. The
+second line should not be modified.
+
+Each line thereafter will produce a single output line; there is no limit to
+their number.
+
+Each following line must start with an '11 '; this is a code that tells the
+full-up KRC that this is a one-point line. The next 9 fields are read with a
+fixed format, and each item should be aligned with the last character of the
+Column title. All items must be present, each line must extend at least to the
+'m' in Azim; comments may extend beyond that, the portion up to below the ']'
+will appear in the output file. Be sure to have a <CR> at the end of the last
+input line, but no blank lines.
+
+
+Title Line, Text transfered to output. This & next line must be present
+11    Ls   Lat Hour  Elev  Alb Inerti Opac Slop Azim <Align each field ]  
+11 100.0  22.3 13.5  -3.1 0.20  100.0 0.30  0.0 12.3 Viking Lander 1  
+11 100.   22.3 13.5  -3.1 0.20  200.0 0.30  5.0 90.  VL1
+11 100.   22.3 13.5  -3.1 0.20  200.0 0.30  5.0 180. VL1 
+11 100.   22.3 13.5  -3.1 0.20  200.0 0.30  5.0 270. VL1   
+11   0.   47.7 13.5  -3.0 0.20   50.0 0.20  5.0 270. Viking Lander 2
+11  90.   47.7 13.5  -3.0 0.20  100.0 0.20  0.0   0. VL2
+11  90.   47.7 13.5  -3.0 0.20  200.0 0.20  0.0   0. VL2
+11  90.   47.7 13.5  -3.0 0.20  400.0 0.20  0.0   0. VL2
+11  90.   47.7 13.5  -3.0 0.15  200.0 0.20  0.0   0. VL2
+11  90.   47.7 13.5  -3.0 0.35  200.0 0.20  0.0   0. VL2
+11  90.   47.7 13.5  -3.0 0.20  200.0 0.50  0.0   0. VL2
+11  90.   47.7 13.5  -3.0 0.20  200.0 1.00  0.0   0. VL2
+11 180.  -8.75 13.0  16.5 0.20  100.0 0.20  0.0   0. Summit Arsia Mons
+11 251.  -8.75 13.0  16.5 0.20  100.0 0.20  0.0   0. Arsia Mons perihelion
+11 270.  -8.75 13.0  16.5 0.20  100.0 0.20  0.0   0. Arsia Mons midsummer
+11 270.  -8.75 13.0  16.5 0.20   50.0 0.20  0.0   0. Arsia Mons midsummer
+11 300.   88.5 12.   -3.   .3   250.0 0.20   0   0   Polar cap test
+
+
+One-point sample output
+The one-point mode echos each input line to the monitor.  The output below is
+the print file generated by using the input files in the prior two sections. Any
+change lines are printed, including the name of the one-point input file.
+
+All computed output temperatures follow the line beginning "C_END" and the
+first blank line
+
+
+ One-point Master. Default values for all parameters.       
+             File-Case  1- 0    12 Nov  6 10:10:50   PAGE=  1
+ TYPE LOC VALUE -------- Parameter changes
+ Changed>>   1   1  0.2502     Albedo  ALBEDO  
+ Changed>>  10   1  0.1000     oneA.inp
+ ---- Start of one-point mode ----
+ Title Line, Text transfered to output. This & next line must be present         
+C_END  Ls   Lat  Hour Elev  Alb Inerti Opac Slop Azim  TkSur  TbPla             Comment
+ 11 100.0  22.3 13.50 -3.1 0.20  100.0 0.30  0.0  12. 283.78 268.39 Viking Lander 1    
+ 11 100.0  22.3 13.50 -3.1 0.20  200.0 0.30  5.0  90. 279.06 264.15 VL1                
+ 11 100.0  22.3 13.50 -3.1 0.20  200.0 0.30  5.0 180. 277.84 263.09 VL1                
+ 11 100.0  22.3 13.50 -3.1 0.20  200.0 0.30  5.0 270. 277.63 263.06 VL1                
+ 11   0.0  47.7 13.50 -3.0 0.20   50.0 0.20  5.0 270. 258.96 245.96 Viking Lander 2    
+ 11  90.0  47.7 13.50 -3.0 0.20  100.0 0.20  0.0   0. 279.52 267.08 VL2                
+ 11  90.0  47.7 13.50 -3.0 0.20  200.0 0.20  0.0   0. 274.78 262.84 VL2                
+ 11  90.0  47.7 13.50 -3.0 0.20  400.0 0.20  0.0   0. 266.82 255.83 VL2                
+ 11  90.0  47.7 13.50 -3.0 0.15  200.0 0.20  0.0   0. 278.95 266.77 VL2                
+ 11  90.0  47.7 13.50 -3.0 0.35  200.0 0.20  0.0   0. 260.87 249.78 VL2                
+ 11  90.0  47.7 13.50 -3.0 0.20  200.0 0.50  0.0   0. 273.57 255.84 VL2                
+ 11  90.0  47.7 13.50 -3.0 0.20  200.0 1.00  0.0   0. 269.52 246.02 VL2                
+ 11 180.0  -8.8 13.00 16.5 0.20  100.0 0.20  0.0   0. 297.57 295.42 Summit Arsia Mons  
+ 11 251.0  -8.8 13.00 16.5 0.20  100.0 0.20  0.0   0. 305.99 303.08 Arsia Mons periheli
+ 11 270.0  -8.8 13.00 16.5 0.20  100.0 0.20  0.0   0. 304.67 301.79 Arsia Mons midsumme
+ 11 270.0  -8.8 13.00 16.5 0.20   50.0 0.20  0.0   0. 307.98 305.05 Arsia Mons midsumme
+ 11 300.0  88.5 12.00 -3.0 0.30  250.0 0.20  0.0   0. 146.00 143.02 Polar cap test  

@@ -1,0 +1,81 @@
+KRC Dev. team:
+
+Below is an expanded description of the type 52 output file.  Please look it
+over. If there is something you need that is not there, that will go on a lien
+list for potential inclusion. I am hoping the Type 52 will meet most users
+needs.
+
+In the mean time, I would like to know what language/tools folks use to
+unscramble Type 52 files; I use IDL and that reader is contained in each KRC
+distribution. Please let me know what you use, or if you do not use type 52 at
+all. My goal is to have Type 52 readers available for most of the environments
+in the user community.
+
+Hugh
+
+-----------------
+
+Type 52 is a "bin5" file; this has an ASCII header followed by a N-dimensional
+binary array whose dimensions and word-type are defined in the header; for
+type 52, the number of dimensions is 5 and the type is REAL*4. The 4th
+dimension is increased to allow room for a "prefix" to be embedded in the binary
+array for each case.
+
+Type 52 = (N24 hours, 7 items, N4 latitudes, NDX+seasons, cases)
+The 7 items are:  
+1)=TSF      Final hourly surface temperature
+2)=TPF      Final hourly planetary temperature
+3)=TAF      Final hourly atmosphere temperature, not predicted
+4)=DOWNVIS  Hourly net downward solar flux [W/m^2]
+5)=DOWNIR   Hourly net downward thermal flux [W/m^2]
+6) packed with: 
+  NDJ4     Number of days to compute solution
+  DTM4     RMS temperature change on last day
+  TTA4     Predicted final atmosphere temperature   
+  TIN(2:n) Minimum hourly layer temperature, starting with first real layer
+        n is the smaller of: N1    (the number KRC computed  
+                             N24-2 (the number that fit in this file)   
+7) packed with: 
+  FROST4   Predicted frost amount, [kg/m^2]
+  AFRO4    Frost albedo (at the last time step)
+  HEATMM   Mean upward heat flow into soil surface on last day, [W/m^2]
+             This would have contributed to sublime frost-cap if it were present
+  TAX(2:n) Maximum hourly layer temperature. Parallel to TIN
+
+Type 52 allows multiple cases, each with a "prefix" for each case consisting of:
+  4 integers (converted to Float) that define sizes
+   (1)=FLOAT(NWKRC)   Number of 4-byte words in KRCCOM, currently 255
+   (2)=FLOAT(IDX)     1-based index of the dimension with extra values
+   (3)=FLOAT(NDX)     Number of those extra
+   (4)=FLOAT(NSOUT)   Number of output seasons  (Not used; could be redefined)
+ followed by KRCCOM, defined in krccom.inc
+ followed by a sub-array (seasons,5)     (0-based index)
+    0]=DJU5   Current Julian date (offset from J2000.0)
+    1]=SUBS   Seasonal longitude of Sun, in degrees
+    2]=PZREF  Current surface pressure at 0 elevation, [Pascal] 
+    3]=TAUD   Mean visible opacity of dust, solar wavelengths
+       If a climate model is used, value if for the last latitude.
+    4]=SUMF   Global average columnar mass of frost [kg /m^2]  (If computed)
+
+ Thus the prefix is 259 +5*nseas  words.
+
+Each season contains N24*7*N4 words, the number of leading pseudo-seasons is 
+  NDX = Ceil ( (259 + 5*nseas) / (N24*7*N4) )
+ where nseas is the number of seasons output: NJ5-JDISK+1
+
+For Type 52, the size of a case is set by the first case.  The number of cases
+allowed is set by this size and printed as MASE at the end of the first case in
+the print output.
+
+KRC input items that would change any of the bin5 dimensions are not allowed to
+increase between cases; i.e., N24, N4 and nseas=N5-JDISK. An invalid change of
+these will be detected in tdisk.f; a note will go to the print file and the
+error file, the output file will be written with any cases completed up to this
+point and the file closed. All remaining cases will be computed but not saved.
+
+The number of cases that can be stored is dynamic and fairly liberal; recent
+versions of KRC reserve 10 M words for the bin5 array. So, for example, with
+N24=24, 19 latitudes and 50 stored seasons, up to 61 cases can be saved in one
+run.
+
+

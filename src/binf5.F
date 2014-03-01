@@ -58,8 +58,8 @@ C 98dec29  HHK disable byteswap on read ???
 C 99nov05  HHK allow longer headers
 C  and include as ckb real differences from the version at
 C    /home/kbecker/isis/apps/rolo2/libs/librolo/binf5.f
-C2004jul12 hk add arch-type for mac.
-C 2008mar31 hk replace  SWAPBYTER4 with swapbyte4
+C 2004jul12 HK Add arch-type for mac.
+C 2008mar31 HK Replace  SWAPBYTER4 with swapbyte4
 C           and  Replace c## with d for conditional compile
 C           and temporary firmcode machine architecture   << beware
 C 2010apr06-may22  HK derive this debug version from bin5f.f
@@ -99,8 +99,8 @@ C_End
 	LOGICAL*4 DBG2		! set to write as code locations are reached
 C****************************************************************************
 D	print *,'BINF5: input IRET=',IRET
-	DBG1=MOD(IRET,2).EQ.1	! set if  IRET odd  Report values
-	DBG2=IRET.GE.2		! set if  iret >= 2  Report progress
+	DBG1=MOD(IRET,2).EQ.1	! set if  IRET odd   Report values
+	DBG2=IRET.GE.2		! set if  IRET >= 2  Report progress
 	IF (DBG1.OR.DBG2) WRITE(*,*) 'BINF5 debug flags=',DBG1,DBG2
 	IRET = 0			! set return flag for no error
 	IF (DBG1) WRITE(*,*)'BINF5: INPUTS: Action=',ACTION

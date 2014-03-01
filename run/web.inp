@@ -1,0 +1,65 @@
+ 0 0 / KOLD: season to start with;  KEEP: continue saving data in same disk file
+Typical Mars  Display of print options, 3 latitudes 40 seasons
+    ALBEDO     EMISS   INERTIA     COND2     DENS2    PERIOD  SpecHeat   DENSITY
+       .25      1.00     200.0       3.4     928.0    1.0275      630.     1600.
+      CABR       AMW   [ABRPHA    PTOTAL     FANON      TATM     TDEEP   SpHeat2
+      0.11      43.5     -0.00     510.0      .055      200.     180.0     1710.
+      TAUD     DUSTA    TAURAT     TWILI      ACR2     [ARC3     SLOPE    SLOAZI
+       0.3       .90       0.5       0.0       0.5     -0.00       0.0       90.
+    TFROST    CFROST    AFROST     FEMIS       AF1       AF2    FROEXT     [FD32
+     146.0   589944.       .65      0.95      0.54    0.0009       50.       0.0
+      RLAY      FLAY     CONVF     DEPTH     DRSET       DDT       GGT     DTMAX
+    1.2000     .1800    2.0000       0.0       0.0     .0020       0.1       0.1
+      DJUL    DELJUL  SOLARDEC       DAU     LsubS    SOLCON      GRAV     AtmCp
+  10322.33   17.1745     00.0     1.465        .0     1368.      3.727     735.9
+    ConUp0    ConUp1    ConUp2    ConUp3    ConLo0    ConLo1    ConLo2    ConLo3
+  0.013000 -0.005278  0.002616 -0.001122  2.786833 -1.264019 0.5252116 -0.463745
+    SphUp0    SphUp1    SphUp2    SphUp3    SphLo0    SphLo1    SphLo2    SphLo3
+ 630.00000 240.32495 -48.54044   7.74749  1710.648  721.8740  57.44873  24.37532
+        N1        N2        N3        N4        N5       N24        IB        IC
+        20       384        15         3       120        24         0         8
+     NRSET      NMHA      NRUN     JDISK     IDOWN    FlxP14    FlxP15     KPREF
+         3        24         1         1         0        45        65         1
+     K4OUT     JBARE     Notif   [IDISK2                                     end
+        52         0        20        -0                                       0
+    LP1    LP2    LP3    LP4    LP5    LP6 LPGLOB   LVFA   LVFT  LkofT
+      F      T      F      F      F      F      F      F      F      F
+  LPORB   LKEY    LSC  spare  LOCAL  Prt76 LPTAVE  Prt78  Prt79  L_ONE
+      T      F      F      F      T      F      F      F      F      F
+Latitudes: in 10F7.2  _____7 _____7 _____7 _____7 _____7 _____7 _____7
+ -60.00   0.00 +45.00   0.00   0.00   0.00   0.00   0.00   0.00   0.00
+Elevations: in 10F7.2 _____7 _____7 _____7 _____7 _____7 _____7 _____7
+   1.22   1.17   3.00   0.00   0.00   0.00   0.00   0.00   0.00   0.00
+  08 Sep 29 10:41:33 =RUNTIME.  IPLAN AND TC=   4.0 0.55000
+   4.000000      0.5500000      0.8650615      0.3229325E-01   5.000821    
+  0.9340634E-01   1.523671       12882.95       686.9650      0.9229904    
+   5.544495       24.62280       0.000000      0.4093198       0.000000    
+   0.000000       0.000000       0.000000       6.159676      0.4662921    
+  0.4172604E-01  0.6197483       4.381073       0.000000       1.228627    
+  0.6619807       0.000000       1.391099      0.1075499     -0.3195100E-01
+  0.2263214      -1.246176     -0.5861457     -0.8611114E-01  0.8908045    
+  0.4461527     -0.9063585      0.1158813     -0.4063075     -0.4136413    
+ -0.4393618      0.7974096      0.9138050     -0.4049719     -0.3095386E-01
+  0.4054090      0.9140893      0.9184200E-02  0.2457525E-01 -0.2094154E-01
+  0.9994786     -0.3252879     -0.8556869     -0.4024770      0.9456150    
+ -0.2943530     -0.1384504      0.7823110E-07  0.4256245     -0.9048999
+8 0 0 'HKtry2.t52' / Disk file name  '/local/tmp/HKtry.t52'
+1 12 540.  'PTOTAL set to yield 7  mb at VL1 @ Ls=100' /
+1 3 114.4727 'Iner' / to match upper k(T)
+1 4 2.787 'COND2'/  to match lower k(T)
+0/
+3 10 1 'LkofT' / Temperature-dependant conductivity
+0/
+0/
+0/
+
+
+3 1 1 'LP1' / print program description   || useless pointer to helplist
+3 3 1 'LP3' / print hourly on last day    || 1.1 MB
+3 4 1 'LP4' / print daily convergence summary  ||  0.3MB)
+3 5 1 'LP5' / print latitude summary    || 170 kB
+3 6 1 'LP6' / print TMIN and TMAX       || 190 kB
+3 7 1 'LP7' / print global parameter. 2 lines/season || 23 kB
+3 17 1 'LD17' / print T_k -Tsur at midnight on RESET day for each latitude || small
+
+1 35 4. 'CONVF' / push time doubling start deeper

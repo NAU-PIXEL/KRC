@@ -1,28 +1,42 @@
-        REAL FUNCTION ALSUBS (KODE, ARG)
-C_Titl  ALSUBS  Convert L-sub-s  <-> days into a Martian year
+      REAL FUNCTION ALSUBS (KODE, ARG, MMY)
+C_Titl  ALSUBS  Convert L-sub-s  <-> MJD
       IMPLICIT NONE
-      INTEGER KODE ! IN. Controls which direction to do convertion
-C    1:  Convert days from start of Martian year (L_s=0) to L_s
-C    2:  Convert L_s to days (of 86400 seconds) into a martian year
-      REAL ARG               ! IN  days into year (kode=1) or Ls (kode=2)
+      INTEGER KODE              ! IN. Controls which direction to do convertion
+C    1:  Convert from MJD  to L_s
+C    2:  Convert L_s to  MJD
+      REAL ARG                  ! IN. Days into year (kode=1) or Ls (kode=2)
+      INTEGER MMY               ! IN. Modern Mars Year 
 C Uses cosine series analytic approximation. Error < .01 degree L_s. ~ 1990.
 C_Hist 2002mar07  Hugh_Kieffer Adopted from l_sub_s.pro
+C 2013jun09 HK Use fits from qlsam.pro to MJD rather than days from MY start
+C            Mean absolute error about .025 degree or .045 days from Allison00
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
 
-      DOUBLE PRECISION F,X
-      if (kode.eq.1) then       ! from Mars Day-of-year to L_s
-        x=dble(arg)/686.98D0    ! fractional martian year
-        x=x*2.0D0*3.1415926536D0 ! radians from start of martian year  
-        f= -10.328371D0 +57.296001D0*x -10.688416D0*cos(x+3.2931221D0) 
-     &       -0.62748339D0*cos(2.*x+5.0168313D0)
-     &       -0.050566287D0 *cos(3.*x+0.41753547D0)
-      ELSE             ! from degrees L_s to days since start of a Mars year
-        x=0.017453292520D0*arg  ! convert degrees to radians
-        f= 19.717923D0 + 109.33317D0*x + 20.417421D0*cos(x+3.4731399D0)
-     &       -0.70853928D0*cos(2.*x+5.3719812D0) 
-     &       + 0.029281483D0*cos(3.*x+0.92372042D0)
+      DOUBLE PRECISION F,X,AA(8),BB(8)
+      DOUBLE PRECISION MYEAR /686.97124D0/ ! mean Mars tropical year
+      DOUBLE PRECISION MJD0 /151.28423D0/ ! MJD of Ls=0 near J2000.0. Start MY25
+
+      DATA AA /-10.327394D0,57.293061D0,10.690779D0,-0.15156414D0
+     &     ,-0.62572785D0,1.2689212D0,-0.05001041D0,-0.41539527D0/
+
+      DATA BB /19.722797D0,109.33485D0,-20.42314D0,-0.33143763D0
+     &     ,-0.71602485D0,0.90737588D0,0.02920373D0,-0.99918222D0/
+
+      IF (KODE.EQ.1) THEN       ! from MJD to L_s
+         X=DBLE(ARG-MJD0)/MYEAR ! fractional martian year
+C         X=MOD(X,1.D0)          ! "
+        X=6.2831853072D0*X      ! radians from start of martian year  
+        F= AA(1) +AA(2)*X +AA(3)*COS(X-AA(4))
+     & + AA(5)*COS(2.D0*X-AA(6)) +AA(7)*COS(3.D0*X -AA(8))
+      ELSE             ! from degrees L_s to days since start of MY 25
+        X=0.017453292520D0*ARG  ! convert degrees to radians 
+        F= BB(1) +BB(2)*X +BB(3)*COS(X-BB(4))
+     & + BB(5)*COS(2.D0*X-BB(6)) +BB(7)*COS(3.D0*X -BB(8))
+
+        F=F+(MMY-25)*MYEAR
+
       ENDIF
 
-      ALSUBS=REAL(F) ! convert back to sigle precision
+      ALSUBS=REAL(F) ! convert back to single precision
       RETURN
       END

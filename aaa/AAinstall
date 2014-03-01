@@ -1,25 +1,65 @@
+       Guide to installing the KRC distribution  2013oct01
 
-       Guide to installing the KRC distribution  2013jan25
+This file is a mix of text and some commands that may need editing
+  Linux commands: lines containing the  #  comment character
+  IDL   commands: lines containing the  ;  comment character
 
------------ Installation Guide ----------- 
+ 
 Create a directory where you wish the KRC system to reside.
-cd to this directory, which I will here call K
+cd to this directory, which I will here call /K/
 untar the krcdist.tar file. This should create and populate several subdirectories
-cd to K/aaa
-First installation only: Hopefully can skip for updates
-   edit two lines for paths in step61 and in step6
-   run step61	# This will copy files to be edited locally to safe area 
-      Check/edit the files that were copied
-Run step6	# This will copy edited file back into the build area
-> cd K/src/cfiles    # cd to area of C code 
-> make -f Makec      # Build the C library
-cd to K/src          # cd to the Dir with all the FORTRAN source code
-> make krc           # Make the executable. Report any fixes you make
-> make porbmn        # make the PORB system. " "
-> cd ../run	     # cd to area with sample input files
-> ln -s ../src/krc .     # create soft link to the executable
-> ln -s ../src/porbmn .  # " " 
+cd /K/	  	      	    	 # cd to the build area
+rm -Rf *		    	 # empty it entirely
+tar -xvf /work2/krcdist.tar.gz   # untar the distro
+tar -xvf /work2/krcbig.tar 	 # untar the big files
 
+cd /K/aaa     			 # Contains distro scripts
+  FIRST INSTALLATION ONLY: Hopefully can skip these for updates
+    Create a directory outside the build are to hold unique versions of files
+      related to this institution, which I will here call /U/
+    Copy /k/aaa/step61  to /U/
+    Edit two lines for paths in /U/step61
+    Run /U/step61  This will copy files to be edited locally to the safe area 
+      Check/edit all the files that were copied into /U/
+
+Source /U/step6	This will copy edited files back into the build area
+
+cd /K/src/cfiles      #  low-level I/O routines, required before a Fortran build
+make all		       # build the C library
+
+cd /K/src		       # cd to the Dir with all the FORTRAN source code
+make krc		       # Make KRC  
+make porbmn		       # Make PORB
+
+cd /K/idl/extern    		# Move to area for Shared Object Library (SOL) 
+  All the --w.c routines are "wrappers" to connect IDL to Fortran.
+  Remove or rename any prior SOL:  *.so
+make ftnwrap64.so			# build the SOL 
+  Must restart IDL to access any new shared object library
+
+cd /K/run			# move to directory in which normally run KRC
+ln -s ../src/krc .		# soft link to KRC executable
+ln -s ../src/porbmn . 		# " " to PORB program 
+
+  Now can run KRC using the input files in this directory
+krc   	     	 		# Start krc
+  enter:  VerTest.inp
+  enter:  /  or the name of a print output file
+
+
+cd /K/idl   # top of IDL execution area
+source idlPath        # set the path for IDL 
+
+idl  # Start IDL. If not found, then give the full path:
+   e.g.:  /usr/local/exelis/idl82/bin/idl    		     
+
+IDL> kirin [ src=??, dat=??,ver=??,prn=??,diss=??]  ; initialize IDL for KRC
+   see comments at the top of /K/idl/kirin.pro  for what the ?? are.
+
+IDL> .rnew krcvtest	      ; follow the description in /k/doc/Vtest.pdf
+
+----------------------------------------------------------------
+----------------------------------------------------------------
 ----------------------------------------------------------------
 
   ./aaa/AAREADME will describe how the distribution package was made.
@@ -30,8 +70,9 @@ Files in ~/doc/ that may be helpful
         General help in setting up input files. ASCII text 
 	Much of this is MANDATORY READING
 
-  JGRpKRC.pdf
-     Journal article describing some of the algorithms. Some of the auxiliary
+  Kieffer13krc.pdf
+     Journal article describing some of the algorithms, with some 
+     post-pub corrections. Some of the auxiliary
      on-line material is included here, the rest are largely redundant to
      this distribution.
    ds01.txt   Architecture of the KRC code set
@@ -45,10 +86,6 @@ Files in ~/doc/ that may be helpful
 
   cement.pdf 
     Thermal conductivity of cemented particulates
-
-In ./src/cfiles there is the Makec makefile which may need editing for your site.
-It builds a library of low-level I/O routines written in C
-It is required before a Fortran build
 
 krc and mkrc (not included in most distributions) require different versions
  of the common krccom. For krc, need krccom2.inp, copied to krccom.inp
@@ -94,7 +131,9 @@ Should run, creating  krc.prt and a binary file defined by the 8 0 0 ---
 
 Before starting IDL, edit and source idlPath.
 
-Look at init.pro (probably requires an IDL guru), edit it as appropriate for
+With each new installation, should rebuild the Shared Object Library;
+
+Look at kirin.pro (probably requires an IDL guru), edit it as appropriate for
 your installation, and run it as the first thing after starting IDL.  It uses
 setcolor.pro to setup 256 colors.
 

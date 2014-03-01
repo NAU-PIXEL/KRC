@@ -4,18 +4,11 @@ History: 2006 Hugh Kieffer
 
 ------------ Begin  ONLY FOR THE FIRST DISTRIBUTION  Begin------------
 
-Decide on the top directory of the distribution files.   ~/krc/Dist/
-Decide on the directory structure below this. My normal architecture is 
--/aaa   Scripts to make distribution, installation guides, Makefile
--/doc   Docucmentation on the system
--/src   Source code other than IDL, copy of makefile[s]
--/idl1   Source IDL code, essential for reading type 5x output files
--/idl2   Source IDL code, other
--/run   Input files
--/run/output  To hold output of runs
--/addon Updates after a full distribution
+Decide on the top directory of the distribution files.   /work2/DistKRC
+Decide on the directory structure below this. The directory tree is 
+descibed in aaa/step1
 
-Create the distribution system scripts
+Create the distribution system scripts:  stepN  where N is 1,2,3...
 Put all these in krc/aaa/  Edit in semi-permanent fashion
 Any other files that must be edited: copy them into krc/aaa and edit there
 
@@ -30,7 +23,13 @@ step3  Script file to build accumulate all the source code and files needed to
  - Makefile  The make file to build the shared object library system. 
    May need to edit for your local system environment
 
+step3b  Big files rarely changed
+
 step4  Script to make the tar file
+step4b  " Big files
+
+step61 Run at new institution to copy files that will need editing into 
+       a unique area. Normally run only for  the first distribution
 
 step6  Copy edited versions of files unique to specific installation on top 
         of the distribution version.
@@ -43,14 +42,15 @@ If any new routines or new input files:
   Update the Make file
 
 
-Execute the /home/hkieffer/krc/Dist/step3 script[3], which empties the build
-area, creates directories and copies files into the build area
+Execute the /home/hkieffer/krc/aaa/step3 script[3], which empties the build
+area, creates directories and copies files into the build area. 
+Then step3b if needed.
 
   RENAME the prior distribution tar file to archive it
 
-Execute the /home/hkieffer/krc/Dist/step4 script, which will move to one
+Execute the /home/hkieffer/krc/aaa/step4 script, which will move to one
 directory above the construction directory and Tar the entire code set,
-following the symbolic links
+following the symbolic links. Then step4b if needed. 
 
 Send  AAinstall krcdist.tar  to the customer
 

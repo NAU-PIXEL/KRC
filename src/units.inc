@@ -5,7 +5,7 @@ C_Titl  UNITS.INC common  /UNITS/ for logicIO units and errors  KRC
 	COMMON /UNITS/
      & IOPM	! prompt, usually terminal screen
      &,IOKEY	! interactive input, usually terminal keyboard
-     &,IOIN	! input; input disk file or terminal
+     &,IOIN	! input file
      &,IOSP	! printer (spooled)
      &,IOERR	! error messages, commonly =  IOSP
      &,IOD1	! disk unit for explanation file (temporarily open)
@@ -14,7 +14,7 @@ C_Titl  UNITS.INC common  /UNITS/ for logicIO units and errors  KRC
      &,IRTN	! subroutine # in which error occured
      &,IERR	! error return code
      &,IDB1,IDB2,IDB3,IDB4,IDB5,IDB6 ! debug control
-     &,LOPN1,LOPN2	! status of logicIO units
+     &,LOPN1,LOPN2	! status of logical IO units
      &,LOPN3,LOPN4	!  .TRUE. means that one is currently open
 C_Desc
 C IDB tests all write to IOSP

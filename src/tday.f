@@ -56,13 +56,16 @@ C
      &,SHEATF,SNOW,TATM4,TBOTM,TRSET,TSUR,TSURM,TS3,TSUR4,ZD,FCJ
 	REAL QA,QB,QQ ! temporary use
 D	REAL NAN  ! for testing if NAN
-	LOGICAL LDAY,LFROST,LRESET,LATM
+	LOGICAL LDAY		! this will [normally] be the last iteration day
+	LOGICAL LFROST		! frost is present on the ground. 
+	LOGICAL LRESET		! it is permissable to do jump perturbation
+	LOGICAL LATM		! there is an atmosphere
 C D	LOGICAL ISNAN		! intrinsic Function NOT IN MY SYSTEM
 D	integer*4 mhist,jhist	!<dbug
 D	parameter (mhist=20)	!<dbug
 D	integer*4 ihist(mhist)	!<dbug
 C
-	SAVE KTT
+	SAVE KTT,TOFF,TMUL
 C
 	IF (IDB2.GE.5) WRITE(IOSP,*) 'TDAY IQ,J4=',IQ,J4,jjo
 	IRET=1
@@ -134,7 +137,7 @@ C Print table of T-dependant inertias.  Temporary use of  FBI,FCI,FKI,FA1,FA2
 	   WRITE(IOSP,*) 'CCKU/L=',CCKU,CCKL
 	   WRITE(IOSP,*) 'CCPU/L=',CCPU,CCPL
 	   WRITE(IOSP,*)'   T     cond_SpHeat_UPPER_iner'
-     &   ,'    cond_SpHeat__LOWER_iner'
+     &   ,'    cond_SpHeat_LOWER_iner'
 C                         130.0  0.02590  375.46  124.74 
 	   DO I=1,K
 	      QQ=SQRT(FBI(I)*FA1(I) *DENS) ! upper inertia
@@ -491,7 +494,7 @@ C
 	ENDDO
 	DTM=SQRT(ZD/N1) ! RMS change of layer temperatures in prior day
 	DTMJ(J3P1)=DTM
-	QQ=FLOAT(N2+1-JJO)	! temporary divisor
+	QQ=FLOAT(N2+1-JJO)	! temporary divisor: number of time steps this day
 	TTS(J3P1)=TSURM/QQ	! average surface T
 	TTB(J3P1)=TBOTM/QQ	! average bottom T
 	HEAT1M=HEATFM/QQ	! average upward heatflow into the surface
@@ -528,6 +531,8 @@ C
 	      IF (LD17) WRITE(IOSP,'(I7,F8.3,F8.1,12F8.3)') !+
      &      JJJ,DTM,TTS(J3P1),(TAVE(I),I=2,N1M1,NLW),TAVE(N1) !+
 	   ENDIF
+C  If it is the first season and enough iteration days have been done, then 
+C may reset the lower layers on each successive day
 	   IF (J5.LE.1 .AND. JJJ.GE.JRSET) LRESET=.TRUE.
 	ENDIF
  320	CONTINUE ! *^*^*^*^*^*^*^*^*^*^*^*^ end of day loop *^*^*^*^*^*^*^*^*^*

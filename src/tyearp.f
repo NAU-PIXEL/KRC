@@ -4,9 +4,9 @@ C_Vars
 	INCLUDE 'krccom.inc'
 	INCLUDE 'latcom.inc'
 	INCLUDE 'hatcom.inc'
-        REAL  PCOM1(22),SLP,P24,PHOXX(3),PCOM2(33)
-	COMMON /PORBCM/ PCOM1,SLP,P24,PHOXX,PCOM2
-C the above for  PHOXX rather than  INCLUDE '/home/hkieffer/krc/porb/porbcm.inc'
+        REAL  PCOM1(22),SLP,P24,PHFXX(3),PCOM2(33)
+	COMMON /PORBCM/ PCOM1,SLP,P24,PHFXX,PCOM2
+C the above for  PHFXX rather than  INCLUDE '/home/hkieffer/krc/porb/porbcm.inc'
 C  for simplicity
 C_Args
 	INTEGER IQ      ! in. 1=store   2=forecast

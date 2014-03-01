@@ -1,0 +1,27 @@
+#################################################################
+# Script to write distribution tar file of KRC system
+#  step3b  script must be executed first
+#_Hist 2011oct17 Hugh Kieffer Separate from step4
+#################################################################
+
+set RT1='/work2/'		# one level above distribution constuction area
+set RT2='DistKRC'		# distribution construction area
+set NAME='krc' 			# name for this distribution
+set SKEB='big.tar'     # last part of BIG tar file name
+  
+# name construction
+set IN=$RT1$RT2			# construction area
+set OBIG=$RT1$NAME$SKEB 	# output tar file
+
+echo "IN="$IN
+echo "OBIG="$OBIG
+
+cd $IN	
+pwd
+tar -chf  $OBIG big	 # tar following all links	
+
+echo "Done the tar. Return to /aaa "
+cd ~/krc/aaa   # return to parent directory
+pwd
+
+exit

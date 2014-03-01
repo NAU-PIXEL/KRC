@@ -1,199 +1,199 @@
 	SUBROUTINE PORBEL (IOP,IOD,IFILE,IPLAN,TCEN, ODE,CLIN,ARGP
-     &,ECC,PERIOD,SJA,SIDAY,PRA,PDEC,TJO,TITLE)
+     &,ECC,PERIOD,SJA,SIDAY,PRA,PDEC,TJP,TITLE)
 C_Title  PORBEL read planetary orbital element file, compute basic constants
-	IMPLICIT REAL*8 (A-F,O-Z)
+	IMPLICIT NONE
 C_Args
-	INTEGER IOP	!I LOGICAL UNIT FOR REPORT, IF NOT=0.
+	INTEGER IOP	!i logical unit for report, if not=0.
 	INTEGER IOD	!i logical unit number to use for input data file
 	INTEGER IFILE 	!i which type of input file
 	INTEGER IPLAN	!i body in file; for sturms, first 9 are planet 
 C				number counting out from sun
-	REAL*4 TCEN	!i request time in tropical centuries (=36524.22 days)
-C				from 1950.0.
+	REAL*4 TCEN	!i request time in Julian centuries (=36525 days)
+C				from J2000.0
+C Next 3 items are in J2000 ecliptic system (default)
 	REAL*4 ODE	!o longitude of ascending node <radians>
-	REAL*4 CLIN	!o inclination
+	REAL*4 CLIN	!o inclination <radians>
 	REAL*4 ARGP	!o argument of periapsis <radians>
 	REAL*4 ECC	!o eccentricity
 	REAL*4 PERIOD	!o orbital period in days
 	REAL*4 SJA	!o semi-major axis in astronomical units
 	REAL*4 SIDAY	!o length of siderial day in hours
+C Next 2 items are in J2000 equatorial system (default)
 	REAL*4 PRA	!o right ascension of pole <radians>
 	REAL*4 PDEC	!o declination of pole <radians>
-	REAL*4 TJO	!o julian day (offset from 2,440,000) of perihelion
+	REAL*4 TJP	!o julian day (offset from J2000.0) of perihelion
 	CHARACTER*(*) TITLE  !o planet name
-C_Keys  ORBITS
 C_Desc  
-C planetary orbital elements referred to mean ecliptic and equinox of 1950
-C INTERNALLY USES DOUBLE PRECISION AND DEGREES, RETURNS SINGLE PRECISION RADIANS
+C Planetary orbital elements referred to mean ecliptic and equinox of J2000
+C Reads files in  degrees, returns radians
 C read a file based on:
-C  1) "mean elements of the principal planets" by
-C	seidelman, doggett and deluccia; astron jour v. 29, 1974, p 57
-C  2)  JPL  TR 32-1508 by Fancis M. Sturms, Jr. 1972jan15
-C  3)  Comet elements from Ted Bowell 1985sep07
+C  100:  http://iau-comm4.jpl.nasa.gov/XSChap8.pdf Table 8.10.2
+C  200:  IAU Working Group on Cartographic Coordinates and Rotational Elements
+C  300:  Minor planets, several with spin axis defined
+C  400:  Comet elements [from Ted Bowell 1985sep07]
+C
+C Longitude of the node, omega. From vernal equinox in plane of reference to 
+C       the ascending node
+C Argument of perihelion, w. From the ascending node to periapsis in the 
+C       orbital plane
+C Longitude of perihelion, varpi == omega+w
+C Mean anomaly, M. From perapsis to the mean object in the 
+C       orbit plane. M = 2 pi (time from periapsis / period)
+C Mean Longitude, L. == varpi+M
+C Longitude at epoch =omega+w+v ??
+C Eccentric anomaly, E. M=E - e sin E  Keplers equation; where e=eccentricity 
+C      and angles are in radians
 C_File  IOD = orbital elements file, opened and closed
-C_Call  YMD2JD
+C_Calls  COCOCM  COCOMC  ROTV  ROTVEC  UPCASE  YMD2J2  
+C_Liens No END or ERROR test for reads within a asteroid or comet set
 C_Hist	85feb00  Hugh_H_Kieffer  U.S.G.S._Flagstaff   original_version
-C	89sep11  HK fix bug in Sturms  TJO, put more into double precession
+C	89sep11  HK fix bug in Sturms  TJP, put more into double precession
 C 2009dec15  HK Add fourth file for single object. Initally Vesta
-C 2012feb29  HK Minor Plan Handle either full JD or relative to 2440000 as inputs
+C 2012feb29  HK Minor Planets.  Handle either full JD or relative to 2440000 as inputs
 C 2012nov21  HK Change element file names to all lower case and .tab extension
 C               and change NAME to FILE in OPEN statement
+C 2013feb02 HK Change base date from 1950 to J2000. All data files use C_END
+C          Separate files for Solar system planets into orbits and spin vectors
+C 2013jun19 HK Add flag for Pole position in B1950 ecliptic
 C_End&___1_________2_________3_________4_________5_________6_________.72
 
-	PARAMETER (NFILES=4)
+	INTEGER NFILES
+	PARAMETER (NFILES=6)
 	CHARACTER*12 FNAME(NFILES)
-	DATA FNAME/'seidel.tab','sturms.tab','bowell.tab','minor.tab'/
-	INTEGER*4 NLINES(NFILES)/10,13,10,13/  ! number of input lines per body
-	REAL*8 EPOCH		! Julian Day of elements
-	real*8 DJBASE /2.44D6/	! 2440000  All days offset from this.
-	REAL*8 VVV(10)		! elements computed in loop 
-	REAL*8 c0,c1,c2,tc
+	DATA FNAME/'standish.tab','spinaxis.tab','minor.tab'
+     &   ,'small.tab','comet.tab','exoplan.tab'/
+C obsolete: 'seidel.tab','sturms.tab' 
+	INTEGER*4 NLINES(NFILES)/2,1,13,12,10,11/  ! number of input lines per body
+ 	INTEGER IGO		! goto index
+ 	INTEGER I,IERR,ISKIP,J,LIN, IYEAR,IMON,IDAY
+	REAL*4 RDAY, P4,Q4
+	REAL*4 OBL50 /0.40920619/ ! B1950 obliqity 23 deg 26' 44.836" in Radian
+	REAL*4 EMJD		! MJD of the elements returned
+	REAL*8 EPOCH		! Full Julian Day of elements
+	REAL*8 DJBASE /2451545.D0/	! J2000.0  All days offset from this.
+	REAL*4 JULCEN /36525./ ! Days in a Julian century; Standish06
+	REAL*8 VVV(11),XX8		! elements computed in loop 
+	REAL*4 QP,TC,XX
+ 	REAL*4 ZBAXX(3)
+	REAL*4 ALPHA,LAMBDA,BETA,SD,CACD,SACD,R,DELTA ! trig method
+	REAL*4 FFF(6),RRR(6)   ! Items in file            
+	REAL*4 TWOPI,PI,RDEG ! numerical constants
 
-	PARAMETER (ZERO=0.D0, D60=60.0D0, D360=360.0D0)
-C function: convert file format to VALUE at request date. minimize roundoff.
-c When time dependence is in arcSec/century and this squared
-	DEGREE (I,J,S,S1,S2,T) = ( ((S2*T+S1)*T+S)/D60 + J)/D60 + I
-C 
-	DEGREE2 (D,D1,D2,T) = (D2*T+D1)*T + D ! when rates are Deg/century
-C function: OR TO RADIANS
-CC	RADIAN(I,J,S,S1,S2,T) = RSEC*(S+T*(S1+S2*T)) + J*RMIN + I*RDEG
-CC	RADI2 (D,D1,D2,T) = RDEG * ( ( T*(D1+D2*T)) + D )
+	REAL*8 DANOM,DARGP,DCLIN,DECC,DODE,DPERIOD,DSJA,DPDEC,DPRA
+	REAL*8 DLONP,DMLON,SIDYR
+
+	REAL*4 JBRM(9) /0.99992568,0.011181483,0.0048590038 ! Rotation matrix
+     2 ,-0.011181483, 0.99993748,-2.7170294e-05     ! from B1950
+     3 ,-0.0048590038,-2.7162595e-05,0.99998819 /   ! to J2000
+
+	CHARACTER*12 PNAME,TARGET  ! object name
+	CHARACTER*5 BUF5	! hold word a beginning of line
+      CHARACTER*25 MESS(7)      ! error messages
+      DATA MESS /'opening table file' ,'EOF looking for C_END'
+     & ,'error looking for C_END','EOF looking for target '
+     & ,'error looking for target','EOF reading value'
+     & ,'error reading value'/
 
 C initialize constants
-	SECDEG = D60*D60		! secondS of arc / DEGREE
 	TWOPI = 6.2831853071795864769	! radians/revolution
 	PI = TWOPI/2.
-	RDEG = TWOPI/D360		! radians/degree of arc
-	RMIN = RDEG/D60			! radians/minute of arc
-	RSEC = RMIN/D60			! radians/second of arc
-	TRPCEN = 36524.22D0 		! days/tropical century
-	DMOTE2 = 2.959130739D-4  ! mean daily motion of earth, squared RADIANS
-	DJ50=-6718.D0	! julian day of 1950.0 (=2433282), offset from 2440000
-	T = TCEN
-	DAYAT = T*TRPCEN
-C open data file, skip to requested planet
-	OPEN (UNIT=IOD, FILE=FNAME(IFILE), STATUS='OLD')
-	ISKIP = 2 + NLINES(IFILE)*(IPLAN-1)
-	DO I=1,ISKIP
-		READ (IOD,*)
-		ENDDO
+	RDEG = TWOPI/360.	! radians/degree of arc
+	SIDYR=365.256363004	! siderial year in days 
+	IERR=0			! set error index
+	print *,'Entering PORBEL with IFILE,IPLAN=',IFILE,IPLAN
+C If object is a planet, then need to process two files. Done by coming back
+C to statement 40
+	IGO=IFILE
 
-	READ (IOD,*) TITLE		! get planets name
-	GOTO (100,200,300,400),IFILE
+C open data file and skip to desired object
+ 40	OPEN (UNIT=IOD, FILE=FNAME(IGO), STATUS='OLD',ERR=81)
 
-
-C seidel===========================================================
-100	READ(IOD,*)IDEG,MIN,SEC,IREV,SEC1,SEC2	! get mean longitude
-	A=  DEGREE (IDEG,MIN,SEC,SEC1,SEC2,T)
-C..	a=  DEGREE (ideg,min,sec,ZERO,sec2,t)	!# use for alternate tjo
-
-	READ(IOD,*)IDEG,MIN,SEC,SEC1,SEC2	! get longitude of perihelion
-	B=  DEGREE (IDEG,MIN,SEC,SEC1,SEC2,T)
-
-	READ(IOD,*)IDEG,MIN,SEC,SEC1,SEC2	! get long. of ascending node
-	DODE=DEGREE (IDEG,MIN,SEC,SEC1,SEC2,T)
-
-	READ (IOD,*)IDEG,MIN,SEC,SEC1,SEC2	! get inclination
-	DCLIN = DEGREE (IDEG,MIN,SEC,SEC1,SEC2,T)
-
-	READ(IOD,*)ANUM,BNUM,CNUM		! get eccentricity
-	DECC = ANUM + (BNUM +CNUM*T)*T
-
-	IF(IPLAN .LE. 4)THEN
-	 READ(IOD,*)SEC,SEC1		! get either mean century motion 
-	 DMOT=(SEC+SEC1*T)*RSEC/TRPCEN	!  DMOT = mean daily motion, RADIAN
-	 DSJA=(DMOTE2/DMOT**2)**(1./3.)
-	ELSE
-	 READ(IOD,*)DSJA			!   or semimajor axis
-	 DMOT=SQRT(DMOTE2/DSJA**3)
+C     skip past the header
+ 50	READ (IOD,'(a5)',END=82,ERR=83) BUF5 ! read one line of input file
+	CALL UPCASE(BUF5,5)	! change all to upper case
+D	print *,BUF5
+	IF (BUF5 .NE. 'C_END') GOTO 50 ! loop until  C_END found
+	print *,BUF5	
+	IF (IPLAN.GT.1) THEN	! skip past objects
+	   ISKIP = NLINES(IGO)*(IPLAN-1)
+	   DO I=1,ISKIP		! skip lines
+	      READ (IOD,*,END=84)	! read a line without looking at it
+	   ENDDO
+	   print *,'skipped lines=',iskip
 	ENDIF
-	PERIOD = TWOPI/DMOT		! and calculate period (in days)
+	J=0			! count of successfull  READs
+	GOTO (100,200,300,400,500,600),IGO ! type of file
 
-	READ(IOD,*)ANUM,SEC,BNUM,SEC1	! get ra and dec of north pole. 
-	DPRA  = ANUM + SEC *T/SECDEG	! IN DEGREES
-	DPDEC = BNUM + SEC1*T/SECDEG
-
-	READ(IOD,*)SIDAY		! get length of siderial day
-
+C standish===========================================================
+ 100	EMJD=JULCEN*TCEN ! MJD of elements returned
+	READ (IOD,*,END=86,ERR=87) TITLE,FFF    ! values at 2000.0
+	J=1
+D	print *,'title,fff= ',TITLE,FFF 
+	READ (IOD,*,END=86,ERR=87) BUF5,RRR	! rates per century
+	J=2
+D	print *,'buf,rrr',buf5,rrr
+C argument of perihelion: w = wbar-Omega= [5]-[6]
+C mean anomaly: M= L-(Omega+wbar) =[4]-([6]+[5])
+C check TJ0 before adding huge L rate
+	DSJA =FFF(1)		! a: semi-major axis, AU
+	DANOM= FFF(4)-(FFF(5) )	! mean anomaly at epoch <deg>
+	DPERIOD=SIDYR*SQRT(DSJA**3) ! orbital period in days
+	TJP = -DPERIOD*(DANOM/360.) ! date of perihelion
+	print *,'base TJP=',TJP
+	DO I=1,6		! move all values to request epoch
+	   FFF(I)=FFF(I)+TCEN*RRR(I) ! add the rate delta
+	ENDDO
+	DSJA =FFF(1)		! a: semi-major axis, AU
+	DECC =FFF(2)		! e: eccentricity
+	DCLIN=FFF(3)		! i: inclination  <deg>
+	DMLON=FFF(4)		! L: Mean longitude <deg>
+	DLONP=FFF(5)		! wbar: longitude of perihelion <deg>
+	DODE =FFF(6)		! Omega: longitude of ascending node <deg>
 C argument of perihelion is longitude of perihelion minus the
 C longitude of the node
-	DARGP=B-DODE
+	DARGP=DLONP-DODE	! argument of periapsis = wbar-Omega <deg>
 C mean anomaly is mean longitude minus the longitude of perihelion
-	DD = IREV*D360*T
-	DANOM = MOD (DD+A-B,D360)
-C get julian date of nearby perihelion
-C	tjo = ifix (dayat/period) * period +dj50 -(a-b)/dmot !# alternate
-	TJO = DAYAT + DJ50 - DANOM/(DMOT/RDEG) ! current time - since last perih.
-	GOTO 800
+	DANOM= DMLON-DLONP	! mean anomaly at epoch = L-wbar <deg>
+	DANOM= MOD(DANOM,360.) !+ value within 1 rev of zero
+	DPERIOD=SIDYR*SQRT(DSJA**3) ! orbital period in days
+	TJP = EMJD - DPERIOD*(DANOM/360.) ! date of perihelion
+	CLOSE (UNIT=IOD)
+	IGO=2
+	GOTO 40 ! read the spin vector file
 
-C sturms ===========================================================	
-C first 3 items are independant of coordinate system
-200	READ (IOD,*) DSJA			! get semimajor axis
-	DMOT=SQRT(DMOTE2/DSJA**3)	!  and calculate mean daily motion
-	PERIOD = TWOPI/DMOT		!  and period (in days)
-
-	READ (IOD,*) DEG,DEG1,DEG2	! get eccentricity, inputs are really
-	DECC = ((DEG2*T)+DEG1)*T +DEG	!   dimensionless, not in degrees.
-
-	READ (IOD,*) DEG,DD,DEG2		! get mean anomoly, linear term 
-	DANOM = DEGREE2 (DEG,ZERO,DEG2,T)	!  was specified in degree/day. 
-	DANOM = MOD ((DD*DAYAT + DANOM),D360)
-
-	DO I=3,9		! each numeric entry
-	   DEG1=ZERO		! set linear term to zero
-	   DEG2=ZERO		! and quadratic
-	   READ (IOD,*) DEG0,DEG1,DEG2 ! list-directed read
-	   VVV(I)=DEGREE2 (DEG0,DEG1,DEG2,TC) ! at request time
-	ENDDO 
-C next 3 items in mean equinox and ecliptic of 1950.0
-	DCLIN=VVV(3)		! inclination
-	DODE =VVV(4)		! longitude of node
-	DARGP=VVV(5)		! argument of perihelion
-C next 3 items in mean equinox and earth equator of 1950.
-	DPRA =VVV(6)		! pole ra
-	DPDEC=VVV(7)		! pole dec
-C	DEL = VVV(8)             ! angle for node on earth equator along 
-C                               !   planet equator to autumal equinox
-C	OBLIQ =VVV(9)		!obliquity of the planet 
-
-	READ (IOD,*) DEG,DD		! get prime meridian constants
-	SIDAY = (D360*24.D0)/DD		! get length of siderial day
-CC	PRIMEM = MOD ((DD*TRPCEN + DEG),D360) ! ROTATION THUS FAR
-
-C get julian date of nearby perihelion
-	TJO = DAYAT + DJ50 - DANOM/(DMOT/RDEG) ! current time - since last perih.
-	GOTO 800
-
-C bowell ===========================================================
-300	READ (IOD,*) IYEAR,IMON,DAY	! get time of perihelion
-	IDAY = DAY	! get integer days 
-	CALL YMD2JD (IYEAR,IMON,IDAY, A)  ! get julian date base 2,440,000
-	TJO = A + (DAY-FLOAT(IDAY)) 	! add back on the fraction of a day
-
-	READ (IOD,*) DARGP		! get argument of perihelion
-	READ (IOD,*) DODE		! get longitude of node
-	READ (IOD,*) DCLIN		! get inclination
-	READ (IOD,*) Q			! get perihelion in au
-	READ (IOD,*) DECC		! get eccentricity
-	DSJA = Q/(1.D0-DECC)		! convert to semi-major axis
-	DMOT = SQRT ( DMOTE2/DSJA**3)	!  and to mean daily motion
-	PERIOD = TWOPI / DMOT		!  and to orbital period.
-
-	READ (IOD,*) DPRA,DPDEC	! get polar ra and dec
-	READ (IOD,*) SIDAY	! get siderial day length
+C spin vector ===========================================================
+200	PNAME=TITLE
+	WRITE(6,*) 'Orbit is ',TITLE,' enter / or satellite name'
+	READ(5,*) PNAME
+	LIN=LEN_TRIM(PNAME)	! length of input name without trailing blanks
+ 220	READ (IOD,*,END=84,ERR=85) TARGET, RRR ! list directed
+	IF (TARGET(1:LIN) .NE. PNAME(1:LIN) ) GOTO 220 ! loop until match
+	I=LEN_TRIM(TITLE) ! planet
+	TITLE=TITLE(1:I)//':'//PNAME(1:LIN) ! Planet:pole
+D	print *,'SP object=',target
+D	print *,'RRR=',rrr
+	DPRA =RRR(1)+TCEN*RRR(2)		! pole ra
+	DPDEC=RRR(3)+TCEN*RRR(4)		! pole dec
+	XX   =RRR(6)	 ! rotation: degrees per day
+	SIDAY = (360.*24.)/XX		! get length of siderial day in hours
 	GOTO 800
 
 C Minor planet ===========================================================
-C for KRC historic reasons, retain 1950.0 and 2440000 as reference dates
-C But file may (usually will) contain full JD
-400	READ (IOD,*) EPOCH	! get epoch as Julian Date
-	IF (EPOCH .GT. DJBASE/2.) EPOCH=EPOCH-DJBASE ! make relative to 2440000
-	TC=TCEN-(EPOCH-DJ50)/TRPCEN ! centuries from epoch to request data
+ 300	READ (IOD,*,END=84)   ! BUF5	! skip blank line
+D	print *,'@300 ',BUF5
+	J=1
+	READ (IOD,*,END=86,ERR=87) TITLE	! get objects name
+D	print *,'303 ',title
+	J=2
+D	print *,'TITLE=',title
+	READ (IOD,*,END=86,ERR=87) EPOCH	! get epoch as Full Julian Date
+	J=3
+D	print *,'EPOCH=',epoch
 	DO I=1,10		! each numeric entry
-	   DEG1=ZERO		! set linear term to zero
-	   DEG2=ZERO		! and quadratic
-	   READ (IOD,*) DEG0,DEG1,DEG2 ! list-directed read
-	   VVV(I)=DEGREE2 (DEG0,DEG1,DEG2,TC) ! at request time
+	   READ (IOD,*,END=86,ERR=87) XX8 !  read one value
+	   J=3+I
+	   print *,I,XX8
+	   VVV(I)=XX8		! 
 	ENDDO 
 	DSJA =VVV(1)		! semi-major axis
 	DECC =VVV(2)		! eccentricity
@@ -203,33 +203,158 @@ C But file may (usually will) contain full JD
 	DANOM=VVV(6)		! Mean anomoly at epoch
 	DPRA =VVV(7)		! pole ra
 	DPDEC=VVV(8)		! pole dec
-C	Q    =VVV(9)		! Prime meridian at epoch
+	QP   =VVV(9)	! Prime meridian at epoch==Flag to B1950 ecliptic
 	SIDAY=VVV(10)		! siderial day length
-	DMOT = SQRT ( DMOTE2/DSJA**3)	!  mean daily motion, radians
-	PERIOD = TWOPI/DMOT		!  and period (in days)
-C JD of periapsis is Epoch -(M/360)Period = Epoch -M/MeanDailyMotion
-C This date in the KRC system is JD-2440000 
-	TJO = EPOCH - DANOM/(DMOT/RDEG) ! day at periapsis, offset from 2440000
+	DPERIOD=SIDYR*SQRT(DSJA**3) ! orbital period in days
+	TJP = (EPOCH-DJBASE) - DPERIOD*(DANOM/360.D0) ! date of perihelion
+	IF (QP.EQ.1.) THEN  ! convert from B1950 ecliptic to J2000 equat.
+C COCOMC uses west longitude, so negate RA
+	   CALL COCOMC(DPDEC,-DPRA,1.0, XX) ! unit vector along pole
+	   CALL ROTV(XX,1,OBL50,  P4) ! p4 now spinAxis in B1950 equator
+	   CALL ROTVEC (JBRM,P4, ZBAXX) ! rotate into J200 Equat.
+	   CALL COCOCM(ZBAXX, DPDEC,xx,q4) ! Q4 should be unity
+	   DPRA=-XX		! from west to east longitude
+	   print *, 'DPRA,DPDEC,Q4=', DPRA,DPDEC,Q4
+C using only trig
+	   lambda=rdeg*vvv(7) ! RA in Radians
+	   beta=rdeg*vvv(8) ! Dec in radians
+C algoritym from Dmitry Savransky 
+	   sd = sin(obl50)*sin(lambda)*cos(beta) + cos(obl50)*sin(beta)
+	 cacd = cos(lambda)*cos(beta)
+	 sacd = cos(obl50)*sin(lambda)*cos(beta) -sin(obl50)*sin(beta)
+	 alpha = atan2(sacd,cacd)
+	 r = sqrt(cacd**2 + sacd**2)
+	 delta = atan2(sd,r)
+	 dpra= alpha/rdeg	! Output RA in deg
+	 dpdec= delta/rdeg	! output Dec in degrees
+	 print *, 'DPRA,DPDEC=', DPRA,DPDEC
+	ENDIF
 	GOTO 800
 
+C Small bodies ===========================================================
+ 400	READ (IOD,*,END=86,ERR=87) I,TITLE,EPOCH
+	J=1
+	PRINT *,I,TITLE,EPOCH
+	DO I=1,11		! each numeric entry
+	   READ (IOD,*,END=86,ERR=87) PNAME,XX8 !  read one value in 2nd item
+	   J=J+1
+	   PRINT *,I,PNAME,XX8
+	   VVV(I)=XX8		! 
+	ENDDO 
+	DECC =VVV(1)		! eccentricity
+	DSJA =VVV(2)		! semi-major axis
+C do not use (3)=q
+	DCLIN=VVV(4)		! inclination
+	DODE =VVV(5)		! longitude of node
+	DARGP=VVV(6)		! argument of perihelion
+	DANOM=VVV(7)		! Mean anomoly at epoch
+	SIDAY=VVV(8)/24.	! siderial day length, days
+	DPRA =VVV(9)		! pole ra
+	DPDEC=VVV(10)		! pole dec
+	QP   =VVV(11)		! Prime meridian at epoch  NOT TRANSFERRED
+	DPERIOD=SIDYR*SQRT(DSJA**3) ! orbital period in days
+	TJP = (EPOCH-DJBASE) - DPERIOD*(DANOM/360.D0) ! date of perihelion
+	GOTO 800
+
+C Comets (spec. by q) ======================================================
+ 500	READ (IOD,*,END=84)	! skip separation line
+	J=1
+	READ (IOD,*,END=86,ERR=87) TITLE		! get objects name
+	J=2
+D       print *,'TITLE=',title
+	READ (IOD,*,END=86,ERR=87) IYEAR,IMON,RDAY ! get time of perihelion UTC
+	J=3
+D	print *,'year,mon,day=',IYEAR,IMON,RDAY 
+	IDAY = RDAY		! get integer days (UTC noon)
+	CALL YMD2J2 (IYEAR,IMON,IDAY, I)  ! get julian day base J2000.0
+	TJP = I + (RDAY-FLOAT(IDAY)-0.5) ! add back the fraction of a day
+	READ (IOD,*,END=86,ERR=87) DARGP ! get argument of perihelion
+	J=J+1
+	READ (IOD,*,END=86,ERR=87) DODE ! get longitude of node
+	J=J+1
+	READ (IOD,*,END=86,ERR=87) DCLIN ! get inclination
+	J=J+1
+	READ (IOD,*,END=86,ERR=87) QP ! get perihelion in au
+	J=J+1
+D	print *,'QP=',qp
+	READ (IOD,*,END=86,ERR=87) DECC ! get eccentricity
+	J=J+1
+	DSJA = QP/(1.D0-DECC)		!  convert to semi-major axis
+	DPERIOD=SIDYR*SQRT(DSJA**3) ! orbital period in days
+	READ (IOD,*,END=86,ERR=87) DPRA,DPDEC	! get polar  RA and  Dec
+	J=J+1
+	READ (IOD,*,END=86,ERR=87) SIDAY	! get siderial day length
+	J=J+1
+D	print *,'SIDAY',siday	
+	GOTO 800
+
+C Exo-planets ======================================================
+600	READ (IOD,*,END=84) BUF5	! skip separation line
+	print *,'600 buf=',BUF5
+	J=1
+	READ (IOD,*,END=86,ERR=87) TITLE	! get objects name
+	PRINT *,TITLE
+	J=2
+	DO I=1,9		! each numeric entry
+	   READ (IOD,*,END=86,ERR=87) XX8 !  read one value in 2nd item
+	   J=J+1
+	   PRINT *,I,XX8
+	   VVV(I)=XX8		! 
+	ENDDO 
+	XX8=10.**(-0.4*(VVV(1)-4.83)) *(VVV(2)/32.616)**2 ! Star/Sun power factor
+	Print *,'Star/Sun power factor=',xx8,' * default SOLCON M <><>'
+	TJP=VVV(3)-DJBASE	! MJD date of periastron
+	DSJA =VVV(4)		! semi-major axis in AU
+	DPERIOD=VVV(5)		! orbital period in days
+	DECC =VVV(6)		! eccentricity
+	XX8=MAX(VVV(7),0.1)	! obliquity. Must avoid 0. which causes NANs
+	DPDEC=90.-XX8		! pole Dec, based on obliquity in S system
+	DARGP=VVV(8)		! argument of perihelion == Ls of periap
+	SIDAY=VVV(9)/24.	! siderial day length, days
+	XX8=SIDAY*(1.+ SIDAY/DPERIOD) ! Synodic (solar) day
+	Print *,'Synodic day =',XX8,'  to KRC PERIOD <><>'
+C Items defined by use of the Seasonal coordinate system
+	DCLIN=0.		! inclination
+	DODE =0.		! longitude of node
+	DANOM=0.		! Mean anomoly at epoch
+	DPRA =270.		! pole RA
+	GOTO 800
 C =================================================================
-800	CLOSE (UNIT=IOD)
-	ODE = DODE*RDEG	 ! convert output arguments to single precision radians
-	CLIN = DCLIN*RDEG
-	ARGP = DARGP*RDEG
+ 800	ODE = DODE*RDEG		! | convert output arguments 
+	CLIN = DCLIN*RDEG	! | to single precision radians
+	ARGP = DARGP*RDEG	! "
 	ECC = DECC
-C  PERIOD  SIDAY  TJO WERE NOT IN DOUBLE_PREC.
 	SJA = DSJA
-	PRA = DPRA*RDEG
-	PDEC = DPDEC*RDEG
+	PRA = DPRA*RDEG		! "
+	PDEC = DPDEC*RDEG	! "
+	PERIOD= DPERIOD		! orbital period in days
 	IF (IOP.NE.0) THEN
 	  WRITE(IOP,801) IFILE,IPLAN,FNAME(IFILE),TITLE, TCEN
      &,DODE, DCLIN,DARGP,  ODE,CLIN,ARGP
-     &,DSJA,DECC,TJO,PERIOD,  SIDAY, DPDEC,DPRA, PDEC,PRA
-801	FORMAT ('0IFILE IPLAN FILE TITLE TCEN ='/2I4,2X,A,2X,A10,F8.6
-     &/'[double] ODE CLIN ARGP =' /3F15.8 /3F15.8 
-     &/' SJA ECC TJO PERIOD ='/4F15.8
-     &/' SIDAY   [double] PDEC PRA       ='/F15.8/2F15.8/2F15.8)
+     &,DSJA,DECC,TJP,PERIOD,  SIDAY, DPDEC,DPRA, PDEC,PRA
+801	FORMAT ('0IFILE IPLAN FILE TITLE TCEN ='/2I4,2X,A,2X,A10,F10.6
+     &/'[double] ODE CLIN ARGP /radian =' /3F15.8 /3F15.8 
+     &/' SJA ECC TJP PERIOD ='/2F15.8,f15.5,F15.8
+     &/' SIDAY   [double] PDEC PRA  /radian ='/F15.8/2F15.8/2F15.8)
 	ENDIF
+
+ 9	CLOSE (UNIT=IOD)
+D	print *,'Exit PORBEL'
 	RETURN
+C_____________________________________________________________________
+
+C  Error section
+ 87	IERR=IERR+1		! error reading values
+ 86	IERR=IERR+1		!  EOF reading values
+ 85	IERR=IERR+1		! error skipping objects
+ 84	IERR=IERR+1		!  EOF skipping objects
+ 83	IERR=IERR+1		! error looking for  C_END
+ 82	IERR=IERR+1		!  EOF looking for  C_END
+ 81	IERR=IERR+1		! opening file
+
+	PRINT *,'PORBEL Error: File was >',FNAME(IGO)
+	PRINT *,'------ Error: ierr',IERR,' Last title= ', TITLE
+	PRINT *,'------ Error: J=',J,' Reason: ',MESS(IERR) 
+	GOTO 9
+
 	END

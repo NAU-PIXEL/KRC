@@ -1,44 +1,67 @@
 ###################################
 # Script and comments for making a distribution package of the KRC thermal
-# model file system see the file AAREADME for additional description
+# model file system. See the file AAREADME for additional description
 #  This step to ensure documentation products up to date
-# 2012 Nov 21 Hugh Kieffer  Update
+# 2012 Nov 21 Hugh Kieffer 
+# 2013nov13  HK Update
 ###################################
-
-
-
 
 
 ########## Ensure that the Guides are the latest version 
 
 cd ~/xtex/AGU/
 
-latex HeatOfT 			# process the .tex file	
-latex HeatOfT			#   twice to resolve references
-dvipdfm  HeatOfT.dvi		# and to pdf
+latex krcV3 			# process the .tex file	
+bibex krcV3 			# resolve the bibliograhy
+latex krcV3 			# process the .tex file	
+latex krcV3 			#   twice to resolve references	
+dvipdf krcV3.dvi		# and to pdf
 
-latex krcCorP2 			# process the .tex file	
-bibex krcCorP2 			# resolve the bibliograhy
-latex krcCorP2 			# process the .tex file	
-latex krcCorP2 			#   twice to resolve references	
-dvipdfm krcCorP2.dvi	# and to pdf
+cd ~/krc
 
-latex mkrc
-dvipdfm mkrc.dvi
+latex hporb			# has references
+bibtex hporb
+latex hporb
+latex hporb
+dvipdf hporb.dvi		# and to pdf
 
+latex PUG			# has references
+bibtex PUG
+latex PUG
+latex PUG
+dvipdf PUG.dvi		# and to pdf
+tth <PUG.tex >PUG.html	      # and to html
+latex helplist		# no refs
+dvipdf helplist.dvi		# and to pdf
+
+cd ~/krc/VER/
+
+latex Vtest
+dvipdf Vtest.dvi	# and to pdf
 
 cd ~/xtex/themis/
+
 latex cement 			# process the .tex file	
 latex cement			#   twice to resolve references
-dvipdfm cement.dvi	# and to pdf
+dvipdf cement.dvi	# and to pdf
 
-exit
+cd ~/xtex/tes/krc/
+
+latex mkrc
+dvipdf mkrc.dvi
+latex HeatOfT 			# process the .tex file	
+latex HeatOfT			#   twice to resolve references
+dvipdf HeatOfT.dvi		# and to pdf
+
+exit #========================================================
 
 ##########  template
 
 latex q 			# process the .tex file	
-latex q			#   twice to resolve references
-dvipdfm q.dvi	# and to pdf
+bibtex q 			# get th references
+latex q				#   twice to resolve references
+latex q				#   
+dvipdfm q.dvi			# and to pdf
 
 ### obsolete
 cd ~/krc  

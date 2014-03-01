@@ -1,0 +1,79 @@
+Orbit elements and spin axis for small bodies. Format adopted from the 
+ JPL Small-Body Database Browser   http://ssd.jpl.nasa.gov/sbdb.cgi
+Each object must have exactly 12 lines.  Three items are read for line 1.
+   Only the second item is used in lines 2:12
+1:     BodyNumber  Name   EpochOfElements(as full Julian Date)
+2-8:   Copy of element lines e through M.
+9:     Copy of columns 2:4 from > Physical Parameters > Rotation period (hours)
+10-11: Spin Axis:  Right Ascension and Declination, degrees. From other source.
+12:    Prime meridian angle at J2000.0 (rarely known) 
+All lines are read as list directed, so there must some blanks between items
+    and there must be no interior blank or /. For the first body, a / follows 
+    the items read, anything be that number of items is ignored.
+All angles are in degrees.   
+The reference coordinate systems are:
+   orbital elements: heliocentric ecliptic J2000    
+   spin axis (pole): J2000 equatorial 
+Last valid object is   5   [update].    Beyond that should not be read
+C_END    << Required to indicate end of comments
+1 Ceres 2456400.5 /
+e 	.0761668545450167 / 	1.9586e-08 	 
+a 	2.767992936039414 /  	2.3731e-09 	AU
+q 	2.557163620698466 / 	5.4098e-08 	AU
+i 	10.5942304169345  /	2.3429e-06 	deg
+node 	80.33008249643187 /	1.1917e-05 	deg
+peri 	72.16711987278464 /	1.9674e-05 	deg
+M 	327.8540676698703 /	1.6005e-05 	deg
+rot_per 	9.074170  /	h
+PoleRA  291.  / 5
+PoleDec 59.   / 5 
+merid   170.9 /
+2 Pallas  2456400.5 
+e 	.2314996558080064 	1.9276e-08 	 
+a 	2.772015010581457 	2.1596e-09 	AU
+q 	2.130294489737222 	5.3569e-08 	AU
+i 	34.8368014488263 	2.1348e-06 	deg
+node 	173.1197473204847 	3.737e-06 	deg
+peri 	309.9544372128818 	5.5435e-06 	deg
+M 	310.0446145441367 	4.8236e-06 	deg
+rot_per 	7.8132 	h
+PoleRA  33.
+PoleDec -3.
+merid   38.
+3 Juno 2456400.5 
+e 	.255305395587282 	2.0266e-08 	 
+a 	2.670734112721557 	2.1949e-09 	AU
+q 	1.988881283564732 	5.4096e-08 	AU
+i 	12.97936931350103 	2.428e-06 	deg
+node 	169.8827852081769 	1.1412e-05 	deg
+peri 	248.3098632497382 	1.2473e-05 	deg
+M 	257.6392567125791 	6.4343e-06 	deg
+rot_per 	7.210 	h
+PoleRA 115.    converted from B1950
+PoleDec 56.
+merid   0.
+4 Vesta	 2456400.5
+e 	.08825715520610074 	1.0296e-08 	 
+a 	2.36244573496989 	1.2964e-09 	AU
+q 	2.153942995072661 	2.3824e-08 	AU
+i 	7.139911814214593 	1.409e-06 	deg
+node 	103.8501363116314 	2.7661e-06 	deg
+peri 	150.940192234186 	7.6324e-06 	deg
+M 	218.1714950076329 	5.6483e-06 	deg
+rot_per 	5.342 	h
+PoleRA  305.8   3.1
+PoleDec 41.4   1.5
+merid   292.
+101955 Bennu 2456400.5   (1999 RQ36)    Body 5 in this file
+e 	.2037319346437232 	3.4131e-08 	 
+a 	1.126004277007048 	1.294e-10 	AU
+q 	.8966012472352957 	3.8364e-08 	AU
+i 	6.034917131144178 	4.3573e-06 	deg
+node 	2.042278429192176 	5.6318e-06 	deg
+peri 	66.26860100390597 	6.4232e-06 	deg
+M 	72.82807637355893 	3.7237e-06 	deg
+rot_per 4.29746   ± 0.002 h, Nolan et al 2013.  JPL has  4.288 h 
+PoleRA  -67.9     Nolan: β = −88° (lat), λ = 45° and an uncertainty of 5°.  
+PoleDec -86.2    in ecliptic coordinates,  Convert using eclip2equat.pro 
+merid   0.
+INSERT ABOVE this 12-line sets for additional bodies 

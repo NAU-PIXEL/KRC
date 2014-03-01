@@ -29,6 +29,8 @@ TINT	N	N
 no references to *.INC
 AVEDAY  CP0	DATIME	EPRED	ORBIT	ROTATE	R2R
 
+porbcm in PORB0 TSEAS TYEARP
+TCARD calls PORB0
 
 Call sequence, prepared for slide: crop  left=.22 bot=.72
 
@@ -58,33 +60,33 @@ k: if T-dependent                  |   ~TPRINT (4            TPRINT (2
 ^ coupled to above                 \<---latitude             TPRINT (4 
 (n: call with control code n 
 
+KRC...
+  PORB
+    ORBIT
+    ROTVEC
 
-porbcm in PORB0 TSEAS TYEARP
-TCARD calls PORB0
+crop left=.22 bot=.2 right=2.
 
-PORBMN    Main program
-  INCLUDE 'porbcm.inc'  
-  may OPEN IOP 
-  DATIME
-  PORB1  Read orbital elements, compute matrices
-    INCLUDE 'porbcm.inc'
-    read IOK, write IOS,IOP
-    PORBEL
-    ROTDIA
-    ROTAX
-  PORBIO   Read/write Common to file
-    INCLUDE 'porbcm.inc'
-    read IOK, write IOS,IOP
-    may OPEN IOD for read or write
+PORBMN  Main program. Includes 'porbcm.inc'
+  DATIME   Returns current date and time
+ may call the following in any order. All INCLUDE 'porbcm.inc'
+  PORB1    Read orbital elements, compute matrices
+    PORBEL    Read any of 4 orbital element files, compute basic constants
+      YMD2JD    Convert year, month, day to Julian date offset from 2,440,000
+    OBLIQ     Compute Planets poles in ecliptic coord and nodes
+    OBLIP     Compute obliquity of a planet  
+    ROTDIA 2x
+    ROTAX  10x
+  PORBIO   Read/write Common to file as text or binary
   EPHEMR   Print ephemeris == geometry versus time
-    INCLUDE 'porbcm.inc'
-    read IOK, write IOP 
-    PORB
-    JDATE
+    PORB     Computes planetary angles and location for specific time
+      ORBIT    Compute location of body in its orbital plane
+      ROTVEC    Apply rotation matrix to rotate a vector
+    CALDATE
     SPCREV
-  PROBQQ   Test computation of matrices
-    INCLUDE 'porbcm.inc'
-    ROTDIA
-    ROTAX
-    MPRINT
-    MPROD3
+    ANG360
+  PORBQQ   Test computation of matrices
+    ROTDIA 2x
+    ROTAX  4x
+    MPRINT 3x
+    MPROD3 2x 

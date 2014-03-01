@@ -21,7 +21,7 @@ HHKOS      ?= $(HOST_MACH)
 HHKINC     ?= $(CURDIR)
 
 #  GNU C compiler and flags.
-CC=gcc -pipe -g -Wall -fPIC -Dunix -D$(HOST_ARCH) -D$(HOST_MACH) -D$(HHKOS)
+CC=gcc -pipe -O2  -Wall -fPIC -Dunix -D$(HOST_ARCH) -D$(HOST_MACH) -D$(HHKOS)
 
 #  Special load flags.  These flags are utilized in all builds, whether
 #  they are FORTRAN or C
@@ -55,7 +55,6 @@ install: $(LIBNAME)
 $(LIBNAME): $(OBJS)
 	$(AR) $(ARFLAGS) $(LIBNAME) $(OBJS)
 
-.PHONY: clean
 #  Clean up 
 clean: 
 	$(RM) $(OBJS) $(LIBNAME)

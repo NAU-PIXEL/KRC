@@ -1,18 +1,20 @@
-	SUBROUTINE PORBIO
+	SUBROUTINE PORBIO (TITLE)
 C_Titl  PORBIO  read/write porb common to disk file with name = porbcm.dat
-
-	INCLUDE 'porbcm.inc'
-
+	INCLUDE 'porbcm.inc'  ! has  IMPLICIT  NONE
+C_Args 
+	CHARACTER*(*) TITLE  !both. object name
 C_Calls: [open, read, write, close]
 C_Hist  Hugh Kieffer 76aug02. vax version 84may28
 C 2012nov22 HK change NAME to FILE in OPEN statements
-C_End
-	PARAMETER (IDEM1=60)
-	DIMENSION P(IDEM1)
-	EQUIVALENCE (P,PLANUM)
+C 2013feb07  HK Use  IMPLICIT  NONE
+C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
+
+	INTEGER MSEC /15/	! max geometry record
+	INTEGER IO		! in/out flag
+	INTEGER ISEC		! index of geometry matrix in file
+	INTEGER ITYPE,I		! 
 	CHARACTER FNAME*30
-	CHARACTER*4 FROMTO(2)
-	DATA MSEC/5/,FROMTO/'FROM',' TO '/
+	CHARACTER*4 FROMTO(2) /'FROM',' TO '/
 C binary=unformatted, direct access; PORBCM.DAT
 C ASCII=formatted, ?? access ; PROBCM.INP
 
@@ -22,6 +24,7 @@ C ASCII=formatted, ?? access ; PROBCM.INP
 11	WRITE (IOS,*)' ?* 1=BINARY (UNFORMATTED)   2=ASCII (FORMATTED)'
 	READ (IOK,*,ERR=11,END=9)ITYPE
 	IF (ITYPE.GT.1) GOTO 30
+
 C open binary data file
 	OPEN (UNIT=IOD,FILE='PORBCM.DAT',FORM='UNFORMATTED'
      &,ACCESS='DIRECT',STATUS='UNKNOWN',RECL=IDEM1)
@@ -33,30 +36,32 @@ C note: if -xl[d] is set, RECL is number of 4-byte words, else number of bytes
 		GOTO 2
 	    ENDIF
 	IF (IO.EQ.1) THEN
-C		READ  (IOD'ISEC) P
-		READ  (IOD,REC=ISEC) P
+		READ  (IOD,REC=ISEC) PCOM
+		TITLE='From Binary: unknown'
 	    ELSE
-C		WRITE (IOD'ISEC) P
-		WRITE (IOD,REC=ISEC) P
+		WRITE (IOD,REC=ISEC) PCOM
 	    ENDIF
 	WRITE (IOP,7) FROMTO(IO), ISEC,PLANUM,TC
 7	FORMAT ('0PORBIO: /PORBCM/ ',A,' PORBCM.DAT RECORD',I2,
      & '  IPLAN,TC=',2F6.3,/)
 	GOTO 9
+
 C open formatted ascii record for possible inclusion in an ascii file.
-30	FNAME='PORBCM.INP'
+30	FNAME='PORBCM.mat'
 	WRITE (IOS,*)' ?* NAME OF ASCII OUTPUT FILE; DEFAULT IS ',FNAME
 	READ  (IOK,*,ERR=30,END=9) FNAME
-	IF (IO.EQ.1) THEN
+	IF (IO.EQ.1) THEN	! read
 	  OPEN (UNIT=IOD, FILE=FNAME, STATUS='OLD',ACCESS='SEQUENTIAL')
-	  READ (IOD,33)	! skip first line
-	  READ (IOD,33) P
-33	FORMAT (5G15.7)
-	ELSE
+	  READ (IOD,34)	RUNTIM,PLANUM,TC,TITLE	!  first line
+	  READ (IOD,33) PCOM
+ 33	  FORMAT (5G15.7)	! format for the geometry matrix
+	ELSE			! write
 	  OPEN (UNIT=IOD, FILE=FNAME, STATUS='UNKNOWN',ACCESS='APPEND')
-	  WRITE (IOD,34) RUNTIM,PLANUM,TC
-34	  FORMAT (1X,5a4,'=RUNTIME.  IPLAN AND TC= ',F5.1,F8.5)
-	  WRITE(IOD,33) P
+	   I=LEN_TRIM(TITLE)	! planet
+	   print *,'PORBIO30',title,'<',i
+	  WRITE (IOD,34) RUNTIM,PLANUM,TC,TITLE(1:I)
+34	  FORMAT (1X,5a4,'=RUNTIME.  IPLAN AND TC= ',F5.1,F8.5,X,A)
+	  WRITE(IOD,33) PCOM
 	ENDIF
 	WRITE (IOP,*)' ASCII RECORD ',FROMTO(IO),' FILE =',FNAME
 9	CLOSE (IOD)
