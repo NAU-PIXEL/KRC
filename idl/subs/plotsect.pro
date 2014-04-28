@@ -1,7 +1,7 @@
 PRO plotsect, lab, yf,  xv=xv, cs=cs
 ;_Titl  PLOTSECT Plot section lines and titles when several things on one abcissa
 ; lab in. strarr(N)    Section labels
-; yf  in_ float        Fraction of way up for labels
+; yf  in. float        Fraction of way up for labels
 ; xv  in_ fltarr(N-1)  X values of the separations. Default is uniform
 ; cs  in_ float        Charactersize of labels. Default is 1.5
 ;_Hist  2013sep01 Hugh Kieffer  When can't find any prior vrsion

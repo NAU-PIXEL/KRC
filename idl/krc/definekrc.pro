@@ -1,5 +1,5 @@
 function definekrc, what,param, labkf,labki,labkl,idmin,idmax $
-,mxn2=mxn2,nwin=nwin,nword=nword,pid=pid
+,mxn2=mxn2,nbyt=nbyt,nword=nword,pid=pid
 ;_Titl  DEFINEKRC  Define structures in IDL that correspond for Fortran commons
 ; what	 in.  String to select which common. Valid are: KRC DAY LAT FIL
 ; params out. lonarr of parameters from krccom.inc
@@ -10,42 +10,46 @@ function definekrc, what,param, labkf,labki,labkl,idmin,idmax $
 ;	idmin	out.	Intarr of minimum valid values for krccom.id
 ;	idmax	out.	Intarr of maximum valid values for krccom.id
 ; mxn2  in_     Integer  Alternate MAXN2
-; nwin  in_     Integer  Number of words expected in common. 239 is flag 
-;                to identify pre-KofT files
+; nbyt  in_     Integer  Two uses: 8= file is REAL*8.  
 ; nword out_   Integer  Number of 4-byte words in common
 ; pid   out_   Strarr   Titles to items on params
 ; func.	out.   Structure for requested common
 ;_Calls  BYTEPAD
-;_Hist 2002mar11 Hugh Kieffer
-; 2002jul31 HK Make a function, one structure at a time
-; 2008apr13 HK Add II52 to KRCcom.  UNDO because READKRCCOM finds many changes 
-; 2008oct16 Nov15 HK Change sizes to agree with new krc compile. Add nword
-; 2010jan28 HK Add argument PARAMS, keyword nwin. Extend labkf over non-inputs
-; 2013aug31 HK Update to current KRC commons.
-;_End
-
-if not keyword_set(nwin) then nwin=247 ; default is KofT style
-;NUMFD=88	; Size of floats
-NUMFD=64+32     ; Size of floats with T-dependant materials
-if nwin eq 239 then numfd=80    ; pre KofT version
-NUMID=40	; Size of "  "  integers
-NUMLD=20	; Size of "  "  Logicals
+;_Hist 2014mar12 Hugh Kieffer Derive from definekrc.2013aug31
+; 2014mar12 HK Accomodate REAL*8 KRC files, Drop support of pre-KofT versions
+;_End     .comp  definekrc
+if not keyword_set(nbyt) then nbyt=4 ; Default is REAL*4 version
+dodp= nbyt eq 8 ; Expect KRC Version 3 with REAL*8
+; vvvvvvv Extract from krccom.f
 MAXN1 =30	; dimension of layers
+if dodp then MAXN1 =50
 MAXN2 =384*4	; dimension of times of day   Was 384=24*16
 MAXN3 =16	; dimension of iteration days
 MAXN4 =37	; dimension of latitudes.  Was 19
-MAXN5 =161      ; dimension of seasons
+MAXN4E =38     ; " "  Even needed for LATCOM NDJ4
+;MAXN5 =161      ; dimension of seasons
 MAXN6 =6        ; dimension of saved years
 MAXNH =48	; dimension of saved times of day. Was 24
-MAXBOT=6	; dimension of time divisions. Was 10
-numtit=20                       ; # 4-byte words in  TITLE
-numday=5                        ; # 4-byte words in  DAY
+MAXBOT=6	; dimension of time divisions. Was 10 MUST be even
+NUMFD =96     ; Size of floats
+NUMID =40	; Size of "  "  integers
+NUMLD =20	; Size of "  "  Logicals
+numtit=20       ;   # 4-byte words in  TITLE
+numday=5        ;   # 4-byte words in  DAY
 ;^^^^^^^^^^^^^^^^^^^^ firm code, must agree with krccom.inc 
 MAXN1P=MAXN1+1	; dimension layer temperature points
-nwkrc=numfd+numid+numld+numtit+numday+2*MAXN4 ; length in 4-byte words
-param=[MAXN1,MAXN2,MAXN3,MAXN4,MAXN5,MAXN6,MAXNH,MAXBOT $
+if dodp then begin 
+   numtit=21
+   n4krc=NUMFD*2+NUMID+NUMLD+2*MAXN4*2+numtit+numday ; num 4-byt
+   nwkrc=n4krc/2
+endif else begin
+   n4krc=NUMFD+2*MAXN4 +NUMID+NUMLD+NUMTIT+NUMDAY ; length in 4-byte words
+   nwkrc=n4krc
+endelse
+
+param=[MAXN1,MAXN2,MAXN3,MAXN4,MAXN6,MAXNH,MAXBOT $
 ,NUMFD,NUMID,NUMLD,NUMTIT,NUMDAY,NWKRC]
-pid=['MAXN1','MAXN2','MAXN3','MAXN4','MAXN5','MAXN6','MAXNH','MAXBOT' $
+pid=['MAXN1','MAXN2','MAXN3','MAXN4','MAXN6','MAXNH','MAXBOT' $
    ,'NUMFD','NUMID','NUMLD','NUMTIT','NUMDAY','NWKRC']
 
 if keyword_set(mxn2) then MAXN2 =mxn2
@@ -55,11 +59,6 @@ kode=strupcase(what)
 case kode of  ; which COMMON
 
 'KRC': begin
-out={ fd:fltarr(numfd),id:lonarr(numid),ld:lonarr(numld) $
- ,tit:bytarr(4*numtit),daytim:bytarr(4*numday) $
- ,ALAT:fltarr(MAXN4)  $ ; latitude in degrees.
- ,ELEV:fltarr(MAXN4)  } ; elevation in km.
-    nword=nwkrc
 fd0=[ .25, 1.00, 250.0, 2.00, 1.00,1.0275, 630., 1600. $
 , 0.10,  .30, 260., 689.7, .055, 200., 200.,  0.0 $
 ,  0.2,  .90, .5,  2.0,  0.5, 0.10,  0.0,  90. $
@@ -67,12 +66,26 @@ fd0=[ .25, 1.00, 250.0, 2.00, 1.00,1.0275, 630., 1600. $
 ,1.2000, .1800, 2.0000,  0.0,  0.0, .0020, .1000,  0.1 $
 ,8948.4,  17.1745, 00.0, 1.465, .0, 1368., 3.727, 800. ]
 nfl=n_elements(fd0) ; number of Floats with labels here
+if dodp then begin 
+   out={ fd:dblarr(numfd) $               ; R*8: params, latitude in degrees.
+         ,ALAT:dblarr(MAXN4),ELEV:dblarr(MAXN4) $ ; R*8: latitudes, elevations
+         ,id:lonarr(numid),ld:lonarr(numld)  $    ; I*4: Integers and Logicals 
+         ,tit:bytarr(4*numtit),daytim:bytarr(4*numday) } ; Character strings
+    out.fd=[double(fd0),replicate(0.d0,numfd-nfl)] ; fill to end with  zeros
+endif else begin
+   out={ fd:fltarr(numfd),id:lonarr(numid),ld:lonarr(numld) $
+         ,tit:bytarr(4*numtit),daytim:bytarr(4*numday) $
+         ,ALAT:fltarr(MAXN4)  $ ; latitude in degrees.
+         ,ELEV:fltarr(MAXN4)  } ; elevation in km.
+   out.fd=[fd0,replicate(0.,numfd-nfl)] ; append the place for computed values
+endelse
+nword=n4krc
 id0      =[19,384,10,19,10,24,0,0,  3,24,1,5,0,71,68,1,  -1,0,7,2]
 nil=n_elements(id0) ; number of Ints with labels here
+out.id=[id0,replicate(0L,numid-nil)]
+
 ld0= [0,1,0,0,0,0,0,0,0,0,  1,0,0,1,0,0,0,0,0]
 nll=n_elements(ld0)
-out.fd=[fd0,replicate(0.,numfd-nfl)] ; append the place for computed values
-out.id=[id0,replicate(0L,numid-nil)]
 out.ld=[ld0] ;replicate(0L,numld-nll)]
 if N_PARAMS() ge 5 then begin ; if caller wants definitions 
 labkf=[ $
@@ -228,8 +241,25 @@ labkl=[ $
 endif ;  N_PARAMS() ge 5
 end ; case 'KRC'
 
-'LAT': begin & out ={    $
-  NDJ4:lonarr(MAXN4)       $ ; # days to compute solution for each latitude
+'LAT': if dodp then begin
+out ={DTM4:dblarr(MAXN4)   $ ; rms temperature change on last day
+ ,TST4:dblarr(MAXN4)       $ ; predicted equilibrium temperature of ground
+ ,TTS4:dblarr(MAXN4)     $ ; predicted mean surface temperature for each latitude
+ ,TTB4:dblarr(MAXN4)       $ ; predicted mean bottom temperature
+ ,FROST4:dblarr(MAXN4)     $ ; predicted frost amount gram/cm^2.
+ ,AFRO4:dblarr(MAXN4)      $ ; frost albedo.
+ ,TTA4:dblarr(MAXN4)       $ ; final atmosphere temperature
+ ,TTX4:dblarr(MAXN4)       $ ; spare
+ ,TMN4:dblarr(MAXN1,MAXN4) $ ; predicted convergence surface temperature
+ ,TIN:dblarr(MAXN1,MAXN4)  $ ; minimum hourly layer temperature
+ ,TAX:dblarr(MAXN1,MAXN4)  $ ; maximum hourly layer temperature
+ ,TSF:dblarr(MAXNH,MAXN4)  $ ; final hourly surface temperature
+ ,TPF:dblarr(MAXNH,MAXN4)  $ ; final hourly planetary temperature 
+ ,NDJ4:lonarr(MAXN4) }       ; # days to compute solution for each latitude
+nwlat=(8L+ 3L*MAXN1 + 2L*MAXNH) *MAXN4 +MAXN4E/2 ; number of 8-byte words
+nword=2*nwlat
+endif else begin
+out ={ NDJ4:lonarr(MAXN4)  $ ; # days to compute solution for each latitude
  ,DTM4:fltarr(MAXN4)       $ ; rms temperature change on last day
  ,TST4:fltarr(MAXN4)       $ ; predicted equilibrium temperature of ground
  ,TTS4:fltarr(MAXN4)     $ ; predicted mean surface temperature for each latitude
@@ -243,10 +273,33 @@ end ; case 'KRC'
  ,TAX:fltarr(MAXN1,MAXN4)  $ ; maximum hourly layer temperature
  ,TSF:fltarr(MAXNH,MAXN4)  $ ; final hourly surface temperature
  ,TPF:fltarr(MAXNH,MAXN4) } ; final hourly planetary temperature
-nword=(9+ 3*MAXN1 + 2*MAXNH) *MAXN4
-end  ; case LAT
+nword=(9L+ 3L*MAXN1 + 2L*MAXNH) *MAXN4
 
-'DAY': Begin & out={XCEN:fltarr(MAXN1)  $ ; Depth at layer centers [m]
+endelse ; case LAT
+
+'DAY': if dodp then begin
+ out={XCEN:dblarr(MAXN1)  $ ; Depth at layer centers [m]
+ ,SCONVG:dblarr(MAXN1)   $ ; Classical convergence factor for each layer
+ ,BLAY:dblarr(MAXN1)     $ ; Layer thicknesses [m]
+ ,TMIN:dblarr(MAXN1)     $ ; Minimum layer temperatures of day
+ ,TMAX:dblarr(MAXN1)     $ ; Maximum layer temperatures of day
+ ,TTJ:dblarr(MAXN1P)     $ ; Layer temperatures (T(1) is surface temperature)    
+ ,TT1:dblarr(MAXN1,MAXN3) $ ; Temperatures at start of day for each layer and day
+ ,TTS:dblarr(MAXN3)      $ ; Mean daily surface temperatures                     
+ ,TTB:dblarr(MAXN3)      $ ; Mean daily bottom temperatures                      
+ ,TTA:dblarr(MAXN3)      $ ; End-of-Day Atmospheric temperatures
+ ,DTMJ:dblarr(MAXN3)     $ ; RMS daily temperature                               
+ ,FRO:dblarr(MAXN3)      $ ; Daily frost amounts. [kg/m^2]                    
+ ,ASOL:dblarr(MAXN2)     $ ; Insolation at each time of day                      
+ ,ADGR:dblarr(MAXN2)     $ ; Atm. solar heating at each time of day 
+ ,TOUT:dblarr(MAXN2)     $ ; Surface temperatures of solution at each time of day
+ ,TSFH:dblarr(MAXNH)     $ ; Hourly surface temperatures at solution
+ ,TPFH:dblarr(MAXNH)     $ ; Hourly planetary temperatures at solution
+ ,N1K:lonarr(MAXBOT)     } ; Binary time division layers
+nwday= 5L*MAXN1 + MAXN1P + (5L+MAXN1)*MAXN3 + 3*MAXN2 + 2*MAXNH + MAXBOT/2
+nword=2*nwday
+endif else begin
+ out={XCEN:fltarr(MAXN1)  $ ; Depth at layer centers [m]
  ,SCONVG:fltarr(MAXN1)   $ ; Classical convergence factor for each layer
  ,BLAY:fltarr(MAXN1)     $ ; Layer thicknesses [m]
  ,TMIN:fltarr(MAXN1)     $ ; Minimum layer temperatures of day
@@ -264,10 +317,10 @@ end  ; case LAT
  ,TSFH:fltarr(MAXNH)     $ ; Hourly surface temperatures at solution
  ,TPFH:fltarr(MAXNH)     $ ; Hourly planetary temperatures at solution
  ,N1K:lonarr(MAXBOT)     } ; Binary time division layers
-nword=6*MAXN1+1  + (5+MAXN1)*MAXN3 + 3*MAXN2 + 2*MAXNH + MAXBOT
-end ; case DAY
+nword= 5L*MAXN1 + MAXN1P  + (5L+MAXN1)*MAXN3 + 3*MAXN2 + 2*MAXNH + MAXBOT
+endelse ; case DAY
 
-'FIL': begin  ; FILCOM
+'FIL': begin & numch=80 ; FILCOM
 blan80=BYTEPAD('dum',80)
 blan20=BYTEPAD('dum',20)
 blan12=BYTEPAD('dum',12)

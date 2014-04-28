@@ -1,9 +1,9 @@
       REAL FUNCTION VLPRES (KODE, DATE)
-C_Titl  VLPRES  Viking lander pressure curves
+C_Titl  VLPRES  Viking lander pressure curves  Using J2000 dates
       IMPLICIT NONE
 C_Args
-      INTEGER KODE	!in.  1=VL1_yr1  2=VL1_yr2  3=VL2  4=normalized average
-      REAL DATE	!in. date in julian days, offset from 2440000
+      INTEGER KODE      !in.  1=VL1_yr1  2=VL1_yr2  3=VL2  4=normalized average
+      REAL DATE !in. date in julian days, offset from J2000.0   Was from 2440000
 C_Desc
 C  Derived from the coefficents in:  JGR vol 98,  E6, pp 10,973-971
 C    provided by  Neal  Johnson.
@@ -28,16 +28,23 @@ C == lsubs       =    117.99265
 C_Hist 97feb11  Hugh_Kieffer original version
 C 99nov18  HHK  add  SAVE statement
 C 2010jan11 HK Go to implicit none
+C 2014apr27 HK Adjust dates to J2000 system; should have been done 2013jan30
+C               and untabify
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
       REAL PMEAN  (4) ! mean pressure (4th is normalized to 1.)
       REAL AMP  (5,4) ! amplitude of harmonic term
       REAL PHASE(5,4) ! phase of harmonic term
 
-      REAL YEARM / 686.98 /
-      REAL DJ0 / 3395.49 / ! julian date for  L-sub-s of start of curve
-C	 this is average of  VL1 and  VL2 origins, near L_s 330.
+      REAL YEARM / 686.9957/ ! was 686.98 /
+      REAL DJ0 / 94.438 / ! was 3395.49 Julian date for L-sub-s of start of curve
+C        this is average of  VL1 and  VL2 origins, near L_s 330.
 CC    REAL DJ0 / 10265.0 /  L_S 330. OCCURS ON  JD 2450265.0  = 1996 Jun 30.5
 C this is 10.000 martian years later than start of pressure curve
+C
+C Want DJ0 in J2000 to to be a integral multiple of modern YEARM from the 
+C 2440000 base DJ0 of 3395.49
+C 2440000+3395.49 = 2451545 + X +-N*686.9957    Choose N=12, get X= 94.438355
+C Check, IDL: LSAM(X) gives 330.23895     Lsubs(x) gives 330.24139 
       LOGICAL LFIRST /.TRUE./
       REAL D2R,DJ,FRAC,FYEAR,PI,PIF,RI,SUM,SUMA,SUMP
       INTEGER I,J

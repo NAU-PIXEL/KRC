@@ -4,7 +4,8 @@ function lastperiod, lsv,leny,jy2, per=per, verb=verb
 ; leny  out. integer   Number of seasons in a year, may be an estimate
 ; jy2   out. integer   First index of the final [partial] year
 ; per   in_  float     Length of a period; default is 360.
-; verb  in_  integer   If set, prints results, if ge 2 
+; verb  in_  integer   If set, prints results. If ge 2, also print 2 other itmes
+;                         If ge 4, then stops before return 
 ; func. out. integer   First index of the last [up to] complete year coverage
 ;_His  Hugh Kieffer  Address all possibilities of KRC files 
 ;_End      .comp lastperiod  

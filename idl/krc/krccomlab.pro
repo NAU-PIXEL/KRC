@@ -12,7 +12,7 @@ PRO krccomlab ,kode,fcom,icom,lcom, fclab,iclab,lclab, uuu,  idx=idx
 ;                  if abs=1, omits computed real items, if 2, includes them
 ;                  Default is -1
 ;_Desc
-; Uses the _lab arrays for lenght, so the _com arrays must be at least this long
+; Uses the _lab arrays for length, so the _com arrays must be at least this long
 ;_Calls  none
 ;_Hist 2002mar02 Hugh Kieffer Mostly extracted from READKRC
 ; 2002mar21 HK Make _Lab input, and immune to undefined arrays
@@ -66,7 +66,7 @@ if ko4 then begin
         for i=0,last,10 do begin
             i2=(i+9) < last
             print,Lclab[i:i2],format='(10A7)'
-            if dix then print,i+indgen(i2-i+1),format='(8I10)'
+            if dix then print,i+indgen(i2-i+1),format='(10I7)'
             print,Lcom[i:i2],format='(10I7)'
         endfor
     endelse

@@ -40,24 +40,9 @@ labf=['VerA=new DIR ',' " case file',' " multi-type stem',' " OnePoint [.prt]' $
 ,' " OnePoint [.prt]',' " DIR for prt','DIR for IDL output' $
 ,'Output onePoint set','Report file stem', ' " .ext'] 
 parf=[newd,newv+'test1',newv+'test2',newv+'Mone','/home/hkieffer/krc/tes/' $
-,oldd,oldv+'test1',oldv+'test2',oldv+'Mone','---',idltop,'grid.one',newv $
+,oldd,oldv+'test1',oldv+'test2',oldv+'Mone',newd,idltop,'grid.one',newv $
 ,'Report.txt'] 
 
-if hcpu eq 'hulk3' then begin ; specific to a site
-   if curd ne idltop then begin ; must be running in distro build area
-
-   endif else begin ; running in normal idl on hulk3
-      parf[1]='V224str2'  & parf[5]=parf[0] ; 2014jan22
-      parf[9]=parf[4] & parf[3]='Mone' & parf[8]='Moneq'
-      
-      parf=['/work/work1/krc/test/','V230test1','V230test2','V230bOne','/home/hkieffer/krc/tes/','/work/work1/krc/test/','V222test1','V222test2','V230bOne','/home/hkieffer/krc/tes/','/home/hkieffer/idl/','grid.one','V230b','Report.txt'] ; 2014jan27
-      parf[2]='V230Longhs' & parf[7]='V230Longhe'
-      parf[2]='V230Longhmsw' & parf[7]='V230Longh23ew'
-      
-      parf[0]='/work/work1/build/run/' & parf[1]='V231btest1'
-      parf[6]='V230btest1'
-   endelse
-endif
 parf0=parf ; remember the initial values
 
 labi=['Flag: DJUL is oldstyle','@46 # seasons','@46 N hours','@522 item index' $
@@ -141,25 +126,17 @@ case kon of ;...................................................................
 
 110: parf=parf0 ; Reset names to default
 
-111: kons=[200,202,207,21,22,29,252,253] ; Reread VerA group 2 cases
+111: kons=[200,202,207,21,22,29,252,253] ; Read VerA group 1 cases
 
-112: kons=[200,203,207,252,50,51,18] ; Read 3 types for Ver A
+112: kons=[41,-1,411,-1,42,43,-1,44,-1,45,-1,46] ; Test cases
 
-113: kons=[41,-1,411,-1,42,43,-1,44,-1,45,-1,46] ; Test cases
+113: kons=[200,203,207,252,50,51,18] ; Read 3 types for Ver A
 
 114: kons=[511,-1,52,-1,53,-1,55] ; Test between types
 
 115: kons=[26,201,202,207,252] ; Save current t52 and Read VerB cases
 
 116: kons=[61,-1,62,63] ; Compare versions
-
-117: begin & kons=[200,202,207,21,22,29,252,26,201,207,252,62,63] ;
-parf=parf0
-parf[6]=parf[1] & parf[7]=parf[2] ; Version B is latest in distro  output
-parf[8]=parf[3]
-parf[0]=krcsrc ; Version A becomes new run
-parf[3]='Mone'
-end
 
 118: kons=[432,43,435,-1,44,-1,445] ; look at effect of atm
 
@@ -852,7 +829,7 @@ qq=tppb-tppa                    ; difference: File B -A
 xa=min(qq,max=xb)
 print,'Range of OnePoint T differences',xa,xb
 ya=MEAN_STD(qq,std=yb)
-print,'B-A Mean and stdDev=',ya,yb
+print,'    B-A  Mean and stdDev=',ya,yb
 ya=MEAN_STD(abs(qq),std=yb)
 print,'abs(B-A) Mean and stdDev=',ya,yb
 xa=MEAN_STD(qq[*,1]-qq[*,0],std=xb)

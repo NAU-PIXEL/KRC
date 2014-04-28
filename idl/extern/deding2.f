@@ -38,13 +38,18 @@ C  Atm. heating is : cosi-topdiff-(1.-ASUR)*trans
 C_Limitations
 C Limits  OMEGA to .999999 and  |G0| to .99 
 C_Calls  None
-C_Hist	88may05  HKieffer derive from  DEDING.
-C 99apr15  HHK bring  EXPMAX &  VLARGE well within single precision range
+C_Hist 1982jan--  Davip_A_Paige  RADLIB
+C 1986sep28  Hugh_H_Kieffer allow very large tau, gives semi-infinite result
+C 1986oct13  HHK  Use determinant in inverting  C1&C2. Add comments.
+C 1987jan27  HHK remove debug and unused code.
+C 1988may05  HK  Treat unit solar irradiance at top of atmosphere as 
+C     perpendicular to the direction of incidencederive from  DEDING.
+C 1999apr15  HHK bring  EXPMAX &  VLARGE well within single precision range
 C       and test for extreme  G0. 
 C  Add conservative scattering case, but it does not give similiar answers.
 C  Seems to works consistantly for  OMEGA up to .999999, so use this as limit
 C  After messing around with limiting cases for  G0 near +- 1, decide
-C to simply limit |G0| to .99 
+C  to simply limit |G0| to .99 
 C 2002jul16 HK Changed name from DEDING1, 
 C	revised fourth and next-to-last argument
 C 2002jul16  Using qdeding2.pro, results agree with JWW figures only for BOND.
@@ -71,7 +76,7 @@ C	REAL*8 VLARGE/1.0D200/	! large real number
 	GIN=MAX(MIN(G0,GMAX),-GMAX) ! G can cause blow up; limit assymetry
 	A0=     MIN(OMEGA,ONE-EPSILON) ! avoid 0 determinant at omega=1.
 	TT=TWO/THREE		! 2/3	
-C delta-eddington transformation
+C  Delta-Eddington transformation
 	F = GIN**2		!  JWW eq. 5 for f'
 	OMF=ONE-F
 	G = (GIN-F)/OMF		!  JWW eq. 2b for g'

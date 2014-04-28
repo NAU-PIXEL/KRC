@@ -39,12 +39,14 @@ function readkrc1, file,fcom,icom,lcom, lsubs,ts,tp,  ktype=ktype $
 ; 2010apr16 HK Update from readkrc.pro, add !dbug
 ; 2010sep04 HK Allow negative maxs to return single season
 ; 2013aug30 HK Assume DJUL date for distinction of KRC Versions
-; @014jan29 HK Add keyword dates. Claify when this and Ls are calculated here
+; 2014jan29 HK Add keyword dates. Clarify when this and Ls are calculated here
+; 2014apr25 HK Use ktype=-2 to indicate old krc that did not have MAXN5
 ;_End
 
 dv2=5000. ; 2013-09-09 12:00   switch date between assumed Version 1 and 2
 ;^^^^^^^^^^^ firmcode
 
+if not keyword_set(ktype) then ktype=0
 krc1=DEFINEKRC('KRC',param,nword=nwkrc) ; define structure == krccom
 ; krc1=DEFINEKRC('KRC',param,nword=nwkrc,pid=pid)
 ; n=n_elements(pid) & q=' =param[' & q2='] ; '
@@ -54,16 +56,17 @@ krc1=DEFINEKRC('KRC',param,nword=nwkrc) ; define structure == krccom
      MAXN2 =param[ 1] ; 1536
      MAXN3 =param[ 2] ;   16
      MAXN4 =param[ 3] ;   37
-     MAXN5 =param[ 4] ;  161
-     MAXN6 =param[ 5] ;    6
-     MAXNH =param[ 6] ;   48
-    MAXBOT =param[ 7] ;    6
-     NUMFD =param[ 8] ;   96
-     NUMID =param[ 9] ;   40
-     NUMLD =param[10] ;   20
-    NUMTIT =param[11] ;   20
-    NUMDAY =param[12] ;    5
-     NWKRC =param[13] ;  ---- 255
+     MAXN5 =param[ 4] ;  161 
+if ktype eq -2 then i=1 else i=0
+     MAXN6 =param[ 5-i] ;    6
+     MAXNH =param[ 6-i] ;   48
+    MAXBOT =param[ 7-i] ;    6
+     NUMFD =param[ 8-i] ;   96
+     NUMID =param[ 9-i] ;   40
+     NUMLD =param[10-i] ;   20
+    NUMTIT =param[11-i] ;   20
+    NUMDAY =param[12-i] ;    5
+     NWKRC =param[13-i] ;  ---- 255
 
 bd=bytarr((numtit+numday)*4)
 vrb=keyword_set(verb)           ; verbose flag
@@ -84,7 +87,6 @@ TSF = fltarr(MAXNH,MAXN4)      ; final hourly surface temperature
 TPF = fltarr(MAXNH,MAXN4)      ; final hourly planetary temperature
 
 ;--------------------------------------------------------------------
-if not keyword_set(ktype) then ktype=0
 if ktype lt 0 then begin        ; type -1
    nwtot=2*MAXNH*MAXN4
    ihead=1                               ; prepended records

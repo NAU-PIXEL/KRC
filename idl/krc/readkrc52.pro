@@ -44,7 +44,9 @@ function readkrc52, finame,ttt,uuu,vvv,itemt,itemu,itemv, ddd,ggg,itemd,itemg $
 ; 2009feb25 HK Include option for Type 51. Reorder arguments
 ; 2011aug04 HK Ensure all dimensions present for type 52, even if size is 1
 ; 2013jun10 HK Accomodate Version 2 for Ls as well as older versions.
-; 2013jul27 HK Replace function being Ls wih KRCCOM
+; 2013jul27 HK Replace function being Ls with KRCCOM
+; 2014mar12 HK Accomodate Version 3 REAL*8
+; 2014apr26 HK Fix offset of 1 in getting old version latitudes
 ;_End
 
 ; help,finame,ttt,uuu,vvv,itemt,itemu,itemv,log,dbug,jword
@@ -52,7 +54,7 @@ function readkrc52, finame,ttt,uuu,vvv,itemt,itemu,itemv, ddd,ggg,itemd,itemg $
 ; 51: [N24,2,Nlat,x+nseas,ncase]  
 ; 52: [N24,7,Nlat,x+nseas,ncase]   First x "seasons" of each case contains: 
 ; Initial block contains
-; 4 real words  Float of NWKRC ,Dimension of xtra, Number of xtra, spare 
+; 5 real words: see "front" in  READKRCCOM
 ; followed by KRCCOM, DJU5(nseas),SUBS(nseas)
 ;   ,PZREF(nseas), TAUD(nseas), SUMF(nseas)
 ; 51: True seasons contain for every hour: TSF,TPF
@@ -63,26 +65,26 @@ function readkrc52, finame,ttt,uuu,vvv,itemt,itemu,itemv, ddd,ggg,itemd,itemg $
 
 t52=not keyword_set(t51) 
 BIN5,'R',finame,head,aaa,/verb
-sizh=size(aaa)   ; [Hour or layer,7 items,latitude,1+season,[case]]
+siza=size(aaa)   ; [Hour or layer,7 items,latitude,1+season,[case]]
 ; items are [Ts,Tp,Ta,downVIS,downIR,<-- by hour   3+Tmin, 3+Tmax <-- by layer]
-if sizh[0] lt 4 then begin 
+if siza[0] lt 4 then begin 
     message,'Input file has wrong dimensions',/con
     return,-5
 endif
-if sizh[0] eq 4 then begin      ; only one case, force to 5 dimensions
-    aaa=reform(aaa,sizh[1],sizh[2],sizh[3],sizh[4],1,/overwrite)
-    sizh=size(aaa)
+if siza[0] eq 4 then begin      ; only one case, force to 5 dimensions
+    aaa=reform(aaa,siza[1],siza[2],siza[3],siza[4],1,/overwrite)
+    siza=size(aaa)
  endif
-vern=GETVERS(head,idx) ; look for version number
-dom = total((idx-[2,2,0])*[1.e4,100.,1]) ge 0 ; True if using J2000.0 dates
+vern=GETVERS(head,ii) ; look for version number.
+dod=siza[siza[0]] eq 5 ; double precision version
+;dom = total((ii-[2,2,0])*[1.e4,100.,1]) ge 0 ; True if using J2000.0 dates
 
-front=READKRCCOM(finame,hold)   ; get the front words
-if n_elements(front) lt 2 then return,front
-kcom=READKRCCOM(1,hold)
+ii=READKRCCOM(finame,khold)   ; get khold
+if n_elements(ii) lt 2 then return,ii ; Error occured
+kcom=READKRCCOM(1,khold)         ; get krccom for the first case
 mlat=n_elements(kcom.alat)      ; number of latitudes stored in KRCCOM
 nlay=kcom.id[0]                 ; number of layers computed in KR
-free_lun,hold[0]                ; close file
-idx=front[1] & ndx=front[2]
+free_lun,khold[0]                ; close file
 
 itemt=['Tsurf','Tplan','Tatm','DownVIS','DownIR'];each hour,lat,season,case
 if not t52 then itemt=itemt[0:1] ; Type 51 has only 2 items
@@ -94,32 +96,41 @@ numv=n_elements(itemv)
 numu=n_elements(itemu)
 numd=n_elements(itemd)
 if t52 then numd=n_elements(itemd) else numd=0
-nhour=sizh[1]                   ; number of Hours. Expect 24 or 48
-nv=sizh[2]                      ; number of variables. Expect 7[t52] or 2[t51] 
-nlat=sizh[3]                    ; number of latitudes
-ncase=sizh[5]                   ; each is a case
+nhour=siza[1]                   ; number of Hours. Expect 24 or 48
+nv=siza[2]                      ; number of variables. Expect 7[t52] or 2[t51] 
+nlat=siza[3]                    ; number of latitudes
+ncase=siza[5]                   ; each is a case
 if nv ne numt+numd then message,'# items mismatch' ;
-ksiz=fix(aaa[0:3,0,0,0,0])      ; get sizes
-nwkrc=ksiz[0]                   ; or front[0]  ; # words in KRCCOM
 nkay=(nlay-1)<(nhour-3)         ; Number of layers transfered
-; nlat=ksiz[2]
+front=fix(aaa[0:3,0,0,0,0])      ; get sizes from FRONT
+nwkrc=front[0]                   ;  # real (*4 or 8) words in KRCCOM
+; idx=front[1]  ; this must be 4
 ndx=front[2]                    ; number of virtual seasons containing krccom
-nseas=sizh[4]-ndx               ; Number of true seasons
+nseas=siza[4]-ndx               ; Number of true seasons
+if nseas ne front[3] then stop ; expect to agree
 print,'# layers computed, transfered=',nlay,nkay
 wpl=nhour*nv                    ; words per latitude
 wps=wpl*nlat                    ; words per season
 qq=reform(aaa[*,*,*,0:ndx-1,*],wps*ndx,ncase) ; extract header for each case
 k=4+nwkrc+5*nseas               ; words in case header
-krcc=reform(qq[4:3+nwkrc  ,*],nwkrc,ncase) ; extract krccom for each case
 vvv =reform(qq[4+nwkrc:k-1,*],nseas,numv,ncase) ; extract season items " "
+krcc=reform(qq[4:3+nwkrc  ,*],nwkrc,ncase) ; extract krccom for each case
 ;if dom then mjd=vvv[*,0,0] else mjd=vvv[*,0,0]-11545. ; MJD re 2000.0
 ;lsubs=LSAM(mjd,myn)                                   ; calc Ls here
-i=nwkrc-2*mlat                  ; words before start of latitude values
-q=reform(krcc[i:*,*],mlat,2,ncase) ; all latitudes possible
+if dod then begin               ; R*8: alat,elev follow FD
+   i=n_elements(kcom.fd)        ; words before start of latitude values
+   i2=i+2*mlat-1                ; last of elev
+endif else begin                ; R*4 : alat,elev at end of KRCCOM
+   i2=nwkrc-1                  
+   i=i2-2*mlat+1
+endelse
+q=krcc[i:i2,*]                           ; all latitudes possible
+q=reform(q,mlat,2,ncase,/over)           ; 
+; help,dom,krcc,i,i2,q
 uuu=reform(q[0:nlat-1,*,*],nlat,2,ncase) ; latitudes and elevations for each case
 ; done extraction of case header items
 if !dbug then help,aaa,qq,krcc,vvv,uuu
-wpc=wps*sizh[4]                 ; words per case
+wpc=wps*siza[4]                 ; words per case
 jword=[4,wpc,ncase]
 ttt=reform(aaa[*,0:numt-1,*,ndx:*,*],nhour,numt,nlat,nseas,ncase) ; hourly items
 

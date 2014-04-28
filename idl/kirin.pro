@@ -63,7 +63,7 @@ case cpu of
       outid=vera                
       mybw='HP_Laserjet_3330'   ; B&W printer
       myclr='q'                 ; Color printer 
-end
+  end
   else: begin              ; assumes ASU test environemnt
      idltop='/mars/common/rsi/idl71/bin/idl/' ; <<< IDL execution 
      solib=idltop+'externals/ftnwrap64.so'      ; shared object library
