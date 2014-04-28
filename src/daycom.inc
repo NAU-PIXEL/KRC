@@ -1,32 +1,32 @@
 C_Titl  DAYCOM.INC   common for layer and time items in  KRC
       INTEGER*4 NWDAY
-	PARAMETER (NWDAY = 5*MAXN1 + MAXN1P + (5+MAXN1)*MAXN3
+        PARAMETER (NWDAY = 4*MAXN1 + 2*MAXN1P + (5+MAXN1)*MAXN3
      &  + 3*MAXN2 + 2*MAXNH + MAXBOT) ! size of this common in 4-byte words
 C_Desc
 C  ASOL &  ADGR are set in  TLATS, the rest are set in  TDAY
-      REAL*4 XCEN(MAXN1)	! Depth at layer centers [m]
-     &, SCONVG(MAXN1)	! Classical convergence factor for each layer
-     &, BLAY(MAXN1)	! Layer thicknesses [m]
-     &, TMIN(MAXN1)	! Minimum layer temperatures of day on the hour
-     &, TMAX(MAXN1)	! Maximum layer temperatures of day on the hour
-     &, TTJ(MAXN1P)	! Layer temperatures (TTJ(1) is surface temperature)    
+      REAL*4 XCEN(MAXN1)        ! Depth at layer centers [m]
+     &, SCONVG(MAXN1)   ! Classical convergence factor for each layer
+     &, BLAY(MAXN1P)    ! Layer thicknesses [m]
+     &, TMIN(MAXN1)     ! Minimum layer temperatures of day on the hour
+     &, TMAX(MAXN1)     ! Maximum layer temperatures of day on the hour
+     &, TTJ(MAXN1P)     ! Layer temperatures (TTJ(1) is surface temperature)    
      &, TT1(MAXN1,MAXN3)! Temperatures at start of day for each layer and day 
-     &, TTS(MAXN3)	! Mean daily surface temperatures                     
-     &, TTB(MAXN3)	! Mean daily bottom temperatures                      
-     &, TTA(MAXN3)	! End-of-Day Atmospheric temperatures
-     &, DTMJ(MAXN3)	! RMS daily temperature change
-     &, FRO(MAXN3)	! Daily frost amounts. [kg/m^2]                    
-     &, ASOL(MAXN2)	! Insolation at each time of day, direct + diffuse
-     &, ADGR(MAXN2)	! Atm. solar heating at each time of day 
-     &, TOUT(MAXN2)	! Surface temperatures of solution at each time of day
-     &, TSFH(MAXNH)	! Hourly surface temperatures at solution
-     &, TPFH(MAXNH)	! Hourly planetary temperatures at solution
-      INTEGER*4 N1K(MAXBOT)	! Binary time division layers
+     &, TTS(MAXN3)      ! Mean daily surface temperatures                     
+     &, TTB(MAXN3)      ! Mean daily bottom temperatures                      
+     &, TTA(MAXN3)      ! End-of-Day Atmospheric temperatures
+     &, DTMJ(MAXN3)     ! RMS daily temperature change
+     &, FRO(MAXN3)      ! Daily frost amounts. [kg/m^2]                    
+     &, ASOL(MAXN2)     ! Insolation at each time of day, direct + diffuse
+     &, ADGR(MAXN2)     ! Atm. solar heating at each time of day 
+     &, TOUT(MAXN2)     ! Surface temperatures of solution at each time of day
+     &, TSFH(MAXNH)     ! Hourly surface temperatures at solution
+     &, TPFH(MAXNH)     ! Hourly planetary temperatures at solution
+      INTEGER*4 N1K(MAXBOT)     ! Binary time division layers
 
       COMMON /DAYCOM/ XCEN, SCONVG, BLAY, TMIN, TMAX, TTJ, TT1
      &, TTS, TTB, TTA,DTMJ, FRO, ASOL, ADGR, TOUT, TSFH, TPFH, N1K
 
-C_Hist	84jun15  Hugh_H_Kieffer  97feb11  HHK add  ADGR  
+C_Hist  84jun15  Hugh_H_Kieffer  97feb11  HHK add  ADGR  
 C   97mar03 HK correct  NWDAY       97sep08  HHK add  TPFH
 C 2002jul12 HK Add TTA, ADGR was down-going atmospheric  IR radiance
 C 2002aug15 HK NWDAY is computed, =1951

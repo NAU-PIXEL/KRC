@@ -3,7 +3,7 @@
 # model file system. See the file AAREADME for additional description
 #  This step to ensure documentation products up to date
 # 2012 Nov 21 Hugh Kieffer 
-# 2013nov13  HK Update
+# 2013nov13, 2014mar03   HK Update
 ###################################
 
 
@@ -17,7 +17,7 @@ latex krcV3 			# process the .tex file
 latex krcV3 			#   twice to resolve references	
 dvipdf krcV3.dvi		# and to pdf
 
-cd ~/krc
+cd ~/krc/Doc
 
 latex hporb			# has references included
 latex hporb
@@ -27,9 +27,10 @@ latex PUG			# has references
 bibtex PUG
 latex PUG
 latex PUG
-dvipdf PUG.dvi		# and to pdf
-tth <PUG.tex >PUG.html	      # and to html
-latex helplist		# no refs
+dvipdf PUG.dvi          	# and to pdf
+tth <PUG.tex >PUG.html		# and to html  2014mar03 does not find .bbl
+
+latex helplist			# no refs
 dvipdf helplist.dvi		# and to pdf
 
 cd ~/krc/VER/

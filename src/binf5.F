@@ -142,7 +142,7 @@ C  K for sizes, 28 for date and its delimiters, 10 for ending
  100	   WRITE (BUF,*) (ID(I),I=1,ID(1)+1),ID(8),NIT,PLAN*NBH ! sizes
 	   CC=' '		! initiate header as all blank
 	   K=WHITE1 (BUF,CC)	! remove excess spacing; put into header
-C  K is last non-blank character
+C            K is last non-blank character
 	   LL =(ID(9)+(K+28+10)-1)/NBH +1 ! number of blocks required
  	   IF (DBG1) WRITE(*,*)'ID(9),K,LL,plan=',ID(9),K,LL,PLAN !###
 	   IF (PLAN.LT.LL) THEN
@@ -183,10 +183,10 @@ Ckb           call u_datime(buf) !isis
 	   ENDIF
 
 	   LL=ID(9)-J		! number of user text bytes still to write
-	   IF (DBG1) WRITE(*,*)'kblock,i,j,ll=',KBLOCK,I,J,LL !##
+	   IF (DBG1) WRITE(*,*)'plan,kblock,i,j,ll=',PLAN,KBLOCK,I,J,LL !##
 	   IF (LL.GT.0) THEN
 	      I=MIN(I,LL)	! amount to write, even if 0
-	      CC(K+1:K+I) = HEADER(J+1:J+I) ! move text to header
+	      CC(K+1:K+I) = HEADER(J+1:J+I) ! move text to header <<<<<
 	   ENDIF
 	   IF (DBG1.OR.DBG2) WRITE(*,*)'@6 LOC=',LOC !###
 	   CALL PIO_WT (FID, LOC, NBH, HH, IERR) ! write one block
@@ -202,7 +202,8 @@ C				!   header record starting at beginning
 	     GOTO 200
 	   ENDIF
 
-	   IF (DBG1.OR.DBG2) WRITE(*,*)'@8 LOC,ND1=',LOC,ND1 !###
+	   IF (DBG1.OR.DBG2) WRITE(*,*)'@8 LOC,ND1,NBY=',LOC,ND1,NBY !###
+C   FID, starting byte, Number bytes, buffer to write, return code    
 	   CALL PIO_WT (FID, ND1,NBY, DDATA, IERR) ! write data to file
 	   IF (IERR .NE. 0) GOTO 94
 

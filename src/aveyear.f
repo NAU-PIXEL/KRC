@@ -4,7 +4,7 @@ C  This is the average annual insolation, normalized to mean annual
 C solar flux over the orbit
 C_Args
         REAL*4 BLIQ ! in. Obliquity in degrees.
-C                       (the sub-solar latitude on the planet)
+C                       (the maximum sub-solar latitude on the planet)
         REAL*4 XLAT ! in. latitude on surface; in degrees. 
 C
 C_Desc formula from  WARD in  MARS p309 Eq 12

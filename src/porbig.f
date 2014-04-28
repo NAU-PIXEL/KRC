@@ -19,9 +19,9 @@ C_End&___1_________2_________3_________4_________5_________6_________.72
 	INTEGER I,J,K,INCODE,IPLAN
 	REAL*4 PIO2		! constants
 	REAL*4 PERIOD
-	REAL*4 QQ,QB,QV(3),ZFAXU(3)	! temporary scalar and vector	
+	REAL*4 QQ,QB,QV(3)	! temporary scalar and vector	
 C	REAL*4 XBAXU(3),YBAXU(3),ZBAXU(3)		
-	REAL*4 XBFXU(3),YBFXU(3),ZBFXU(3),ZBAXU(3)	
+	REAL*4 XBFXU(3),YBFXU(3),ZBFXU(3),ZBAXU(3),ZFAXU(3)	
 	REAL*4 ZUNIT(3) /0.,0.,1./ ! Z unit vector
 	REAL*4 AFRM(9),FARM(9)
 C
@@ -56,7 +56,9 @@ C	SLP=ARGP-ARGV ! ArgPeriapsis -  (from node to planets vernal equinox)
 	K=IFIX(PBUG)		!d
 	I=MOD(K,2)		!d  +1
 C Get rotation matrix from orbital==F to J2000==A rotation matrix  AFrm
-	CALL ROTORB (ODE,CLIN,ARGP, AFRM,.TRUE.) ! This is EFrm
+C	CALL ROTORB (ODE,CLIN,ARGP, AFRM,.TRUE.) ! This is EFrm
+C elements are relative to Earths orbit, not Earth Equator
+	CALL ROTORB (ODE,CLIN,ARGP, AFRM) ! This is EFrm
 	IF (I.EQ.1) THEN	!d 
 	   WRITE(IOP,*),'IPLAN,TC,SIDAY,OBL=',IPLAN,TC,SIDAY,OBL
 	   WRITE(IOP,*),'ODE,CLIN,ARGP=',ODE,CLIN,ARGP !d
@@ -64,7 +66,8 @@ C Get rotation matrix from orbital==F to J2000==A rotation matrix  AFrm
 	   WRITE(IOP,*),'ZBAB,ZBAA,TJP=',ZBAB,ZBAA,TJP
 	   CALL ROTSHO ('EFRM',AFRM,IOP) !d
 	ENDIF	
-	CALL ROTAX  (1,-OBL,  AFRM) ! by obliquity. Now equatorial
+	CALL ROTAX  (1,-OBL,  AFRM) ! by obliquity. Now equatorial=J2000
+	CALL ROTCOL (AFRM,3, ZFAXU) ! Orbit pole , Z unit vector, in J200
 	IF (I.EQ.1) THEN	!d
 	   CALL ROTSHO ('AFRM',AFRM,IOP) !d
 	   QB=R2D*ZBAB !d RA
@@ -76,12 +79,15 @@ C inputs: ZBAB = Right Ascension of spin axis in J2000 equitorial, degrees
 C         ZBAA = Declination " "         
 C Z axis of B is along spin axis
 C X axis of B is along vernal equinox, which is along spinAxis-cross-OrbitPole
-	CALL COCOSC (PIO2-ZBAA,ZBAB, 1. , ZBAXU) ! spin axis unit vector in J200
+	CALL COCOSC (PIO2-ZBAA,ZBAB, 1. , ZBAXU) ! spin axis unit vector in J2000
+	CALL VDOT (ZFAXU,ZBAXU, QQ) ! cos of angle between orbit Z and body Z
+	BLIP=ACOS(QQ)   ! angle between vectors, == obliquity
 	CALL TRANS3 (AFRM,FARM)
 	CALL ROTVEC (FARM,ZBAXU, ZBFXU) ! rotate into Focus system
+
 C Vernal equinox, which is along spinAxis-cross-OrbitPole
 C    but orbit pole in F is [0,0,1] 
-	CALL VCROSS (ZBFXU, zunit, QV) ! QV is XBFXX
+	CALL VCROSS (ZBFXU, ZUNIT, QV) ! QV is XBFXX
 	CALL VNORM (QV,XBFXU)	! make unit length:  Vernal equinox
 	CALL VCROSS (ZBFXU,XBFXU,YBFXU) ! get Y axis of Season system
 C Make rotation matrix direct from orbit plane to Season

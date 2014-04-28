@@ -3,17 +3,17 @@ C_Titl  LATCOM.INC   common for latitude-dependant items in  KRC
       PARAMETER (NWLAT= (9+ 3*MAXN1 + 2*MAXNH) *MAXN4) ! 
 C_arg: all are set in  TLATS
       INTEGER*4 NDJ4(MAXN4) ! # days to compute solution for each latitude
-      REAL*4 DTM4(MAXN4)	 ! rms temperature change on last day
-     &,TST4(MAXN4)	 ! predicted equilibrium temperature of ground
-     &,TTS4(MAXN4)	 ! predicted mean surface temperature for each latitude
-     &,TTB4(MAXN4)	 ! predicted mean bottom temperature
-     &,FROST4(MAXN4)	 ! predicted frost amount kg/m^2.
-     &,AFRO4(MAXN4)	 ! frost albedo.  
-     &,TTA4(MAXN4)	 ! predicted final atmosphere temperature  
-     &,TTX4(MAXN4)	 ! spare
+      REAL*4 DTM4(MAXN4)         ! rms temperature change on last day
+     &,TST4(MAXN4)       ! predicted equilibrium temperature of ground
+     &,TTS4(MAXN4)       ! predicted mean surface temperature for each latitude
+     &,TTB4(MAXN4)       ! predicted mean bottom temperature
+     &,FROST4(MAXN4)     ! predicted frost amount kg/m^2.
+     &,AFRO4(MAXN4)      ! frost albedo.  
+     &,TTA4(MAXN4)       ! predicted final atmosphere temperature  
+     &,TTX4(MAXN4)       ! spare
      &,TMN4(MAXN1,MAXN4) ! predicted convergence midnight temperature
-     &,TIN(MAXN1,MAXN4)	 ! minimum hourly layer temperature
-     &,TAX(MAXN1,MAXN4)	 ! maximum hourly layer temperature
+     &,TIN(MAXN1,MAXN4)  ! minimum hourly layer temperature
+     &,TAX(MAXN1,MAXN4)  ! maximum hourly layer temperature
      &,TSF(MAXNH,MAXN4)  ! final hourly surface temperature
      &,TPF(MAXNH,MAXN4)  ! final hourly planetary temperature
 C_Var: all are set in  TLATS

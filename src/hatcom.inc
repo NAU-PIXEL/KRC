@@ -1,10 +1,10 @@
 C_Titl  HATCOM.INC   common to store post-2003 items in  KRC
-C     nwhat= 1+(3+4*maxnh+maxn6*maxn1)*maxn4 ! size of this common	
-      REAL*4 HEAT1M	    ! Mean upward heat flow into surface on last day
-     &, HEATMM(MAXN4)	    !  " " for all latitudes <W m^-2>
+C     nwhat= 1+(3+4*maxnh+maxn6*maxn1)*maxn4 ! size of this common
+      REAL*4 HEAT1M         ! Mean upward heat flow into surface on last day
+     &, HEATMM(MAXN4)       !  " " for all latitudes <W m^-2>
      &, TEXTRA(MAXN4,2)     ! Extrapolation in surface/bottom temperature
      &, TAF(MAXNH,MAXN4)    ! final hourly atmosphere temperature, not predicted
-     &, TOFALB(MAXNH,MAXN4)	! hourly top-of-atm albedo, not predicted
+     &, TOFALB(MAXNH,MAXN4)   ! hourly top-of-atm albedo, not predicted
      &, DOWNVIS(MAXNH,MAXN4)    ! hourly net downward solar flux
      &, DOWNIR(MAXNH,MAXN4)     ! hourly net downward thermal flux
      &, TMN4Y(MAXN6,MAXN1,MAXN4)! midnight temperatures (year,layer,lat.)

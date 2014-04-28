@@ -1,21 +1,50 @@
-evolve.txt  Notes on evolution of KRC code, after the first 17 years.
-Newest on top.  Does not include many minor changes
+evolve.txt    Notes on evolution of KRC code, after the first 17 years.
+Newest on top.  Does not include all minor changes.
 ............................................................................
 
-2014jan27 Distro 2.3.0 . If fatal error, rather than terminating run, KRC will
-try the next case. Ensure disk files closed for unusual sequences.
+2014apr27 Version 2.4.1 Fix blunder in the v2.x.x system when using the Viking
+lander pressure relation; in VLPRES update the base date for compatability with
+the J2000 system.
 
-2013nov13 Distro of version 2.2.4 sent to ASU but named krc222f there. This is
+2014mar28 Version 2.3.3 (not released)
+Minor fixes to V2.3.2 routines noticed in the R*8 development:
+daycom.inc    BLAY(MAXN1) >> BLAY(MAXN1P) and increase NWDAY by 1
+tday.f       DIFFI(MAXN1) >> DIFFI(MAXN1P)
+ "           HEAT >> HEATA   simply to make it unique
+tdisk.f      INTEGER*4 HEADLEN /30/ >>  INTEGER*4 HEADLEN /25/
+tcard.f near 274  N1PIB.GT.MAXN1 >>  N1PIB.GT.MAXN1P
+
+2014mar23:28 Code KRCN, A Crank-Nicholson solution version of the R*8 version of
+TDAY, only this file is modified, and it calls the new routine tridah8.f, which
+is a modification of the Numerical Recipes routine tridag. A parallel change is
+to remove all code related to time doubling, use of which would require changing
+the matrix size at nearly every time step.
+
+2014mar10:16 Code KRC8, a double-precision version, keeping the same algorithms.
+Major source files and routine names changed by adding a trailing 8:
+---.f >> ---8.f . For a number of minor routines, kept the same name and grouped
+them into a file ksubs8.f . Order of arrays in KRCCOM modified. The files for
+all commons with any real variables renamed: ---com.inc >> ---c8m.f . 21 Fortran
+files modified. Untabify most source-code files. Makefile Make8 .
+
+2014feb28 Version 2.3.2  Change Makefiles to use gfortran rather than g77, and 
+simplify them.
+
+2014jan27 Version 2.3.0 If fatal error, rather than terminating run, KRC will
+try the next case. Ensure disk files closed for unusual sequences. Use more
+accurate, and slower, models for the OnePoint mode.
+
+2013nov13 Version 2.2.4 sent to ASU but named krc222f there. This is
 the last of several variations on 2.2.2 that dealt only with the makefile, IDL
 routines, and tiny format changes. All calculations are the same in all varients
 of 2.2.2 and 2.2.4
 
 2013aug30  Fix logic in tdisk when changing between file types. 
 
-2013aug26 Revise PORB system to accomodate exoplanets and a format for asteroids
-that allows cut-and-paste from the JPL small-bodies browser; most changes in
-porbel.f . Add design and Users Guide documents for PORB. Included detailed
-documentation of Type 52 output file.  Release version 2.2.2
+2013aug26 Version 2.2.2  Revise PORB system to accomodate exoplanets and a format
+for asteroids that allows cut-and-paste from the JPL small-bodies browser; most
+changes are in porbel.f . Add design and Users Guide documents for
+PORB. Included detailed documentation of Type 52 output file.
 
 2013jun10:Aug05 v2.2.1 Fix bug in computing dates to match requested LS in
 OnePoint mode that was introduced in 2013jan changes.  Major change to PORB
@@ -26,13 +55,14 @@ values now agree closely with Allison and McEwen (2000), as described in ls.tex
 
 2013jan30+ v2.1.2
 Add version number to screen, print file , and type5x output. Defined in filcom
-Remove capability of taking input cards from terminal.
-Fix binf5 to detect CPU word order and write in .bin5 file
-Update PORB system to use dates from J2000.0, use IMPLICIT NONE throughout,
+Remove capability of taking input cards from terminal. Use IMPLICIT NONE 
+throughout. Fix binf5 to detect CPU word order and write in .bin5 file
+Update PORB system to use dates from J2000.0, dates now 11545 less than older.
   Revise the orbit-element tables, using Standish for planet orbits.
   Change variable name:  PHOXX to PHFXX , to match matrix.tex conventions.
 
 2013jan25  Version 1 distributed for KRC workshop at ASU Jan 28-30
+This is the version described in the JGR article.
 
 2012jun02 Compute cosine of incidence on level and slopes using vector algebra.
 This removes the restriction that slope normals should not be tilted past the 

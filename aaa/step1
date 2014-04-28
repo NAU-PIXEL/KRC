@@ -34,7 +34,7 @@ mkdir idl/extern  # routines to go into shared object library
 mkdir idl/krc	# IDL code specific to KRC
 mkdir idl/subs	# IDL general subroutines
 mkdir run	# binary executable, input files, test print files
-mkdir run/output  # binary files output by runs
+mkdir run/out   # binary files output by runs
 mkdir src	# source code and include files and Makefile (as soft links)
 mkdir src/cfiles  # C code for low-level I/O
 

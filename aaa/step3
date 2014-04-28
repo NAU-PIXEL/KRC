@@ -41,8 +41,9 @@ ln -s /work2/Reprints/TherMod/Kieffer13krc.pdf . # JGR article as published
 ln -s /home/hkieffer/xtex/AGU/krcV3.pdf . 	# journal article, with corrections
 ln -s /home/hkieffer/xtex/tes/krc/HeatOfT.pdf . #  T-dependent materials
 ln -s /home/hkieffer/xtex/themis/cement.pdf . 	# Particulate model
-ln -s /home/hkieffer/krc/helplist.tex  .	# Helplist source
-ln -s /home/hkieffer/krc/helplist.pdf  .	# KRC Users Guide
+ln -s /home/hkieffer/krc/Doc/helplist.tex  .	# Helplist source
+ln -s /home/hkieffer/krc/Doc/helplist.pdf  .	# KRC Users Guide
+ln -s /home/hkieffer/krc/Doc/type52map.tex .	# included in helplist
 ln -s /home/hkieffer/krc/Doc/hporb.tex . 	# source for PORB doc
 ln -s /home/hkieffer/krc/Doc/hporb.pdf . 	# PORB documentation
 ln -s /home/hkieffer/krc/Doc/PUG.tex .
@@ -50,7 +51,6 @@ ln -s /home/hkieffer/krc/Doc/PUG.pdf .   # PORB USers Guide
 ln -s /home/hkieffer/krc/Doc/PUG.html .
 ln -s /home/hkieffer/krc/VER/Vtest.tex .
 ln -s /home/hkieffer/krc/VER/Vtest.pdf .  # Description of KRC version tests
-ln -s /home/hkieffer/krc/type52map .
 ln -s /home/hkieffer/krc/porb/PORBguide . 	# Guide to running PORB
 ln -s /home/hkieffer/xtex/tes/krc/mkrc.pdf .	## Movie version of KRC
 #ln -s /home/hkieffer/xtex/tes/krc/asteroid.tex . ## Discussions with Phil
@@ -61,8 +61,8 @@ ln -s /home/hkieffer/Documents/ppt/mars/krc/Noutline .
 ln -s /home/hkieffer/xtex/definc.sty .  # Latex shorthand
 #ln -s /work2/apps/tetex/tex/latex/natbib/natbib.sty .
 ln -s /home/hkieffer/idl/bin5.txt .
-ln -s /home/hkieffer/krc/evolve.txt .     # evolution of changes to KRC
-ln -s /home/hkieffer/krc/flow.txt .
+ln -s /home/hkieffer/krc/Doc/evolve.txt .     # evolution of changes to KRC
+ln -s /home/hkieffer/krc/Doc/flow.txt .
 ln -s /home/hkieffer/krc/src/How3 .	# how some things in KRC work
 #ln -s /home/hkieffer/krc/liens.txt .
 #ln -s /home/hkieffer/krc/notes .  # scattered notes from development
@@ -75,7 +75,7 @@ ln -s /home/hkieffer/xtex/AGU/2012JE004164-ds10.txt ds10.txt
 
 echo "Done copy to doc"
 
-cd $RTOP/run
+cd $RTOP/run      # for input files and many print files
 rm -Rf *
 ln -s /home/hkieffer/krc/tes/master.inp .    # 19 latitudes, defaults parameters
 ln -s /home/hkieffer/krc/tes/web.inp .  # draft for web
@@ -100,7 +100,7 @@ ln -s /home/hkieffer/krc/tes/VerTest.inp .     # acceptance test
 ln -s /work1/mars/opacity/THEMIS1yearDustIce.bin5 . # climate opacities
 echo "Done copy to run"
 
-cd $RTOP/src
+cd $RTOP/src       # Most source code and Makefile
 rm -f *
 ln -s /home/hkieffer/krc/uniq/Makefile .        # put Makefile where it's used
 ln -s /home/hkieffer/krc/src/porbcm.inc
@@ -190,7 +190,7 @@ ln -s /home/hkieffer/src/for/math/vaddsp.f .  # many routines
 ln -s /home/hkieffer/src/for/math/xtreme.f .
 echo "done copy from src/for"
 
-cd $RTOP/src/cfiles
+cd $RTOP/src/cfiles   # C language source code and Makefile
 rm -f *
 #ln -s /home/hkieffer/src/cnew/cisis/krcMakeC .
 ln -s /home/hkieffer/krc/aaa/Makec  Makefile	# put Makefile where it's used
@@ -230,11 +230,12 @@ ln -s /home/hkieffer/src/cnew/cisis/uidef.h .
 ln -s /home/hkieffer/src/cnew/cisis/upper.c .
 echo "done copy from src/cnew"
 
-cd $RTOP/idl
+cd $RTOP/idl  # IDL routines
 rm -f *
 ln -s /home/hkieffer/krc/aaa/idlPath .    # set the IDL path
 ln -s /home/hkieffer/idl/krc/kirin.pro .  # initialize IDL for KRC
 ln -s /home/hkieffer/idl/krc/krcvtest.pro . # Test KRC versions
+ln -s /home/hkieffer/idl/test/qdeding2.pro . # test R*4 R*8 alignment
 echo "done copy from idl"
 
 cd $RTOP/idl/extern   # items for Shared Object Library
@@ -245,7 +246,7 @@ ln -s /home/hkieffer/tes/mod/binhead2.f .
 ln -s /home/hkieffer/src/for/math/ccor2d.f .
 ln -s /home/hkieffer/src/for/math/con4.f .
 ln -s /home/hkieffer/lunar/DE/const.f .
-ln -s /home/hkieffer/rad/mie/deding1.f .
+# ln -s /home/hkieffer/rad/mie/deding1.f .  # single precision
 ln -s /home/hkieffer/rad/mie/deding2.f .
 ln -s /home/hkieffer/lunar/DE/dpephem.f .
 ln -s /home/hkieffer/src/for/NumRec/dspline.f .
@@ -323,7 +324,7 @@ ln -s /home/hkieffer/idl/externals/vlpresw.c .
 #ln -s /home/hkieffer/idl/externals/qprapxw.c .
 echo "done copy of idl/extern"
 
-cd $RTOP/idl/krc
+cd $RTOP/idl/krc  # IDL code directly related to KRC
 rm -f *                                           # list of Calls
 ln -s /home/hkieffer/idl/krc/definekrc.pro .  # none
 ln -s /home/hkieffer/idl/krc/getvers.pro .    # none
@@ -341,8 +342,9 @@ ln -s /home/hkieffer/idl/krc/readkrccom.pro . # definekrc
 ln -s /home/hkieffer/idl/krc/examt52.pro .  # Example program: refers to routines outside idl1
 echo "done copy of idl/krc"
 
-cd $RTOP/idl/subs    # not updated after about 2012 march
+cd $RTOP/idl/subs    # IDL code not spcific to KRC
 rm -f *       
+ln -s /home/hkieffer/idl/subs/avalg.pro . 
 ln -s /home/hkieffer/idl/subs/bin5.pro .          # none
 ln -s /home/hkieffer/idl/skel91.pro .      # skeleton program that uses kon91
 ln -s /home/hkieffer/idl/subs/chart.pro .  # called by examt52
@@ -372,6 +374,7 @@ ln -s /home/hkieffer/idl/subs/pm180.pro .
 ln -s /home/hkieffer/idl/subs/printjcols.pro .
 ln -s /home/hkieffer/idl/subs/printril.pro .
 ln -s /home/hkieffer/idl/subs/readtxtcol.pro .
+ln -s /home/hkieffer/idl/subs/scalelin.pro  .
 ln -s /home/hkieffer/idl/subs/st0.pro  .
 ln -s /home/hkieffer/idl/subs/strum.pro  .
 ln -s /home/hkieffer/idl/subs/strword1.pro .

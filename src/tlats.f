@@ -29,6 +29,7 @@ C 2012feb29  HK  Remove unused variables
 C 2012mar01  HK  Include logical switches for atmosphere
 C 2012mar27  HK  Incorporate  CLIMTAU
 C 2014feb25 HK Set most variables to *4. Align with 6 spaces and 2-space indent
+C 2014apr27 HK untabify  Remove unused variables from trig slope solution
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
 C
       REAL*4 DERI(2,2)            ! diffuse irradiances from Delta-Eddington
@@ -36,17 +37,17 @@ C
       REAL*4 COLL,COL3,BOND      ! returned by Delta-Eddington
 C
       REAL*4 ACOSLIM,AH,AINC,ANGLE,AVEA,AVEE,ATMHEAT,AVEI,AVEH
-     &,BOTDOWN,BOUNCE,CC,CC2,CD,CL,CL2,COSAM,COSI,COSZLIM,COS2,COS3
+     &,BOTDOWN,BOUNCE,CC,CD,CL,COSAM,COSI,COSZLIM,COS2,COS3
      &,DIFAC,DIFFUSE,DIP,DIRECT,DIRFLAT,EFP,FACTOR,F23,FP,G0,G1,OMEGA
-     &,PCAP,PFACTOR,PCO2G,PCO2M,RADEAST,RANG,RLAT,RLAT2,RSDEC,SAZ
-     &,SLONOR,SD,SL,SL2,SOLR,SS,SS2,TAEQ4,TATMAVE,TATMSIG
+     &,PCAP,PFACTOR,PCO2G,PCO2M,RANG,RLAT,RSDEC,SAZ
+     &,SD,SL,SOLR,SS,TAEQ4,TATMAVE,TATMSIG
      &,TAUICE,TAUVIS,TBOT,TOPUP,TSEQ4,TSUR,TWILFAC,TWILIM
       REAL*4 QI,QA,QH,QHS,QS      ! temporary use
       REAL*4 FXX(3),HXX(3),MXX(3),PXX(3),RXX(3),TXX(3) ! cartesian vectors
       REAL*4 YUNIT(3) / 0,1.,0./ ! unit vector along  Y axis
 C
       INTEGER*4 I,IH,IR, J,JE,JJ,JJH,JHOT,J3P1,KODE
-      LOGICAL LQ1,LQ2,LATM
+      LOGICAL LQ1,LQ2,LATM,LQ3
 C
       REAL VLPRES,CO2PT,EPRED ! Function names. Default precision
       REAL AVEDAY,AVEYEAR,CLIMTAU     ! Function names  Default precision
@@ -54,10 +55,11 @@ C
       LATM=PTOTAL.GT.1.0      ! atmosphere present flag
       LQ1=IDB2.GE.3            ! once per season or latitude
       LQ2=IDB2.GE.6            ! each day
+      LQ3=LD19 .AND. (J5.EQ.JDISK) ! first recorded season
       IF (IDB2.NE.0) WRITE(IOSP,*)'TLATSa',N3,N4,J5,LATM,LQ1,LQ2
-D	print *,'TLATSa',N3,N4,J5,LATM,LQ1,LQ2 !<dbug
+D       print *,'TLATSa',N3,N4,J5,LATM,LQ1,LQ2 !<dbug
 C
-      IRL=1			! set return code to normal
+      IRL=1                     ! set return code to normal
       I=IQ            ! simply to avoid compiler complaint that IQ is not used
 C
 C============ factors that do not depend upon season ===================
@@ -71,8 +73,8 @@ C  ASOL = direct + diffuse insolation as a function of local time
       TWILIM = COS((90.+TWILI)/RADC) ! minimum cosine i for twilight
 C
 C for sloping terrain
-C;	SLONOR = SLOPE*COS(SLOAZI/RADC) ! north component of dip, degrees
-C;	RADEAST = (SLOPE/RADC)*SIN(SLOAZI/RADC) ! east " " , radians
+C;      SLONOR = SLOPE*COS(SLOAZI/RADC) ! north component of dip, degrees
+C;      RADEAST = (SLOPE/RADC)*SIN(SLOAZI/RADC) ! east " " , radians
       IF (SLOAZI .GT. -360.) THEN ! slope is regional
          SKYFAC = (1.+ COS(SLOPE/RADC))/2. ! effective isotropic radiation.
          COSZLIM=0.            ! zenith angle default limit is 90 degrees
@@ -95,8 +97,8 @@ C
       SAZ=SLOAZI/RADC            ! azimuth of dip, east from north
       CALL ROTV (YUNIT,3,-SAZ,  PXX) ! PXX is temp. axis in equator
       IF (LQ1) THEN
-         WRITE(75,*) 'J5+',J5,SUBS,SLOPE,SLOAZI,SKYFAC
-         WRITE(75,*) 'MXX+',MXX,DIP,SAZ
+         WRITE(75,*) 'J5+',J5,SUBS,SDEC,DAU,SLOPE,SLOAZI
+         WRITE(75,*) 'MXX+',MXX,SKYFAC
          WRITE(75,*) 'PXX+',PXX
       ENDIF
 C       set blowup test to a factor larger than perpendicular black surface
@@ -138,20 +140,20 @@ C
       SS=SL*SD            ! not really needed for VAV version
       CC=AMAX1(1.E-10,CL*CD)      ! not really needed for VAV version
 C       for slope
-C;	RLAT2=(DLAT+SLONOR)/RADC ! effective latitude in radians
-C;	CL2=COS(RLAT2)
-C;	SL2=SIN(RLAT2)
-C;	SS2=SL2*SD
-C;	CC2=AMAX1(1.E-10,CL2*CD)
+C;      RLAT2=(DLAT+SLONOR)/RADC ! effective latitude in radians
+C;      CL2=COS(RLAT2)
+C;      SL2=SIN(RLAT2)
+C;      SS2=SL2*SD
+C;      CC2=AMAX1(1.E-10,CL2*CD)
 C       
       COSIAM(1)= MAX(1.E-6,AVEDAY(SDEC,DLAT)) ! get average cosine incidence
-C;	COSIAM(2)= SS+CC	!  cos ( incidence angle at noon )
+C;      COSIAM(2)= SS+CC        !  cos ( incidence angle at noon )
       COSAM=-SS/CC            !  find length of day and daylight intervals
       IF (ABS(COSAM).LT.1.) THEN
          DAM=RADC*ACOS(COSAM)      ! occurs in COMMON. Used only in tprint.f
       ELSEIF (COSAM.GE.1.) THEN
          DAM=0.
-C;         COSIAM(2) = 1.E-6	! sun never rises
+C;         COSIAM(2) = 1.E-6    ! sun never rises
       ELSE
          DAM=180.
       ENDIF
@@ -218,8 +220,9 @@ C
       ENDIF                  !^-^-^-^-^
       ACOSLIM = AMAX1(OPACITY/EXPMIN,0.001) ! limit to avoid math checks
       IF (LQ1) print *,'TLATS: J4,SOLR...',J4,SOLR,ACOSLIM,COSIAM(1)
+      IF (LQ3) WRITE(IOSP,701)'LQ3',NCASE,J5,J4,TATMAVE,PRES,OPACITY
+ 701  FORMAT(A4,I3,I5,I3,2F12.6,F12.8)
 C
- 777      FORMAT(9G12.5)            ! default format
 C insolation at mid-step and its average. time origin is midnight.
 C  angle from noon is (j2/n2 * 2.pi) - pi, so cos of this is -cos(j2/n2 *2pi)
 C  cosi = cosine of solar incidence angle onto horizontal
@@ -240,9 +243,9 @@ C  cos3 = cosine of twilight angle onto horizontal
 !         if doa then cos2=cos2+sas*cosi ; add regional reflectance
          CALL ROTV( MXX,3,ANGLE, HXX) !VAv  Sun progress thru day
          CALL VDOT(HXX,FXX,COSI)      ! cos of incidence angle on horizontal
-         CALL VDOT(HXX,TXX,COS2)	! cos of incidence angle onto slope
-C;	   COSI= SS  -CC*COS (ANGLE) ! cos of incidence angle on horizontal
-C;	   COS2= SS2 -CC2*COS (ANGLE+RADEAST) ! " " onto slope
+         CALL VDOT(HXX,TXX,COS2)        ! cos of incidence angle onto slope
+C;         COSI= SS  -CC*COS (ANGLE) ! cos of incidence angle on horizontal
+C;         COS2= SS2 -CC2*COS (ANGLE+RADEAST) ! " " onto slope
 C       Get atmosphere transmission and heating for horizontal surface
          IF (COSI.GT.ACOSLIM) THEN ! Day: Sun is above horizon
            IF (LATM) THEN      !v-v-v-v-v  with atmosphere
@@ -253,13 +256,13 @@ C       Get atmosphere transmission and heating for horizontal surface
              DIRFLAT=COSI*COLL ! collimated onto regional flat plane
            ELSE            ! -+-+-+-+ day with no atmosphere
 C As opacity goes to zero, COLL->1., topup-> cosi*ALB, botdown->0 athmheat->0
-             TOPUP  =COSI*AVEA !  Lambert surface
-             BOTDOWN=0.      ! no atm scattering
-             ATMHEAT=0.      ! no atm absorbtion
-             COLL=1.      ! no atm attenuation of beam
-             DIRFLAT=COSI      ! incident intensity on horizontal
-            ENDIF
-         ELSE                  ! night: set several values for dark
+             TOPUP  =COSI*AVEA  !  Lambert surface
+             BOTDOWN=0.         ! no atm scattering
+             ATMHEAT=0.         ! no atm absorbtion
+             COLL=1.            ! no atm attenuation of beam
+             DIRFLAT=COSI       ! incident intensity on horizontal
+           ENDIF                !^-^-^-^-^
+         ELSE                   ! night: set several values for dark
             ATMHEAT=0.
             DIRFLAT=0.
             TOPUP=0.
@@ -268,36 +271,36 @@ C As opacity goes to zero, COLL->1., topup-> cosi*ALB, botdown->0 athmheat->0
 C Get diffuse insolation, including twilight and first-order surface reflection 
          IF (COSI.GT.TWILIM) THEN ! in day or twilight zone
            COS3= COS(TWILFAC*ACOS(COSI)) ! twilight effective cosine
-	   IF (LATM.AND.(COS3.GT.1.E-5)) THEN
+           IF (LATM.AND.(COS3.GT.1.E-5)) THEN ! direct onto slope
              CALL DEDING2 (OMEGA,G0,AVEA,COS3,OPACITY, BOND,COL3,DERI)
-             BOTDOWN=PIVAL*(DERI(1,2)+F23*DERI(2,2)) !diffuse down at surf
-	   ELSE
+             BOTDOWN=PIVAL*(DERI(1,2)+F23*DERI(2,2)) ! diffuse down at surf
+           ELSE
              BOTDOWN=0.
-	   ENDIF
-	   DIFFUSE=SKYFAC*BOTDOWN ! diffuse flux onto surface
-	   IF (SLOAZI .LE. -360.) THEN ! bounce in a pit
+           ENDIF
+           DIFFUSE=SKYFAC*BOTDOWN ! diffuse flux onto surface
+           IF (SLOAZI .LE. -360.) THEN ! bounce in a pit
              AINC=ACOS(COSI)*RADC ! incidence angle in degrees
              G1=MIN(1.,(90.-AINC)/SLOPE) ! (90-i)/slope
-	   ELSE
+           ELSE
              G1=1.0
-	   ENDIF 
-	   BOUNCE=(1.-SKYFAC)*AVEA*(G1*DIRFLAT+DIFFUSE)
+           ENDIF 
+           BOUNCE=(1.-SKYFAC)*AVEA*(G1*DIRFLAT+DIFFUSE)
          ELSE
-	   DIFFUSE=0.
-	   BOUNCE=0.
+           DIFFUSE=0.
+           BOUNCE=0.
          ENDIF
 C       
 C       Set direct surface insolation
          IF (COS2.GT.COSZLIM) THEN ! target is directly illuminated
-	   DIRECT=COS2*COLL	! slope is in sunlight
+           DIRECT=COS2*COLL     ! slope is in sunlight
          ELSE
-	   DIRECT=0.            ! Target is in shadow
+           DIRECT=0.            ! Target is in shadow
          ENDIF
 C       
          QI=(DIRECT+DIFFUSE+BOUNCE)*SOLR ! solar onto slope surface
          IF (LQ1.AND.(MOD(JJ,24).EQ.1)) THEN
-	   WRITE(75,*)'HXX+',HXX,JJ
-	   WRITE(75,*)'ANG:',ANGLE,COSI,COS2,DIRECT,QI
+           WRITE(75,*)'HXX+',HXX,JJ
+           WRITE(75,*)'ANG:',ANGLE,COSI,COS2,DIRECT,QI
          ENDIF
          IF (LQ2) WRITE(IOSP,*),'TLatc',JJ,COSI,COS3,DIRECT,DIFFUSE 
          QA=ATMHEAT*SOLR      ! solar heating of atm.
@@ -305,11 +308,12 @@ C
          ADGR(JJ)=QA
          AVEI=AVEI+QI
          AVEH=AVEH+QA
-         IF (LD19) WRITE(79,777) QA,QI,DIRECT,DIFFUSE,BOUNCE
+         IF (LQ3) WRITE(79,777) JJ,COSI,COLL,QA,QI,DIRECT,DIFFUSE,BOUNCE
+ 777      FORMAT(I5,2f11.7,2f12.6,3f11.7)
          IF (JJ.EQ.JJH) THEN      !  JJH is next saving hour
-	   TOFALB(IH,J4)=TOPUP
-	   IH = IH+1            ! increment to next hour
-	   JJH = IH*AH+.5	! next time-step to save
+           TOFALB(IH,J4)=TOPUP
+           IH = IH+1            ! increment to next hour
+           JJH = IH*AH+.5       ! next time-step to save
          ENDIF
       ENDDO                  !-------------end time-of-day loop-----------
 C       
@@ -317,65 +321,65 @@ C       find equilibrium temperature at current latitude !+no atm
 C
       AVEI=AMAX1((1.-AVEA)*AVEI/FLOAT(N2),0.) ! average absorbed insolation
       IF (LATM) THEN            !v-v-v-v-v  with atmosphere
-	TAUIR=(CABR+TAUVIS*TAURAT)*(PRES/PTOTAL)+TAUICE	! thermal opacity, zenith
-	QA=AMIN1(0.0168455,AMAX1(TAUIR,62.4353)) ! limits 1. < FACTOR < 2.
-	FACTOR= 1.50307 -0.121687*ALOG(QA) ! from fit to hemisphere integrals
-	TAUEFF=FACTOR*TAUIR	! effective hemispheric opacity
-	BETA=1.-EXP(-TAUEFF)	! hemispheric thermal absorption of atmosphere
-	AVEH=AMAX1(AVEH/FLOAT(N2),0.) ! average atm. solar heating
-	QS=AVEH/BETA            ! atm heating term
-	IF (TAUIR.LT .01) QS=TAUD*SOLR/PIVAL+TAUIR*AVEI ! small tau limit
-	TAEQ4=(QS+AVEI)/(SIGSB*(2.-AVEE*BETA)) ! equilib T_a^4
-	TSEQ4=BETA*TAEQ4+AVEI/(SIGSB*AVEE) ! equilib T_s^4
-	TEQUIL = AMAX1( TSEQ4,1.e4)**0.25 ! equilib T_s, min of 10.
-	IF (TEQUIL.LT.TFNOW) TEQUIL=TFNOW
+        TAUIR=(CABR+TAUVIS*TAURAT)*(PRES/PTOTAL)+TAUICE ! thermal opacity, zenith
+        QA=AMIN1(0.0168455,AMAX1(TAUIR,62.4353)) ! limits 1. < FACTOR < 2.
+        FACTOR= 1.50307 -0.121687*ALOG(QA) ! from fit to hemisphere integrals
+        TAUEFF=FACTOR*TAUIR     ! effective hemispheric opacity
+        BETA=1.-EXP(-TAUEFF)    ! hemispheric thermal absorption of atmosphere
+        AVEH=AMAX1(AVEH/FLOAT(N2),0.) ! average atm. solar heating
+        QS=AVEH/BETA            ! atm heating term
+        IF (TAUIR.LT .01) QS=TAUD*SOLR/PIVAL+TAUIR*AVEI ! small tau limit
+        TAEQ4=(QS+AVEI)/(SIGSB*(2.-AVEE*BETA)) ! equilib T_a^4
+        TSEQ4=BETA*TAEQ4+AVEI/(SIGSB*AVEE) ! equilib T_s^4
+        TEQUIL = AMAX1( TSEQ4,1.e4)**0.25 ! equilib T_s, min of 10.
+        IF (TEQUIL.LT.TFNOW) TEQUIL=TFNOW
       ELSE                  ! no atmosphere
-	BETA=0.
+        BETA=0.
 C       start using annual average insolation
-	QA=1./(SQRT(1.-ECC**2)) ! average orbit insolation factor
-	QS=AVEYEAR(RADC*BLIP,DLAT) ! Ave. fraction.  Args. in degrees
-	AVEI=QA*QS*SOLCON/SJA**2 ! average insolation in W/m^2
-	TEQUIL = ((1.-AVEA)*AVEI/(SIGSB*AVEE))**0.25 ! equilib T_s
+        QA=1./(SQRT(1.-ECC**2)) ! average orbit insolation factor
+        QS=AVEYEAR(RADC*BLIP,DLAT) ! Ave. fraction.  Args. in degrees
+        AVEI=QA*QS*SOLCON/SJA**2 ! average insolation in W/m^2
+        TEQUIL = ((1.-AVEA)*AVEI/(SIGSB*AVEE))**0.25 ! equilib T_s
       ENDIF
       IF (LQ1) then
-	PRINT *,'AVEA ...',AVEA,AVEE,AVEI,AVEH
-	PRINT *,'CABR...',CABR,TAUD,TAUIR,FACTOR,TAUEFF
-	PRINT *,'BETA...',BETA,QS,SIGSB 
-	PRINT *,'TAEQ4,TSEQ4,TEQUIL',TAEQ4,TSEQ4,TEQUIL
+        PRINT *,'AVEA ...',AVEA,AVEE,AVEI,AVEH
+        PRINT *,'CABR...',CABR,TAUD,TAUIR,FACTOR,TAUEFF
+        PRINT *,'BETA...',BETA,QS,SIGSB 
+        PRINT *,'TAEQ4,TSEQ4,TEQUIL',TAEQ4,TSEQ4,TEQUIL
       ENDIF
       JJO=1
 C       if at start, use linear profile, else  continuing from prior season
       IF (J5.LE.1) THEN      ! start with linear profile
-	IF (N3.GT.3) JJO=.75*N2+1.5 ! start first day just past 3/4 day
-	TSUR=TEQUIL		!  isothermal if bottom is insulating
-	TBOT=TEQUIL		!  "  "
-	IF(IB.GE.1) TBOT=TDEEP	! case for constant bottom  T
-	IF(IB.GT.1) TSUR=TDEEP	! case for isothermal initial condition
+        IF (N3.GT.3) JJO=.75*N2+1.5 ! start first day just past 3/4 day
+        TSUR=TEQUIL             !  isothermal if bottom is insulating
+        TBOT=TEQUIL             !  "  "
+        IF(IB.GE.1) TBOT=TDEEP  ! case for constant bottom  T
+        IF(IB.GT.1) TSUR=TDEEP  ! case for isothermal initial condition
 C       
-	IF (LQ1) PRINT *,'TSUR,TBOT',TEQUIL,TSUR,TBOT
-	IF (LQ1) PRINT *,'XCEN',XCEN 
-	DO I=1,N1
-	  TTJ(I)=TSUR+(TBOT-TSUR)*(XCEN(I)-XCEN(1))/(XCEN(N1)-XCEN(1))
-	ENDDO
-	TTJ(N1PIB)=TBOT
-	TTS(1)=TEQUIL
-	TTB(1)=TEQUIL
-	IF (LATM) THEN
-	  TATMJ=TAEQ4**0.25	! starting Atm T
+        IF (LQ1) PRINT *,'TSUR,TBOT',TEQUIL,TSUR,TBOT
+        IF (LQ1) PRINT *,'XCEN',XCEN 
+        DO I=1,N1
+          TTJ(I)=TSUR+(TBOT-TSUR)*(XCEN(I)-XCEN(1))/(XCEN(N1)-XCEN(1))
+        ENDDO
+        TTJ(N1PIB)=TBOT
+        TTS(1)=TEQUIL
+        TTB(1)=TEQUIL
+        IF (LATM) THEN
+          TATMJ=TAEQ4**0.25     ! starting Atm T
 C       Approximate radiation time constant         
-	  QA=ATMCP*(PRES/GRAV)*TATMJ ! heat in the atm
+          QA=ATMCP*(PRES/GRAV)*TATMJ ! heat in the atm
      &         / (BETA*SIGSB* TAEQ4) !  /IR radiation rate 
-	  QS=QA/(2.71828*86400.) ! 1/e about right for Mars, convert to days
-	  IF (LQ1) PRINT *,'Radiation time, sec',QA 
+          QS=QA/(2.71828*86400.) ! 1/e about right for Mars, convert to days
+          IF (LQ1) PRINT *,'Radiation time, sec',QA 
      &         ,'  Relaxation time, days',QS
-	ENDIF
-      ELSE			! start with final value from previous season
-	DO  I=1,N1PIB
-	  TTJ(I)=TMN4(I,J4)
-	ENDDO
-	TTS(1)=TTS4(J4)
-	TTB(1)=TTB4(J4)
-	IF (LATM) TATMJ=TTA4(J4) ! predicted final atm temp from prior season
+        ENDIF
+      ELSE                      ! start with final value from previous season
+        DO  I=1,N1PIB
+          TTJ(I)=TMN4(I,J4)
+        ENDDO
+        TTS(1)=TTS4(J4)
+        TTB(1)=TTB4(J4)
+        IF (LATM) TATMJ=TTA4(J4) ! predicted final atm temp from prior season
       ENDIF
 D       write(iosp,*)'tauir,taueff,BETA=',tauir,taueff,BETA
 D       write(iosp,*)'aveh,avei=',aveh,avei
@@ -390,8 +394,8 @@ C
 C       
 C====== 
       IF (IR.EQ.2) THEN      ! if blow-up; stop the model
-	IRL=2
-	GOTO 9
+        IRL=2
+        GOTO 9
       ENDIF
 C       save results for current latitude
 C       
@@ -405,13 +409,13 @@ C
       DTM4(J4)=DTMJ(J3P1)      !  RMS change of layer temperatures in prior day
       NDJ4(J4)=J3
       DO I=1,N24
-	TSF(I,J4)=TSFH(I)
-	TPF(I,J4)=TPFH(I)
-	ENDDO
+        TSF(I,J4)=TSFH(I)
+        TPF(I,J4)=TPFH(I)
+        ENDDO
       DO I=1,N1            ! save extrema for each layer
-	TIN(I,J4)=TMIN(I)	!   and predict next season's
-	TAX(I,J4)=TMAX(I)	!   temperatures.
-	ENDDO
+        TIN(I,J4)=TMIN(I)       !   and predict next season's
+        TAX(I,J4)=TMAX(I)       !   temperatures.
+        ENDDO
 C  
       TTX4(J4)=FLOST*DELJUL/(J3*PERIOD)  ! linear extrap. of frost lost over this season     
       FP=DELJUL/PERIOD-J3      ! undone iterations to end of this season.
@@ -420,31 +424,31 @@ C so they are defined up to J3P1.  DTMJ(1)==-1.
 C If 2 or more new days were computed this season, do aymptotic prediction.
 C If have 1 new day, do linear predication; signaled by negative extrapol.
       IF (J3.GE.2) THEN      ! have at least 3 points in array to predict
-	JE=J3-1
+        JE=J3-1
       ELSEIF (FP.LT.0.1) THEN ! can use 2-points
-	FP=FP-1.		! force  EPRED into 2-point mode
-	JE=1
+        FP=FP-1.                ! force  EPRED into 2-point mode
+        JE=1
       ELSE
-	JE=-1			! turn off any interpolation
+        JE=-1                   ! turn off any interpolation
       ENDIF
       IF (JE.GE.1) THEN      ! can use extrapolation
-	DO I=1,N1		! predict next season's temperatures
-	  TMN4(I,J4)= EPRED(TT1(I,JE),FP,MAXN1,TFNOW,TBLOW)
-	ENDDO
-	TTS4(J4)   = EPRED(TTS(JE),FP,1,TFNOW,TBLOW) ! surface average
-	TTB4(J4)   = EPRED(TTB(JE),FP,1,TFNOW,TBLOW) ! bottom layer average
-	IF (LATM) THEN		!v-v-v-v-v  with atmosphere
-	  TTA4(J4)   = EPRED(TTA(JE),FP,1,TFNOW,TBLOW) ! end-of-day Atm 
-	  EFP        = EPRED(FRO(JE),FP,1,0.,9999.)
-	ENDIF			! -+-+-+-+ day with no atmosphere
+        DO I=1,N1               ! predict next season's temperatures
+          TMN4(I,J4)= EPRED(TT1(I,JE),FP,MAXN1,TFNOW,TBLOW)
+        ENDDO
+        TTS4(J4)   = EPRED(TTS(JE),FP,1,TFNOW,TBLOW) ! surface average
+        TTB4(J4)   = EPRED(TTB(JE),FP,1,TFNOW,TBLOW) ! bottom layer average
+        IF (LATM) THEN          !v-v-v-v-v  with atmosphere
+          TTA4(J4)   = EPRED(TTA(JE),FP,1,TFNOW,TBLOW) ! end-of-day Atm 
+          EFP        = EPRED(FRO(JE),FP,1,0.,9999.)
+        ENDIF                   ! -+-+-+-+ day with no atmosphere
       ELSE                  ! extrapolation not possible
-	DO I=1,N1		!  start next season where this one ended
-	  TMN4(I,J4)= TTJ(I)
-	ENDDO
-	TTS4(J4) = TTS(J3P1)
-	TTB4(J4) = TTB(J3P1)
-	TTA4(J4) = TTA(J3P1)	! wont hurt to do if no atm == WHINA
-	EFP      = FRO(J3P1)	! wont hurt to do if no atm
+        DO I=1,N1               !  start next season where this one ended
+          TMN4(I,J4)= TTJ(I)
+        ENDDO
+        TTS4(J4) = TTS(J3P1)
+        TTB4(J4) = TTB(J3P1)
+        TTA4(J4) = TTA(J3P1)    ! wont hurt to do if no atm == WHINA
+        EFP      = FRO(J3P1)    ! wont hurt to do if no atm
       ENDIF
       IF (IB.GE.1) TMN4(N1PIB,J4)=TTJ(N1PIB)
       TEXTRA(J4,1) = TTS4(J4)-TTS(J3P1) ! amount of extrapolation,Top
@@ -458,18 +462,18 @@ C       TIN(MAXN1,J4)= TEXTRA(J4,2) ! overload
 C       
       IF (LP4) CALL TPRINT (4) ! print daily convergence summary
       IF (LD16) THEN
-	WRITE(76,761)SUBS,DLAT,ALB,SKRC,TAUD,PRES
- 761	FORMAT(/,'      Ls      Lt       A       I    TauD       P'
+        WRITE(76,761)SUBS,DLAT,ALB,SKRC,TAUD,PRES
+ 761    FORMAT(/,'      Ls      Lt       A       I    TauD       P'
      & /F8.2,F8.2,F8.3,F8.1,F8.3,F8.2 
      & //'   Hour      T_K  IR_Inc    Solar T_Planet')
- 762	FORMAT(F7.2,F9.3,F8.3,F9.3,F9.3)
-	QHS=24./FLOAT(N24)
-	DO I=1,N24
-	  J=(I*N2)/N24
-	  QH=I*QHS
-	  QS=(1.-ALB)*ASOL(J)	! absorbed insolation
-	  WRITE(76,762)QH,TSFH(I),ADGR(J),QS,TPFH(I)
-	ENDDO
+ 762    FORMAT(F7.2,F9.3,F8.3,F9.3,F9.3)
+        QHS=24./FLOAT(N24)
+        DO I=1,N24
+          J=(I*N2)/N24
+          QH=I*QHS
+          QS=(1.-ALB)*ASOL(J)   ! absorbed insolation
+          WRITE(76,762)QH,TSFH(I),ADGR(J),QS,TPFH(I)
+        ENDDO
       ENDIF
       IF (J4.LT.N4) GO TO 100
 C       

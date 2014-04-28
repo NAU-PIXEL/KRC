@@ -1,4 +1,4 @@
-# Makefile for KRC distribution  2014feb26 
+# Makefile for KRC distribution  2014mar02
 
 SHELL=/bin/csh
 
@@ -36,8 +36,7 @@ OBJP = porbmn.o porbio.o ephemr.o ymd2j2.o porbig.o porbit.o porbel.o orbit.o sp
 # normal link
 krc: $(OBJ6)     # -xl required for record length to be in words
 	$(FC) $(LDFLAGS) $(LIBDIRS) -o $@ $(OBJ6) \
-	$(HLIB) $(CLIB) $(SYSLIBS)
-
+	$(CLIB) $(SYSLIBS)
 
 # map movie version
 mkrc: $(OBJECTSM)     # -xl required for record length to be in words
@@ -79,17 +78,17 @@ alsubs.o: alsubs.f
 ang360.o: ang360.f 
 aveday.o: aveday.f 
 aveyear.o: aveyear.f
-b2b.o: b2b.f 
+b2b.o: b2b.f   # used by porb.  krc uses C version
 bigend.o: bigend.f
-binf5.o: binf5.F
+binf5.o: binf5.F # uses  B2B(in C)  BIGEND  CATIME WHITE1  PIO_ system
 caldat.o: caldat.f
 caldate.o: caldate.f
 catime.o: catime.f
 climtau.o: climtau.f
 cocosp.o: cocosp.f # coordinate conversion package
 co2pt.o: co2pt.f
-datime.o: datime.f
-deding2.o: deding2.f
+datime.o: datime.f # contains non-standard Fortran
+deding2.o: deding2.f # interface R*4, internal R*8
 eccanom.o: eccanom.f
 evmono3.o: evmono3.f
 finterp.o: finterp.f

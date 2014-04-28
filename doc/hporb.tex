@@ -380,7 +380,7 @@ Standish gives his algorithm for getting position vector: which included solvein
 
 \item Mean anomaly: $  M=(t-t_p)* 360/P_o $
 \item Obtain the eccentric anomaly $E$ by iterating Kepler's equation for $M$:
-\qiii $M= E- E \sin E $
+\qiii $M= E- e \sin E $ \ where $e$ is the eccentricity
 \qi Standish does this in degrees, PORB does this in radians
 \item Compute the heliocentric coordinates in the orbital plane (F)
 \qi $x =a(cos E-e)$ and $ y=a \sqrt{1-e^2} sin E$ and PHFxx=[x,y,0]
@@ -741,9 +741,9 @@ YMD2J2  convert year, month, day to Julian date offset from J2000
   ROTAX   Change rotation matrix to include additional rotation 'R'
   ROTDIA  Form diagonal matrix of magnitude  R.
   ROTRIP  Converts rotation matrix to pointing triple.
-  ROTROW  Extract  N'th column from a 3x3 matrix.
-  ROTROW  Extract  N'th row from a 3x3 matrix.
-  ROTSHO  Print a 3x3 rotation matrix with ID
+  ROTCOL  Extract  N'th column from a 3x3 matrix. Consecutive in 9-vector
+  ROTROW  Extract  N'th row    from a 3x3 matrix. Spaced by 3 in 9-vector
+  ROTSHO  Print a 3x3 rotation matrix with ID. 
   ROTV    Rotate a vector about a Cartesian axis
   VROTV   Vector rotation about another vector
   ROTZXM  Make rotation matrix from vectors along Z-axis, and in X-Z plane

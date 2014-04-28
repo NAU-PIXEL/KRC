@@ -1,9 +1,33 @@
 Keystroke guide to build of new version KRC on H3
 
+---------------  Make a Distro ------------------
+
+Run latest krc:  in=VerTest.inp   prt=VerTest.prt
+Run latest krc:  in=Mone.inp      prt=VnnnMone.prt
+
+Check that all documentation is up to date
+  look at step2. Update any worked on recently
+   lt ~/krc/Doc/*.tex  ~/krc/Doc/*.pdf ~/krc/VER/*.tex  ~/krc/VER/*.pdf
+    If any tex newer than its pdf, do the proper actions in step2
+
+in ~/krc/aaa  
+do: step3
+do: step4 
+Edit step3b to latest version
+do: step3b
+do: step4b 
+
+in /work2, 
+mv krcdist.tar.gz  krcNNN.tar.gz        where NNN is the version number
+mv krcbig.tar  krcNNNbig.tar
+
+in ~/cop
+ln -s 
+
+---------------  Install a Distro ------------------
+
 in /work2/:
   mv krcdist.tar.gz krc231.tar.gz  << edit the version number
-
-
 
 cd /work1/build
       check DIR, then empty it by: rm -Rf *
@@ -25,55 +49,32 @@ cd into "run"  directory
 ln -s ../src/krc . 
 ln -s ../src/porbmn .
 
-kens 230 executable is 149899
+krc
+input] VerTest.inp
+print] VerTest.prt
+
+krc
+input] Mone.inp
+print] V232Mone.prt
+
+Testing against prior version: 
+cd ../idl   ; go to the idl Directory
+source idlPath
+idl
+kirin
+.comp krcvtest
+krcvtest,newv='V232' 
+@11   just check is paths are correct
 
 
 ----- FIXES YET NEEDED
 
-new version of .so makefile
-remove 2 test print of FINPPUT from krc
 
 NOte. If files are not in current directory, surround in single quotes.
 
 
 ^^^  FIXES YET NEEDED
-NOtes on Feb25
 
-H3 krc run in build/run/  is OK with VerTest.inp
-H3 krc run in krc/tes will not take  /work1/build/run/VerTest.inp 
- but will take '/work1/build/run/VerTest.inp'
-Result looks OK
- IG=           3   RBUF=3 10 1 'LkofT' / T-dependent properties                                         
- IG=           0   RBUF=0/                                                                              
- Case  1  DTIME: total, user, system=    0.6339    0.6319    0.0020
-
-Program received signal SIGSEGV, Segmentation fault.
-0x0000003194c89d08 in _wordcopy_fwd_aligned () from /lib64/libc.so.6
-Missing separate debuginfos, use: debuginfo-install compat-libf2c-34-3.4.6-19.el6.x86_64 glibc-2.12-1.107.el6.x86_64 libgcc-4.4.7-4.el6.x86_64 libgfortran-4.4.7-4.el6.x86_64
-(gdb) where
-#0  0x0000003194c89d08 in _wordcopy_fwd_aligned () from /lib64/libc.so.6
-#1  0x0000003194c83b42 in memmove () from /lib64/libc.so.6
-#2  0x0000000000412ff3 in datime_ ()
-#3  0x00000000004023e7 in MAIN__ ()
-#4  0x0000000000418c7a in main ()
-(gdb) 
-================
-DAYTIM is krccom.inc:43:       REAL TITLE(20),DAYTIM(5) 
-used at 
-          
-krc.f:79:       CALL DATIME (DAYTIM)
-krc.f:120:        CALL DATIME (DAYTIM)  ! reset th
-tdisk.f:128:      WRITE(IOSP,110)CSTAT,FDISK,ITOP,NWTOT, NRECL,DAYTIM
-tdisk.f:129:      WRITE(IOERR,110)CSTAT,FDISK,ITOP,NWTOT, NRECL,DAYTIM
-tprint.f:198:        WRITE(IOSP,810) TITLE,VERSIN,NRUN,NCASE,DAYTIM,IPG
-
-
-TITLE used 
-tcard.f:121:      READ (IOIN,'(20A4)'     ,END=430) TITLE
-tcard.f:203:270 READ (TEXT,'(20A4)',END=160) TITLE !  IG=7: change  TITLE
-tprint.f:198:        WRITE(IOSP,810) TITLE,VERSIN,NRUN,NCASE,DAYTIM,IPG
-
-Plan: Define title as character*80,  daytim as character*20
 
 *4 done for
 krc  tseas tlats tday 
@@ -87,70 +88,6 @@ run
 [input the file names]
 where [ or  backtrace]
 quit   to exit
-
-...
-     0.625 seconds at start of season  660 of  670
-     0.635 seconds at end of season  670 of  670
- IG=           3   RBUF=3 10 1 'LkofT' / T-dependent properties                                         
- IG=           0   RBUF=0/                                                                              
- Case  1  DTIME: total, user, system=    0.6359    0.6349    0.0010
-
-Program received signal SIGSEGV, Segmentation fault.
-0x0000003194c89d08 in _wordcopy_fwd_aligned () from /lib64/libc.so.6
-Missing separate debuginfos, use: debuginfo-install compat-libf2c-34-3.4.6-19.el6.x86_64 glibc-2.12-1.107.el6.x86_64 libgcc-4.4.7-4.el6.x86_64 libgfortran-4.4.7-4.el6.x86_64
-(gdb) where
-#0  0x0000003194c89d08 in _wordcopy_fwd_aligned () from /lib64/libc.so.6
-#1  0x0000003194c83b42 in memmove () from /lib64/libc.so.6
-#2  0x0000000000412ff3 in datime_ ()
-#3  0x00000000004023e7 in MAIN__ ()
-#4  0x0000000000418c7a in main ()
-
-
-Try using H3 Makefile
-
-Ken:
-
- Did a lot of explicit variable typing in 
- datime.f  tseas.f   tlats.f   tcard.f   tprint.f   krc.f
-
-recompile on H3, runs VerTest.inp fine
-
-Make new distro here, build it in clean area
-Run on VerTest.inp falus in the same place. 
-Run it under gdb, after fault, backtrace produces identical output:
-#0  0x0000003194c89d08 in _wordcopy_fwd_aligned () from /lib64/libc.so.6
-#1  0x0000003194c83b42 in memmove () from /lib64/libc.so.6
-#2  0x0000000000412ff3 in datime_ ()
-#3  0x00000000004023e7 in MAIN__ ()
-#4  0x0000000000418c7a in main ()
-
-In build .run, make clean, then compile KRC with
-make -f ~/krc/src/Makefile krc
-This krc runs Vertest.inp just fine.
-
-Looking at the two Makefiles, after removing all comments, 
-
-The distro+uniq version has
-SHELL=/bin/csh
-FC=gfortran 
-FFLAGS= -O -fno-automatic -fno-second-underscore -fargument-alias -fd-lines-as-comments
-LD=gfortran
-SYSLIBS =  -lg2c -lc -lm
-HHKLIB=/work1/build/  # top of libraries to use
-LIBDIRS=-L$(HHKLIB)
-CLIB=./cfiles/libhk_cisis.a
-
-
-The H3 version has: 
-SHELL=/bin/csh
-HHKOS=Linux_ix86 
-FC=gfortran
-FFLAGS= -g  -fno-automatic -fno-second-underscore -fargument-alias -fd-lines-as-comments
-HHKLIB=/home/hkieffer/linux/lib 
-SYSLIBS = -L /usr/lib64  -lg2c -lgfortran -lc -lm 
-LIBDIRS=-L$(HHKLIB)
-HLIB=-lhk_fmath -lhk_fgeom -lhk_futil -lhk_fchar -lhk_fNumRec # -lhk_rad
-CLIB=-lhk_cisis
 
 [hkieffer@hulk3 src]$ gcc --version
 gcc (GCC) 4.4.7 20120313 (Red Hat 4.4.7-4)
@@ -199,32 +136,7 @@ then:  Replace all DOUBLE PRECISION with REAL*8
 Only other executable occurances are: hratlsq.f kratlsq.f
 
 
-FORTRAN Non-standard use:
-
-In order to have the run-time and the purpose line (2nd line in input file) be carried into the output files, they are stored in REAL*4 variables DAYTIM(5) and TITLE(20) respectively, both of which are in  COMMON /KRCCOM/ which is coded in krccom.inc
-
-DAYTIM is returned by datime.f and printed in tprint.f and tdisk.f as 5A4
- datime.f uses the routine B2B to load the return value.
-
-TITLE is read in tcard.f as 20A4 and printed in tprint.f as 20A4
 ===============================
-FFLAGS= -g -O  -fno-automatic -fno-second-underscore -fd-lines-as-comments -Wall 
-All compile, but lots of: Warning: Nonconforming tab character at (1)
- as expected for -Wall
-
-catime.f:(.text+0x12): undefined reference to `G77_time_0'
-catime.f:(.text+0x33): undefined reference to `G77_ctime_0'
-catime.f:(.text+0x4e): undefined reference to `s_copy'
-catime.f:(.text+0x6d): undefined reference to `s_copy'
-catime.f:(.text+0x8c): undefined reference to `s_copy'
-/home/hkieffer/linux/lib/libhk_futil.a(datime.o): In function `datime_':
-datime.f:(.text+0x12): undefined reference to `G77_time_0'
-datime.f:(.text+0x33): undefined reference to `G77_ctime_0'
-datime.f:(.text+0x4e): undefined reference to `s_copy'
-/home/hkieffer/linux/lib/libhk_fchar.a(white1.o): In function `white1_':
-white1.f:(.text+0xa6): undefined reference to `s_copy'
-white1.f:(.text+0xf5): undefined reference to `s_copy'
-
 =================
 in build, with /uniq/Makefile, get 
 286688 Feb 25 19:01 krc*
@@ -237,4 +149,33 @@ using
 FFLAGS= -fno-automatic -fno-second-underscore -fargument-alias -fd-lines-as-comments
 make clean,   make krc
 179451 Feb 26 10:44 krc*
-2014 Feb 26 10:47:33  Vert2 V231c Total time [s]=   5.9810901 
+2014 Feb 26 10:47:33  Vert2 V231c Total time [s]=   5.9810901
+
+ 
+2014 Feb 26 16:41:46  re make distro 232, build it and run
+ Case  1  DTIME: total, user, system=    0.6429    0.6419    0.0010
+
+Program received signal SIGSEGV, Segmentation fault.
+0x0000003194c89d08 in _wordcopy_fwd_aligned () from /lib64/libc.so.6
+Missing separate debuginfos, use: debuginfo-install compat-libf2c-34-3.4.6-19.el6.x86_64 glibc-2.12-1.107.el6.x86_64 libgcc-4.4.7-4.el6.x86_64 libgfortran-4.4.7-4.el6.x86_64
+(gdb) where
+#0  0x0000003194c89d08 in _wordcopy_fwd_aligned () from /lib64/libc.so.6
+#1  0x0000003194c83b42 in memmove () from /lib64/libc.so.6
+#2  0x0000000000412ff3 in datime_ ()
+#3  0x00000000004023e7 in MAIN__ ()
+#4  0x0000000000418c7a in main ()
+
+Replace build/src/Makefile with 
+FC=gfortran 
+FFLAGS= -fno-automatic -fno-second-underscore -fargument-alias -fd-lines-as-comments
+LD=gfortran
+
+                                      
+ Case  1  DTIME: total, user, system=    0.7739    0.7729    0.0010
+      END KRC   Total time [s]=   6.0410814    
+   
+ Case  1  DTIME: total, user, system=    0.7739    0.7739    0.0000
+      END KRC   Total time [s]=   5.9960880 
+
+
+keN's area:  bastion, ssh halex, cd ../krios/krc/builds/latest

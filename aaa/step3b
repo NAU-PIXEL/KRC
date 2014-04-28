@@ -16,23 +16,20 @@ rm -f *
 ln -s /home/hkieffer/krc/tes/master.prt  master.txt  # new master print
 ln -s /home/hkieffer/krc/tes/mast37.prt  mast37.txt  # print file
 ln -s /home/hkieffer/krc/tes/master5x.prt  master5x.txt
-ln -s /home/hkieffer/krc/tes/oneA.prt    oneA.txt
+#ln -s /home/hkieffer/krc/tes/oneA.prt    oneA.txt
 ln -s /home/hkieffer/krc/tes/VerTest.prt VerTest.txt
 ln -s /work1/krc/mars/mast37.t52 .
 ln -s /work1/krc/mars/masterA.t52 .
-ln -s /work1/krc/mars/V221B5.t51 .
-ln -s /work1/krc/mars/V221B5.t52 .
-ln -s /work1/krc/mars/V221B5.t54 .
-ln -s /work1/krc/mars/V221B5.t55 .
-ln -s /work1/krc/mars/V221B5.t56 .
-ln -s /work1/krc/test/V1Mone.prt .
-ln -s /work1/krc/test/Vntest1.t52  .
-#ln -s /work1/krc/test/V212test2.t52  .
-ln -s /work1/krc/test/V222Mone.prt .
-ln -s /work1/krc/test/V222test1.t52  .
-ln -s /work1/krc/test/V222test2.t52  .
-ln -s /work1/krc/test/V222test2.tm1  .
-ln -s /work1/krc/test/V222test2.t0   .
+#ln -s /work1/krc/mars/V221B5.t51 .
+#ln -s /work1/krc/mars/V221B5.t52 .
+#ln -s /work1/krc/mars/V221B5.t54 . 
+#ln -s /work1/krc/mars/V221B5.t55 . 
+#ln -s /work1/krc/mars/V221B5.t56 .
+ln -s /home/hkieffer/krc/tes/V232Mone.prt V232Mone.txt #<<<
+ln -s /home/hkieffer/krc/tes/out/V232test1.t52  .  #<<<
+ln -s /home/hkieffer/krc/tes/out/V232test2.t52  .  #<<<
+ln -s /home/hkieffer/krc/tes/out/V232test2.tm1  .  #<<<
+ln -s /home/hkieffer/krc/tes/out/V232test2.t0   .  #<<<
 echo "Done copy to BIG files"
 
 cd ~/krc/aaa   # return to parent directory

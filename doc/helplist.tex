@@ -65,7 +65,7 @@ with any spin vector, in any orbit (around any star); this is also the source of
 some of the complexity.
  
 Method is explicit forward finite differences with exponentially increasing
-layer thickness and binary time increase with depths where allowed by stability.
+layer thickness and binary time increase with depth where allowed by stability.
 Depth parameter is scaled to the diurnal thermal skin depth.  Initially starts
 at 18 hours with the mean temperature of a perfect conductor.  Second degree
 perturbation is applied at the end (midnight) of the (third) day; this jumps the
@@ -78,11 +78,10 @@ Boundary condition treatment:
 \qi  Lower boundary may be insulating or constant-temperature.
 
 Atmospheric Radiation: KRC uses a one-layer atmosphere that is grey in both the
-solar and infra-red regions. parametric atmosphere. The default atmospheric
+solar and infra-red regions. The default atmospheric
 parameters are based on estimates of Mars' gas and aerosol properties.
-\qi  Delta-Eddington model for insolation; direct onto sloped surface and diffuse,
-with possible twilight extension.
-  Atmosphere temperature based on Delta-Eddington solar absorption and IR opacity
+\qi  Two-stream Delta-Eddington model for insolation; direct onto sloped surface and diffuse, with possible twilight extension.
+\\ The atmosphere temperature is based on Delta-Eddington solar absorption and IR opacity
 
 Keplerian orbital motion; seasons are at uniform increments of time. Mean 
 orbital elements are pre-calculated for any epoch (all planets and several
@@ -126,13 +125,13 @@ you wish to change. The number of lines of Latitudes and Elevations must match
 the value of N4, e.g., 2 lines for N4=11:20, entries beyond the N4 position may
 be left blank or contain the end of the line. The 7 lines following Elevations
 are a geometry matrix for Mars orientation and orbit in 2010, and should not be
-touched; they can be replaced by running PORBMN carefully.
+touched; they could be replaced by running PORBMN carefully.
 
 The parameter title lines are skipped, so that you may put comments there carefully.
 
 The first input line is always KOLD,KEEP (I*), which sets file usage; these are
 described in \S \ref{dbf}. If KOLD=0, then a full set of input values is read.
-\qi If and only if there is a third non-zero integer, then KRC will read next
+\qi If and only if there is a third non-zero integer, then KRC will read the next
 card as 6 debug flags, IDB1 to IBD6, which are normally zero.
   See \S \ref{debug} below \\
 The next (normally second) line is free text where you can outline the purpose 
@@ -214,6 +213,8 @@ Type 1	Real parameters  (8F10.2) ================================
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
   Orbit Geometry & Constants
 41  DJUL    Starting Julian date of run -2451545 (J2000.0) (N5>0)
+             If LKEY (logical itenm 12) is set True, this is desired Ls of 
+             first disk output date (set by JDISK: integer item 12)
 42  DELJUL  Increment between seasons in Julian days (if N5>1)
 43  SDEC    Solar declination in degrees. (if Not LPROB)
 44  DAU     Distance from Sun in astronomical units (if Not LPROB)
@@ -357,7 +358,8 @@ Type 3 Logical Parameters (10L7) ====================================
 10  LKOFT   Use temperature-dependent conductivity and specific heat
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 11  LPORB   Call PORB1 just after full input set
-12  LKEY    Read change item from terminal after main input set
+12  LKEY    Treat DJUL (real item 41) as the Ls of the first output
+             season, set by JDISK [the 12'th integer input]
 13  LSC     Read change cards from input file at start of each season
 14  LNOTIF  spare
 15  LOCAL   Use each layer for scaling depth
@@ -435,7 +437,7 @@ To start variable albedo, use input card:
 Can revert to constant albedo by hokey technique of using a bad name. E.g.,
 \qi  8 22 0 'badName' / turn variable albedo off \\
 Text table files of value versus season will be read at the start of a
-run. These will apply to ALL latitudes. See example  valb1.tab   \\
+run. These will apply to ALL latitudes. See example  \nf{valb1.tab}   \\
 Variable Tau done the same way, with 22 being replaced with 23 \\
 
 CLIMTAU files have dust and ice opacity over season and latitude. Uses BINF5 to
@@ -490,7 +492,7 @@ files. The first season to write is specified by JDISK, all following seasons
 will go to the same file. For direct-access files, each file record consists of
 KRCCOM plus LATCOM or KRCCOM plus DAYCOM.
 
-Disk output is largely controlled by the KRC  and TSEAS routines.
+Disk output is largely controlled by the KRC and TSEAS routines.
 
 \subsection{Items which control file I/O } %------------
 \vspace{-3.mm} 
@@ -540,14 +542,23 @@ Although KRC allows the N1, the number of layers, to change between cases the
 IDL type 52 reader \np{readkrc52} will only extract the number in the first
 case, so N1 should not increase between cases.
 
-The first 4 words of the prefix, and of thus of the bin5 array, are:
+The first 4 words of the prefix, and thus of the bin5 array, are:
 \vspace{-3.mm} 
 \begin{verbatim}
 (1)=FLOAT(NWKRC)   ! Number of words in KRCCOM
 (2)=FLOAT(IDX)     ! 1-based index of dimension with extra values
 (3)=FLOAT(NDX)     ! Number of those extra
 (4)=FLOAT(NSOUT)   ! [Available of other use]
+\end{verbatim} 
 
+Although five 5x types are defined, Type 52 contains all the information available in any of the 5x types and is recommended for all but the most expert users.  
+
+WARNING: Only type 52 has been extensively tested.
+
+See also Appendix \ref{type52} for a detailed description and how it is unpacked.
+
+\vspace{-3.mm}
+\begin{verbatim}
     51=(N24 hours, 2: TSF TPF, N4 lats, NDX+ seasons, cases)
 The prefix section contains: sub_array(seasons,5)(0-based index)
   0)=DJU5  1)=SUBS  2)=PZREF  3)=TAUD  4)=SUMF
@@ -559,10 +570,7 @@ The 7 items are:  1)=TSF  2)=TPF  3)=TAF  4)=DOWNVIS  5)=DOWNIR
   The number of layers for TIN and TAX is the smaller of: the number computed 
 and that fit here.
 The prefix is identical to Type 51
-\end{verbatim} 
-See also Appendix \ref{type52}
-\vspace{-3.mm}
-\begin{verbatim}
+
     54= (seasons, 5 items, NDX +nlat, cases)
         Items are (0-based index): 
         0= TSF=surface temperature at 1 am, 1= TSF at 13 hours,
@@ -583,12 +591,11 @@ The first dimension is: TSF for all hours, TPF at all hours,
  T4 for all layers at midnight, then FROST4,HEATMM,TTA4
 The prefix is identical to Type 51
 \end{verbatim}
-
 Once a disk file is opened, any records written will go into that file until a
 new filename is specified (Type 8 Change line), which closes the current file.
 It is best to ensure that output file does not already exist. If the file
-already exists, new output may be written in same area, even if larger than
-needed.
+already exists, new output may be written in same area, even if the old file was
+larger than needed.
 
 \subsection{Maximum sizes} %---------------------------
 Values for latest version of KRC in this section are in square brackets. All are
@@ -742,7 +749,7 @@ inertia at 220K for nominal density and specific heat.
 
 A parameter initialization file   \nf{Mone.inp}  is provided. It sets the KRC 
 system into a reasonable mode for one-point calculations. Do not change that 
-file unless you have read this entire file.
+file unless you have read this entire file; caveat plastes (modeler beware).
 
 A line near the end of that file points to a file 'oneA.one' which can contain
 any number of one-point conditions. You can replace that name with your own; the
@@ -798,11 +805,12 @@ file path-name.
 
 \subsubsection{ Comments on the One-point model} %............ 
 
-The initialization file \nf{Mone.inp} is set to compute the temperatures at the
-season requested without seasonal memory. It uses layers that extend to 5
-diurnal skin depths. It does not treat the seasonal frost properly, so don't
-believe the results near the edge of the polar cap. Execution time on a circa
-2001 PC may be the order of 0.01 seconds per case.
+The initialization file \nf{Mone.inp} is a compromise between the secular trend
+being reached (less layers) and the annual variation being damped (more
+layers). The version after KRC v2.2.4 was tested over a large grid of
+non-polar-cap points against a model twice as deep and run for 6 years; the
+average absolute difference was 0.05 K. Execution time on a circa 2013 PC is
+about 30 cases/second.
 
 The underlying model is the full version of KRC. By modifying the initialization
 file, you can compute almost anything you might want. If you choose to try this,
@@ -818,10 +826,13 @@ tcard.f:123:    IF (IDB1.GE.1) PRINT *,'Before PORB0'
 tcard.f:125:    IF (IDB1.GE.1) PRINT *,'AFTER PORB0'
 tcard.f:349:    IF (IDB1.NE.0) WRITE(IOSP,*)'TCARD Exit: IRET=',IRET,NFD,ID(1) 
 tday.f:63:      IF (IDB2.GE.5) WRITE(IOSP,*) 'TDAY IQ,J4=',IQ,J4,jjo
-tday.f:544: 9   IF (IDB2.GE.6) WRITE(IOSP,*) 'TDAYx'
-tdisk.f:90:     IF (IDB3.NE.0) WRITE(IOSP,*)'TDISKa ',KODE,KREC,NCASE,J5,K4OUT
-tdisk.f:424:       IF (IDB3.GE.3) WRITE(IOSP,*)'TDISKc  KREC=',KREC,LOPN2,IOD2,I
-tdisk.f:431:    IF (IDB3.GE.3) WRITE(IOSP,*)'TDISKx  KREC=',KREC
+tday.f:544: 9   IF (IDB2.GE.6) WRITE(IOSP,*) 'TDAYx'tdisk.f:97:     IF (IDB3.GE.3) WRITE(IOSP,*)'TDISKa ',KODE,KREC,NCASE,J5,K4OUT
+tdisk.f:98:     IF (IDB3.GE.4) WRITE(IOSP,31)'TDISKa N3,N4+',N3,N4,N5,J5,MASE !<dbug
+tdisk.f:99:     IF (IDB3.GE.5) WRITE(*   ,31)'TDISKa N3,N4+',N3,N4,N5,J5,MASE !<dbug
+tdisk.f:421:        IRET=IDB3 !  +1=report many values   +2 report progress 
+tdisk.f:440:       IF (IDB3.GE.3) WRITE(IOSP,*)'TDISKc KREC=',KREC,LOPN2,IOD2,I
+tdisk.f:447:    IF (IDB3.GE.7) WRITE(IOSP,*)'TDISKx  KREC=',KREC
+
 tlats.f:56:     LQ1=IDB2.GE.3           ! once per season or latitude
 tlats.f:+       LQ2=IDB2.GE.6           ! each day
 tlats.f:+       IF (IDB2.NE.0) WRITE(IOSP,*)'TLATSa',N3,N4,J5,LATM,LQ1,LQ2
