@@ -38,7 +38,7 @@ INCLUDES=-I.   # in this directory
 # L are Library directores that always are searched in
 # l are libraries to include  -lc==libc.a  etc. 
 LIBDIRS=-L. -L/home/hkieffer/linux/lib  # Code Library directories
-SYSLIBS = -lg2c -lc -lm  
+SYSLIBS = -lgfortran -lc -lm  
 
 
 #  Set up suffixes and special ISIS targets for those suffixes     

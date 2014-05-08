@@ -38,7 +38,7 @@ ARFLAGS=-rvs    # r=replace v=verbose s=include index
 #LIBRARY  ?= libhk_cisis
 #LIBNAME   = $(LIBRARY).a
 LIBNAME=./libhk_cisis.a
-SYSLIBS=-lncurse -ltermcap  -lg2c -lc -lm
+SYSLIBS=-lncurse -ltermcap  -lgfortran -lc -lm
 
 #  Set up source dependancies
 SRCS = $(wildcard *.c)
