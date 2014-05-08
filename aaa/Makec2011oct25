@@ -33,7 +33,7 @@ ARFLAGS=-rvs    # r=replace v=verbose s=include index
 LIBRARY        ?= krc_c
 LIBNAME        = $(LIBRARY).a
 
-SYSLIBS=-lncurse -ltermcap  -lg2c -lc -lm
+SYSLIBS=-lncurse -ltermcap  -lgfortran -lc -lm
 
 OBJS = b2b.o b_alloc.o b_c2fstr.o b_f2cstr.o b_free.o binf5_bind.o pio_bind_c.o primio.o r2r.o u_actinf.o u_bind_c.o u_move1.o u_move4.o u_swapn.o
 

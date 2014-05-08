@@ -10,7 +10,7 @@ LD=gfortran
 
 # ------------ Libraries -------------------------
 
-SYSLIBS =  -lg2c -lc -lm
+SYSLIBS =  -lgfortran -lc -lm
 
 HHKLIB=/work1/build/  # top of libraries to use
 LIBDIRS=-L$(HHKLIB)

@@ -13,7 +13,7 @@ FFLAGS= -O  -fno-automatic -fno-second-underscore -fargument-alias -fd-lines-as-
 # -Wall
 LD=gfortran
 
-SYSLIBS =  -lg2c -lc -lm
+SYSLIBS =  -lgfortran -lc -lm
 
 #  library groups
 HHKLIB=/work1/build/  # top of libraries to use

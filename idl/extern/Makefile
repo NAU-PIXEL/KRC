@@ -31,7 +31,7 @@ INCLUDES=-I.   # in this directory
 # L are Library directores that always are searched in
 # l are libraries to include  -lc==libc.a  etc. 
 LIBDIRS=-L.  # -L/home/hkieffer/linux/lib  #<<< last is for NumRec
-SYSLIBS = -lg2c -lc -lm  
+SYSLIBS = -lgfortran -lc -lm  
 
 #  Set up how to process each source file type. 
 .SUFFIXES:           # clean out any prior
