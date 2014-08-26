@@ -117,10 +117,10 @@ Print,'Move the file   Then any key to GO' & qi=get_kbrd(1) & end
 99: begin                       ; Action guide. Customise for each routine
 MAKE99,ptitl,prior,hold,maxk=maxk,get=get; make guide to calling program
 print,'-9=StopInKON91  -3=null  -1=pause    0=Stop    888=setcolorGuide'
-print,'100=wset,0  101=erase  102=wset,2  103=window for output'
+print,'100=wset,0  101=erase  102=wset,2  103=window for output   899=wind'
 print,'121=kons=-3  122=Edit Kons  801/2/3/4 output to eps/png/jpg/-eps'
 print,'808=actionlabel at TopLeft   809=Warning to mv output file' 
-print,'81/82=start/endClrEps  8=newPS 80=restart 87=close 88=subtitle 9=plotPS'
+print,'80/81/82=type/start/endFig  8=newPS 87=close 88=subtitle 9=plotPS'
 print,'MAKE99: 991=Expand current kons   992/995=1-line each   994=expand all'
 print,'123: Do kons=',ST0(kons)
 end  

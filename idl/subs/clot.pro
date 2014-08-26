@@ -47,7 +47,7 @@ if !dbug ge 8 then stop
 ; help,yyy,txt,xx,locc,xran,yran,titl,oplot,bw,ksym,oplot
 
 kok=n_elements(locc)
-if kok lt 4 then loc2=[0.15,0.92,-0.04,0.08] else loc2=locc
+if kok lt 4 then loc2=[0.15,0.93,-0.03,0.06] else loc2=locc
 
 if keyword_set(oplot) then idop=oplot else idop=0 ; line index offset
 dos = idop lt 100               ; use line style from commmon

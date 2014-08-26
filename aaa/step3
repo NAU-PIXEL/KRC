@@ -1,23 +1,11 @@
 #====================================
 # Script and comments for making a distribution package of the KRC thermal
-# model file system. See the file aaa/AAREADME for additional description.
+# model file system, Version 3
+# See the file aaa/AAREADME for additional description.
 # Run after step 2 and before step 4
-#
-#_Hist 2006jan25 Hugh Kieffer Evolve from ROLO distribution system
-# 2006jan25 Hugh Kieffer   Not running under Suse 9.3
-# 2006apr12 HK Have running under Suse9.3
-# 2006sep12 HK Update to include seasonally-variable albedo and tau
-# 2009may09 HK Update to include T-dependant version
-# 2010jan22 HK Update to use IMPLICIT NONE version
-# 2010jul09 HK Update to use version with T-depend. Cp and k
-# 2011aug20 HK Update post complete draft of Journal paper
-# 2011oct17:25 HK Accomodate new location of source aaa
-# 2012mar30 HK use #- comment to indicate items not part of general distro.
-# 2012nov22 HK Update. Use 2-column preprint of JGR paper. Include PORB 
-# 2013jan25 HK Separate IDL into idl1 for essential (for readkrc52) and idl2 for others
-# 2013aug05 HK Update to Version 2.2
-# 2013sep03 HK Update to 2.2.4  Separate tar file for large output files.
-# 2013oct02 HK Update. Revise IDL tree
+#  #4ln indicates a R*4 version of similar R*8 routine 
+#_Hist 2104jun09 Hugh Kieffer Modify from step3 for version 2
+# 2014jun19 HK Incorporate PORB system version 3
 #====================================
 
 set FAM='/home/hkieffer/krc'    # family to be distributed
@@ -33,7 +21,8 @@ rm -Rf *		# clean out in case RTOP was used for different family
 cd $RTOP/aaa
 rm -Rf *
 cp -p $FAM/aaa/* . 	# copy the entire source aaa directory
-rm -f *~                # eliminate old versions
+ln -s /home/hkieffer/krc/uniq/H3install .
+rm -f *~                # eliminate any old versions
 
 cd $RTOP/doc		# check dates on all .pdf versus .tex
 rm -f * 		# latex x      la4 x     ps2pdf q.ps x.pdf
@@ -67,11 +56,12 @@ ln -s /home/hkieffer/krc/src/How3 .	# how some things in KRC work
 #ln -s /home/hkieffer/krc/liens.txt .
 #ln -s /home/hkieffer/krc/notes .  # scattered notes from development
 #ln -s /home/hkieffer/krc/Dist/aaa/makeNotes .
-ln -s /home/hkieffer/xtex/AGU/2012JE004164-ds01.txt ds01.txt  # JGR supplementary material
-ln -s /home/hkieffer/xtex/AGU/2012JE004164-ds02.txt ds02.txt
-ln -s /home/hkieffer/xtex/AGU/2012JE004164-ds08.txt ds08.txt
-ln -s /home/hkieffer/xtex/AGU/2012JE004164-ds09.txt ds09.txt
-ln -s /home/hkieffer/xtex/AGU/2012JE004164-ds10.txt ds10.txt
+
+#ln -s /home/hkieffer/xtex/AGU/2012JE004164-ds01.txt ds01.txt  # JGR supplementary material
+#ln -s /home/hkieffer/xtex/AGU/2012JE004164-ds02.txt ds02.txt
+#ln -s /home/hkieffer/xtex/AGU/2012JE004164-ds08.txt ds08.txt
+#ln -s /home/hkieffer/xtex/AGU/2012JE004164-ds09.txt ds09.txt
+#ln -s /home/hkieffer/xtex/AGU/2012JE004164-ds10.txt ds10.txt
 
 echo "Done copy to doc"
 
@@ -80,11 +70,11 @@ rm -Rf *
 ln -s /home/hkieffer/krc/tes/master.inp .    # 19 latitudes, defaults parameters
 ln -s /home/hkieffer/krc/tes/web.inp .  # draft for web
 ln -s /home/hkieffer/krc/tes/master5x.inp .  # output all type 5x binary files
-ln -s /home/hkieffer/krc/tes/mast37.inp .        # 37 latitudes and mean elevations
+ln -s /home/hkieffer/krc/tes/mast37.inp .    # 37 latitudes and mean elevations
 ln -s /home/hkieffer/krc/tes/Mone.inp .	     # krc input for one-point
 ln -s /home/hkieffer/krc/tes/oneA.one .      # one-point input table 
-# ln -s /home/hkieffer/krc/tes/inp/mkrc.inp .      #  sample for mkrc 
-ln -s /home/hkieffer/krc/tes/inp/RQ36.inp .      # specific asteroid, no atmosphere
+# ln -s /home/hkieffer/krc/tes/inp/mkrc.inp .   #  sample for mkrc 
+ln -s /home/hkieffer/krc/tes/inp/RQ36.inp .     # specific asteroid, no atmosphere
 #ln -s /home/hkieffer/krc/tes/valb1.tab .     # sample seasonal albedo input
 #ln -s /home/hkieffer/krc/src/krc krc64   	# executable for 64-bit hardware
 #ln -s /home/hkieffer/krc/src/mkrc mkrc64   	# executable for 64-bit hardware
@@ -103,74 +93,78 @@ echo "Done copy to run"
 cd $RTOP/src       # Most source code and Makefile
 rm -f *
 ln -s /home/hkieffer/krc/uniq/Makefile .        # put Makefile where it's used
-ln -s /home/hkieffer/krc/src/porbcm.inc
-ln -s /home/hkieffer/krc/src/porbcx.inc
-ln -s /home/hkieffer/krc/src/units.inc .
-ln -s /home/hkieffer/krc/src/daycom.inc .
+ln -s /home/hkieffer/krc/src/dayc8m.f .
 ln -s /home/hkieffer/krc/src/filcom.inc .
-ln -s /home/hkieffer/krc/src/hatcom.inc .
-ln -s /home/hkieffer/krc/src/krccom.inc .
-ln -s /home/hkieffer/krc/src/mkrccom.inc .
-ln -s /home/hkieffer/krc/src/latcom.inc .
+ln -s /home/hkieffer/krc/src/latc8m.f .
+ln -s /home/hkieffer/krc/src/hatc8m.f .
+ln -s /home/hkieffer/krc/src/krcc8m.f .
+ln -s /home/hkieffer/krc/src/units.inc .
+#ln -s /home/hkieffer/krc/src/mkrccom.inc .
+ln -s /home/hkieffer/krc/porb/porbc8m.f
+ln -s /home/hkieffer/krc/porb/porbx8m.f
 
-ln -s /home/hkieffer/krc/src/albvar.f .
+ln -s /home/hkieffer/krc/src/albvar8.f .
 ln -s /home/hkieffer/krc/src/alsubs.f .
-ln -s /home/hkieffer/krc/src/aveday.f .
-ln -s /home/hkieffer/krc/src/aveyear.f .
 ln -s /home/hkieffer/krc/src/bigend.f .
 ln -s /home/hkieffer/krc/src/binf5.F .
+#4ln -s /home/hkieffer/krc/porb/caldate4.f .
 ln -s /home/hkieffer/krc/porb/caldate.f .
 ln -s /home/hkieffer/krc/src/climtau.f .
-ln -s /home/hkieffer/krc/src/co2pt.f .
-ln -s /home/hkieffer/krc/src/datime.f .
-ln -s /home/hkieffer/krc/porb/eccanom.f .
+#ln -s /home/hkieffer/krc/src/datime.f .
+ln -s /home/hkieffer/krc/src/deding28.f .
+#4ln -s /home/hkieffer/krc/porb/eccanom.f .
+ln -s /home/hkieffer/krc/porb/eccanom8.f  .
+#4ln -s /home/hkieffer/krc/porb/ephemr4.f .
 ln -s /home/hkieffer/krc/porb/ephemr.f .
-ln -s /home/hkieffer/krc/src/epred.f .
-#ln -s /home/hkieffer/krc/porb/evmono.f .
-ln -s /home/hkieffer/krc/src/evmono3.f .
+ln -s /home/hkieffer/krc/src/epred8.f .
+#4ln -s /home/hkieffer/krc/porb/evmono.f .
+ln -s /home/hkieffer/krc/src/evmono38.f .
 ln -s /home/hkieffer/krc/src/finterp.f .
 ln -s /home/hkieffer/src/for/util/idarch.F .
-ln -s /home/hkieffer/krc/src/krc.f .
-ln -s /home/hkieffer/krc/porb/mprint.f .
-ln -s /home/hkieffer/krc/porb/mprod3.f .
-ln -s /home/hkieffer/krc/porb/oblip.f .
-ln -s /home/hkieffer/krc/porb/obliq.f .
-ln -s /home/hkieffer/krc/porb/orbit.f .
+ln -s /home/hkieffer/krc/src/krc8.f .
+ln -s /home/hkieffer/krc/src/ksubs8.f .  # AVEDAY  AVEYEAR  CO2PT  SIGMA
+#ln -s /home/hkieffer/krc/porb/mprint.f .
+#ln -s /home/hkieffer/krc/porb/oblip.f .
+#ln -s /home/hkieffer/krc/porb/obliq.f .
+#4ln -s /home/hkieffer/krc/porb/orbit.f .
+ln -s /home/hkieffer/krc/porb/orbit8.f .
 #ln -s /home/hkieffer/krc/porb/porb.f .
 ln -s /home/hkieffer/krc/porb/porb1.f .
+#4ln -s /home/hkieffer/krc/porb/porbel4.f .
 ln -s /home/hkieffer/krc/porb/porbel.f .
+#4ln -s /home/hkieffer/krc/porb/porbig4.f .
 ln -s /home/hkieffer/krc/porb/porbig.f .
+#4ln -s /home/hkieffer/krc/porb/porbio4.f .
 ln -s /home/hkieffer/krc/porb/porbio.f .
+#4ln -s /home/hkieffer/krc/porb/porbit4.f .
 ln -s /home/hkieffer/krc/porb/porbit.f .
+#4ln -s /home/hkieffer/krc/porb/porbmn4.f .
 ln -s /home/hkieffer/krc/porb/porbmn.f .
-ln -s /home/hkieffer/krc/porb/porbqq.f .
-ln -s /home/hkieffer/krc/src/porb0.f .
+#ln -s /home/hkieffer/krc/porb/porbqq.f .
+#4ln -s /home/hkieffer/krc/src/porb0.f .
+ln -s /home/hkieffer/krc/src/porb08.f .
+#4ln -s /home/hkieffer/krc/porb/prtpcom4.f .
 ln -s /home/hkieffer/krc/porb/prtpcom.f .
 ln -s /home/hkieffer/krc/src/r2i2s.f .
 ln -s /home/hkieffer/krc/src/readaie.f .
 ln -s /home/hkieffer/krc/src/readtxt360.f .
-ln -s /home/hkieffer/krc/porb/rotdia.f .
-#ln -s /home/hkieffer/krc/porb/rotax.f .
-ln -s /home/hkieffer/krc/src/rotvec.f .
 ln -s /home/hkieffer/krc/src/seasalb.f .
 ln -s /home/hkieffer/krc/src/seastau.f .
 ln -s /home/hkieffer/krc/porb/spcrev.f .
-ln -s /home/hkieffer/krc/src/tcard.f .
-ln -s /home/hkieffer/krc/src/tday.f .
-ln -s /home/hkieffer/krc/src/tdisk.f .
-ln -s /home/hkieffer/krc/src/tint.f .
-ln -s /home/hkieffer/krc/src/tlats.f .
-ln -s /home/hkieffer/krc/src/tprint.f .
-ln -s /home/hkieffer/krc/src/tseas.f .
+ln -s /home/hkieffer/krc/src/tcard8.f .
+ln -s /home/hkieffer/krc/src/tday8.f .
+#Nln -s /home/hkieffer/krc/src/tdayCN8.f . # Crank-Nicholsen version
+ln -s /home/hkieffer/krc/src/tdisk8.f .
+ln -s /home/hkieffer/krc/src/tint8.f .
+ln -s /home/hkieffer/krc/src/tlats8.f .
+ln -s /home/hkieffer/krc/src/tprint8.f .
+#Nln -s /home/hkieffer/krc/src/tridag8.f . # needed only for Crank-N. version
+#Nln -s /home/hkieffer/krc/src/tridah8.f . # needed only for Crank-N. version
+ln -s /home/hkieffer/krc/src/tseas8.f .
+ln -s /home/hkieffer/krc/src/tun8.f .
 ln -s /home/hkieffer/krc/src/tyearp.f .
-ln -s /home/hkieffer/src/for/char/upcase.f .
-#ln -s /home/hkieffer/krc/src/vcros.f .
-#ln -s /home/hkieffer/krc/src/vfdot.f .
-#ln -s /home/hkieffer/krc/src/vfmag.f .
 ln -s /home/hkieffer/krc/src/vlpres.f .
 ln -s /home/hkieffer/krc/src/white0.f .
-ln -s /home/hkieffer/src/for/char/white1.f .
-#ln -s /home/hkieffer/krc/porb/ymd2jd.f .
 ln -s /home/hkieffer/krc/porb/ymd2j2.f .
 echo "done copy from krc"
 
@@ -178,15 +172,18 @@ ln -s /home/hkieffer/src/for/math/ang360.f .
 ln -s /home/hkieffer/src/for/util/b2b.f .
 ln -s /home/hkieffer/src/for/NumRec/caldat.f 
 ln -s /home/hkieffer/src/for/util/catime.f .
-ln -s /home/hkieffer/src/for/math/cocosp.f .   # many routines.
-ln -s /home/hkieffer/rad/mie/deding2.f .
+#4ln -s /home/hkieffer/src/for/math/cocosp.f .   # many routines.
+ln -s /home/hkieffer/src/for/mathdp/cocodp8.f .   # many routines.
 ln -s /home/hkieffer/src/for/util/julday.f .
 ln -s /home/hkieffer/src/for/util/r2r.f . 
-ln -s /home/hkieffer/src/for/math/rotmsp.f .   # many routines
+#4ln -s /home/hkieffer/src/for/math/rotmsp.f .   # many routines
+ln -s /home/hkieffer/src/for/mathdp/rotmdp8.f .   # many routines
 ln -s /home/hkieffer/src/for/math/rndex.f .
 ln -s /home/hkieffer/src/for/math/rterp.f .
-ln -s /home/hkieffer/src/for/math/sigma.f .
-ln -s /home/hkieffer/src/for/math/vaddsp.f .  # many routines
+ln -s /home/hkieffer/src/for/char/upcase.f 
+#4 ln -s /home/hkieffer/src/for/math/vaddsp.f .  # many routines
+ln -s /home/hkieffer/src/for/mathdp/vadddp8.f .  # many routines
+ln -s /home/hkieffer/src/for/char/white1.f .
 ln -s /home/hkieffer/src/for/math/xtreme.f .
 echo "done copy from src/for"
 
@@ -246,7 +243,6 @@ ln -s /home/hkieffer/tes/mod/binhead2.f .
 ln -s /home/hkieffer/src/for/math/ccor2d.f .
 ln -s /home/hkieffer/src/for/math/con4.f .
 ln -s /home/hkieffer/lunar/DE/const.f .
-# ln -s /home/hkieffer/rad/mie/deding1.f .  # single precision
 ln -s /home/hkieffer/rad/mie/deding2.f .
 ln -s /home/hkieffer/lunar/DE/dpephem.f .
 ln -s /home/hkieffer/src/for/NumRec/dspline.f .
@@ -290,7 +286,6 @@ ln -s /home/hkieffer/idl/externals/idl.h .
 #ln -s /home/hkieffer/idl/externals/c2t06bw.c . 
 ln -s /home/hkieffer/idl/externals/ccor2dw.c .
 ln -s /home/hkieffer/idl/externals/con4w.c .
-ln -s /home/hkieffer/idl/externals/deding1w.c .
 ln -s /home/hkieffer/idl/externals/deding2w.c .
 ln -s /home/hkieffer/idl/externals/dpephemw.c .
 ln -s /home/hkieffer/idl/externals/elevatew.c .

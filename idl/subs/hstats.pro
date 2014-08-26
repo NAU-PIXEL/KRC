@@ -17,8 +17,8 @@ function hstats, zz,  kode, prt=prt, lab=lab
 ; 2010apr24 HK Add keyword  prt
 ;_End
 
-tit=['Mean','StdDev','Min','Max' $
-,'MeanAbs','StdDevAbs','MinAbs','MaxAbs','Num']
+tit=['Mean','StdDev','Min','Max' $ ; max 7 chars
+,'MeanAbs','StDvAbs','MinAbs','MaxAbs','Num']
 
 siz=size(zz) & type=siz[siz[0]+1]
 nz=siz[siz[0]+2]

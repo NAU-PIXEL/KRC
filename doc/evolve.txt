@@ -2,6 +2,9 @@ evolve.txt    Notes on evolution of KRC code, after the first 17 years.
 Newest on top.  Does not include all minor changes.
 ............................................................................
 
+2015jun1 Version 3.2.1 Add TUN8 subroutine to write a fort.77 file when I15 is 
+100+ 
+
 2014apr27 Version 2.4.1 Fix blunder in the v2.x.x system when using the Viking
 lander pressure relation; in VLPRES update the base date for compatability with
 the J2000 system.
@@ -14,14 +17,14 @@ tday.f       DIFFI(MAXN1) >> DIFFI(MAXN1P)
 tdisk.f      INTEGER*4 HEADLEN /30/ >>  INTEGER*4 HEADLEN /25/
 tcard.f near 274  N1PIB.GT.MAXN1 >>  N1PIB.GT.MAXN1P
 
-2014mar23:28 Code KRCN, A Crank-Nicholson solution version of the R*8 version of
-TDAY, only this file is modified, and it calls the new routine tridah8.f, which
+2014mar23:28Code KRCN, A Crank-Nicholson solution version of the R*8 version of
+TDAY8, only this file is modified, and it calls the new routine tridah8.f, which
 is a modification of the Numerical Recipes routine tridag. A parallel change is
 to remove all code related to time doubling, use of which would require changing
 the matrix size at nearly every time step.
 
-2014mar10:16 Code KRC8, a double-precision version, keeping the same algorithms.
-Major source files and routine names changed by adding a trailing 8:
+2014mar10:16  V3.1.1 Code KRC8, a double-precision version, keeping the same 
+algorithms. Major source files and routine names changed by adding a trailing 8:
 ---.f >> ---8.f . For a number of minor routines, kept the same name and grouped
 them into a file ksubs8.f . Order of arrays in KRCCOM modified. The files for
 all commons with any real variables renamed: ---com.inc >> ---c8m.f . 21 Fortran
@@ -61,15 +64,14 @@ Update PORB system to use dates from J2000.0, dates now 11545 less than older.
   Revise the orbit-element tables, using Standish for planet orbits.
   Change variable name:  PHOXX to PHFXX , to match matrix.tex conventions.
 
-2013jan25  Version 1 distributed for KRC workshop at ASU Jan 28-30
-This is the version described in the JGR article.
+2013jan25 Version 1 distributed for KRC workshop at ASU Jan 28-30. This is the
+version described in H. Kieffer, Thermal model for analysis of Mars infrared
+mapping, J. Geophys. Res.: Planets, v.118, 451-570 (2013).
 
 2012jun02 Compute cosine of incidence on level and slopes using vector algebra.
 This removes the restriction that slope normals should not be tilted past the 
 spin axis, and is exact for large slopes. A few new subroutines for vector 
 algebra.
-   This version described in: H.H. Kieffer, Thermal model for analysis of Mars
-infrared mapping, J. Geophys. Res.: Planets, v. 118, 451-470,(2013)
 
 2012may11 Temporary calculation of magnitude of energy lost from system when
 Tatm falls below saturation but there is no cap to which to add the
@@ -283,6 +285,7 @@ in last season.  Computes non-gravitational acceleration terms.  Moving
 numerical grid to keep it in fixed relation to surface which is subliming or
 condensing.
 
-circa 1968. Original code: Used for analysis of Mariner 6, 7, 9 and Viking
-missions. Described in: H.H. Kieffer et al., Thermal and albedo mapping of Mars
-During the Viking primary mission, J. Geophys. Res.,v. 82, 4249-4291 (1977)
+circa 1968. Original code: Used for analysis of Mariner 6, 7, 9 and for planning
+and analysis of the Viking missions. Described in: H.H. Kieffer et al., Thermal
+and albedo mapping of Mars During the Viking primary mission,
+J. Geophys. Res.,v. 82, 4249-4291 (1977)

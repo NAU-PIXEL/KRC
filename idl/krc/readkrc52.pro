@@ -76,7 +76,7 @@ if siza[0] eq 4 then begin      ; only one case, force to 5 dimensions
     siza=size(aaa)
  endif
 vern=GETVERS(head,ii) ; look for version number.
-dod=siza[siza[0]] eq 5 ; double precision version
+dod=siza[siza[0]+1] eq 5 ; double precision version
 ;dom = total((ii-[2,2,0])*[1.e4,100.,1]) ge 0 ; True if using J2000.0 dates
 
 ii=READKRCCOM(finame,khold)   ; get khold
@@ -142,7 +142,7 @@ if t52 then begin
     ddd=reform(qq[3:2+nkay,*,*,*,*],nkay,numd,nlat,nseas,ncase,/over) ; hour, Tmin and tmax, lat, season,case
 endif
 if !dbug then begin 
-    help,ttt,ddd,ggg,uuu,vvv,lsubs
+    help,ttt,ddd,ggg,uuu,vvv
     print,'Nhour,Nlay,Nlat,Nseas,Ncase=',Nhour,Nlay,Nlat,Nseas,Ncase
     STOP
 endif

@@ -5,6 +5,7 @@
 #_Hist  Feb 08 2005 Kris Becker, USGS, Flagstaff Original Version
 # 2009may17 Hugh Kieffer Modify for the C routines needed by KRC
 # 2011oct24 HK Modify for distribution
+# 2014may05 -lg2c >> -lgfortran
 #_End
 ###########################################################################
 
@@ -38,6 +39,7 @@ ARFLAGS=-rvs    # r=replace v=verbose s=include index
 #LIBRARY  ?= libhk_cisis
 #LIBNAME   = $(LIBRARY).a
 LIBNAME=./libhk_cisis.a
+# SYSLIBS=-lncurse -ltermcap  -lg2c -lc -lm
 SYSLIBS=-lncurse -ltermcap  -lgfortran -lc -lm
 
 #  Set up source dependancies

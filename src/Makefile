@@ -1,131 +1,124 @@
-# Makefile for KRC distribution  2014mar02
+# Makefile for KRC Version 3  distribution  2014jun19
+# 2014jun19 HK Incorporate Version 3 PORB
 
 SHELL=/bin/csh
 
-FC=gfortran 
-FFLAGS= -fno-automatic -fno-second-underscore -fargument-alias -fd-lines-as-comments
-# -fbounds-check
-# -Wall
+FC=gfortran
+
+FFLAGS= -fno-automatic -fno-second-underscore -fd-lines-as-comments  # -Wall -fbounds-check  -O  
+
+# -g [gcc Debug] Produce debugging information in the op. system's native format 
+# -O [gcc Optimize] Try to reduce code size and execution time. First stage
+# -fbounds-check      [gcc Code]  Run-time checks for array subscripts 
+# -Wall enables -Wunused-labels, -Waliasing, -Wampersand, -Wsurprising, -Wnonstd-intrinsic, and -Wline-truncation
+
 LD=gfortran
+#------------- Libraries -------------------------
+SYSLIBS = -L  -lgfortran -lc -lm 
 
-# ------------ Libraries -------------------------
+# LDFLAGS= -fdump-tree-slim  # used, but does nothing 2014mar11
 
-SYSLIBS =  -lgfortran -lc -lm
-
-HHKLIB=/work1/build/  # top of libraries to use
+# Library directories that always are searched in
+HHKLIB=/mars/u/krios/krc/builds/3.2.1/  # top of libraries to use
 LIBDIRS=-L$(HHKLIB)
-
 CLIB=./cfiles/libhk_cisis.a
 
 #------------- system dependencies -------------
 
-OBJECTSM = mkrc.o  mlats.o tday.o tcard.o tprint.o tdisk.o epred.o \
-           porb0.o tint.o albvar.o co2pt.o vlpres.o aveday.o porb.o orbit.o \
-           eccanom.o alsubs.o deding2.o seasalb.o seastau.o readtxt360.o \
-           finterp.o evmono3.o idarch.o r2i2s.o white0.o readaie.o \
-	  binf5.o catime.o datime.o rndex.o rotmsp.o rterp.o sigma.o \
-	vaddsp.o white1.o xtreme.o
+OBJ8 = krc8.o tseas8.o tlats8.o tday8.o tcard8.o tprint8.o tdisk8.o tun8.o \
+ epred8.o porb08.o tint8.o albvar8.o vlpres.o porbit.o orbit8.o eccanom8.o  \
+ alsubs.o deding28.o seasalb.o seastau.o readtxt360.o finterp.o evmono38.o \
+ climtau.o binf5.o bigend.o rotmdp8.o vadddp8.o cocodp8.o \
+ b2b.o catime.o white1.o ksubs8.o
 
-OBJ6 = krc.o tseas.o tlats.o tday.o tcard.o tprint.o tdisk.o epred.o porb0.o \
- tint.o albvar.o co2pt.o vlpres.o aveday.o porbit.o orbit.o eccanom.o  \
- deding2.o idarch.o seasalb.o seastau.o sigma.o readtxt360.o finterp.o evmono3.o aveyear.o \
- climtau.o catime.o datime.o binf5.o bigend.o white1.o rotmsp.o cocosp.o vaddsp.o
+# ksubs8 has  aveday  aveyear  co2pt  sigma
 
-OBJP = porbmn.o porbio.o ephemr.o ymd2j2.o porbig.o porbit.o porbel.o orbit.o spcrev.o caldate.o caldat.o julday.o b2b.o upcase.o eccanom.o datime.o prtpcom.o rotmsp.o cocosp.o vaddsp.o
+OBJP3 = porbmn.o porbio.o ephemr.o ymd2j2.o porbig.o porbit.o porbel.o orbit8.o spcrev.o caldate.o caldat.o julday.o b2b.o upcase.o eccanom8.o catime.o prtpcom.o rotmdp8.o cocodp8.o vadddp8.o
 
 # normal link
-krc: $(OBJ6)     # -xl required for record length to be in words
-	$(FC) $(LDFLAGS) $(LIBDIRS) -o $@ $(OBJ6) \
+
+krcd: $(OBJ8) 
+	$(FC) $(LDFLAGS) $(LIBDIRS) -o $@ $(OBJ8) \
 	$(CLIB) $(SYSLIBS)
 
-# map movie version
-mkrc: $(OBJECTSM)     # -xl required for record length to be in words
-	$(FC) $(LDFLAGS) $(LIBDIRS) -o $@ $(OBJECTSM) \
+krcn: $(OBJN) 
+	$(FC) $(LDFLAGS) $(LIBDIRS) -o $@ $(OBJN) \
 	$(CLIB) $(SYSLIBS)
 
-porbmn: $(OBJP)
-	$(FC) $(LDFLAGS) $(LIBDIRS) -o $@ $(OBJP) \
+porbmn: $(OBJP3)
+	$(FC) $(LDFLAGS) $(LIBDIRS) -o $@ $(OBJP3) \
 	$(SYSLIBS)
 
-# routines with dependencies
-krc.o:   krc.f krccom.inc latcom.inc daycom.inc units.inc filcom.inc  
-mkrc.o: mkrc.f krccom.inc latcom.inc daycom.inc units.inc filcom.inc 
+# make routines for program dependencies
+#
+krc8.o:       krc8.f krcc8m.f latc8m.f dayc8m.f units.inc filcom.inc 
+tseas8.o:   tseas8.f krcc8m.f latc8m.f          units.inc hatc8m.f 
+tlats8.o:   tlats8.f krcc8m.f latc8m.f dayc8m.f units.inc hatc8m.f porbc8m.f
+tday8.o:     tday8.f krcc8m.f          dayc8m.f units.inc hatc8m.f
+tdayCN8.o: tdayCN8.f krcc8m.f          dayc8m.f units.inc hatc8m.f
+tcard8.o:   tcard8.f krcc8m.f latc8m.f dayc8m.f units.inc filcom.inc 
+tprint8.o: tprint8.f krcc8m.f latc8m.f dayc8m.f units.inc filcom.inc 
+tdisk8.o:   tdisk8.f krcc8m.f latc8m.f dayc8m.f units.inc filcom.inc hatc8m.f
+tun8.o:       tun8.f krcc8m.f          dayc8m.f           hatc8m.f
 
-tseas.o: tseas.f krccom.inc latcom.inc hatcom.inc units.inc 
-mlats.o: mlats.f krccom.inc latcom.inc daycom.inc hatcom.inc units.inc
-tlats.o: tlats.f krccom.inc latcom.inc daycom.inc hatcom.inc units.inc porbcx.inc
-tday.o: tday.f krccom.inc daycom.inc hatcom.inc units.inc
-tyearp.o: tyearp.f krccom.inc latcom.inc hatcom.inc
 seasalb.o: seasalb.f units.inc filcom.inc
 seastau.o: seastau.f units.inc filcom.inc
-tcard.o: tcard.f krccom.inc latcom.inc daycom.inc units.inc 
-tprint.o: tprint.f krccom.inc latcom.inc daycom.inc units.inc filcom.inc 
-tdisk.o: tdisk.f krccom.inc latcom.inc daycom.inc hatcom.inc units.inc filcom.inc
-porb1.o: porb1.f units.inc porbcm.inc
+climtau.o: climtau.f  units.inc filcom.inc
+readtxt360.o: readtxt360.f
 
-ephemr.o: ephemr.f   porbcm.inc
-porb.o:   porb.f     porbcm.inc
-porb1.o:  porb1.f    porbcm.inc
-porbio.o: porbio.f   porbcm.inc
-porbmn.o: porbmn.f   porbcm.inc
-porbqq.o: porbqq.f   porbcm.inc
-porbig.o: porbig.f   porbcm.inc
-porbit.o: porbit.f   porbcm.inc
-
-# no additional dependancies
-albvar.o: albvar.f
-alsubs.o: alsubs.f
-ang360.o: ang360.f 
-aveday.o: aveday.f 
+albvar8.o: albvar8.f krcc8m.f
+alsubs.o: alsubs.f 
+averag.o: averag.f  # test for function should be defined and called
 aveyear.o: aveyear.f
-b2b.o: b2b.f   # used by porb.  krc uses C version
 bigend.o: bigend.f
-binf5.o: binf5.F # uses  B2B(in C)  BIGEND  CATIME WHITE1  PIO_ system
+binf5.o: binf5.F  # uses  B2B  BIGEND  CATIME WHITE1  PIO_ system
+deding28.o: deding28.f
+eccanom8.o: eccanom8.f
+ephemr.o: ephemr.f  porbc8m.f
+evmono38.o: evmono38.f
+finterp.o: finterp.f
+jdate.o:  jdate.f  
+julday.o:  julday.f  
+orbit8.o: orbit8.f
+porb08.o: porb08.f units.inc porbc8m.f
+porbel.o: porbel.f 
+porbit.o: porbit.f   porbc8m.f
+porbig.o: porbig.f   porbc8m.f
+porbio.o: porbio.f   porbc8m.f
+porbit.o: porbit.f   porbc8m.f
+prtpcom.o: prtpcom.f  porbc8m.f
+#porb1.o: porb1.f units.inc porbcom8.f
+readaie.o: readaie.f
+#r2i2s.o: r2i2s.f
+spcrev.o: spcrev.f 
+tint8.o: tint8.f krcc8m.f
+tridag8.o: tridah8.f   # uses prior partial solution
+vlpres.o: vlpres.f
+white0.o: white0.f
+cocodp8.o: cocodp8.f  # collection
+rotmdp8.o: rotmdp8.f  # collection
+vadddp8.o: vadddp8.f  # collection
+ymd2j2.o: ymd2j2.f
+
+
+#----------------------- added after remove use of all but C library
+
+b2b.o: /mars/u/krios/krc/builds/3.2.1/src/b2b.f
 caldat.o: caldat.f
 caldate.o: caldate.f
-catime.o: catime.f
-climtau.o: climtau.f
-cocosp.o: cocosp.f # coordinate conversion package
-co2pt.o: co2pt.f
-datime.o: datime.f # contains non-standard Fortran
-deding2.o: deding2.f # interface R*4, internal R*8
-eccanom.o: eccanom.f
-evmono3.o: evmono3.f
-finterp.o: finterp.f
-idarch.o: idarch.F
-julday.o:  julday.f  
-koft.o: koft.f
-orbit.o: orbit.f
-porb.o:  porb.f
-porb0.o: porb0.f
-porbel.o: porbel.f 
-prtpcom.o: prtpcom.f
-oblip.o:  oblip.f  
-obliq.o:  obliq.f  
-orbit.o:  orbit.f
-r2i2s.o: r2i2s.f
-readaie.o: readaie.f
-readtxt360.o: readtxt360.f
-rndex.o: rndex.f 
-rotmsp.o: rotmsp.f   # many routines
-rterp.o: rterp.f
-sigma.o: sigma.f  
-spcrev.o: spcrev.f
-tint.o:  tint.f
-tyearp.o: tyearp.f
+catime.o: /mars/u/krios/krc/builds/3.2.1/src/catime.f
+datime.o: datime.f
 upcase.o: upcase.f
-vaddsp.o: vaddsp.f   # many routines
-vlpres.o: vlpres.f
-white0.o: white0.f 
-white1.o: white1.f
-xtreme.o: xtreme.f
-ymd2jd.o: ymd2jd.f
+white1.o: /mars/u/krios/krc/builds/3.2.1/src/white1.f
+vec2code.o: vec2code.f
 
-# epred.o: epred.f 
-# idarch.o: idarch.F
-#mprint.o: mprint.f 
-#mprod3.o: mprod3.f
-# rotv.o 
-
-clean:  
-	rm -f krc *.o
+ksubs8.o: ksubs8.f  # has  AVEDAY  AVEYEAR  CO2PT  SIGMA
+#
+# Make clean
+#
+clean:
+	-unalias rm; rm -f *.o 
+realclean:
+	-rm krc
+	-rm porb
+	-rm -f *.o 

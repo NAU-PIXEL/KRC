@@ -11,7 +11,7 @@
 \parindent=0.em \parskip=1.ex %  no indent & paragraph spacing
 
 \title{KRC planetary surface temperatures: Helplist}
-\author{Hugh H. Kieffer  \ \ File=-/krc/helplist.tex Version 2.3.1 2014feb25}
+\author{Hugh H. Kieffer  \ \ File=-/krc/Doc/helplist.tex Version 3.2.1 2014jun02}
 
 % local definitions
 %\newcommand{\short}{full}    % dummy for format
@@ -38,8 +38,7 @@
 This document is intended to help the expert user of KRC set up an input file
 that addresses their goals and will generate the kind of output they desire. It
 is assumed that the user is familiar with the KRC journal article: H.H. Kieffer,
-Thermal model for analysis of Mars infrared mapping, J. Geophys. Res. Planets,
-(2012) [Ref. 1]
+Thermal model for analysis of Mars infrared mapping, J. Geophys. Res.: Planets, v.118, 451-570 (2013) [Ref. 1]
 
 The evolution of KRC code is contained in:  evolve.txt 
 
@@ -165,6 +164,7 @@ Type 1	Real parameters  (8F10.2) ================================
 10  AMW     Molecular weight of the atmosphere
 11  ABRPHA  unused       [Phase of ABRAMP, degrees relative to midnight] 
 12  PTOTAL  Global annual mean surface pressure at 0 elev., Pascal[=.01mb]
+             If <=1.; no atmosphere at all.
              If KPREF=2, global average of atmosphere plus cap system.
 13  FANON   Mass-fraction of mean atmosphere that is non-condensing
 14  TATM    Atm temp for scale-height calculations
@@ -303,7 +303,7 @@ Type 2 Integer Parameters (8I10) ====================================
 12  JDISK   Season count that disk output is to begin. 0=none
 13  IDOWN   Season at which to read change cards
 14  I14     Index in FD of flexible print
-15  I15      ""
+15  I15      "" and >100 is code for special output to fort.77 via tun.f
 16  KPREF   Mean global pressure control. 0=constant
               1= follows Viking Lander curve  2=reduced by global frost, but
               then N4 must be >8, and latitudes must be monotonic increasing
@@ -909,6 +909,8 @@ Calls: DEFINEKRC
 KRCLAYER \ Compute center depth of KRC layers \\
  all items via arguments \\
 Calls: None
+
+\input{tun}  %<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 \section{Notes on how some aspects of the code work} %___________
 

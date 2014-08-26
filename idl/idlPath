@@ -7,9 +7,9 @@
 
 # Edit the next 3 lines for your machine
 
-setenv IDLL '+/usr/local/exelis/idl82/lib/'   # Location of RSI IDL library
+setenv IDLL '/mars/common/rsi/idl71/lib/'   # Location of RSI IDL library
 
-setenv IDLD '+/work1/build/idl' 		# location of KRC distribution idl
+setenv IDLD '/mars/u/krios/krc/builds/new/work/idl/subs:/mars/u/krios/krc/builds/new/work/idl/krc:.:/mars/common/rsi/idl71/lib/obsolete:/mars/common/rsi/idl71/lib/utilities:/mars/common/rsi/idl71/lib/imsl:' 		# location of KRC distribution idl
 
 #setenv IDLH '+/home/hkieffer/idl'	# Your own IDL source code area
 

@@ -1,6 +1,27 @@
 Keystroke guide to build of new version KRC on H3
 
----------------  Make a Distro ------------------
+---------------  Make and test a PORB only Distro ------------------
+
+Check that PORB documentation is up to date: see top part of stepP34
+cd ~/krc/aaa
+do: stepP34
+
+cd /work1/buildp
+rm -Rf *
+tar -xzf /work2/porbdist.tar.gz
+
+cd src
+make porbmn
+
+cd ../run
+ln -s ../src/porbmn .
+
+porbmn  to start PORB
+
+
+
+
+---------------  Make a full KRC Distro ------------------
 
 Run latest krc:  in=VerTest.inp   prt=VerTest.prt
 Run latest krc:  in=Mone.inp      prt=VnnnMone.prt
@@ -35,10 +56,10 @@ tar -xzf /work2/krc230.tar.gz  << edit the version number
 
 in /work1/build, do: source ~/krc/uniq/step6
 
-go the the “src/cfiles” directory.
+go to the “src/cfiles” directory.
 make all
 
-go the the “src” directory.
+go to the “src” directory.
 make krc
 make porbmn
 

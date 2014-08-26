@@ -9,38 +9,38 @@ Each object must have exactly 12 lines.  Three items are read for line 1.
 12:    Prime meridian angle at J2000.0 (rarely known) 
 All lines are read as list directed, so there must some blanks between items
     and there must be no interior blank or /. For the first body, a / follows 
-    the items read, anything be that number of items is ignored.
+    the items read, anything beyond that number of items is ignored.
 All angles are in degrees.   
 The reference coordinate systems are:
    orbital elements: heliocentric ecliptic J2000    
    spin axis (pole): J2000 equatorial 
 Last valid object is   5   [update].    Beyond that should not be read
 C_END    << Required to indicate end of comments
-1 Ceres 2456400.5 /
-e 	.0761668545450167 / 	1.9586e-08 	 
-a 	2.767992936039414 /  	2.3731e-09 	AU
-q 	2.557163620698466 / 	5.4098e-08 	AU
-i 	10.5942304169345  /	2.3429e-06 	deg
-node 	80.33008249643187 /	1.1917e-05 	deg
-peri 	72.16711987278464 /	1.9674e-05 	deg
-M 	327.8540676698703 /	1.6005e-05 	deg
+1 Ceres 2456800.5 /1 -----------------------------------------
+e 	.07579779827230555 / 1.9592e-08  solution date 2013-Jul-16 08:45:50  	 
+a 	2.767025704525198 / 2.1752e-09 	AU
+q 	2.557291248359312 / 5.4081e-08 	AU
+i 	10.59387843173385 / 2.3428e-06 	deg
+node 	80.32831021110563 / 1.192e-05 	deg
+peri 	72.39491611545941 / 1.974e-05 	deg
+M 	53.29569434422478 / 1.6116e-05 	deg
 rot_per 	9.074170  /	h
 PoleRA  291.  / 5
 PoleDec 59.   / 5 
 merid   170.9 /
-2 Pallas  2456400.5 
-e 	.2314996558080064 	1.9276e-08 	 
-a 	2.772015010581457 	2.1596e-09 	AU
-q 	2.130294489737222 	5.3569e-08 	AU
-i 	34.8368014488263 	2.1348e-06 	deg
-node 	173.1197473204847 	3.737e-06 	deg
-peri 	309.9544372128818 	5.5435e-06 	deg
-M 	310.0446145441367 	4.8236e-06 	deg
+2 Pallas  2456800.5  /2 -----------------------------------------
+e 	.23136806339302 	1.9287e-08 solution date 2013-Jul-16 08:46:11 
+a 	2.771722875768389 	2.2356e-09 	AU
+q 	2.130434721739725 	5.357e-08 	AU
+i 	34.84103374517942 	2.1349e-06 	deg
+node 	173.0969085484765 	3.7365e-06 	deg
+peri 	309.9258687541497 	5.5409e-06 	deg
+M 	35.50313393617061 	4.8612e-06 	deg
 rot_per 	7.8132 	h
 PoleRA  33.
 PoleDec -3.
 merid   38.
-3 Juno 2456400.5 
+3 Juno 2456400.5 /3 -----------------------------------------
 e 	.255305395587282 	2.0266e-08 	 
 a 	2.670734112721557 	2.1949e-09 	AU
 q 	1.988881283564732 	5.4096e-08 	AU
@@ -52,7 +52,7 @@ rot_per 	7.210 	h
 PoleRA 115.    converted from B1950
 PoleDec 56.
 merid   0.
-4 Vesta	 2456400.5
+4 Vesta	 2456400.5 /4 -----------------------------------------
 e 	.08825715520610074 	1.0296e-08 	 
 a 	2.36244573496989 	1.2964e-09 	AU
 q 	2.153942995072661 	2.3824e-08 	AU
@@ -64,7 +64,7 @@ rot_per 	5.342 	h
 PoleRA  305.8   3.1
 PoleDec 41.4   1.5
 merid   292.
-101955 Bennu 2456400.5   (1999 RQ36)    Body 5 in this file
+101955 Bennu 2456400.5   /5 ----------------  (1999 RQ36) -------------
 e 	.2037319346437232 	3.4131e-08 	 
 a 	1.126004277007048 	1.294e-10 	AU
 q 	.8966012472352957 	3.8364e-08 	AU
@@ -76,4 +76,28 @@ rot_per 4.29746   ± 0.002 h, Nolan et al 2013.  JPL has  4.288 h
 PoleRA  -67.9     Nolan: β = −88° (lat), λ = 45° and an uncertainty of 5°.  
 PoleDec -86.2    in ecliptic coordinates,  Convert using eclip2equat.pro 
 merid   0.
-INSERT ABOVE this 12-line sets for additional bodies 
+1000036 1P/Halley 2449400.5 /6 ---------------
+e 	0.967142908462304 	5.035e-09  solution date 2001-Aug-02 13:51:39 	 
+a 	17.8341442925537 	3.8913e-08 	AU
+q 	0.585978111516909 	8.8924e-08 	AU  tp 	2446467.395317050925	
+i 	162.262690579161 	6.7791e-06 	deg   (1986-Feb-05.89531705) 
+node 	58.42008097656843 	9.0539e-06 	deg
+peri 	111.3324851045177 	1.1714e-05 	deg
+M 	38.3842644764388 	1.4226e-07 	deg
+rot_per  24.0 / day
+PoleRA 19.0  / Sekenina pole
+PoleDec-27.0  
+merid   0 
+1003228 SidingSpring 2456505.5 /7 ----------C/2013 A1 (Siding Spring)----------
+e 	1.000604515347663 	6.122e-06  / solution date 2014-Mar-14 12:52:28  
+a 	-2314.311724635852 	23.435 	AU  hyperbolic
+q 	1.399036956818885 	7.3372e-06 	AU tp 	2456955.886833306343
+i 	129.0266593549997 	3.1912e-05 	deg
+node 	300.9743378699729 	8.3708e-05 	deg
+peri 	2.435502966380776 	0.00033199 	deg
+M 	-.003987098605085023 	6.055e-05 	deg
+rot_per 	7.7 / h  NO DATA on rotation or pole
+PoleRA  7.7
+PoleDec 7.7
+merid   7.7
+^^^^^^^^^^^^^ INSERT ABOVE this 12-line sets for additional bodies^^^^^^^^^^ 

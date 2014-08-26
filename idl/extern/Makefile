@@ -1,6 +1,7 @@
 # Makefile for IDL externals for KRC users
 #_Hist 2014feb28 HK Derive from Hugh's idl/externals/Makefile
 # Tried  -m32 on CFLAGS FFLAGS and LDFAGS; this caused errors
+# 2014may05 -lg2c >> -lgfortran
 #########################################################################
 
 # Set up some shell-level specific variables
@@ -31,6 +32,7 @@ INCLUDES=-I.   # in this directory
 # L are Library directores that always are searched in
 # l are libraries to include  -lc==libc.a  etc. 
 LIBDIRS=-L.  # -L/home/hkieffer/linux/lib  #<<< last is for NumRec
+#SYSLIBS = -lg2c -lc -lm   commented 2014may05
 SYSLIBS = -lgfortran -lc -lm  
 
 #  Set up how to process each source file type. 

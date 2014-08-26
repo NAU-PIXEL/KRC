@@ -1,15 +1,27 @@
-function krclayer, fd,id,ld
+function krclayer, fd,id,ld, ggg, flab=flab, glab=glab
 ;_Titl  KRCLAYER  Compute and print KRC layer depth table from KRCCOM values
 ; fd     in.  KRCCOM floats
 ; id     in.  KRCCOM integers
 ; ld     in.  KRCCOM logicals
+; ggg   out.  fltarr(n1,2) diffusivity and convergence factor (no time doubling)
+; flab  out_  strarr(7)  Short labels for columns of function
+; glab  out_  strarr(2)  Short labels for columns of ggg
 ; func. out. fltarr (N1,7) of:  0=thickness in local scale  1=thickness in m
 ; 2=Center depth in Top scale   3=Center depth in m   4=Mass above layer center 
 ; 5=Mass above layer bottom     6=Depth to bottom in local scale
+;_Desc
+; stability requirements. delt_t < tlay^2/(2*diffu)
+; stability factor: tlay^2/(2*delt_t*diffi)
 ;_Calls  none
 ;_Hist 2008apr13 Hugh Kieffer Convert Fortran from tday.f and tdisk.f
 ; 2014feb13 HK Omit obsolete layer indices. Add total mass above bottom of layer
-;_End
+; 2014may02 HK Add ggg output
+;_End      .comp krclayer
+
+flab=['Thick,scaled','Thick,m','Center,scaled','center,m' $
+,'MassAboveCen','MassAboveBot','BotDeptLocal']
+
+glab=['diffusivity','convergence']
 
 ; indices here are 1 less than in KRC helplist
 n1    =id[0]
@@ -91,6 +103,7 @@ for I=0,N1-1 do begin
 endfor
 ;        print,'Bottom layers for time doubling:  ',N1K[0:kkk], form='(a,10I5)'
 
+ggg=reform([diffi,tlay^2/((2.*persec/n2)*diffi)],n1,2.,/over)
 
 ; Compute the layer indices used for Type 52. Algebra same as in tdisk.f
 ; Last step is to subtract 1 to make 0-based.

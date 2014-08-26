@@ -118,7 +118,7 @@
 %\parindent=0.em \parskip=1.ex % paragraph spacing
 
 \title{The KRC Planetary ORBit (PORB) System}
-\author{Hugh H. Kieffer  \ \ File=~/krc/Doc/hporb.tex 2014jan24}
+\author{Hugh H. Kieffer  \ \ File=~/krc/Doc/hporb.tex 2014jan24 jun05}
 
 % local definitions
 %\newcommand{\short}{full}    % begin & end un-numbered equations
@@ -231,17 +231,21 @@ contain one element per line and include spin-axis.
  \qi Prime meridian at epoch [deg]
  \qi Sideral rotation period, [days]
 
- \item [\textit{small.tab}]  Newer format designed to allow cut-and-paste from the JPL Small-Body Database Browser. Rotation period in hours. Last two items are spin-axis direction; must get these data from other sources.
+ \item [\textit{small.tab}] Newer format designed to allow cut-and-paste of
+   elements 'a' through 'M' from the JPL Small-Body Database Browser.  The last
+   four items relate to the spin-axis, the rotation period in hours, the
+   spin-axis direction, and zero meridian( which is rarely known); must get
+   these data from other sources or set a dummy values.
  \end{description}
 
 \subsection{Comets}
 
 \textbf{\textit{comet.tab}} \  Some comets: orbit and spin. 
 Originally developed for the comet version of KRC, which included sublimation with a moving depth coordinate system, development of a coma, and non-gravitational accelleration terms. None of these are in the current version of KRC.
-\\ WARNING: Some entries are old. Consistency of source orientation systems uncertain.
 
 Format nearly the same as \nf{minor.tab} except for use of perihelion distance $q$ rather than semi-major axis $a$. They are related by: $q=a(1- \epsilon)$.
 
+\\ WARNING: Some entries are old. Consistency of source orientation systems uncertain. Use dicouraged: Put new commets into \nf{small.tab}. 
 \subsection {ExoPlanets}
 
 Obliquity and season at periastron were chosen as alternatives to the
@@ -249,7 +253,7 @@ conventional three items that specify orbit orientation (node, inclination,
 argument of periapsis) but which are relatively meaningless for planetary system
 without a well-defined reference plane.  The two chosen are easy to understand
 and have direct effect on temperatures.  \np{probel.f} forces planet obliquity to
-be at least 0.1\qd because a value of zero causes NAN's.
+be at least 0.1\qd~ because a value of zero causes NAN's.
 
 To implement this, must set J2000 obliquity \nv{OBL} to zero in \np{probig.f} to nullify the conversion from ecliptic to equatorial coordinates. 
 
