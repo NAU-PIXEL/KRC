@@ -5,16 +5,16 @@ C_Vars
       INCLUDE 'dayc8m.f'
       INCLUDE 'hatc8m.f'
 C_Args
-      INTEGER K15               !in. what kind of output + 100
-      INTEGER ISTEP             !in.  phase: 1= write expected sizes  2=write data
-      INTEGER I3                !in.  optional: meaning depends upon K15
-      REAL*8 ARG4(*)            !in.  optional: meaning depends upon K15
+      INTEGER K15       !in. what kind of output + 100
+      INTEGER ISTEP     !in.  phase: 1= write expected sizes  2=write data
+      INTEGER I3        !in.  optional: meaning depends upon K15
+      REAL*8 ARG4(*)    !in.  optional: meaning depends upon K15
 C open/close of file fort.77 handled by FORTRAN system
 
-C_DESC Shell for various special kinds of output, only one kind for any run.
-C Each version is a text file written as fort.45; use must rename
-C output is only for seasons that go to TDISK
-C first line for each case indicate the expected size for this case
+C_DESC Routine for various special kinds of output, only one kind for any run.
+C Each version is a text file written as fort.77; user must rename after a run
+C Output is only for seasons that go to TDISK
+C First line for each case indicate the expected size for this case
 
 C 1: t(z) for each output hour
 C 2: interface radient flux: direct and diffuse insolation, overhead and

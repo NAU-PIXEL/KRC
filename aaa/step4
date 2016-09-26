@@ -31,5 +31,6 @@ tar -chzf  $OUT aaa doc idl run src  	 # tar following all links
 pwd
 cd ~/krc/aaa   # return to parent directory
 pwd
-echo "OUT="$OUT
+
+echo "Now rename "$OUT" to actual version"
 exit

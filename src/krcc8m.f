@@ -1,7 +1,7 @@
-C_Titl  krccom8.f  common for input and transfer variables
+C_Titl  krcc8m.f = KRCCOM common for input and transfer variables
 C_Limitations 
       IMPLICIT NONE             ! none-the-less, try to code with usage
-      INTEGER*4 MAXN1,MAXN2,MAXN3,MAXN4,MAXN5,MAXN6,MAXNH,MAXBOT
+      INTEGER*4 MAXN1,MAXN2,MAXN3,MAXN4,MAXN6,MAXNH,MAXBOT
      &,MAXN1P,NUMFD,NUMID,NUMLD,N4KRC,NWKRC,KOMMON,MAXN4E
 C Here are all the dimension-defining parameters for items in any common
       PARAMETER (MAXN1 =50)     ! dimension of layers
@@ -20,9 +20,9 @@ C       PARAMETER (MAXN5 =161)     ! dimension of saved seasons
       PARAMETER (NWKRC=N4KRC/2) ! number of Real words in krccom. Used by tdisk
       PARAMETER (KOMMON=10000000) ! Storage used by tdisk
 
-      INTEGER*4 N1,N2,N3,N4,N5,  N24,IB,IC2,NRSET,NMHA              !  1:10
+      INTEGER*4 N1,N2,N3,N4,N5,  N24,IIB,IC2,NRSET,NMHA              !  1:10
      &,NRUN,JDISK,IDOWN,I14,I15,  KPREF,K4OUT,JBARE,NMOD,IDISK2   ! 11:20
-     &,KOLD,KVALB,KVTAU,ID24(4),  NFD,NID,NLD                     ! 21:30
+     &,KOLD,KVALB,KVTAU,ID24(3), NBKRC,NFD,NID,NLD                ! 21:30
      &,N1M1,NLW,JJO,KKK,N1PIB,  NCASE,J2,J3,J4,     J5            ! 31:40
 
       REAL*8 ALB,EMIS,SKRC,COND2,DENS2, PERIOD,SPHT,DENS,CABR,AMW          ! 1:10
@@ -35,8 +35,8 @@ C       PARAMETER (MAXN5 =161)     ! dimension of saved seasons
      &,SCALEH,BETA,DJU5,DAM,EFROST,DLAT,COND,DIFFU,SCALE ! :93
      &,PIVAL,SIGSB,RADC      ! :96
 
-      LOGICAL*4 LP1,LP2,LP3,LP4,LP5,  LP6,LPGLOB,LVFA,LVFT,LKOFT   !  1:10
-     &,LPORB,LKEY,LSC,LNOTIF,LOCAL,   LD16,LD17,LD18,LD19,LONE     ! 11:20
+      LOGICAL*4 LP1,LP2,LP3,LP4,LP5,  LP6,LPGLOB,LVFA,LVFT,LKOFT     !  1:10
+     &,LPORB,LKEY,LSC,LZONE,LOCAL,   LD16,LD17,LD18,LD19,LONE        ! 11:20
 
       REAL*8 CCKU(4),CCKL(4),CCPU(4),CCPL(4) ! coef of K & Cp, Upper/Lower layers
 C      INTEGER*1  KITLE(84),DAYTIM(20) ! Sum= 104 bytes MUST be multiple of 8
@@ -74,14 +74,14 @@ Cset   -----------lats--------- tint ---lats-------      ---lats----
      6,DJU5,DAM,EFROST,DLAT,COND,  DIFFU,SCALE,PIVAL,SIGSB,RADC       !10 :96
      &,ALAT,ELEV                                       ! 2*maxn4=2*37=74 :170
 Cset   seas lat day2   lats -------day1------- --main------
-     7,N1,N2,N3,N4,N5,  N24,IB,IC2,NRSET,NMHA                     !  1:10
-     8,NRUN,JDISK,IDOWN,I14,I15,  KPREF,K4OUT,JBARE,NMOD,IDISK2   ! 11:20
-     9,KOLD,KVALB,KVTAU,ID24,  NFD,NID,NLD                        ! 21:30
+     7,N1,N2,N3,N4,N5,  N24,IIB,IC2,NRSET,NMHA                       !  1:10
+     8,NRUN,JDISK,IDOWN,I14,I15,  KPREF,K4OUT,JBARE,NMOD,IDISK2      ! 11:20
+     9,KOLD,KVALB,KVTAU,ID24,  NBKRC,NFD,NID,NLD                     ! 21:30
 Cset             ----card---
-     A,N1M1,NLW,JJO,KKK,N1PIB,  NCASE,J2,J3,J4,     J5            ! 31:40
+     A,N1M1,NLW,JJO,KKK,N1PIB,  NCASE,J2,J3,J4,     J5               ! 31:40
 Cset   ---day1- lat ----day1-    main -day2- lats  seas
-     B,LP1,LP2,LP3,LP4,LP5,    LP6,LPGLOB,LVFA,LVFT,LKOFT         !  1:10
-     C,LPORB,LKEY,LSC,LNOTIF,LOCAL,   LD16,LD17,LD18,LD19,LONE    ! 11:20
+     B,LP1,LP2,LP3,LP4,LP5,    LP6,LPGLOB,LVFA,LVFT,LKOFT            !  1:10
+     C,LPORB,LKEY,LSC,LZONE,LOCAL,   LD16,LD17,LD18,LD19,LONE        ! 11:20
      D, KITLE,DAYTIM  ! 
 Cset   tcard tprint tcard tcard 
 C
@@ -106,5 +106,8 @@ C 2012may10 HK Define FLOST
 C 2014feb25 HK Specify all word lengths as *4
 C 2014mar10 HK Make  REAL*8  version    Change name from krccom.inc Untabify
 C 2014may04 HK Increase N2 by factor of 256
+C 2016mar:may HK Move ALAT,ELEV from near end. Change IB to IIB,  IC to IC2
+C             LNOTIF to LZONE
+C 2016aug12 HK Add NBKRC to common
 C_End _______________________________________________________________________
-  
+ 

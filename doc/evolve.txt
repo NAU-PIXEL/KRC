@@ -2,12 +2,53 @@ evolve.txt    Notes on evolution of KRC code, after the first 17 years.
 Newest on top.  Does not include all minor changes.
 ............................................................................
 
-2015jun1 Version 3.2.1 Add TUN8 subroutine to write a fort.77 file when I15 is 
-100+ 
+2016sep05 V 3.4.2 Released as alpha. Correct the version 3 layer-doubling factor
+from 4 to 2. The convergence safety factor in code SCONVG and the input minimum
+CONVF are both the square of that described in the JGR article in section 3.2.3
+. Replace use of R2R family of routines, which overloaded arguments so that the
+compiler could not check out-of-bounds, with FILLMV set of routines with a FILL
+and MoVe routine for each word type.
 
-2014apr27 Version 2.4.1 Fix blunder in the v2.x.x system when using the Viking
-lander pressure relation; in VLPRES update the base date for compatability with
-the J2000 system.
+2016may20 V 3.4.1 Option to use flat-model result for the far-field of sloped
+models.  Allow up to 3 binary files open at once. Major changes to TDISK and new
+routines TFAR (read a type -1, -2 (had been -1) , or -3 file) and CUBUTERP
+(cubic spline over uniformly spaced data). Modest changes to KRC, TSEAS, TLATS,
+TDAY. Minor changes to TCARD and to commons HATCOM, FILCOM, and UNITS.  See the
+V34 USers Guide for documentation.
+
+2016mar22 Version 3.3.1 Minor glitch fixes. LD18 is used to indicate when
+parameter and layer table were last printed; used to force their print if a
+numerical blowup happens.
+
+2016mar07 Version 3.3.0 Released as alpha, later withdrawn. IB becomes IIB, flags
+made negative, and positive values represent geothermal heat flow in
+milliwatts/m^2.  Allow bond albedo function beyond Lambert.  Option for zone
+table, major re-code of TDAY; new routine READZONE.  Revision of time-doubling
+code. Printing the layer table moved from TPRINT to TDAY. Changes to KRCCOM and
+FILCOM. Start naming of source files with 2 digits of version number,
+e.g. tday33.f; include files are all ...vvc.f where vv is first 2 parts of
+version number. Soft links are used for routines and commons that had nill of
+minor revisions.
+
+2015dec24++ Version 3.2.3  TDAY: First time-double layer not less than 4. FLAY
+now is the first physical layer. Real parameter 11 (ABRPHA) and 32 (FD32) become
+the Clausius-Clapeyron coefficients used in function CO2PT; labeled SatPrA and
+SatPrB in the input file. Values for CO2 (the prior hard-code) are 27.9546 and
+3182.48, included in master323.inp; which is also updated to finer layers. Minor
+print changes.
+
+2015jun1 Version 3.2.1 Released to ASU. Add TUN8 subroutine to write a fort.77
+file when I15 is 100+. TUN8 has access to several of the commons: see the code
+to learn what the current version outputs; TUN8 would need to be modified by
+user for their special need. KRC calls TUN8 at the start of each case to write a
+header.  If I15=101, then TDAY calls TUN8 on the last day of each season being
+output to disk at each output hour.  If I15=102, then TLATS calls TUN8 for every
+latitude for every season being output to disk.  Change KRCCOM to move ALAT and
+ELEV earlier.
+
+2014apr28 Version 2.4.1 Released to ASU. Fix blunder in the v2.x.x system when
+using the Viking lander pressure relation; in VLPRES update the base date for
+compatibility with the J2000 system. LAST SINGLE PRECISION VERSION.
 
 2014mar28 Version 2.3.3 (not released)
 Minor fixes to V2.3.2 routines noticed in the R*8 development:
@@ -27,24 +68,25 @@ the matrix size at nearly every time step.
 algorithms. Major source files and routine names changed by adding a trailing 8:
 ---.f >> ---8.f . For a number of minor routines, kept the same name and grouped
 them into a file ksubs8.f . Order of arrays in KRCCOM modified. The files for
-all commons with any real variables renamed: ---com.inc >> ---c8m.f . 21 Fortran
+all commons with any real variables renamed: ---com.inc >> ---c8m.f . 21 FORTRAN
 files modified. Untabify most source-code files. Makefile Make8 .
 
-2014feb28 Version 2.3.2  Change Makefiles to use gfortran rather than g77, and 
-simplify them.
+2014feb28 Version 2.3.2 Released to ASU. Change Makefiles to use gfortran rather
+than g77, and simplify them.  [Untabify and justify most .f files; many
+variables to set explicitly to REAL*4]
 
-2014jan27 Version 2.3.0 If fatal error, rather than terminating run, KRC will
+2014jan27 Version 2.3.0  If fatal error, rather than terminating run, KRC will
 try the next case. Ensure disk files closed for unusual sequences. Use more
 accurate, and slower, models for the OnePoint mode.
 
-2013nov13 Version 2.2.4 sent to ASU but named krc222f there. This is
+2013nov13 Version 2.2.4  Sent to ASU but named krc222f there. This is
 the last of several variations on 2.2.2 that dealt only with the makefile, IDL
-routines, and tiny format changes. All calculations are the same in all varients
+routines, and tiny format changes. All calculations are the same in all variants
 of 2.2.2 and 2.2.4
 
 2013aug30  Fix logic in tdisk when changing between file types. 
 
-2013aug26 Version 2.2.2  Revise PORB system to accomodate exoplanets and a format
+2013aug26 Version 2.2.2  Revise PORB system to accommodate exoplanets and a format
 for asteroids that allows cut-and-paste from the JPL small-bodies browser; most
 changes are in porbel.f . Add design and Users Guide documents for
 PORB. Included detailed documentation of Type 52 output file.
@@ -87,7 +129,6 @@ for initial temperature estimates; changes restricted to TLATS and TDAY. Write
 OBLIP and AVEYEAR. Discover many versions of porbcm.inc and some porb--.f;
 replace all current use except -/krc/porb/ with soft-links. No-atmosphere is
 triggered by PTOTAL of 1 [Pascal] or less. Include '|<dbug' on D-lines.
-
 Incorporate CLIMTAU that allows read of zonal/seasonal dust and ice opacities
 
 2011july Develop movie version, KRCm, to speed up Phils calculation of
@@ -99,33 +140,28 @@ multiple versions of some routines
 2010apr21 Update 3 routines that deal with the 4 input lines related to
 temperature-dependent properties: tprint, tcard, tday , giving the extension .f2
 and the older versions extension .f1. Make soft links of .f to the .f2 version
-Also make soft link for krccom.inc to krccom2.inc As of this date, the base
+Also make soft link for krccom.inc to krccom2.inc . As of this date, the base
 version of KRC has the temperature-dependent option, invoked by setting LKOFT.
-
- Add option of 3rd integer on first input line. If not 0, then will read a card
- of 6 debug flags, IDB1 to IBD6, which are contained in units.inc and all are
- initialized as 0 in TCARD(1)
-
+Add option of 3rd integer on first input line. If not 0, then will read a card
+of 6 debug flags, IDB1 to IBD6, which are contained in units.inc and all are
+initialized as 0 in TCARD(1)
 
 2010jan11 Go to IMPLICIT NONE in all major routines
 Change names in krccom  PI>>PIVAL  RAD>>RADC  to improve search uniqueness
 Move TINT call from tlats to tseas so as to remove 1-season delay in SUMF
-Add D-line writes to fortran units for study of KofT differences.
+Add D-line writes to FORTRAN units for study of KofT differences.
 
 2009apr22
 Begin ability to forecast deep layers based on storage of midnight values.
-
 Scheme 1. [Coded, but not refined. Mostly a stub] Store at integral years prior
 to forecast season index. If have 3 or more values, use EPREAD; should be safe
 to use on all layers. Because of possible jump perturbation on the first day,
 best to not have that be one of the stored dates. Does nothing if IDISK2=0.  [To
 remove, delete TMN4Y from hatcom, delete call to TYEARP in TSEAS, remove
 tyearp.o from sources in Makefile]
-
 Scheme 2.[Not implemented] Rolling storage of all seasons for the past year. At
 forecast season; evaluate thermal delay to surface and make [complicated]
 forecast.
-
 
 2008nov11-2009feb MAJOR CHANGE. Add temperature-dependent conduction option
   Use L10 as logical variable for k-of-T
@@ -162,7 +198,7 @@ Use IDOWN as season index at which to read some changes
 
 2006apr22 tdisk  Allow flexible number of cases for output file type 52 and 54
 
-2006apr12 tdisk  Change file style 54 to have both 1am and 1pm surface Temp.
+2006apr12 tdisk  Change file style 54 to have both 1 am and 1 pm surface Temp.
 
 2006jan25 tlats  Modify SKYFAC from linear with slope to (1+cos s)/2
 

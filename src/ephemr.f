@@ -13,7 +13,7 @@ C   91may02  HHK format, use  ANG360, full  JD if before base time
 C 2004sep21  HK replace   TYPE *,  with   WRITE(*,*) 
 C 2012feb29  HK Replace  JDATE with  CALDATE 
 C 2013jul24 HK Revise to V2 PORB system
-C 2014jun09 HK Convert to R*8,  untabify
+C 2014jun09 HK Convert to R*8,  untabify  2016may23 HK Remove unused label 4
 C_END
 
       INCLUDE 'porbc8m.f'      ! has  IMPLICIT  NONE
@@ -37,7 +37,7 @@ C_END
       WRITE(*,*)'  NEGATIVE PERIOD IS SPACECRAFT NUMBER; JD0 IGNORED'
       WRITE(*,*)'  ZERO PERIOD; JD0 IGNORED.'
       READ(IOK,*,END=9,ERR=2) ORBPER,ORB0,TITLE
- 4    WRITE(IOP,320)
+      WRITE(IOP,320)
  320  FORMAT('1')
       WRITE (IOP,301) RUNTIM,TITLE,N2,DJUL,DELJUL,ORBPER,ORB0
  301  FORMAT(1X,5a4,4X,A,/' N2=',I4,' DJUL=',F10.2,' DELJUL=',F8.2

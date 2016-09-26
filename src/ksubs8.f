@@ -1,4 +1,7 @@
 C_Titl  KSUBS8  A collection of R*8 routines with same name as R*4 versions
+C_Hist 2014sapril  Hugh Kieffer.  Create
+C 2015sep14 HK Modify CO2PT to accomodate any gas
+C
 C Includes  AVEDAY  AVEYEAR  CO2PT  SIGMA 
 
       REAL*8 FUNCTION AVEDAY (SDEC,XLAT)
@@ -45,6 +48,8 @@ CC***     ETA=ACOS(1.)                  ! polar night
         AVEDAY = RESULT ! transfer to caller
         RETURN
         END
+
+
 
       REAL*8 FUNCTION AVEYEAR (BLIQ,XLAT)
 C_Titl  AVEYEAR  Average annual exposure of surface to sunlight. 
@@ -95,31 +100,37 @@ C 1/(2 pi^2) * sum*delp=  1/(2 pi^2) * sum*(2 pi/N)= sum/(N pi)
 
 
       REAL*8 FUNCTION CO2PT (KODE, ARG2)
-C_Titl  CO2PT:  CO2 pressure/temperature relation
-      IMPLICIT NONE
+C_Titl  GASPT  Gas saturation pressure / temperature relation
+C_Vars
+      INCLUDE 'krcc8m.f'  ! has  IMPLICIT NONE 
 C_Args
       INTEGER KODE            !in. 1=P-to-T  2=T-to-P
       REAL*8 ARG2               !in. pressure (pascal) or temperature (kelvin)
-CC REAL  CO2PT !func. temperature or pressure
 C_Desc
 C  Clausius-Clapeyron equation based on  MARS p 959
 C  ln  P = a -  b/T   or  T = b/(a - ln  P)
 C this relation is good to ~ 1% for 120-160 kelvin or .4 to 314 pascal
 C_Hist  Hugh_Kieffer  97feb11
 C 2010jan11 HK Go to implicit none
+C 2015sep14 HK Allow any gas by getting parameter from krccom
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
 
-      REAL*8 A   /27.9546D0/  ! first  C-C coefficient for  CO2 (mb) mars p 959
-      REAL*8 B   /3182.48D0/  ! second  C-C coefficient for  CO2  (1/K)
+      REAL*8 A !  /27.9546D0/  ! first  C-C coefficient for  CO2 (mb) mars p 959
+      REAL*8 B !  /3182.48D0/  ! second  C-C coefficient for  CO2  (1/K)
       REAL*8 OUT,P, T
+
+C transfer two items from KRCCOM explicitly for clarity. 
+C as of 2015sep14 these are the only two spare Real input parameters
+      A=ABRPHA                  ! first Clausius-Clapeyron coefficient
+      B=FD32                    ! second  " " "  
 
       IF (KODE.EQ.1) THEN
         P=ARG2
-        IF (P.LE.0.) P=1.D0  ! dumb insurance to avoid log failure
+        IF (P.LE.0.) P=1.D-3  ! dumb insurance to avoid log failure
         OUT = B/(A-DLOG(P))
       ELSE
         T=ARG2
-        IF (T.LT.10.D0) T=10.D0
+        IF (T.LT.10.D0) T=10.D0 ! dumb insurance to avoid numerical failure
         OUT = DEXP( A-B/T)
       ENDIF
       CO2PT = OUT

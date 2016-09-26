@@ -56,7 +56,7 @@ C               and change NAME to FILE in OPEN statement
 C 2013feb02 HK Change base date from 1950 to J2000. All data files use C_END
 C          Separate files for Solar system planets into orbits and spin vectors
 C 2013jun19 HK Add flag for Pole position in B1950 ecliptic
-C 2014jun09 HK Convert to R*8  Untabify
+C 2014jun09 HK Convert to R*8  Untabify    2016may23 HK remove unused variable
 C_End&___1_________2_________3_________4_________5_________6_________.72
 
       INTEGER NFILES
@@ -75,7 +75,7 @@ C obsolete: 'seidel.tab','sturms.tab'
       REAL*8 DJBASE /2451545.D0/ ! J2000.0  All days offset from this.
       REAL*8 JULCEN /36525.D0/  ! Days in a Julian century; Standish06
       REAL*8 VVV(11),XX8        ! elements computed in loop 
-      REAL*8 QP,TC,XX
+      REAL*8 QP,XX
       REAL*8 ZBAXX(3)
       REAL*8 ALPHA,LAMBDA,BETA,SD,CACD,SACD,R,DELTA ! trig method
       REAL*8 FFF(6),RRR(6)      ! Items in file            

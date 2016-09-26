@@ -1,5 +1,5 @@
 function avalg, aaa,vv,op,dim=dim
-;_Titl  AVALG  Array Vector algebra; +-*/ operations
+;_Titl  AVALG  Array Vector algebra; +-*/=<> operations
 ; aaa	in.	Array of dimensionality 2 to 4 (could recode for more)
 ; vv	in.	Vector to be applied to aaa. If this is a scalar, 
 ;		then aaa may be any dimensionality
@@ -14,13 +14,13 @@ function avalg, aaa,vv,op,dim=dim
 ;               '>'  out=aaa>vv
 ;               '<'  out=aaa<vv
 ; dim	in_	Dimension of array to which vector is applied.
-;		  Default is the first that matches size.
-; func.	out	Result of algebra. -integer if formal error.
+;		  Default is the first that matches size of vv
+; func.	out	Result of algebra same size as aaa.  -integer if formal error.
 ;_Desc
 ; This routine coded as with M0 logic; I.e., no change in array dimensions.
 ;   For example of  M1 (minus 1 dimension) logic, see m1mean .
 ; Because it is easy for user to change to make -vv or 1/vv,
-;   the - and / operations are inverted to allow more generality.
+;   the v- and v/ operations are inverted to allow more generality.
 ;_Hist  99may24  Hugh Kieffer
 ; 2001mar09 HK change op from keyword to argument
 ; 2001may08 HK Add the vx operations, and redefine the - and / operations
@@ -28,7 +28,10 @@ function avalg, aaa,vv,op,dim=dim
 ; avoid test and branches in calling programs 
 ; 2012mar12 HK  Add > and < operations
 ; 2013jan11 HK Make all indices long so can treat dimensions > 32767
-;_End
+; 2015oct04 HK Issues warning if dimension match ambiguous
+;   Tested for speed in TIMINGD: relative to explicit code,
+;   for large arrays slower by factor of 2, for 1000 elements factor is 2.5 to 6.
+;_End                      .comp avalg
 
 maxd=4                          ; max number of input dimensions coded for
 kerr=0                          ; set error index to  none
@@ -55,7 +58,8 @@ endif else begin ; normal situation
 
 if dima eq 1 then dimu=1 else begin
     if not keyword_set(dim) then begin ; find first dimension match
-        j=where(ssa[1:dima] eq vlen) ; all dimensions that match
+        j=where(ssa[1:dima] eq vlen,i1) ; all dimensions that match
+        if i1 gt 1 then message,'WARNING: dimension match ambiguous',/con
         dim=j[0]+1              ; will be 0 if no match
     endif 
     dimu=dim

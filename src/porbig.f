@@ -1,5 +1,5 @@
       SUBROUTINE PORBIG (TITLE)
-C_Titl  PROBIG  Read orbital elements from disk files. Initiate porbcm
+C_Titl  PROBIG  Read orbital elements via PORBEL. Initiate porbcm
       INCLUDE 'porbc8m.f'     ! has  IMPLICIT NONE
 C_Args 
       CHARACTER*(*) TITLE       !out. object name

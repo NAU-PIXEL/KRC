@@ -34,27 +34,33 @@ Check that all documentation is up to date
 in ~/krc/aaa  
 do: step3
 do: step4 
-Edit step3b to latest version
-do: step3b
-do: step4b 
+IF transferring BIG files:
+  Edit step3b to latest version
+  do: step3b
+  do: step4b 
+endif
 
-in /work2, 
+in /work2/KRC 
 mv krcdist.tar.gz  krcNNN.tar.gz        where NNN is the version number
 mv krcbig.tar  krcNNNbig.tar
 
 in ~/cop
-ln -s 
+ln -s /work2/krcNNN.tar.gz .
+cd
+gp p cop/krcNNN.tar.gz asu 
 
 ---------------  Install a Distro ------------------
 
 in /work2/:
   mv krcdist.tar.gz krc231.tar.gz  << edit the version number
 
-cd /work1/build
-      check DIR, then empty it by: rm -Rf *
+cd KRC
+mkdir NNN  <- version number. Need do only onve for each version
+cd NNN
+      if Dir not empty: rm -Rf *
 tar -xzf /work2/krc230.tar.gz  << edit the version number
 
-in /work1/build, do: source ~/krc/uniq/step6
+NOPE: in /work2/KRC/NNN/ , do: source ~/krc/uniq/step6
 
 go to the “src/cfiles” directory.
 make all
@@ -67,12 +73,13 @@ go into the “idl/extern” directory
 make ftnwrap64.so
 
 cd into "run"  directory
+mkdir out
 ln -s ../src/krc . 
 ln -s ../src/porbmn .
 
 krc
-input] VerTest.inp
-print] VerTest.prt
+input] VerTest.inp     or 342Test    <- edit version.  ".inp" not used V342+
+print] VerTest.prt     or /
 
 krc
 input] Mone.inp
@@ -97,95 +104,6 @@ NOte. If files are not in current directory, surround in single quotes.
 ^^^  FIXES YET NEEDED
 
 
-*4 done for
-krc  tseas tlats tday 
-
-rebuild 2.3.2
-
-
-DEBUGGER
-gdb krc
-run
-[input the file names]
-where [ or  backtrace]
-quit   to exit
-
-[hkieffer@hulk3 src]$ gcc --version
-gcc (GCC) 4.4.7 20120313 (Red Hat 4.4.7-4)
-
-
-The -g  and -O options are in gcc
- -fargument-alias is not in gFortran nor gcc
-
--g
-    Produce debugging information in the operating system's native format (stabs, COFF, XCOFF, or DWARF 2). GDB can work with this debugging information.
-
-    On most systems that use stabs format, -g enables use of extra debugging information that only GDB can use; this extra information makes debugging work better in GDB but probably makes other debuggers crash or refuse to read the program. If you want to control for certain whether to generate the extra information, use -gstabs+, -gstabs, -gxcoff+, -gxcoff, or -gvms (see below).
-
-    GCC allows you to use -g with -O. The shortcuts taken by optimized code may occasionally produce surprising results: some variables you declared may not exist at all; flow of control may briefly move where you did not expect it; some statements may not be executed because they compute constant results or their values are already at hand; some statements may execute in different places because they have been moved out of loops.
-
-    Nevertheless it proves possible to debug optimized output. This makes it reasonable to use the optimizer for programs that might have bugs.
-
-    The following options are useful when GCC is generated with the capability for more than one debugging format.
-
-
-
--fno-automatic
-    Treat each program unit (except those marked as RECURSIVE) as if the SAVE statement were specified for every local variable and array referenced in it. Does not affect common blocks. (Some Fortran compilers provide this option under the name -static or -save.) The default, which is -fautomatic, uses the stack for local variables smaller than the value given by -fmax-stack-var-size. Use the option -frecursive to use no static memory. 
-
-
--fsecond-underscore
-    By default, GNU Fortran appends an underscore to external names. If this option is used GNU Fortran appends two underscores to names with underscores and one underscore to external names with no underscores. GNU Fortran also appends two underscores to internal names with underscores to avoid naming collisions with external names.
-
-    This option has no effect if -fno-underscoring is in effect. It is implied by the -ff2c option.
-
-    Otherwise, with this option, an external name such as MAX_COUNT is implemented as a reference to the link-time external symbol max_count__, instead of max_count_. This is required for compatibility with g77 and f2c, and is implied by use of the -ff2c option. 
-
--fd-lines-as-comments
-    Enable special treatment for lines beginning with d or D in fixed form sources. If the -fd-lines-as-code option is given they are treated as if the first column contained a blank. If the -fd-lines-as-comments option is given, they are treated as comment lines.
-
-CONSIDER ADDING 
--fimplicit-none
-    Specify that no implicit typing is allowed, unless overridden by explicit IMPLICIT statements. This is the equivalent of adding implicit none to the start of every procedure. 
-
--Wall
-    Enables commonly used warning options pertaining to usage that we recommend avoiding and that we believe are easy to avoid. This currently includes -Waliasing, -Wampersand, -Wsurprising, -Wintrinsics-std, -Wno-tabs, -Wintrinsic-shadow and -Wline-truncation. 
--------------------------------
- fgrep -in precision *.f
-then:  Replace all DOUBLE PRECISION with REAL*8 
- for alsubs.f
-Only other executable occurances are: hratlsq.f kratlsq.f
-
-
-===============================
-=================
-in build, with /uniq/Makefile, get 
-286688 Feb 25 19:01 krc*
-
-run of 14 Feb 25 19:03:47   Total time [s]=   5.9630933 
-
-14 Feb 26 09:59:24  Vert2 V231c  5.9770913
-------------
-using 
-FFLAGS= -fno-automatic -fno-second-underscore -fargument-alias -fd-lines-as-comments
-make clean,   make krc
-179451 Feb 26 10:44 krc*
-2014 Feb 26 10:47:33  Vert2 V231c Total time [s]=   5.9810901
-
- 
-2014 Feb 26 16:41:46  re make distro 232, build it and run
- Case  1  DTIME: total, user, system=    0.6429    0.6419    0.0010
-
-Program received signal SIGSEGV, Segmentation fault.
-0x0000003194c89d08 in _wordcopy_fwd_aligned () from /lib64/libc.so.6
-Missing separate debuginfos, use: debuginfo-install compat-libf2c-34-3.4.6-19.el6.x86_64 glibc-2.12-1.107.el6.x86_64 libgcc-4.4.7-4.el6.x86_64 libgfortran-4.4.7-4.el6.x86_64
-(gdb) where
-#0  0x0000003194c89d08 in _wordcopy_fwd_aligned () from /lib64/libc.so.6
-#1  0x0000003194c83b42 in memmove () from /lib64/libc.so.6
-#2  0x0000000000412ff3 in datime_ ()
-#3  0x00000000004023e7 in MAIN__ ()
-#4  0x0000000000418c7a in main ()
-
 Replace build/src/Makefile with 
 FC=gfortran 
 FFLAGS= -fno-automatic -fno-second-underscore -fargument-alias -fd-lines-as-comments
@@ -199,4 +117,4 @@ LD=gfortran
       END KRC   Total time [s]=   5.9960880 
 
 
-keN's area:  bastion, ssh halex, cd ../krios/krc/builds/latest
+Ken's area:  bastion, ssh halex, cd ../krios/krc/builds/latest

@@ -5,8 +5,8 @@ C_Titl  CLIMTAU  Atmospheric opacities as function of Ls and latitude
       PARAMETER (NUMX=72)      ! number of "sample"
       PARAMETER (NUMY=36)      ! number of "lines"
 C_Vars
-      INCLUDE 'units.inc'
-      INCLUDE 'filcom.inc'
+      INCLUDE 'unic8m.f'
+      INCLUDE 'filc8m.f'
 C_Args
       REAL*4 LSUB               !in. season; l-sub-s in degrees.
 C     If large negative, will read file and save values
@@ -19,7 +19,8 @@ C  For each positive date request, does linear interpolation, with wrap around.
 C output will be negative if error occured
 C File dimensions firm-coded here
 C_Hist  Hugh_Kieffer  2012mar20 Derive from seastau.f
-C 2012mar27  HK  Include tau-ice 
+C 2012mar27 HK  Include tau-ice 
+C 2016may12 HK Update include names
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
 
 C local variables

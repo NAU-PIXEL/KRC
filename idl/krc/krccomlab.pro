@@ -19,7 +19,8 @@ PRO krccomlab ,kode,fcom,icom,lcom, fclab,iclab,lclab, uuu,  idx=idx
 ; 2004jul24 HK. Correct error where in   n  was one too small
 ; 2010sep05 HK Add keyword idx
 ; 2011aug06 HK Add argument  uuu, more options for idx
-;_End
+; 2014mar07 HK Fix missinf "last" for logicals
+;_End                .comp krccomlab
 
 ko1=kode mod 2 eq 1             ; 1 was added
 ko2=ishft(kode,-1) mod 2 eq 1   ; 2 was added
@@ -27,7 +28,7 @@ ko4=ishft(kode,-2) mod 2 eq 1   ; 4 was added
 if not keyword_set(idx) then idx=-1
 dix=idx gt 0 ; print indices
 
-if ko1 then begin 
+if ko1 then begin               ; print floats
     n=n_elements(fclab)
     if n lt 1 or n_elements(fcom) lt n then  $
       Print,'KRCCOMLAB: Some Float undefined' $
@@ -43,7 +44,7 @@ if ko1 then begin
     endelse
 endif
 
-if ko2 then begin
+if ko2 then begin               ; print integers
     n=n_elements(iclab)
     if n lt 1 or n_elements(icom) lt n then  $
       Print,'KRCCOMLAB: Some Int. undefined' $
@@ -58,11 +59,12 @@ if ko2 then begin
     endelse
 endif
 
-if ko4 then begin 
+if ko4 then begin               ; print logicals
     n=n_elements(lclab)
     if n lt 1 or n_elements(lcom) lt n then  $
       Print,'KRCCOMLAB: Some Logical undefined' $
     else begin
+        last=n-1
         for i=0,last,10 do begin
             i2=(i+9) < last
             print,Lclab[i:i2],format='(10A7)'

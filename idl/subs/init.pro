@@ -104,8 +104,8 @@ if keyword_set(op) then begin   ; prompt for options
     endif
 endif
 
-window,0,retain=retain          ; Open default window with backing store option
 safe=[win,retain, 800,640,retain] ; Init display size and backing store in Common
+window,0,xsize=1200,ysize=770,xpos=700,ypos=1200,retain=retain          ; Open default window with backing store option
 SETCOLOR,init=0                 ; Start the colors. Will define !binc
 a=!dtor*30. & c=cos(a) &  s=sin(a)          ;| Define psym=8 as
 usersym,[0.,c,-c,0.]*1.4,[-1.,s,s,-1.]*1.4  ;| inverted triangle

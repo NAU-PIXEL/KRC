@@ -47,7 +47,8 @@ function readkrc52, finame,ttt,uuu,vvv,itemt,itemu,itemv, ddd,ggg,itemd,itemg $
 ; 2013jul27 HK Replace function being Ls with KRCCOM
 ; 2014mar12 HK Accomodate Version 3 REAL*8
 ; 2014apr26 HK Fix offset of 1 in getting old version latitudes
-;_End
+; 2015dec24 HK Detect and omit cases flagged as invalid.
+;_End           .comp readkrc52
 
 ; help,finame,ttt,uuu,vvv,itemt,itemu,itemv,log,dbug,jword
 
@@ -135,12 +136,24 @@ jword=[4,wpc,ncase]
 ttt=reform(aaa[*,0:numt-1,*,ndx:*,*],nhour,numt,nlat,nseas,ncase) ; hourly items
 
 if t52 then begin 
-   itemg=['NDJ4','DTM4','TTA4','FROST4','AFRO4','HEATMM'] ; each lat,season,case
-    numg=n_elements(itemg)
-    qq=aaa[*,5:6,*,ndx:*,*]     ; layer items
-    ggg=reform(qq[0:2,*,*,*,*],numg,nlat,nseas,ncase,/over) ; lat items
-    ddd=reform(qq[3:2+nkay,*,*,*,*],nkay,numd,nlat,nseas,ncase,/over) ; hour, Tmin and tmax, lat, season,case
+  itemg=['NDJ4','DTM4','TTA4','FROST4','AFRO4','HEATMM'] ; each lat,season,case
+  numg=n_elements(itemg)
+  qq=aaa[*,5:6,*,ndx:*,*]                                   ; layer items
+  ggg=reform(qq[0:2,*,*,*,*],numg,nlat,nseas,ncase,/over)   ; lat items
+  ddd=reform(qq[3:2+nkay,*,*,*,*],nkay,numd,nlat,nseas,ncase,/over) ; hour, Tmin and tmax, lat, season,case
+  ndj4=fix(reform(ggg[0,0,0,*]))
+  ii=where(ndj4 gt 0,i)
+  if i lt ncase then begin
+    message,'WARNING, Number of stored and valid cases:'+string(ncase,i),/con
+    Print,'Will omit all invalid cases'
+    ttt=ttt[*,*,*,*,ii]
+    ddd=ddd[*,*,*,*,ii]
+    ggg=ggg[*,*,*,ii]
+    uuu=uuu[*,*,ii]
+    vvv=vvv[*,*,ii]
+  endif
 endif
+
 if !dbug then begin 
     help,ttt,ddd,ggg,uuu,vvv
     print,'Nhour,Nlay,Nlat,Nseas,Ncase=',Nhour,Nlay,Nlat,Nseas,Ncase

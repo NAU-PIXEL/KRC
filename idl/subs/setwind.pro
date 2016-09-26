@@ -26,13 +26,14 @@ case kon of
  894: ppp[3:4]=[640,512]        ; 5/4 default for older monitor
  895: ppp[3:4]=[800,640]        ; 5/4 mid-size
  896: ppp[3:4]=[800,800]        ; 30", appears square 
- 897: ppp[3:4]=[1200,960]       ; 5/4 for 30", allows central gap
-;897: ppp[3:4]=[1280,800]       ; 8/5 default = 1-quarter for 2560x1600=Dell
+; 897: ppp[3:4]=[1200,960]       ; 5/4 for 30", allows central gap
+ 897: ppp[3:4]=[1200,770]       ; slightly smaller than Del default
+; 897: ppp[3:4]=[1280,800]       ; 8/5 default = 1-quarter for 2560x1600=Dell
  898: ppp[3:4]=[2550,1520]      ; Maximum for Dell 30" with borders
  899: begin                     ; guide
 print,'890+  0= create window 0:  2=2  3=3    1=set backing  9=this Guide'
 print,' Set size:   4=5/4old   5=5/4mid   6=square  7=5/4big    8=DellMax'
-print,'window,1,r=2  640:512    800:640    800:800  1200:960    2550:1220'
+print,'window,1,r=2  640:512    800:640    800:800  1200:770    2550:1220'
  end
 else: message,'invalid kon'
 endcase

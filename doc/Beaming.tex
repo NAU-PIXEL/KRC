@@ -1,0 +1,561 @@
+\documentclass{article} 
+\usepackage{underscore} % accepts  _ in text mode
+\usepackage{ifpdf} % detects if processing is by pdflatex
+\usepackage{/home/hkieffer/gong/tex/newcom}  % Hughs conventions
+% \newcommand{\qj}{\\ \hspace*{-2.em}}      % outdent 1
+\title{Thermal Beaming using KRC models}
+\author{Hugh H. Kieffer  \ \ File=-/krc/Doc/DV3/Beaming.tex  2016Mar}
+% josh 208-331-7998
+% davidsson icarus subitted
+\begin{document} %==========================================================
+\maketitle
+%\tableofcontents
+%\listoffigures
+%\listoftables
+%\hrulefill .\hrulefill
+% \pagebreak
+
+\begin{abstract}
+``Thermal beaming'', the non-isotropic thermal emission of a rough surface, is
+  implimented as a post-KRC process.  KRC is first run for a uniform grid of
+  slopes and azimuths, azimuths being ``cases'' in a single file and each type
+  52 output file being named to indicate the slope used; these KRC runs normally
+  are for a planetary set of latitudes and for a planetary year (after
+  spinup). An IDL program reads the KRC files and progressively narrows in on
+  particular surface points and season, models of surface slope distributions,
+  and viewing directions. A set of observation wavelengths can be defined, and
+  the surface facets at different slopes/azimuths (and thus temperatures) are
+  summed based on their abundance in the slope model and their black-body
+  radiance at each wavelength, yielding a forecast infrared spectrum. While
+  designed primarily for airless bodies, an ``atmosphere-present'' mode accounts
+  for an atmosphere grey spectral radiance at the appropriate viewing geometry.
+\end{abstract}
+
+Steps \begin{enumerate}    % numbered items 
+\item Recover the discussion in V34 design 
+\item Define the model set needed
+ \item Generate the input file(s). Models must have consistent naming
+ \item Run the models
+ \item Design the integation algorithm
+ \item Write the integration routine
+\qi Look at starting with krchemi
+ \item Run the integration, Study the results
+ \item Complete the UG document
+\end{enumerate}
+
+\section{Representation}
+
+Beaming must depend upon a roughness model and the directions of the Sun and the
+viewer.
+
+Whatever the effect at a particular geometry, its magnitude is expected to
+increase more than linearly with a roughness metric, such as a mean slope,
+because, by symmetry, the derivative with slope must be zero at zero slope,
+suggesting that the effect may be roughly quadratic with mean slope.
+
+If beaming increases radiation at small phase angles, there is still a problem
+of defining beaming at night; whatever model is used it should be continuous
+across the terminator!
+
+If there is beaming, the surface likely has composite TI, so that spectral
+assessments computed from temperature distributions along slopes are in a sense
+synthetic.
+
+At least three ways to model:
+ \begin{enumerate}    % numbered items  
+\item  \textbf{Coupled rough surface} To date, these seem to have used a uniform TI. \qcite{Lagerros98}, \qcite{Vasavada99}, \qcite{Rozitis11}, \qcite{Paige13} 
+\item  \textbf{Weighted sloped models} e.g., \qcite{Bandfield08}, \qcite{Bandfield09}
+ Easy to run large set of models to type52. Then need reformat to file of Tsurf only. 3rd step is weighted sum based on roughness modle and view direction. All this is similar to what was done for the global mean surface temperature map.
+
+\item  \textbf{Post-processing} Considered here. Parameterize using angle away for Solar incidence and delta-Hour from solar incidence. 
+\end{enumerate}
+
+\qcite{Vasavada99} both flat and craters, 32x32 square grid of facets,
+ include planet curvature. 
+
+p 184.5b: The fraction of energy emitted by element $i$ that is incident on
+facet $j$ 
+\qbn \alpha_{ij}=\frac{1}{\pi}\frac{\cos \theta_i \ \cos \theta_j
+  S_j}{d_{ij}^2} \qen 
+where $\theta$ are the angles between the surface normals and the line
+connecting their centers, $S_j$ is the surface area of a facet and $d_{ij}$
+their separation
+
+If $F_j$ is defined as the flux of energy leaving element $j$, then the matrix equation:
+\qb F_j=A_j \left( \sum_{i=1}^N F_i \alpha_{ij} + E_j \right) \qe
+$A_j$ is the facet albedo and $E_j$ is the direct insolation.
+
+\qcite{Ingersoll92} has analytic solution for craters
+
+\section{Bandfield model}
+
+\qcite{Bandfield08} used KRC for an set of slopes at 2\qd ~dip and 20\qd ~azimuth intervals; (p 143.9a)
+
+The $\theta$-bar surface model used in this work produces an array of slopes
+(2\qd~ intervals) and azimuths (20\qd~ intervals) along with a weighting to
+define the contribution of each slope/azimuth combination to the
+measurement. This weighting is based on the Gaussian statistics of the
+$\theta$-bar parameter and the projection of each surface to a plane normal to
+the viewing elevation and azimuth of the measurement. Self-shadowing of surfaces
+is accounted for by applying a weighting of zero to all surfaces where the
+observing spacecraft is below the local horizon of the individual surface
+facet. It is assumed that surfaces blocked from the view of the observing
+spacecraft by other surfaces are of a random nature and do not need to be
+explicitly accounted for (e.g. Hapke, 1984).''
+
+Gaussian distribution: mean $\mu$ and stdDev $\sigma$
+\qb G_{( \sigma,\mu )}=\frac{1}{\sigma \sqrt{2 \pi}}e^{-\frac{(x-\mu)^2}{2 \sigma^2}} \qe
+Considering the solid angle at each slope, using a mean of zero, 
+weighting by $\sin \theta$ 
+so $\overline{\theta}=\int_{x=0}^{\pi/2} \frac{1}{\sigma \sqrt{2 \pi}}e^{-\frac{x^2}{2 \sigma^2}} \sin x dx $
+
+Done in IDL beaming.pro @45.
+ Use  $\sigma$ of 6.288, 12.74 and 19.54 to get $\overline{\theta}$ of 5, 10, 15; see Fig. \ref{bandfield08Fig2}; this does not match Bandfield08 Fig.2 .  Using $\sigma$ of 5, 10, 15 yields  $\overline{\theta}$ of 3.98, 7.9 and 11.7 
+
+\begin{figure}[!ht] \igq{bandfieldFig2BW}
+\caption[Gaussian slopes ]{Gaussian slope distributions: solid lines are to match  $\overline{\theta}$ values shown in labels of Bandfield08 Fig.2 . Dashed lines have input values of 5, 10 and 15 degrees. 
+\label{bandfieldFig2} bandfieldFig2.png  }
+\end{figure} 
+% how made:  Beaming @45 455
+%      1.25834      1.27410      1.30268      1.25648      1.30507      1.28221
+%      1.25835      1.27410      1.30266      1.25650      1.26609      1.28221
+\subsection{New Inputs} %.................................................
+For KRC:  none unless invoke flat far-ground
+\\ Stage 2: list of file names, organization of slope*azimuth
+\\ Stage 3: slope model and view direction
+\subsection{New Outputs} %...............................................
+For KRC; none unless need a new file type
+\\ Stage 2: file of Tsurf[hour,lat,season,1+azimuth*slope=18] 
+\\ Stage 3: Brightness temperature spectrum 
+\subsection{New Common Items} %.........................................
+Perhaps: storage for Tsurf of flat model
+\subsection{Implementation} %.........................................
+Standard KRC. 
+\\ Stage 2 process to reformat files. 
+\\ Stage 3 process to compute hemisphere brightness spectrum
+
+\subsection{Issues}  % ---------------------------------------------
+Importance of  flat far-ground?
+
+\section{Implimentation using KRC}
+Use Bandfield approach; precompute data sets of slopes and azimuths as cases in
+normal KRC run; save as type 52. Reformat to file of
+Tsurf[hour=48,lat=37,season=80,azimuth=18,slope=20]. Azimuth at 20\qd
+~intervals; slope at 2\qd intervals up to 40\qd; each slope is one .t52
+file. 361 cases per material.
+
+Use equal-area zones from pole-to-poles, with one centered on the equator, so
+there is an odd number total; $N=2j+1$.  Normalized area of a zone is: $\sin
+\theta_2 - \sin \theta_1$ where $\theta$ is the zone boundary latitude. Thus
+$\delta \equiv \Delta \sin \theta = 2/N $.  Compute the model at the
+area-weighted center of the zones; $sin \theta= \delta/2+i \delta \ ; i=0:n-1$
+\begin{verbatim}
+j=9 & n=2*j+1
+dels=2./n
+sa=-1.+dels*(0.5+findgen(n))
+alat=!radeg*asin(sa)
+ print,alat, format='(10f7.2)'
+ -71.33 -57.36 -47.46 -39.17 -31.76 -24.90 -18.41 -12.15  -6.04   0.00
+   6.04  12.15  18.41  24.90  31.76  39.17  47.46  57.36  71.33     0.
+\end{verbatim}  
+
+
+
+\subsection{Production Run}  % ----------
+19 latitudes of equal-area zones, albedo of 0.3, surface inertia of 100. 
+Largely Version 3.3 default values. Takes about 2000 seconds. Output to \nf{/work/work1/krc/BeamA--.t52}
+20 files of 38.6Mb each. 
+
+2016aug02 run with far-flat and Kheim photometric model; output to \nf{/work/work1/krc/BeamK--.t52}
+
+
+\subsection{Bennu}  % ---------------------------------------------
+Arrival is 2018 august, [aug03 is MJD 6789, handy], Survey begins 2018Oct,
+Return window open begins 2021march, Earth landing is 2023sept24. MJD of 01 of
+the first three events is: 6787,6848,7730
+
+Bennu year is 436.42 days.  Beam run is 41 seasons spaced by 10.9106 days,
+ 5764.2720 to 6200.6960; so arrival,survey,return dates equivalent to:  5914.15      5975.15 and 5984.31, respectively.
+
+\subsection{Processing step 1} 
+All processing is done by IDL \np{beaming.pro}
+
+Interpolate to a single season: output 1.3Mb
+
+\pagebreak
+\section{Algorithm}  % 
+.
+\\ Specify to effective wavelengths
+\\ Specify the surface latitude and hour grid
+\\ Specify the statistical distribution of slopes
+ \qii Assume all azimuths equally probable 
+\\ Specify sub-viewer lat and hour, perhaps several
+\\ For each slope in the file set
+\qi Compute the fractional abundance
+\qi For each azimuth in the file set
+\qiii Get the surface temperature
+\qiii For each view position
+\qiiii Compute the view factor
+\qiiii Convert to radiance at each
+\qiiii Sum with proper view factor
+\\ Convert radiance to Tb for each view position
+
+\vspace{3mm}
+Makes sense to use a single atm temperature. Use the Tatm of all models weighted
+with the surface abundance based on slope distribution, not the view factors.
+
+\subsubsection{Narrowing of data size}
+A typical set of KRC type 52 files generated for beaming is 774 Mb. Constructing
+a set of Tsurf files for one date, @25, yields
+t5=[hour,[Ts/Ta],lat,case=azimuth, slope] and a file for the flat case, total
+1.32Mb.  Specification of a specific latitude yields ts3=Ts[hour,azimuth,slope],
+and further specification of a specific surface hour yields
+t2[azimuth,slope]=[18, 21]
+ 
+\begin{verbatim}
+
+@111  uses @11parf[0:1,4:6 @16parr[7:8 @12pari[1:3
+25... Read a model set
+22... Get KRC changes and values for kist
+27... Clot [hour,lat] season 20, solazi=0
+-1... Pause.
+272.. Clot [hour,case] season 20, lat=0
+-1... Pause
+28... BIN5 W t5=1season, for all slopes [hour,latitude,azimuth,slope] 
+     and for flat [hour,latitude]
+
+@112    uses @16parr[0:1 @11parf[7
+29... BIN5 R t5 = 1 season
+40... Construct hour vectors  REQ 29 or 25
+51... Interpolate to surface latitude, include flat into the slope set; ts3 
+52... Interpolate in hour. Save t2. REQ 40 51
+
+@113
+525.. BIN5 R t2   
+527.. Calc surface normals  REQ 525 
+251.. Read one KRC type 52 file
+53... For a specific viewer REQ 251, 51 52 527
+46... Compute slope distribution REQ 29
+54... convert T to radiance (wave), sum radiance, REQ 46, 53
+
+
+TO run a hemisphere
+Start with t5 
+Calc surface normals
+Compute slope distribution 
+loop on Q latitude
+  loop on Q hour
+    compute cosine incidence angle on flat
+    if negative, on hidden hemisphere, skip this Q point
+    loop on viewer direction
+      compute view factors
+      convert T to radiance, sum weighted by view factor
+      store as radiance
+  end hour loop
+end lat loop
+compute weighting for each Q
+make weighted sum of radiances
+make hemisphere brightness temperature spectrum
+
+first run of 4 views without coii test Elapsed time1=        2.4648681
+  with  1.28600
+
+at !dbug=2 can see that model temperatures have some irregularity.
+QLAT=-6.04000 QHOUR=4.50000  mostly about 0.3K , at max slope, max of 1 k
+\end{verbatim}
+\vspace{3mm}
+Read all the KRC files and combine at one surface location
+\qii First file, single flat case: extract latitude, dates and  set some sizes 
+\qii Second file, with many cases: extract azimuths and set that size 
+\qi Linear iterpolation in date, make  t5=[hour,[Ts/Ta],lat,case=azi, slope] 
+\qi  and: tflat =[hour,[Ts/Ta],latitude]
+\qi Save as two bin5 files named to include date, 
+\qii header contains: latitudes, azimuths, slopes and the single date
+\\ Read those files and linear interpolate to surface latitude
+\qi make tf3= temperature[hour] and if atm, tf3a= temperature[hour]
+\qi make t3= Ts[hour,azimuth,slope] and if atm, t3a= Ta[hour,azimuth,slope]
+\qi Replicate the flat into many azimuths and put as first slope, making ts3[[hour,azimuth,slope]
+\qiii and if atm, ta3= Ta[hour,azimuth,slope]
+\\ Linear interpolate to surface hour, making
+\qi t2[azimuth,slope] ,  and if atm, t2a= Ta[azimuth,slope]
+\qi Save these arrays in single array [azim,slope [Ts,ta]] in bin5 file
+\qii header contains:  latitudes, azimuths, slopes, the single date and surface location
+\\ Read this file
+\qi construct surface normals
+\\ For one viewing direction (sub-viewer latitude and hour)
+\qi Compute the viewer direction is the local surface system, and $\ cos i$  for each KRC model 
+
+\subsubsection{Sdec}
+Solar declination is not in the type 52 file. Can estimate it for each season by fitting the down-going Visible radiation at noon as a function of latitude, and finding the maximum. Typical result is shown in Figure 
+\ref{beam251}
+\begin{figure}[!ht] \igq{beam251}
+\caption[Estimated sub-Solar Latitude]{Sub-solar latitude derived from the down-going visible radiation as a function of latitude.
+\label{beam251}  beam251.png }
+\end{figure} 
+% how made: beaming @251
+
+
+\subsection{thoughts}
+
+ Small-scale effects (less than about 5 times the diurnal skin depth) can only dimish the thermal differences with slope and hence the beaming effect.
+
+Surface hiding at large emission angles must attenuate the shallow slopes. 
+Shadowing at large incidence angles must attenuate the shallow slopes.
+
+\subsection{Brief geometry notations}
+
+See appendix \S \ref{geomn} for details.
+
+Vectors are shown as ``to:from'', e.g., $\qo{QV_A}$  is from $V$ to $Q$ expressed in the $A$ system.
+
+\vspace{2.mm}
+Locations (vector ends) used here:
+\\ N = Unit vector along the local surface normal.
+\\ P = center (of mass?) of the target body (Planet or satellite)
+\\ Q = surface intercept location (of the instrument optic axis)
+\\ V = Vehicle or spacecraft, viewer, imager, camera. Where one is looking FROM
+\\ Z = generic, the +Z-axis direction of the given coordinate system.
+\qi E.g., $ZQ_{DA}$ is out along the ellipsoid normal at (latitude,Hour) in the $D$ system as expressed in the $A$ system.  
+ 
+\vspace{2.mm}
+Orientation systems used here: all are X,Y,Z right-hand. See \S \ref{ternot} for full definition.
+\\ A = Astronomic: Master reference inertial system (ICRF or J2000)
+\\ D = Day:        Target body spin axis and true solar midnight
+\\ S = Surface:    Local 'horizontal' surface
+
+\vspace{2.mm}
+Other symbols:
+\qi $\overline{MV}$ is the magnitude (distance) between $M$ and $V$
+\qi $\star$ indicates conventional matrix rotation, implemented in IDL by the \#
+ operator.
+\qi \trm{CA} is the rotation matrix taking vectors from the $A$ to the $C$ system
+\qi  $\qct{CA}$ is the coordinate transform that rotates the axes of the $A$ to 
+coincide with the axes of the $C$ system
+
+\vspace{2.mm}
+Work in $S$ system. Generate slope normals in the S system $\qo{ZQ_{j,k}}$ where $j$ is the azimuth index and $k$ is the slope index
+\qi Get $\qo{VP}  $ direction in S system
+\qii Assume for now the target body is small relative to the observer distance so that $VQ=VP$ 
+\qi Then the view factor is   $W_{jk}=\qo{VQ} \cdot \qo{ZQ_{j,k}} $ where $W > 0$.
+\qi $\qo{VQ_S} = \qrm{SD} \qo{VQ_D}$   \ \ Make this rotation matrix by:
+\qii Start with identity matrix: rotate around the pole from midnight to Q hour
+\qii Rotate around Y from N pole to Q latitude
+\qii Rotate around Z 180\qd~ to move +X from south to north
+
+ Starting with an identity matrix, a sequence of calls to ROTAX that would move the
+ axes of A to coincide with the axes of B will generate the BA rotation matrix.
+
+To rotate D axes (Z along planet spin axis, X toward midnight) to coincide with S axes (Z toward zenith, X toward North)
+\qi 0) start with identity matrix
+\qi 1) rotate around Z by 15*Hour of S
+\qi 2) rotate around Y by -(90 - Lat. of S). X is now toward South
+\qi 3) rotate around Z by 180\qd, or, change sign of X and Y
+ \section{Runs}
+ Start with small set of A and I
+ \qi offset: IC2
+\qii 
+Mar 26 05:59 BeamBen00.t52 ALB=.03 EMISS=1. INERTIA=100  RLAY=1.15 FLAY=.12
+  ARC2/PHT=.5  N1=37 IC2=9, 40 seasons, 3-yr spinup
+Aug 23 05:59 BeamK00.t52  same input except ARC2/PHT=.25  IC2=999
+
+
+
+\bibliography{heat,moon,mars}   %>>>> bibliography data
+\bibliographystyle{plain}   % alpha  abbrev 
+
+\appendix %===============================================================
+
+\section{Geometry systems and notation \label{geomn}}
+ This notation system was developed so that variable names in code can follow closely the mathmatical representation.  
+Full discussion of code names for geometric variables is in \nf{~xtex/Geomath/matrix.tex}.  
+\\ Briefly, names are [to][from][system][component] with component ``xx'' representing an X,Y,Z triple (``xxx'' indicates that this is an array of vectors).
+\qi a final ``u'' indicates this is a unit vector. 
+
+Vectors are shown as, e.g., $\qo{QV_A}$ to the target from the Vehicle in the Astronomic system. This would be QVAxx in code (commonly all lower case in IDL).
+  
+
+\subsection{Rotation matrix order and notation \label{rotnot}} %........
+[ Largely extracted from \nf{-/gong/tex/anc.tex}. See also \nf{-/xtex/Geomath/matrix.tex} ]
+
+Symbols: 
+\qi  $\qo{MV_A}$ is the vector from $V$ to $M$ in the $A$ coordinate system 
+\qi $\overline{MV}$ is the magnitude (distance) between $M$ and $V$
+\qi $\star$ indicates conventional matrix rotation, implemented in IDL by the \#
+ operator.
+\qi \trm{CA} is the rotation matrix taking vectors from the $A$ to the $C$ system
+\qi  $\qct{CA}$ is the coordinate transform that rotates the axes of the $A$ to 
+coincide with the axes of the $C$ system. 
+
+Orientation systems commonly used are:
+\\ A = Astronomic: master reference inertial system (ICRF or J2000)
+\\ B = Body:       Target body spin axis and its vernal equinox, inertial
+\\ C = Camera:     Instrument optic axis
+\\ D = Day:        Target body spin axis and true solar midnight
+\\ G = Geoid:      Target body spin axis and prime meridian, rotating
+\\ I = image:      As displayed with line-increasing-up 
+\\ S = Surface:    Local 'horizontal' surface
+\\ ( V = Vehicle:    Mounting platform axes: typically V and C are closely aligned )
+\\ See \S \ref{ternot} for full definition of coordinate systems.
+
+Locations (vector ends) commonly used are:
+\\ H = barycenter of the solar system (Heliocentric)
+\\ P = center (of mass?) of the target body (Planet or satellite)
+\qi may use M = center of the Moon, Mars
+\\ Q = surface intercept location (of the instrument optic axis)
+\\ V = Vehicle or spacecraft, viewer, imager, camera. Where one is looking FROM
+
+A \textbf{Rotation matrix} is also [to][from];  
+ e.g., \trm{CA} rotates vectors from the Astronomic to the Camera system.
+
+
+\begin{verbatim}
+Rotation Matrix storage: to B(new) from A(old); [0-based indices]
+        [ 0  3  6 ]   (x-axis of new in the old system)   |xold| |yold| |zold|
+BA(9) = [ 1  4  7 ] = (y-axis of new in the old system) = | in | | in | | in |
+        [ 2  5  8 ]   (z-axis of new in the old system)   |new | |new | |new |
+ where "axis" is the unit vector along the axis direction.
+
+Print in IDL in this form with: ROTPRT,indgen(9),'test',/help
+
+Note that IDL ``print'' of this as 3x3 would yield [ 0 1 2 ]
+                                                   [ 3 4 5 ]
+                                                   [ 6 7 8 ]
+\end{verbatim}
+
+Must avoid confusion with \textbf{coordinate transforms} $\qct{CA}$ which rotate
+coordinate system axes, not vectors; corresponding coordinate transforms and
+rotation matrices are the transpose of each other.  \trm{CA} $\equiv \qct{AC}$
+
+In programs, all rotation matrices are named with this convention, whether stored as 9-element vector or a 3x3 array.
+\qi \trm{VA}: \nv{VA} or  \nv{VArm} if in column-major order.
+\qii may to append a 9 if a  9-element vector
+\qi Coordinate transform matrices  will be have the last 2 letters 'ct'. Note that ABct and BArm are the same matrix.
+
+Successive rotations: $ \qrm{CA}= \qrm{CV} \star \qrm{VA} $ [one reason this
+  notation scheme was developed] but note that 
+$\qct{CA} = \qct{VA} \star \qct{CV}$
+
+To rotate vectors by [small positive] angles, multiply by the transpose of the
+coordinate transform made by use of ROTAX with [small positive] angles.
+
+\subsection{Coordinate systems \label{ternot}}
+% modifed from -/gon/tex/intro.tex
+Coordinate systems: All are X,Y,Z right-handed.
+ \begin{itemize}   
+ \item $\mathbf{A}$: Astronomic, technically the International Celestial
+   Reference System (ICRF), negligibly different from the J2000 equatorial
+   system. Strictly inertial relative to the universe. +Z toward the Earth's
+   north pole, +X toward the vernal equinox.
+
+ \item $\mathbf{C}$: Camera system. May depend upon manufacture/mission
+   conventions. For normally-nadir imagers, usually has coordinate definitions
+   similar to the spacecraft; +Z is outward along the optical axis (toward
+   nadir), +X is toward the forward orbital motion when nadir-oriented.
+  
+ \item $\mathbf{D}$: Day (or Hour) system. +Z toward bodys right-hand spin axis, +X in the true solar midnight meridian.
+ 
+ \item $\mathbf{I}$: Image coordinate system; defined here as the way one
+   normally draws diagrams; +X is to the right (increasing sample) and +Y is to
+   the top (increasing line if displayed that way!); thus +Z is toward the
+   viewer.  For a descending dayside-equator orientation, +sample is toward the
+   surface West , or ``leftish'' in the sky. For push-broom systems,
+   time goes ``up'' in this system. Note that line increasing ``up'' is opposite
+   the way such ground scenes are normally displayed.
+  
+ \item $\mathbf{L}$: Line-of-sight, LOS; in which the pointing of individual dectels relative to the imager body are given as 
+\qi azimuth=``cross-track'', identical to $+C_Y$ 
+\qi elevation=``along-track'', identical to $+C_X$
+
+ \item $\mathbf{S}$: Surface. Horizontal surface parallel to the ellipsoid surface,
+ as defined by latitude and longitude (or hour), +Z toward the zenith, +Y toward north (degenerate at a pole). +X righthanded, = Y cross Z. X and Y are in the ``horizontal'' plane.
+  
+ \item $\mathbf{V}$: Vehicle, or Spacecraft system, fixed to the body of the
+   spacecraft. Definitions are for normal nadir orientation; +Z is toward nadir,
+   +X is toward the forward motion direction (along the orbit path).
+
+  \end{itemize}
+\section{Parameters}
+Leading '-' indicates value that must agree with a KRC model set. A leading '+' indicates a value that is required for the minimum full run.
+\vspace{-3.mm} 
+\begin{verbatim}
+@11 File names
++  0 DIR for krc file     = /work1/krc/
++  1  stem " "            = BeamA
+   2  " slope part [.t52] = 02
+   3 spare                = ---
+   4 Output dir           = /work1/krc/
+   5 " stem               = BeamA
+   6 mjd [auto][.bin5]    = 6200
+   7 Surface site name    = Q1
+
+@12 Integer values
+       0       7  spare
+-      1       2  slope increment, degrees
+-      2      20  Number of slopes
+-      3      20  Azimuth increment, degrees
+
+@14 Wavelengths
++      0      3.00000  \  Wavelengths
+       1      5.00000   | in micrometers.
+       2      8.00000   | First non-positive
+       3      11.0000   | value terminates
+       4      15.0000   | the list.
+       5      20.0000   |
+       6      25.0000   |
+       7      50.0000   |
+       8      100.000   |
+       9     -1.00000  /
+
+@15 View values
++      0      12.0000  Hour  1\  Sub-viewer
++      1      0.00000   Lat. 1 | Latitude
+       2      3.00000  Hour  2 | and hour
+       3      0.00000   Lat. 2 | in pairs.
+       4      5.00000  Hour  3 | First negative
+       5      89.0000   Lat. 3 | Hour terminates
+       6      13.0000  Hour  4 | the list.
+       7      90.0000   Lat. 4 | 
+       8     -1.00000  Hour  5 | 
+       9      0.00000   Lat. 5 | 
+      10     -1.00000  Hour  6 | 
+      11      0.00000   Lat. 6/
+@16 
+Float values
++      0      5.00000  Surface Latitude
++      1      14.2000  "  hour 1
+       2     0.500000  " del hour
+       3      2.00000   " Num delta H
+       4     -777.000  spare
+       5      777.000  seed
+       6     0.200000  PAUSE in sec
+-      7      436.423  Length of a year
++      8      5858.00  Target MJD
++      9      15.0000  theta-bar, deg
+      10    0.0100000  theta increment,radian
+\end{verbatim}  
+
+
+Check Fig. \ref{beam5q}, 
+\begin{figure}[!ht] \igq{beam5q}
+\caption[Ts vrs azimuth]{Debug: BeamA 6200 lat=-6.04000 H= 6.50000 jh,jl= 6 8 .
+  The reversal at low azimuth is where the Sun has not risen, but T's are higher
+  due to late afternoon heating the prior day.
+\label{beam5q}  beam5q.png }
+\end{figure} 
+% how made: 
+
+\end{document} %===============================================================
+
+\ref{}
+\begin{figure}[!ht] \igq{}
+\caption[]{
+\label{}   }
+\end{figure} 
+% how made: 
+
+\begin{table} \caption[]{}  \label{}
+\begin{verbatim}
+---
+\end{verbatim}
+\vspace{-3.0mm}
+\hrulefill \end{table}  

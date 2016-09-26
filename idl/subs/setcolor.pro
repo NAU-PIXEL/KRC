@@ -26,8 +26,8 @@ common SETCOLOR_COM2, kcc,linecol,kkc,kkl,kkp,fixkkc,fixkkl,fixkkp,kink,hink
 ;--- user generally won't need to look beyond here
 ; fix-kkc,-kkl,-kkp intarr Preset colors, lines, symbols 
 ; kink  intarr  Current indices into !binc
-; hink  intarr  Holds prior kink when called with 857
-
+; hink  intarr  Holds prior kink when called with 857. 
+;                   Also used by kon91 (as scex1) to store instrument bands
 ; System Variable  !binc  intarr  lines + curretn pseudo-color indexs
 ;_Desc
 ; User may reset the items in common to get specific color/line/symbol style
@@ -53,14 +53,18 @@ common SETCOLOR_COM2, kcc,linecol,kkc,kkl,kkp,fixkkc,fixkkl,fixkkp,kink,hink
 ; Thus, plotting routines will not need to modulo the curve index with nkc or 
 ; nkl unless that index exceeds minl.
 ; After any plot to printer, must re-establish color scheme
-;_Calls  COLOR24BIT  GETP  GETPAN  GETPINTS  TOOTHB  ST0 
+;_Calls  CLOC  COLOR24BIT  GETP  GETPAN  GETPINTS  TOOTHB  ST0 
 ;_Lim
-minl=42                         ; minimum number of lines always defined
+minl=50                         ; minimum number of lines always defined
 ; ROLO needs 32, OLI 3pix*14fpm needs 42
 ;_Hist  1999apr18  Hugh Kieffer
 ; 2012nov10-14 HK Make compatible with color eps, use DECOMP0SE=0, 
 ; + !binc=kink+indgen    Allow optional first argument instead of keyword
 ; + Delete history and older version of common, see 2012jun24 version 
+; 2015oct02 HK Add 865 for strong colors on black
+; 2015dec29 HK revise 860 colors; brightest first. 
+; 2016jan18 HK Increase minl from 42 to 50
+; 2016feb22 HK Include hink and kink in initiation, rather than test them for size
 ;_END         .comp setcolor
 
 ; common COLORS, Rorig,gorig,borig,rcur,gcur,bcur
@@ -70,8 +74,6 @@ minl=42                         ; minimum number of lines always defined
 
 defsysv,'!binc',exists=i        ; check if !binc  is defined
 if i eq 0 then defsysv,'!binc',indgen(256) ; define to  allow later changes
-if n_elements(kink) lt 1 then kink=[1,2,3,4]
-
 i=n_params()           ; set types
 if not keyword_set(init) then inj=0 else inj=init
 if i ge 1 then inj=arg1 ; 
@@ -83,7 +85,7 @@ cblack=0 & cwhite=16777215      ; normal monitor values works for DECOMPP= 0 or 
 
 if inj eq 2 or inj eq 850 or n_elements(kcc) lt 11 then begin  ; initialization
     kcc=[-1,39,0,0,0,1,1,20,0,255,minl] ; will force color table set
-    SET_PLOT,'X'                ; set to monitor
+    set_plot,'X'                ; set to monitor
     device, get_visual_depth=vdp ; or, if !p.color gt 40000
     if vdp eq 24 then begin
         lll=COLOR24BIT(r,lc=-2,/put) ; my default, r==dummy  Will load CT
@@ -105,6 +107,8 @@ if inj eq 2 or inj eq 850 or n_elements(kcc) lt 11 then begin  ; initialization
     !P.color=cwhite
     kcc[8]=cwhite               ; bclr, borders & titles
     kcc[9]=255 & kcc[5]=cwhite 
+    kink=fixkkc                 ; insurance
+    hink=fixkkc                 ; insurance
 endif
 
 if inj ge 851 then begin 
@@ -115,15 +119,15 @@ if inj ge 851 then begin
 ; start repeating, or make the lines wider.
   case inj of
     851: begin  & !p.background=cblack  ; black background, white border
-        !P.color=cwhite
+        !p.color=cwhite
         kcc[8]=cwhite           ; bclr, borders & titles
     	kcc[9]=255 & kcc[5]=cwhite  & end   ; lines
     852: begin & !p.background=cwhite; white background, black border and labels
-        !P.color=cblack
+        !p.color=cblack
         kcc[8]=cblack           ; bclr, borders & titles
     	kcc[9]=0 & kcc[5]=cblack & end   ; lines
     853: begin & !p.background=cwhite; printer preview to monitor
-        !P.color=cblack
+        !p.color=cblack
         j=155                   ; gray level, of 255
         k=long(j)+256L*j+256L^2*j ; 24-bit color word
         g=[cblack,k]            ; two levels of gray
@@ -137,16 +141,20 @@ if inj ge 851 then begin
     854: kink=[45,120,170,254]; 4 on either
     855: j=1                   ; use kink in common
     856: kink=[15,44,120,170,220,254] ; 6 on either
-    857: begin & if kcc[6] gt 2 then hink=kink ; all black, insurance for printer
-           kink=replicate(cblack,6) & end
+;    857: begin & if kcc[6] gt 2 then hink=kink ; all black, insurance for printer
+;           kink=replicate(cblack,6) & end
+;    858: if n_elements(hink) gt 2 then kink=hink ; recover colors saved @857,863
+    857: begin & hink=kink ; all black, insurance for printer
+           kink=replicate(cblack,20) & end
     858: if n_elements(hink) gt 2 then kink=hink ; recover colors saved @857,863
     859: GETPINTS,'kink==!binc index set',kink,0,255
-    860: kink=[20,40,52,85,130,197,209,225,254,255] ; 10 on black
+    860: kink=[255,130,197,209,254,40,225,30,52,110] ; 10 on black
     861: kink=[15,33,40,50,85,112,130,145,170,195,209,221,254,255] ; 14 on black
     862: kink=[13,30,32,40,50,60,85,114,130,143,170,197,209,221,232,254,255] ;17
     863: begin & if kcc[6] gt 2 then hink=kink ; black and gray
             kink=[cblack,15]  & end   
     864: kink=[15,90,160,254] ; 4 for white
+    865: kink=[255,140,190,254,209,40,226]; up to 7 for black
     866: kink=[15,40,85,185,254,130] ; 6 for white
     868: kink=[15,40,85,185,254,130,225,50] ; 6+2 for white
 ;    869: kink=[0,20,40,50,85,120,130,175,225,254] ; 10=max good on white
@@ -156,26 +164,26 @@ if inj ge 851 then begin
   b=[0,  0,255,  0,230, 10,255,  0,118,211,130] ; from xwincolors @704,79
   g=[0,  0,  0,200,200,150,  0,140, 16,  0,130]
   r=[0,255,  0,  0,  0,185,255,255,205,148,130]
-  TVLCT, r,g,b                  ;override the low end of current color table
-  DEVICE, DECOMPOSED = 0 
+  tvlct, r,g,b                  ;override the low end of current color table
+  device, decomposed = 0 
   linecol=11                     ; number of overridden low colors
 end
 876: kink=[30,32,40,50,60,85,125,143,170,197,209,221,232,254,255] ; 15 on black
 877: kink=[1,20,32,36,40,60,85,110,133,147,152,180,215,225,254] ; 15 on white
 
-    878: kink=[33,120,190,254,45,210,230,255,140,15] ; OLI bands on black | LDCM
-    879: kink=[45 ,90,170,254,60,220,230,  1,130,15] ; OLI bands on white | order
-    880: DEVICE, DECOMPOSED = 0 ; color is index into current table
-    881: DEVICE, DECOMPOSED = 1 ; color is composite RGB value e.g., !binc
-    882: TOOTHB                 ; default toothbar for all 256 colors
-    883: CLOC,kink,[.55,.89,-.03,.08] ; display defined current line colors
-    888: begin & print   ; Guide 
-print,'851=black background 852=white background 853=printer preview' 
-print,'854,6=4,6 for BorW 855=use kink in common 857=all black for printer'
-print,'858=recover colors saved @857  859=modif. kink   882:TOOTHB'
-print,'860,1,2=10,14,17 colors for black  863=B&gray    883:line display'
-print,'864,6,8,9=4,6,8,11+880 colors for white          888:color Guide'
-print,'876,7,8,9 OLI scan:blk/wht  bands on black,white 899:window Guide'
+878: kink=[33,120,190,254,45,210,230,255,140,15] ; OLI bands on black | LDCM
+879: kink=[45 ,90,170,254,60,220,230,  1,130,15] ; OLI bands on white | order
+880: device, decomposed = 0 ; color is index into current table
+881: device, decomposed = 1 ; color is composite RGB value e.g., !binc
+882: TOOTHB                 ; default toothbar for all 256 colors
+883: CLOC,kink,[.55,.89,-.03,.08] ; display defined current line colors
+888: begin & print   ; Guide 
+print,'851=black background  852=white background  853=printer preview' 
+print,'854,6=4,6 for BorW  855=use kink in common  857=all black for printer'
+print,'858=recover colors saved @857  859=modif. kink       882:TOOTHB'
+print,'860,1,2=10,14,17 colors for black  863=B&gray        883:line display'
+print,'864,6,8,9=4,6,8,11reset colors for white 865=7 black 888:color Guide'
+print,'876,7,8,9 OLI scan:blk/wht  bands on black,white     899:window Guide'
 print,'880/1=DECOMPOSED=0/1: color is index/24bit'
         end
     else: begin & Message,' invalid 85x call',/cont
@@ -224,10 +232,10 @@ if inj lt 1 or inj gt 2 then goto,done; no prompting
 
 kon=1 
 ask: ;---------------------------------------- interactive parameter change
-READ, kon, prompt='SETCOLOR: 0=return 3=ctab 5=scheme 7=# 99=UseGuide> '
+read, kon, prompt='SETCOLOR: 0=return 3=ctab 5=scheme 7=# 99=UseGuide> '
 dokon: 
 case kon of
- -1: STOP
+ -1: stop
  0: goto,done                   ; return
 1: !p.multi = [0,0,0,0,0]	; 1/page
 2: !p.multi = [0,1,2,0,0]	; 2 vertical

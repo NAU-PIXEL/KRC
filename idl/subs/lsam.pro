@@ -1,4 +1,4 @@
-function lsam, arg, myn, aud, rev=rev
+function lsam, arg, myn, aud, rev=rev,pbs=pbs
 ;_Titl  LSAM  Convert Julian day to Mars season L_s and back. Allison and McEwen
 ; arg   in.  May be scaler or array[N]
 ;              Julian day OR offset from J2000, UTC. Switches at 1,000,000.
@@ -33,7 +33,8 @@ function lsam, arg, myn, aud, rev=rev
 rec=[-0.0043336633,0.0043630568,0.0039601861,0.029025116,-0.00042300026]
 ; Correction developed in qlsam.pro @22 to 25
 ; 2013jul12 HK  Return  aud  as [N,4]
-;_End
+; 2-14oct29 HK Add keyword PBS
+;_End                 .comp lsam
 
 dj2000=2451545.D0               ; JD of epoch J2000
 dj4m=51544.5D0                  ; days offset from dj4 to djm
@@ -95,7 +96,7 @@ endif else begin                ; -------------- calc Ls and MY
     lsub=afms+ eoc+pbs              ; Eq. 19 LS in degrees
     lsub=ZERO360(lsub)
     out=lsub
-    marstyear=686.9728          ; mean mars tropical  year in terrestrial days
+    marstyear=686.971          ; mean mars tropical year in terrestrial days
 ;  marsysol=668.5991  mars siderial year in sols
     ny=floor((dj4-5668.690)/marstyear) ; full Mars years from 1874
     myn=ny-42                   ; climate MY

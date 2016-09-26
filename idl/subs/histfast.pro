@@ -1,4 +1,4 @@
-pro  histfast,aa,sigin=sigin,bisin=bisin,xlab=xlab,linear=linear,sub=sub $
+pro histfast,aa,sigin=sigin,bisin=bisin,xlab=xlab,linear=linear,sub=sub $
               ,by=by,noplot=noplot,wt=wt, h1=h1,i1=i1,r1=r1, used=used
 ;_Titl  HISTFAST  Robust, easy histogram plot, with statistics, opt row weights
 ; aa	in.	Array to be treated
@@ -43,10 +43,10 @@ pro  histfast,aa,sigin=sigin,bisin=bisin,xlab=xlab,linear=linear,sub=sub $
 ; 2011mar22 HK Stop before return only if !dbug ge 7
 ; 2011nov09 HK Fix small bug that allowed long(huge) 
 ; 2014apr12 HK Deal with pathologic case of all same but SD is roundoff
+; 2015jan09 HK Do not test integer arrays for finite. And test range as longs
 ;_End
 
 ;on_error,2 ; to handle the "Array has a corrupted descriptor: H1" upon return
-
 
 sizea=SIZE(aa) & wordtype = sizea[sizea[0]+1] ; size of input array
 isint=wordtype le 3 or wordtype ge 12; some form of integer
@@ -54,7 +54,8 @@ nin=sizea[sizea[0]+2]             ; number of input elements
 
 if keyword_set(xlab) then xtit=xlab else xtit='X value'
 
-bad=where(finite(aa) eq 0,nbad) ; count of all non-finite points
+; check for non-finite points
+if isint then nbad=0 else ibad=where(finite(aa) eq 0,nbad) 
 if nbad gt 0 then begin
     if nin-nbad gt 0 then begin ; some finite
         ff=aa[where(finite(aa))] ; create array of only finite points
@@ -72,16 +73,22 @@ if nbad gt 0 then begin
         sd=-1.
         mean=!VALUES.F_NAN
     endelse
-endif else mean=MEAN_STD(aa,std=sd) ; faster than a histogram & its statistics
-
+ endif else begin               ; all finite
+   a2=max(aa,min=a1) ; extremes of input
+   if isint then a2=long(a2) 
+   if a2-a1 gt 0 then begin 
+      mean=MEAN_STD(aa,std=sd)
+      if sd le 0. then begin 
+         message,'HISTFAST: numerical limit',/con
+         sd=1.e-32              ; tiny number
+      endif
+   endif else sd=0. ; & use as flag 
+endelse
 if sd le 0. then begin ; constant or no finite
-allsame: print,'HISTFAST: ',xtit,':     All',nin,' items =',mean 
-       b1=mean & b2=mean & bsize=-1. & j1=0 & j2=0 & nbin=1 ; define for used=
-       a1=mean & a2=mean
+   print,'HISTFAST: ',xtit,':     All',nin,' items =',a1 
+   b1=a1 & b2=a2 & bsize=-1. & j1=0 & j2=0 & nbin=1 ; define for used=
+   mean=a1
 goto,done & end
-
-if nbad eq 0 then a2=max(aa,min=a1) else a2=max(ff,min=a1) ; extremes of input
-if a2-a1 le 0 then goto, allsame ; Pathologic case of all same but SD not zero. 
 
 ; Now, pick limits to exclude far outliers
 j=n_elements(sigin)

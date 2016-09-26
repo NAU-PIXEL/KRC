@@ -65,14 +65,14 @@ case cpu of
       myclr='q'                 ; Color printer 
   end
   else: begin              ; assumes ASU test environemnt
-     idltop='~krios/krc/builds/3.2.1/idl/' ; <<< IDL execution 
-     solib=idltop+'extern/ftnwrap64.so'      ; shared object library
-     krcdist='~krios/krc/builds/latest/'; <<< top of KRC
-     prjdat=krcdist+'big/' ;<<< Project large files
-     prjsrc=krcdist+'run/'                ;<<< Project other files
-     outid=vera                                ;<<<
+     idltop='/mars/common/rsi/idl71/bin/idl/' ; <<< IDL execution 
+     solib=idltop+'externals/ftnwrap64.so'      ; shared object library
+     krcdist='/mars/u/saadat/krc/krcDist222b/'; <<< top of KRC
+     prjdat=krcdist+'krcdevtestprotocall/new/' ;<<< Project large files
+     prjsrc=krcdist+'/run.org/'                ;<<< Project other files
+     outid=vera                               
      mybw='q'                   ;<<< B&W printer
-     myclr='q'                                 ;<<< Color printer 
+     myclr='q'                  ;<<< Color printer 
      end
 endcase
 

@@ -1,4 +1,4 @@
-pro bin5, code, name,head,aa, verb=verb,note=note,quiet=quiet,idx=idx,arc=arc $
+pro bin5, code, name,heds,aa, verb=verb,note=note,quiet=quiet,idx=idx,arc=arc $
 ,date=date,exc=exc
 ;_Titl  BIN5  Write/Read numeric binary files with 'standard' header
 ; code	in.	String. valid are 'Write' or 'Read', case insensitive;
@@ -6,13 +6,13 @@ pro bin5, code, name,head,aa, verb=verb,note=note,quiet=quiet,idx=idx,arc=arc $
 ;                 If the second character is 'b' (case insensitive), then the
 ;                 standard extension .bin5' will be appended to the file name.
 ; name	in.	Full path file name. [optionally without the  .bin5]
-; head	in/out	String. Text for header in the file; any length.
+; heds	in/out	String. Text for header in the file; any length.
 ; aa	in/out	Numeric array, any size; NOT structures or strings.
 ;		For Read, if open error occurs, this will be the error number.
 ; verb	in_	Integer. Verbosity: If set, will print file name before file
 ; 	      action. If =2, for Read, will also print file date and any subset.
 ;	      >= 3, will request confirmation. If no conf., aa is unaltered.
-;          For write, =4 asks for confirm only if file already exist, 5 never asks 
+;        For write, =4 asks for confirm only if file already exist, 5 never asks 
 ;             +10  will print debug values and stop before return
 ; note  in_	String. Notification of what the array represents. Ignored if
 ;                verb is not set.  WRITE only
@@ -73,6 +73,7 @@ postyp0= 12 ; byte position in  types  between last type 1 and first type 2
 ;               Retain the older words in ctype for backward compatibility
 ; 2013feb20 HK Revise extraction of word type to avoid problem of embedded nulls
 ; 2013mar01 HK Add notification for write if file exists
+; 2015mar10 HK Revise write logic to remove looping for header size
 ;_End
 
 valid=[1,2,3,4,5,6,9,12,13,14,15] ; all the numeric types
@@ -96,6 +97,7 @@ exc=-1                          ; set success flag false
 enhere= byte(1L, 0, 1) ne 1     ; extract the first byte of a Long word
 enhere=enhere[0]                ; true if CPU is big-endian
 if enhere then arch='bigend' else arch='litend'
+enfile=enhere                   ; default is no-swap
 
 if kode eq 'R' then goto, read
 if kode ne 'W' then message,'Invalid code' ; formal error, no recovery
@@ -137,7 +139,7 @@ if kwv ge 3 and kwv lt 5 then begin  ; check for pre-existence
 endif
 
 if kwv eq 3 or (kwv eq 4 and j eq 1) then begin ; ask for confirmation
-    print,'bin5 HEAD=',head
+    print,'bin5 HEAD=',heds
     read,prompt='Enter 19 to confirm ',qq 
     if qq ne '19' then  begin
         print,'No confirmation, BIN5 quitting'
@@ -152,25 +154,30 @@ if operr ne 0 then begin
         goto, done              ; release iod before return
 endif
 
-; In the rare circumstance that the additional digit in the revised header
-; length pushes the required length to one more block, the header-creation 
-; section will simply be executed one more time.
-
-makehead:                       ; construct header
-ss=[siza,headlen]              ; append the header length to array size and type
+; Can forecast exactly header length needed
+jin=STRLEN(heds)                ; length of input header
 hh = ''                         ; construct ASCII header of SIZE and headlen
-for i=0,md+3 do hh=hh+' '+strtrim(string(ss[i]),2) ; add dimensions 
-;; hh=strtrim([siza,headlen],2) NOPE, makes an array
-hh = hh+' <<IDL_SIZE + headlen '+SYSTIME(0)+' >>'+ head ; add time & input text
-j=STRLEN(hh)			; get current header length
-;;;print,'j,headlen=',j,headlen
-if j+headend gt headlen then begin ; require larger header
-	nblocks= 1+(j+9)/512	;   compute number of 512-byte blocks required
-	headlen=512*nblocks	;   set revised header length
-	goto, makehead		;   repeat entire header construction
-    endif
-for i=j+1,headlen do hh=hh+' '	; extend header to fixed length
-enfile=enhere                   ; default is no-swap
+for i=0,md+2 do hh=hh+' '+strtrim(string(siza[i]),2) ; add dimensions 
+jid=STRLEN(hh) ; length of IDL dimensions
+date=' <<IDL_SIZE + headlen '+SYSTIME(0)+' >> '
+jda=STRLEN(date) ; length of date block
+jed=jin+jda+jid+headend  ; total bytes needed except for head_size
+; Now everything except the string for the header size is defined
+; That will be 4 for jed up to 512-4=' 512' , 5 for jed up to 9728-5 
+; and 6 up to 99840-6
+if jed le 508 then j=4 else if jed le 9723 then j=5 else j=6
+nblocks= 1+ (jed+j-1)/512 	;   compute number of 512-byte blocks required
+headlen=512*nblocks             ;   total header length
+hh=hh+' '+strtrim(string(headlen),2)+date+heds ; all header text but arch+C_END
+j=headlen-STRLEN(hh) ; additional length needed, 
+if j lt 0 then message,'Algorithm failure'
+;; if j gt 0 then for i=1,j do hh=hh+' '	; append blanks 
+if j gt 0 then hh=hh+string(replicate(32B,j))	; append blanks 
+if dbug then begin 
+   help,jin,jed,nblocks,j
+   print,'headTot=',strlen(hh)
+endif
+   
 if keyword_set(arc) then begin  ; request to change type
     i=STRPOS(ctype,arc)         ; look for match to valid type
     if i ge 0 then begin        ; only if user request was valid
@@ -181,7 +188,8 @@ endif
 
 STRPUT,hh,arch,headlen-headend	; write hardware architecture in fixed location
 STRPUT,hh,'C_END',headlen-bend	; write standard "end" to header
-bb=byte(hh)                     ;  & help,bb
+bb=byte(hh)                     ; vonvert header to byte 
+; help,bb
 
 if enhere eq enfile then WRITEU,iod, bb,aa  $ ; write the header & array
                 else WRITEU,iod, bb,SWAP_ENDIAN(aa)
@@ -249,12 +257,12 @@ enfile=i lt postyp0
 i2=STRPOS(hh,'>>') 		; find end of date
 i1=i2-21                        ; skip past 'IDL_SIZE + headlen'
 date=STRMID(hh,i1,20)           ; extract date/time
-head=STRMID(hh,i2+2,headlen-headend-3-i2) ; extract range that may contain text
-head=STRTRIM(head)		; and trim trailing blanks
+heds=STRMID(hh,i2+2,headlen-headend-3-i2) ; extract range that may contain text
+heds=STRTRIM(heds)		; and trim trailing blanks
 
 if kwv ge 1 then print,'Will Read '+note+' file: ',fame,' Size= ',strtrim(siza,2)
 if kwv ge 2 then print, '  File date= ', date $
-	  ,'   Head_length= ',strtrim(strlen(head),2)
+	  ,'   Head_length= ',strtrim(strlen(heds),2)
 if kwv ge 3 then begin ; ask for confirmation
     read,prompt='Enter 19 to confirm ',qq 
     if qq ne '19' then  begin

@@ -1,26 +1,28 @@
 # Script for install a KRC distribution tar file on H3
 # basically a keystroke file
-# 2014may06 HUgh Kieffer
+# 2014may06 jun19  Hugh Kieffer
+
 cd /work1/build/	  	      	    	 # cd to the build area
 rm -Rf *		    	 # empty it entirely
-tar -xvf /work2/krcdist.tar.gz   # untar the distro
+tar -xvf /work2/krcdist.tar.gz   # untar the distro. May have unique version name
 # tar -xvf /work2/krcbig.tar 	 # untar the big files
 
 # skip all the uniq stuff on H3
 cd src/cfiles      #  low-level I/O routines, required before a Fortran build
 make all		       # build the C library
 cd ..		       # cd to the Dir with all the FORTRAN source code
-make krc		       # Make KRC  
+make krcd		       # Make KRC   double precision version
 make porbmn		       # Make PORB
-cd idl/extern    		# Move to area for Shared Object Library (SOL)
+cd ../idl/extern    		# Move to area for Shared Object Library (SOL)
 make ftnwrap64.so			# build the SOL 
 cd ../../run			# move to directory in which normally run KRC
-ln -s ../src/krc .		# soft link to KRC executable
+mkdir out                       # 
+ln -s ../src/krcd .		# soft link to KRC executable
 ln -s ../src/porbmn . 		# " " to PORB program 
 
+[ exit
 
-exit 
-krc   	     	 		# Start krc
+krcd   	     	 		# Start krc
   enter:  VerTest.inp
   enter:  /  or the name of a print output file
 

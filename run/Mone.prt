@@ -1,0 +1,72 @@
+ ======================== New case ========================
+ --------- TYPE LOC  VALUE -------- Parameter changes
+ Changed>>   1   1  0.2500     Albedo  ALBEDO  
+ Changed>>  10   1  0.1000     oneA.one
+ ---- Start of one-point mode ----
+ Title Line, Text transfered to output. This & next line must be present         
+C_END  Ls   Lat  Hour Elev  Alb Inerti Opac Slop Azim  TkSur  TbPla             Comment
+Version 33 One-point Master.  Default values for all physical parameters.           
+KRCv3.3.0    RUN-CASE  0- 1   2016 Mar 19 22:13:53  PAGE=  1
+ Input file: oneA.one                                                                        
+ Print file: Mone.prt                                                                        
+ Save file: krc.tdi                                                                         
+     ALBEDO     EMISS   INERTIA     COND2     DENS2    PERIOD  SpecHeat   DENSITY
+     0.2000    1.0000  100.0000    2.7700  928.0000    1.0275  647.0000 1600.0000
+       CABR       AMW    SatPrA    PTOTAL     FANON      TATM     TDEEP   SpHeat2
+     0.1100   43.5000   27.9546  546.0000    0.0550  200.0000  180.0000 1711.0000
+       TAUD     DUSTA    TAURAT     TWILI  ARC2/PHT     [ARC3     SLOPE    SLOAZI
+     0.3000    0.9000    0.2500      0.00      0.50      0.80       0.0      12.3
+     TFROST    CFROST    AFROST     FEMIS       AF1       AF2    FROEXT    SatPrB
+   146.0000  589944.0    0.6500    0.9500   0.54000    0.0009   50.0000 3182.4800
+       RLAY      FLAY     CONVF     DEPTH     DRSET       DDT       GGT     DTMAX
+     1.2000    0.1800    3.0000    0.0000    0.0000    0.0020    0.1000    0.1000
+       DJUL    DELJUL SOLAR DEC       DAU       L_S    SOLCON      GRAV    Atm_Cp
+   1763.406   17.1748   24.7843   1.64488    0.0000 1368.0000    3.7270  735.9000
+     ConUp0    ConUp1    ConUp2    ConUp3    ConLo0    ConLo1    ConLo2    ConLo3
+     0.0386   -0.0021    0.0023   -0.0008    2.7667   -1.2990    0.6292   -0.5273
+     SphUp0    SphUp1    SphUp2    SphUp3    SphLo0    SphLo1    SphLo2    SphLo3
+   646.6275  246.6678  -49.8216    7.9520 1710.6480  721.8740   57.4487   24.3753
+         N1        N2        N3        N4        N5       N24       IIB       IC2
+         22       384        15         1        80        24         0        99
+      NRSET      NMHA      NRUN     JDISK     IDOWN    FlxP14    FlxP15     KPREF
+          3        24         0         0        -7        45        65         1
+      K4OUT     JBARE     Notif    IDISK2
+          0         0       200         0
+     LP1    LP2    LP3    LP4    LP5    LP6 LPGLOB   LVFA   LVFT  LKofT
+       F      F      F      F      F      F      F      F      F      F
+   LPORB   LKEY    LSC  LZONE  LOCAL   LD16 LPTAVE  Prt78  Prt79  L_ONE
+       T      F      F      F      T      F      F      F      F      T
+
+ Latitudes: 
+   22.30
+
+ Elevations:
+   -3.10
+ 11 100.0  22.3 13.50 -3.1 0.20  100.0 0.30  0.0  12. 280.86 269.70 Viking Lander 1    
+ 11 100.0  22.3 13.50 -3.1 0.20  200.0 0.30  5.0  90. 275.84 265.09 VL1                
+ 11 100.0  22.3 13.50 -3.1 0.20  200.0 0.30  5.0 180. 274.64 263.99 VL1                
+ 11 100.0  22.3 13.50 -3.1 0.20  200.0 0.30  5.0 270. 274.37 263.84 VL1                
+ 11   0.0  47.7 13.50 -3.0 0.20   50.0 0.20  5.0 270. 257.10 247.04 Viking Lander 2    
+ 11  90.0  47.7 13.50 -3.0 0.20  100.0 0.20  0.0   0. 277.16 267.56 VL2                
+ 11  90.0  47.7 13.50 -3.0 0.20  200.0 0.20  0.0   0. 271.99 262.82 VL2                
+ 11  90.0  47.7 13.50 -3.0 0.20  400.0 0.20  0.0   0. 263.12 254.75 VL2                
+ 11  90.0  47.7 13.50 -3.0 0.15  200.0 0.20  0.0   0. 276.14 266.77 VL2                
+ 11  90.0  47.7 13.50 -3.0 0.35  200.0 0.20  0.0   0. 258.05 249.60 VL2                
+ 11  90.0  47.7 13.50 -3.0 0.20  200.0 0.50  0.0   0. 268.17 256.42 VL2                
+ 11  90.0  47.7 13.50 -3.0 0.20  200.0 1.00  0.0   0. 261.62 247.24 VL2                
+ 11 180.0  -8.8 13.00 16.5 0.20  100.0 0.20  0.0   0. 297.05 295.41 Summit Arsia Mons  
+ 11 251.0  -8.8 13.00 16.5 0.20  100.0 0.20  0.0   0. 305.37 303.13 Arsia Mons periheli
+ 11 270.0  -8.8 13.00 16.5 0.20  100.0 0.20  0.0   0. 304.07 301.84 Arsia Mons midsumme
+ 11 270.0  -8.8 13.00 16.5 0.20   50.0 0.20  0.0   0. 307.48 305.21 Arsia Mons midsumme
+ 11 300.0  88.5 12.00 -3.0 0.30  250.0 0.20  0.0   0. 146.00 143.47 Polar cap test     
+ 11 100.0  22.0  6.00 -3.1 0.25  200.0 0.30  0.0   0. 186.51 188.28 Spinup test        
+ 11 100.0  22.0 13.00 -3.1 0.25  200.0 0.30  0.0   0. 271.54 260.93 Spinup test        
+ 11 100.0   0.0  6.00  0.0 0.25  200.0 0.30  0.0   0. 172.04 174.23 Spinup test        
+ 11 100.0   0.0 13.00  0.0 0.25  200.0 0.30  0.0   0. 260.76 252.90 Spinup test        
+ 11 100.0 -25.0  6.00  0.0 0.25  200.0 0.30  0.0   0. 158.35 159.62 Spinup test        
+ 11 100.0 -25.0 13.00  0.0 0.25  200.0 0.30  0.0   0. 229.24 222.45 Spinup test        
+
+
+     END OF DATA ON INPUT UNIT
+ Case 23  DTIME: total, user, system=    1.0518    1.0518    0.0000
+      END KRC   Total time [s]=   1.0518399    

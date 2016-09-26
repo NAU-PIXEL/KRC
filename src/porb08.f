@@ -4,9 +4,10 @@ C_HIST  97jan30  HHK revised from  PORB1
 C 2005dec28 HK Change to use of IMPLICIT NONE
 C 2013jul24 HK Change to V2 PORB system
 C 2014mar11 HK Make  REAL*8  version
+C 2016may12 HK Update include name
 C_END
         INCLUDE 'porbc8m.f' ! contains IMPLICIT NONE
-        INCLUDE 'units.inc'
+        INCLUDE 'unic8m.f'
 
         REAL*8 P(30)            ! block of 30 floats to read
         EQUIVALENCE (P,PLANUM)  ! correspond to start of common

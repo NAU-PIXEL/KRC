@@ -4,15 +4,15 @@ C_Vars
       INCLUDE 'krcc8m.f'
       INCLUDE 'latc8m.f'
       INCLUDE 'dayc8m.f'
-      INCLUDE 'units.inc'
-      INCLUDE 'filcom.inc'
+      INCLUDE 'unic8m.f'
+      INCLUDE 'filc8m.f'
 C_Args
       INTEGER*4 IQIN            ! in. what to print: 
 C   +=also page title first       calling routine line number as of 2010jan22 
-C 1=+ program description            krc.f:95IF(LP1
-C 2=+ all parameters & depth table   krc.f:97IF(LP2   tcard.f:283beforeStop
+C 1=+ program description OBSOLETE   krc.f:95IF(LP1
+C 2=+ all parameters [& depth table]   krc.f:97IF(LP2   tcard.f:283beforeStop
 C 3=+ latitude page titles           tlats.f:273
-C 4=convergence summary {depth table} tlats.f:343IF(LP4) tday.f:458afterBlowup  
+C 4=convergence summary {depth table} tlats.f:343 IF(LP4) tday.f:458afterBlowup  
 C 5=+ latitude summary               tseas.f:80
 C 6=+ layer min and max temperatures tseas.f:81
 C 7=blowup conditions                tday.f:456
@@ -37,7 +37,9 @@ C 2013feb21 HK Remove leading carridge control characters from format statements
 C 2014feb13 HK Correct depth table labeling from mass being as layer center
 C 2014feb25 HK Set most variables to *4.  Justify
 C 2014mar10 HK Make  REAL*8  version    may04, Increase some format precision
-C 2014jun02 HK Accomodate I15 begin large when used as flag for TUN8
+C 2014jun02 HK Accomodate I15 being large as a flag for TUN8
+C 2015dec24 HK Add print of bottom depth to layer table
+C 2016feb-- HK Convert some names to V3.3  Bypass layer table here
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
 C
       INTEGER*4 I,J,J3P1,K,IQ
@@ -47,16 +49,7 @@ D        WRITE(IOSP,*)'TPRINT CALLED ',IQIN  !debug
 
       IQ = IQIN
       GO TO (800,800,800,400,800,800,700,800,900,99), IQ ! print page title
-C             1   2   3   4   5   6   7   8   9  +
-C
-C  PRINT program description  (IQ = 1)
-C
- 100  OPEN (IOD1, FILE='KRCEXP.TXT',STATUS='OLD')
-      DO 110 I=1,60             !  SCONVG is used here as a scratch array
-        READ  (IOD1,'(30A4)',END=128,ERR=110) SCONVG
- 110    WRITE (IOSP,'(1X,30A4)') SCONVG
- 128  CLOSE (IOD1)
-      GOTO 99
+C              1   2   3   4   5   6   7   8   9  +
 C
 C  PRINT all parameters  (IQ = 2)
 C
@@ -66,12 +59,12 @@ C
       WRITE (IOSP,212) (FD(I),I=1,NFD)
  212  FORMAT ( '     ALBEDO     EMISS   INERTIA     COND2     DENS2'
      &, '    PERIOD  SpecHeat   DENSITY'/1X,8F10.4
-     &/'       CABR       AMW   [ABRPHA    PTOTAL     FANON      TATM'
+     &/'       CABR       AMW    SatPrA    PTOTAL     FANON      TATM'
      &, '     TDEEP   SpHeat2'/1X,8F10.4
-     &/'       TAUD     DUSTA    TAURAT     TWILI      ARC2     [ARC3'
+     &/'       TAUD     DUSTA    TAURAT     TWILI  ARC2/PHT     [ARC3'
      &, '     SLOPE    SLOAZI'/1X,3F10.4,3F10.2,2F10.1 
      &/'     TFROST    CFROST    AFROST     FEMIS       AF1       AF2'
-     &, '    FROEXT     [FD32'/1X,F10.4,F10.1,2F10.4,F10.5,3F10.4
+     &, '    FROEXT    SatPrB'/1X,F10.4,F10.1,2F10.4,F10.5,3F10.4
      &/'       RLAY      FLAY     CONVF     DEPTH     DRSET       DDT'
      &, '       GGT     DTMAX'/1X,8F10.4
      &/'       DJUL    DELJUL SOLAR DEC       DAU       L_S    SOLCON'
@@ -82,8 +75,8 @@ C
      &, '    SphLo2    SphLo3'/1X,8F10.4)
 
       WRITE (IOSP,214) (ID(I),I=1,NID)
- 214  FORMAT ( '0        N1        N2        N3        N4        N5'
-     &, '       N24        IB        IC'/1X,8I10
+ 214  FORMAT ( '         N1        N2        N3        N4        N5'
+     &, '       N24       IIB       IC2'/1X,8I10
      &/'      NRSET      NMHA      NRUN     JDISK     IDOWN    FlxP14'
      &, '    FlxP15     KPREF'/1X,8I10
      &/'      K4OUT     JBARE     Notif    IDISK2',/1X,4I10)
@@ -91,18 +84,22 @@ C
       WRITE (IOSP,216) (LD(I),I=1,NLD)
  216  FORMAT('     LP1    LP2    LP3    LP4    LP5'
      &,         '    LP6 LPGLOB   LVFA   LVFT  LKofT'/1X,10L7
-     &/        '   LPORB   LKEY    LSC LNOTIF  LOCAL'
+     &/        '   LPORB   LKEY    LSC  LZONE  LOCAL'
      &,         '   LD16 LPTAVE  Prt78  Prt79  L_ONE'/1X,10L7)
 D         print *, 'TPRINT: N4,MAXN4=',n4,MAXN4
       WRITE (IOSP,230) 'Latitudes: ',(ALAT(I),I=1,N4)
       WRITE (IOSP,230) 'Elevations:',(ELEV(I),I=1,N4)
  230  FORMAT (/1X,A/(1X,10F7.2))
-      IQ = 4                    ! temporary, to return from header line
-      GOTO 800                  ! Print page title, then come back to  250
+      GOTO 99
+
+C-      IQ = 4                    ! temporary, to return from header line
+C-      GOTO 800                  ! Print page title, then come back to  250
+
 C
 C print layer depth table
 C
  250  Q2=DENS*SPHT
+      WRITE(IOSP,*) 'OBSOLETE layer table written by TPRINT XXXXXXXXXX'
       WRITE(IOSP,260) COND,Q2,DIFFU,SCALE
  260  FORMAT (' Conductiv.=',1PE10.3,'  Dens*Cp=',E10.3,'  Diffu.='
      &     ,E10.3,'  Scale=',E10.3)
@@ -130,9 +127,11 @@ C2345 789 123456789 123456789 123456789 123456789 123456789 123456789 72________
         IF (I.GT.1 .AND. I.LT.IC2) Q6=Q6+BLAY(I)*DENS
         IF (I.GE.IC2) Q6=Q6+BLAY(I)*DENS2 ! layer-center columnar mass
  270    WRITE(IOSP,280) I,Q2,BLAY(I),Q4,XCEN(I),q6,SCONVG(I)
- 280  FORMAT (I5,F10.4,F10.4,F10.4,f10.4,F10.3,F8.3)
+ 280  FORMAT (I5,F10.4,F10.4,F10.4,F10.4,F10.3,F8.3)
+      WRITE(IOSP,281) Q4+Q2/2.,XCEN(N1)+BLAY(N1)/2. ! at bottom
+ 281  FORMAT (' Bottom',T26,F10.4,f10.4)
       WRITE(IOSP,290) (N1K(K),K=1,KKK)
- 290  FORMAT ('0Bottom layers for time doubling:  ',10I5)
+ 290  FORMAT (' Lower layer of time doubling: ',15I3)
       GOTO 99
 C
 C latitude page titles  (IQ = 3)
@@ -202,8 +201,8 @@ C
       WRITE(IOSP,810) KITLE,VERSIN,NRUN,NCASE,DAYTIM,IPG
  810  FORMAT (A,/,A12,' RUN-CASE',I3,'-',I2
      &,3X,A,'  PAGE=',I3)
-      GOTO (100,200,850,250,850,850,99,99,99) ,IQ
-C            1   2   3   4   5   6   7  8  9
+      GOTO (99,200,850,250,850,850,99,99,99) ,IQ
+C            1   2   3   4   5   6  7  8  9
 C print model constants for  IQ = 3,5,6
 C
  850  I=I15

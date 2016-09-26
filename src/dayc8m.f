@@ -16,7 +16,7 @@ C  ASOL &  ADGR are set in  TLATS, the rest are set in  TDAY
      &, TTA(MAXN3)      ! End-of-Day Atmospheric temperatures
      &, DTMJ(MAXN3)     ! RMS daily temperature change
      &, FRO(MAXN3)      ! Daily frost amounts. [kg/m^2]                    
-     &, ASOL(MAXN2)     ! Insolation at each time of day, direct + diffuse
+     &, ASOL(MAXN2)     ! Direct solar flux on sloped surface at each time of day
      &, ADGR(MAXN2)     ! Atm. solar heating at each time of day 
      &, TOUT(MAXN2)     ! Surface temperatures of solution at each time of day
      &, TSFH(MAXNH)     ! Hourly surface temperatures at solution
@@ -38,4 +38,4 @@ C 2010jan12 HK Change to IMPLICIT NONE assumed in krccom
 C 2014feb25 HK Specify all word lengths as *4
 C 2013mar10 HK Make  REAL*8  version    Change name from daycom.inc
 C_End __________________________________________________________________________
-  
+

@@ -19,7 +19,7 @@
 % 2010jan25 move in many things from KRC paper %x << %y is replace y with x
 % 2013may19 extract Mars-related to defmar.syt
 
-\textheight=10.38in \topmargin=-1.33in         %  hulk printer extreme limits centos 5.3
+\textheight=10.in \topmargin=-1.in         %  hulk printer extreme limits centos 5.3
 \textwidth=7.80in  \oddsidemargin=-0.7in \evensidemargin=-0.7in % 2012jan20 printest.tex
 \topskip=0.0in  \footskip=0.2in
 
@@ -245,7 +245,7 @@ Originally developed for the comet version of KRC, which included sublimation wi
 
 Format nearly the same as \nf{minor.tab} except for use of perihelion distance $q$ rather than semi-major axis $a$. They are related by: $q=a(1- \epsilon)$.
 
-\\ WARNING: Some entries are old. Consistency of source orientation systems uncertain. Use dicouraged: Put new commets into \nf{small.tab}. 
+WARNING: Some entries are old. Consistency of source orientation systems uncertain. Use discouraged: Put new commets into \nf{small.tab}. 
 \subsection {ExoPlanets}
 
 Obliquity and season at periastron were chosen as alternatives to the
@@ -336,13 +336,7 @@ Get planet postion at any time in orbital system.
 \qi Convert to ecliptic
 \qi rotate to J2000 
 
-porbcm.inc will contain
-\qi PORB version number, object name, epoch. source table[s]
-\qi Orbit constants (6+) spin axis direction (2), rate and base (2)
-\qi rotation matricies (9 words each) and values needed to convert between systems
-\qi Values for the current MJD: SDEC, DAU, Lsubs
-\qi For eccentric objects, want time (or fraction of period) from perihelion.
-\qii But this is simply (MJD-TJP)/OrbitPeriod
+porbcm.inc: see \S \ref{pcom}
 
 % \pagebreak
 \section{PORBEL: get elements} %--------------
@@ -690,7 +684,7 @@ Derive Year $\equiv$ Mars mean tropical year from
 separation of the extreme $L_S=0$ times from Allison for whatever period is
 chosen.
 
-\section{Common porbcm.inc}  %_________________________________________
+\section{Common porbcm.inc \label{pcom}}  %____________________________
 
 porbcm.inc will contain
 \qi PORB version number, object name, epoch. source table[s]
@@ -699,6 +693,64 @@ porbcm.inc will contain
 \qi Values for the current MJD: SDEC, DAU, Lsubs
 \qi For eccentric objects, want time (or fraction of period) from perihelion.
 \qii But this is simply (MJD-TJP)/OrbitPeriod
+
+Example of the geometry matrix expanded to show variable names
+\vspace{-3.mm} 
+\begin{verbatim}
+<--VERSION---> <--generation date->           IPLAN      TC orbit:pole    
+PORB:2014jun10 2014 Jun 10 18:22:58 IPLAN,TC= 104.0 0.10000 Mars:Mars
+     PLANUM             Tc           RODE           CLIN           ARGP
+   104.0000      0.1000000      0.8644665      0.3226901E-01  -1.281586  
+       XECC            SJA           EOBL          SFLAG           ZBAA
+  0.9340198E-01   1.523712      0.4090926       0.000000      0.9229373 
+       ZBAB           WDOT             W0        OPERIOD            TJP 
+   5.544402       0.000000       0.000000       686.9928       3397.977 
+      SIDAY          spare            TAV           BLIP           PBUG 
+   24.62296       0.000000      -1.240317      0.4397026       7.000000  
+      spare         BFRM 1              2              3              4
+   0.000000      0.3244966      0.8559125      0.4026360     -0.9458869 
+          5              6              7              8         BFRM 9  
+  0.2936299      0.1381286       0.000000     -0.4256704      0.9048783   
+\end{verbatim} 
+
+PLANUM and IPLAN are the same. Description below extracted from \nf{porbc8m.f}
+\vspace{-3.mm} 
+\begin{verbatim}
+       PLANUM    ! 1 Body number. 100*fileNumber+itemNumber
+     &,TC        ! 2 Time in centuries from reference date (2000.0)
+     &,RODE      ! 3 Longitude of the rising node, radian
+     &,CLIN      ! 4 Inclination, radian
+     &,ARGP      ! 5 Argument of periapsis, radian
+     &,XECC      ! 6 eccentricity
+     &,SJA       ! 7 Semi-major axis (Astronomical Units)
+     &,EOBL      ! 8 Obliquity of the Earth's axis, radians
+     &,SFLAG     ! 9 Input system flag 0:default, +1: pole=ec +10:orb=eq
+     &,ZBAA      ! 10 Body pole: declination, radian in J2000 eq.
+     &,ZBAB      ! 11  "     "       Right Ascension, radian in J2000 eq.
+     &,WDOT      ! 12 Siderial rotation rate;/ degrees/day  
+     &,W0        ! 13 Position of prime meridian at 2000.0, degree
+C Above are from orbital element tables  Below are derived    
+      REAL*8 OPERIOD ! 14 Period of the orbit (days)
+     &,TJP       ! 15 J2000 Date of perihelion
+     &,SIDAY     ! 16 Siderial rotation period of body (hours)
+     &,spar17    ! 17 unused
+     &,TAV       ! 18 True anomaly at spring equinox, radians
+     &,BLIP      ! 19 Body obliquity, radians
+     &,PBUG      ! 20 Debug Flag   
+     &,spar21    ! 21 Unused    
+     &,BFRM(9)   ! 22 Rotation matrix from orbital to seasonal
+\end{verbatim}
+
+File number is: 
+\vspace{-3.mm} 
+\begin{verbatim}
+1: standish.tab  http://iau-comm4.jpl.nasa.gov/XSChap8.pdf Table 8.10.2
+2: spinaxis.tab  IAU Working Group on Cartographic Coordinates and Rotational Elements
+3: small.tab     Minor planets, several with spin axis defined
+4: minor.tab     Asteroids, minor-planets, comets based on JPL Horizon cut/paste
+5: comet.tab     Comet elements [from Ted Bowell 1985sep07]
+6: exoplan.tab   ExoPlanets
+\end{verbatim} 
 
  \section{FORTRAN routine list}
 \vspace{-3.mm} 
@@ -901,8 +953,10 @@ L_s  -LSAM mean.Std:    0.0188071    0.0488767
 Lsubs-LSAM mean.Std:    0.0673968    0.0257574
 \end{verbatim}
 
-%\bibliography{mars}   %>>>> bibliography data
-%\bibliographystyle{plain}   % alpha  abbrev 
+\bibliography{mars}   %>>>> bibliography data
+\bibliographystyle{plain}   % alpha  abbrev 
+\end{document} %===============================================================
+
 \begin{thebibliography}{Seidelmann74ww}
 
 \bibitem{Allison00}

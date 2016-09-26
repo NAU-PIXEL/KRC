@@ -1,7 +1,7 @@
 PRO getpan, desc, var,low,high,labs=labin,ido=ido
 ;_Titl GETPAN  Modify any elements of numeric array, with prompt and limit tests
 ; desc  in.	Prompt text
-; var   both.	Array (N) to modify
+; var   both.	Array (length N) to modify, May be 2-dimen (or higher)
 ; low   in. 	Minimum allowed value. May be scalar or same size as var
 ; high  in. 	Max allowed value.     Must be same size as low
 ; 	    If low eq high, then no value restrictions applied.
@@ -22,7 +22,9 @@ PRO getpan, desc, var,low,high,labs=labin,ido=ido
 ; 2002mar21 HK put min and max columns to the left of index
 ; 2003mar30 HK Add prompts when can change list length
 ; 2004aug17 HK Add print-only mode if low gt high. Add test on size of  var.
-;_End
+; 2015may18 HK Handle 2-dimension arrays. Will process higher but return as 2
+;            and expand if logic to individual lines
+;_End        .comp getpan
 
 ; Internal logic controls:
 ; kode  0=no labels or extension,  1=use labels, fixed number of items  
@@ -31,12 +33,20 @@ PRO getpan, desc, var,low,high,labs=labin,ido=ido
 ; lim   Limits: 0=none  1=same for all items   2= individual limits
 ; info  Basic mode: 0=normal  -1=information only, no changes
 
-n=N_ELEMENTS(var)	; # items in array
-if n lt 1 then begin 
-    print,' GETPAN: ERROR, var is not defined.  NO ACTION'
+siz=size(var) & md=siz[0] ; dimensionality
+
+if md lt 1 then begin 
+    message,' GETPAN: ERROR, var is not defined.  NO ACTION',/con
     return
 end
-type=SIZE(var,/type)	; word type
+type=siz[md+1]                  ; word type
+nv=siz[md+2]                    ; # items in array
+if md gt 1 then begin 
+  md1=siz[1]                    ; first dimension
+  md2=nv/md1                    ; all other dimensions
+  var=reform(var,nv,/over)      ; convert to a vector
+  print,'Note: input Dimensionality 2 or more'
+endif
 ;   -  byte   int       long       float         double
 uu=['', ' ',' __','    ___','     ____','  __________'] ; spacing for header
 ff=['','I4', 'i6',    'i10',    'g12.5',       'g15.8']
@@ -45,8 +55,11 @@ ON_IOERROR,bad
 info=0B                         ; default is to allow changes
 lidx=-1                         ; minimum idx with specific action
 if not keyword_set(labin) then kode=0 $ ; no labels or extensions
-  else if n_elements(labin) eq n and size(labin,/type) eq 7 then kode=1 $ ; labels, fixed dimension
-  else begin & kode=2 & lidx=-4 & endelse ; allow change of dimension
+  else if n_elements(labin) eq nv and size(labin,/type) eq 7 then kode=1 $ ; labels, fixed dimension
+  else begin ; individual limits
+  kode=2 
+  lidx=-4 
+endelse ; allow change of dimension
 labs=labin
 if n_elements(ido) gt 0 then begin ; demote all but requested
     jj=where(ido ge 100,i)      ; items for emphasis
@@ -56,7 +69,7 @@ if n_elements(ido) gt 0 then begin ; demote all but requested
         labs[ii]='<<< '+labs[ii]
         dem='   '+dem 
     endif
-    ii=replicate (1B,n)         ; all flags on
+    ii=replicate (1B,nv)         ; all flags on
     ii[ido mod 100]=0B          ; turn off flags  of selected items
     ii=where(ii)                ; list of those not in input list
     labs[ii]=dem+labs[ii]
@@ -86,60 +99,84 @@ print,desc
 case kode of
 0: begin                   ; no individual labels
     case lim of
-        0: print,' Now=',st0(var)
+        0: print,' Now=',ST0(var)
         1: begin & print,'Limits=',low,high
-        print,' Now=',st0(var) & end
-        2: begin 
-            print,top
-            for i=0,n-1 do print, low[i],high[i], i,var[i],format=fmt
-            end
-    endcase & end
-1: begin                    ; individual labels
-    case lim of
-        0: for i=0,n-1 do print, i,var[i],'  ',labs[i]
-        1: begin 
-            print,'  Limits=',low,high
-            for i=0,n-1 do print, i,var[i],'  ',labs[i]
+          print,' Now=',ST0(var) 
         end
         2: begin 
             print,top
-            for i=0,n-1 do print, low[i],high[i], i,var[i],labs[i],format=fmt
+            for i=0,nv-1 do print, low[i],high[i], i,var[i],format=fmt
+          end
+    endcase 
+  end
+1: begin                    ; individual labels
+    case lim of
+        0: for i=0,nv-1 do print, i,var[i],'  ',labs[i]
+        1: begin 
+            print,'  Limits=',low,high
+            for i=0,nv-1 do print, i,var[i],'  ',labs[i]
+        end
+        2: begin 
+            print,top
+            for i=0,nv-1 do print, low[i],high[i], i,var[i],labs[i],format=fmt
             end
-    endcase & end
+    endcase 
+  end
 2: begin          ; variable size, fixed limits 
     if lim gt 0 then print,'Limits=',low[0],high[0]
     print,' -3 3 = delete last    -4 4 = append dummy value'
-    print,'Now= ',st0(var)
+    print,'Now= ',ST0(var)
    end
 endcase
 
-if info then return ; in informational mode
+if info then begin ;  in informational mode
+  if md gt 1 then var=reform(var,md1,md2,/over)
+  return
+endif
  
 get:
 read,idx,test,prompt='Enter index and new value> '
 if idx eq -1 then goto,show	; display current values
-if idx eq -2 or idx lt lidx then return ; all done
-if idx ge n then begin & print,'invalid index' & goto,get & end
-if idx eq -3 then begin ; delete last item
- if n lt 2 then begin & print,'may not decrease size' & goto,get & end
-     n=n-1 &  var=var[0:n-1] & goto,get & end
-if idx lt -3  then begin ; append an item
-    var=[var,high[0]] ; append the high limit, in case input was out of range
-    idx=n & n=n+1 & end  
+if idx eq -2 or idx lt lidx then begin ; all done
+  if md gt 1 then var=reform(var,md1,md2,/over)
+  return
+endif
+if idx ge nv then begin 
+  print,'invalid index' 
+  goto,get 
+endif
+if idx eq -3 then begin         ; delete last item
+  if md gt 1 then print,'May not change Multi-Dim size' else begin 
+    if nv lt 2 then print,'may not decrease size'  else begin
+      nv=nv-1 
+      var=var[0:nv-1] 
+    endelse
+  endelse
+  goto,get 
+endif
+if idx lt -3 then begin   ; append an item
+  if md gt 1 then print,'May not change Multi-Dim size' else begin 
+    var=[var,high[0]]      ; append the high limit, in case input was out of range
+    idx=nv 
+    nv=nv+1 
+  endelse
+endif  
 ; valid idx as index
 case lim of
-    0:                          ; do nothing
-    1: begin                    ; there is a single valid range
-  if (test lt low[0]) or (test gt high[0]) then begin
-     print,'Allowed range is',low,high
-     goto, get
-  endif & end
- 2: begin                    ; there is a valid range for each item
-     if low[idx] lt high[idx] and $
-       ((test lt low[idx]) or (test gt high[idx])) then begin
-     print,'Allowed range is',low[idx],high[idx]
-     goto, get
-  endif & end 
+  0:                            ; do nothing
+  1: begin                      ; there is a single valid range
+    if (test lt low[0]) or (test gt high[0]) then begin
+      print,'Allowed range is',low,high
+      goto, get
+    endif 
+  end
+  2: begin                      ; there is a valid range for each item
+    if low[idx] lt high[idx] and $
+      ((test lt low[idx]) or (test gt high[idx])) then begin
+      print,'Allowed range is',low[idx],high[idx]
+      goto, get
+    endif 
+  end 
 endcase
 var[idx]=test			; update value
 goto, get			; prompt for another change

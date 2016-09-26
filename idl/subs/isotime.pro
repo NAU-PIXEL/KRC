@@ -1,5 +1,5 @@
 function isotime, form, tz=tz
-;_Titl  ISOTIME  Returns current date-time as a string: yyyy-mm-ddThh:mm:ss[LTZ]
+;_Titl  ISOTIME  Current date-time now as a string or MJD to .0001
 ; form in_ Integer. Desired format. Default is 0
 ;           0:  yyyy-mm-ddThh:mm:ss ISO 8601 (lunar standard) format
 ;           1:  yyyymondd hh:mm:ss as one word
@@ -7,7 +7,9 @@ function isotime, form, tz=tz
 ;           3:  yyyymmdd  hh:mm:ss as 2 words
 ;           4:  monddThh:mm        as one word
 ;           5:  ddmonhh:mm         as one word  Short but POSSIBLY CONFUSING 
-;      else=6:  MJD to 4 decimal places as one word   Don't use tz 
+;          12:  yyyymondd hhmmss as 2 words
+;          15:  ddmonhhmm         as one word  Short but POSSIBLY CONFUSING 
+;      else= :  MJD to 4 decimal places as one word   Don't use tz 
 ; tz  in_  Integer in range -11:11, local standard time zone for label
 ;           Or 'Z' for zero=UTC=Zulu (actually, any string)
 ;           If present, a timezone will be appended to the last word 
@@ -24,7 +26,8 @@ function isotime, form, tz=tz
 ; 2011sep29 HK include keywords form and  tz , makes  catime.pro  obsolete
 ;              and account for USA Daylight Savings Time = DST
 ; 2011nov18 HK Make  form  an optional argument, add forms 4,5,6
-;_End
+; 2015may12 HK Add two forms with no colons; add 10 to index. 
+;_End            .comp isotime
 
 cpuz=-8                         ; standard time zone this computer is on
 ;^^^^^^ firm code
@@ -67,16 +70,22 @@ if doz then begin               ; incorporate time zone
     endif
     day=string(iday,form='(I2.2)')
     hr =string(ihr,form='(I2.2)')
-    hms=hr+mcs   ; hh:mm:ss
-endif else hms=ss[3] 
-
+    hcs=hr+mcs                  ; hh:mm:ss; hcs included colons
+endif else hcs=ss[3] 
+phr=strmid(hcs,0,2) ; pure hour 
+pmn=strmid(hcs,3,2) ; pure minute
+psc=strmid(hcs,6,2) ; pure seconds
+hhmm=phr+pmn        ; hhmm
+hms=hhmm+psc        ; hhmmss
 case form of
-    0:    out= ss[4]+'-'+mm+'-'+day+'T'+hms ; ISO one-word, the default
-    1:    out= ss[4]+ss[1]+day+' '+hms  ; yyyymondd hh:mm:ss
-    2:    out=[ss[4]+ss[1]+day,    hms] ; " as two words
-    3:    out=[ss[4]+mm   +day,    hms] ; yyymmdd   hh:mm:ss as 2 words
-    4:    out=ss[1]+day+'T'+strmid(hms,0,5) ; monddThh:mm
-    5:    out= ss[2]+ss[1]+strmid(hms,0,5) ;ddmonhh:mm POSSIBLY CONFUSING 
+    0:    out= ss[4]+'-'+mm+'-'+day+'T'+hcs ; ISO one-word, the default
+    1:    out= ss[4]+ss[1]+day+' '+hcs  ; yyyymondd hh:mm:ss
+    2:    out=[ss[4]+ss[1]+day,    hcs] ; " as two words
+    3:    out=[ss[4]+mm   +day,    hcs] ; yyymmdd   hh:mm:ss as 2 words
+    4:    out=ss[1]+day+'T'+strmid(hcs,0,5) ; monddThh:mm
+    5:    out= ss[2]+ss[1]+strmid(hcs,0,5) ;ddmonhh:mm POSSIBLY CONFUSING 
+    12:   out=[ss[4]+ss[1]+day, hms] ; yyyymondd hhmmss  as 2 words
+    15:   out= ss[2]+ss[1]+hhmm  ; ddmonhhmm POSSIBLY CONFUSING 
    else:   begin ; requested MJD
     dd=SYSTIME(1)               ; seconds from 1970jan01, double precision
 ;base=julday(1,1,1970.,0,0,0) ; full JD of computer base time

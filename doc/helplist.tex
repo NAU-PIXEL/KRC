@@ -3,6 +3,7 @@
 % pdflatex  file[.tex]   TO generate .pdf
 % dvipdfm krcCor.dvi     TO Produce PDF files directly from DVI files
 
+\usepackage{underscore} % accepts  _ in text mode
 % see definc.sty for other page format settings
 %\usepackage{epsfig}
 %\usepackage{definc}  % Hughs conventions
@@ -11,7 +12,9 @@
 \parindent=0.em \parskip=1.ex %  no indent & paragraph spacing
 
 \title{KRC planetary surface temperatures: Helplist}
-\author{Hugh H. Kieffer  \ \ File=-/krc/Doc/helplist.tex Version 3.2.1 2014jun02}
+\author{Hugh H. Kieffer  \ \ File=-/krc/Doc/helplist.tex Version 3.3 2016feb14}
+%_History
+% 2016feb08  HK Update spare parameters
 
 % local definitions
 %\newcommand{\short}{full}    % dummy for format
@@ -38,7 +41,8 @@
 This document is intended to help the expert user of KRC set up an input file
 that addresses their goals and will generate the kind of output they desire. It
 is assumed that the user is familiar with the KRC journal article: H.H. Kieffer,
-Thermal model for analysis of Mars infrared mapping, J. Geophys. Res.: Planets, v.118, 451-570 (2013) [Ref. 1]
+Thermal model for analysis of Mars infrared mapping, J. Geophys. Res.: Planets,
+v.118, 451-570 (2013) [Ref. 1]
 
 The evolution of KRC code is contained in:  evolve.txt 
 
@@ -79,7 +83,8 @@ Boundary condition treatment:
 Atmospheric Radiation: KRC uses a one-layer atmosphere that is grey in both the
 solar and infra-red regions. The default atmospheric
 parameters are based on estimates of Mars' gas and aerosol properties.
-\qi  Two-stream Delta-Eddington model for insolation; direct onto sloped surface and diffuse, with possible twilight extension.
+\qi  Two-stream Delta-Eddington model for insolation; direct onto sloped surface 
+and diffuse, with possible twilight extension.
 \\ The atmosphere temperature is based on Delta-Eddington solar absorption and IR opacity
 
 Keplerian orbital motion; seasons are at uniform increments of time. Mean 
@@ -162,25 +167,25 @@ Type 1	Real parameters  (8F10.2) ================================
   Atmospheric Properties
 9   CABR    IR opacity of dust-free atmosphere of PTOTAL surface pressure
 10  AMW     Molecular weight of the atmosphere
-11  ABRPHA  unused       [Phase of ABRAMP, degrees relative to midnight] 
+11  ABRPHA  First Clausius-Clapeyron coefficient  SatPrA 
 12  PTOTAL  Global annual mean surface pressure at 0 elev., Pascal[=.01mb]
              If <=1.; no atmosphere at all.
              If KPREF=2, global average of atmosphere plus cap system.
 13  FANON   Mass-fraction of mean atmosphere that is non-condensing
 14  TATM    Atm temp for scale-height calculations
 -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   
-15  TDEEP   Fixed bottom temperature. Used if IB>=1.
-16  SPHT2   Lower material specific heat (IC>0)
+15  TDEEP   Fixed bottom temperature. Used if IIB>=1.
+16  SPHT2   Lower material specific heat (IC2>0)
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
   Dust  & Slope Properties
 17  TAUD    Mean visible opacity of dust, solar wavelengths
 18  DUSTA   Single scattering albedo of dust
 19  TAURAT  Ratio of thermal to visible opacity of dust
 20  TWILI   Twilight extension angle [deg]
-21  ARC2    Henyey-Greenstein asymmetry factor
-     moon   = eclipse start time in local Hours
-22  ARC3    unused     [coeff. for planetary heating] 
-     moon   = eclipse duration in seconds 0=no eclipse
+21  ARC2    Henyey-Greenstein asymmetry factor     ARC2/Pho
+             If no atmosphere, this is photometric function control
+             0=Lambert  -=Lommel-Seeliger  +<1=Minnaert exponent
+22  ARC3    Minimum allowable numerical convergence factor   Theory is 1.
 23  SLOPE   Ground slope, degrees dip. Only pit may slope beyond pole.
 24  SLOAZI  Slope azimuth, degrees east from north. <-360 is a pit
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -195,7 +200,7 @@ Type 1	Real parameters  (8F10.2) ================================
               Afrost = AF1 + AF2 * <cos incidence> SOLCON / DAU^2
 31  FROEXT  Frost required for unity scattering attenuation coeff. [kg/m^2]
             the greater of this and 0.01 is always used.
-32  fd32    unused
+32  fd32    Second Clausius-Clapeyron coefficient   SatPrB
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
   Thermal Solution Parameters
 33  RLAY    Layer thickness ratio
@@ -280,6 +285,8 @@ Type 1	Real parameters  (8F10.2) ================================
 96  RADC    Degrees/radian
 
 Type 2 Integer Parameters (8I10) ====================================
+ To simplify coding logic, some may be input as 0, meaning none or never,
+     but will be modifed automatically to very large, Indicate by: -->never 
 
 1   N1      # layers (including fake first layer) (lim MAXN1)
 2   N2      # 'times' per day (lim MAXN2). Must be an even number, 
@@ -291,16 +298,17 @@ Type 2 Integer Parameters (8I10) ====================================
 5   N5      # 'seasons' total for this run. If 0, then DAU and SDEC will be 
              used as entered for a single season.
 6   N24     # 'hours' per day stored, should be divisior of  N2 (lim MAXNH)
-7   IB      Bottom control: 0=insulating, 1=constant temperature 
-             2=start all layers =TDEEP & constant temperature 
-8   IC      First layer (remember that 1 is air) of changed properties. 
-             if 3 to N1-2.   > N1-2 (e.g., 999) =homogeneous
+7   IIB     Bottom control: 0=insulating, -1=constant temperature 
+             -2=start all layers =TDEEP & constant temperature 
+              += geothermal heat flow in milliwats/m^2
+8   IC2     First layer (remember that 1 is air) of changed properties. 
+             <3 will be changed to 999 =homogeneous
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 9   NRSET   # days before reset of lower layers first season;  >N3=no reset
 10  NMHA    # 'hour angles' per day for printout (no limit)
 11  NRUN    Run #; appears in some printout. Initalized as 0 and   
              auto-increment whenever disk file opened. May be modified
-12  JDISK   Season count that disk output is to begin. 0=none
+12  JDISK   Season count that disk output is to begin. <1 -->never
 13  IDOWN   Season at which to read change cards
 14  I14     Index in FD of flexible print
 15  I15      "" and >100 is code for special output to fort.77 via tun.f
@@ -320,7 +328,7 @@ Type 2 Integer Parameters (8I10) ====================================
                54=[many seasons, 5 items,lats, cases]
                55=[many seasons,9 items, cases]
                56=[packed T hour and depth, latitude,season,case]
-18  JBARE   J5 season count at end of which to set frost amount to 0. 0=never
+18  JBARE   J5 season count at end of which to set frost amount to 0. 0-->never
 19  NMOD    Spacing of season for notification. minimum of 1
 20  IDISK2  Last season to disk for which TDISK prints notice
              Note: Special routines MKRC,KRCA and TYEARP use TDISK differently
@@ -347,7 +355,7 @@ Computed I*4 values
 Type 3 Logical Parameters (10L7) ====================================
 
 1   LP1     Print program description. TPRINT(1) 
-2   LP2     Print all parameters and change cards (2)
+2   LP2     Print all parameters and change cards (2) for current case
 3   LP3     Print hourly conditions on last day (3), every lat, every season
 4   LP4     Print daily convergence summary (4)
 5   LP5     Print latitude summary (5)
@@ -361,11 +369,11 @@ Type 3 Logical Parameters (10L7) ====================================
 12  LKEY    Treat DJUL (real item 41) as the Ls of the first output
              season, set by JDISK [the 12'th integer input]
 13  LSC     Read change cards from input file at start of each season
-14  LNOTIF  spare
+14  LZONE   Use a zone depth table file to set layers.
 15  LOCAL   Use each layer for scaling depth
 16  LD16    Print hourly table to fort.76 [TLATS] 
-17  LPTAVE  Print <T>-<TSUR> at midnight for each layer [TDAY] OBSOLETE
-18  LD18    spare
+17  LD17    Print temperatures at end of last day of each season
+18  LD18    Print of parameters and layers was done after last change
 19  LD19    Output to fort.79 [TLATS] insolation and atm.rad. arrays 
 20  LONE    (Computed) Set TRUE if KRC is in the "one-point" mode
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -416,10 +424,14 @@ what you intended.
    5   New Elevation Card(s) Follow                        any
    6   New Orbital Parm Cards Follow (LPORB Must be True)  any
    7   Text becomes new Title                              any
-   8   Text becomes new disk or season-variation file name
+   8   Text becomes new  output or input file name
+         if index=3, name of far-field temperature file
+         if index=5, is name of type 5x (52) packed output file
+         if index=21, this is name of direct-access file
          if index=22, call SEASALB to read variable ALBEDO
          if index=23, call SEASTAU to read variable TAUD
          if index=24, call CLIMTAU to read Mars climate
+         if index=25, name of new zone table
    9   Complete new set of input follows                   any
   10   Text becomes new One-Point input file name
   11   This is a set of parameters for "one-point" model 
@@ -453,7 +465,6 @@ sample file \nf{THEMIS1yearDustIce.bin5} is described in section [159] of Ref 1.
 \\ COMMON /PORBCM/ \ PORB system geometry matrix.  See porbcm.inc  
 \\ COMMON /UNITS/ \ Logical units for I/O and errors.  See units.inc  \\
 
-
 Because the binding routines to IDL are intolerant of any errors, changes to
 KRCCOM, DAYCOM and LATCOM are avoided if possible. Rather, in 2004July HATCOM
 was added as a "catch-all" for any new items.
@@ -469,7 +480,10 @@ There are two triggers:
 \qi  (ADELN.GT.0.8):  $\frac{ | \Delta T |}{T} > 0.8$ 
 \qi (TSUR.GT.TBLOW): tblow $= \frac{\langle S \rangle}{\epsilon \sigma}$
 
-In either case, control goes to 340 in TDAY; iteration is terminated and several values are sent to the print file. TDISK is called to output the current season and to close the file. TPRINT is called to print out the full input set and the latest daily convergence.   
+In either case, control goes to 340 in TDAY; iteration is terminated and several
+values are sent to the print file. TDISK is called to output the current season
+and to close the file. TPRINT is called to print out the full input set and the
+latest daily convergence.
 
 \subsection{Other errors: INCOMPLETE} %---
 \vspace{-3.mm} 
@@ -551,7 +565,9 @@ The first 4 words of the prefix, and thus of the bin5 array, are:
 (4)=FLOAT(NSOUT)   ! [Available of other use]
 \end{verbatim} 
 
-Although five 5x types are defined, Type 52 contains all the information available in any of the 5x types and is recommended for all but the most expert users.  
+Although five 5x types are defined, Type 52 contains all the information
+available in any of the 5x types and is recommended for all but the most expert
+users.
 
 WARNING: Only type 52 has been extensively tested.
 
@@ -602,13 +618,13 @@ Values for latest version of KRC in this section are in square brackets. All are
 firm-coded in krccom.inp
 
 For any run, even without recorded output, there are three limits:
-\qi maximum number of layers, N1 [30]  
-\qi maximum number of times of day, N2 [1536]
+\qi maximum number of layers, N1 [50]  
+\qi maximum number of times of day, N2 [393216]
 \qi maximum number of iteration days, N3 [16]
 
 For all file output types, there are two more limits:
 \qi The number of latitudes N4 [37] 
-\qi  Number of stored hours N24 [48]. 
+\qi  Number of stored hours N24 [96]. 
 \\ All of these are checked and limited in TCARD before a run starts.
 
 MAXN5 and MAXN6 are not limits for standard KRC.
@@ -629,6 +645,70 @@ All five limits mentioned above are in effect.
 The number of cases allowed is set by the size of case one, and printed as MASE
 at the end of the first case in the print output. Cases beyond the maximum that
 can be stored will be executed, but not saved.
+
+\section{Optional input files} %_______________________
+\subsection{Text}
+\subsubsection{Zone depth table}
+Name is defined by a change card: 8 25 x 'fileName' / . May have up to 20 lines
+of comments before a ``C_END'' line. Then each row define a zone and must
+contain 4 columns:
+\qi Col 1: thickness, m
+\qi Col 2: density, kg/m$^3$ \hspace{2.0 cm} But: =-1=use DENS, -2=use DENS2
+\qi Col 3: Conductivity, SI Units. \ $\lceil$   If negative then col 4 is a pointer
+\qi Col 4: Specific heat, SI Units. \  $\lfloor$  1=upper material, 2=lower material
+\\ Must be at least 3 zones; otherwise could use two layers within input parameters. 
+\\ The thickness of the last zone is ignored; KRC will fill out to N1 geometric layers.
+\\ Must not be any trailing blank lines
+
+The file name is read in by TCARD; TDAY will call READZONE to read the
+file. Then the zones will be expanded into an appropriate number of layers. If
+the zone definitions violate the convergence stability requirements or the
+number of layers assigned, the case will be skipped with a warning.
+
+MAXN1 [firm-coded as 50 in KRCCOM] zones are allowed, any beyond this will be ignored.
+
+If the number of layers generated exceeds N1, a warning is printed and the case is skipped.
+
+\subsubsection{Seasonal albedo table}
+Name is defined by a change card: `` 8 22 x 'fileName' / `` and stored as FVALB
+in FILCOM. May have up to 20 lines of comments before a ``C_END'' line. Then
+each row must contain 2 columns.
+\qi Col 1: $L_S$ in degrees
+\qi Col 2: surface albedo
+\\ Values of Col 1 must be within 0:360 and monotonically increasing. 
+\qi Must not be any trailing blank lines
+
+Values apply to all latitudes. Active flag is KVALB
+
+The file name is read in by TCARD; TLATS will call SEASALB to initiate or to get
+a values for a specific season. SEASALB calls READTXT360 to read the
+file. SEASALB will do linear interpolation in season and handle wrap-around.
+
+Example: \nf{-/krc/tes/valb1.tab}
+
+\subsubsection{Seasonal opacity table}
+Similar to the albedo table with these exceptions:
+\qi primary routine is SEASTAU.
+\qi Name is defined by a change card:  8 23 x 'fileName' and stored as FVTAU in FILCOM
+\qi Col 2: visual dust opacity
+\qi Active flag is KVTAU=1
+
+Example: \nf{-/krc/tes/SmithTau.tab} 
+
+\subsection{Binary: Seasonal climate table}
+Name is defined by a change card: 8 25 x 'fileName' / and stored as FVTAU in
+FILCOM; name is shared with variable tau as cannot be active at once. The active
+flag is KVTAU=2.
+
+A binary file of .bin5 format. [Seasons,latitude,item] assumes Seasons and
+latitude on a rectangular, uniformly-spaced, grid. Item 1 is visual opacity.
+Item 2 is ice-cloud opacity [could be optional, but coded to be present].
+
+File is read and bi-linear interpolated by CLIMTAU; which is called by TLATS. 
+  
+Firm-coded for 72 seasons and 36 latitudes, both uniformly spaced. 
+
+Example: \nf{/work1/mars/opacity/THEMIS1yearDustIce.bin5}
 
 \section{Handy things} %_______________________
 
@@ -693,7 +773,7 @@ tlats.f:   for each time-step
 
 \subsection{ To run two material types } %--------------
 
-Set IC to the first layer to have the lower material properties ( >= 3) \\
+Set IC2 to the first layer to have the lower material properties ( >= 3) \\
 Set COND2 to the lower material conductivity \\
 Set DENS2 to the lower material density \\
 Set SPHT2 to the lower material specific heat \\
@@ -701,7 +781,7 @@ If LOCAL is False, then initial setting of all layer thicknesses is based
 upon the scale of the upper material; if it is set True, the thickness of the
 lower layers is set by their scale. \\
   TDAY no longer allows unstable (thin) layers, and will increase the thickness
-of the layer IC to satisfy the convergence safety factor FCONV if needed. 
+of the layer IC2 to satisfy the convergence safety factor FCONV if needed. 
 However, the code to check on convergence was retained.
 
 \subsection{Setting temperature-dependant properties} %--------------
@@ -819,56 +899,68 @@ best to read all of this document.
 \section{ DEBUG OPTIONS \label{debug}}
 If the first input line has a no-zero third number, then the second line is 6 
 white-separated debug-control integers: IDB1 to IDB6
+% grep -in idb *3.f     grep -in idb tseas8.f
+
 \vspace{-3.mm} 
 \begin{verbatim}
-tcard.f:75:     IF (IDB2.GE.5) WRITE(IOSP,*) 'TCARD-A',IQ
-tcard.f:123:    IF (IDB1.GE.1) PRINT *,'Before PORB0'
-tcard.f:125:    IF (IDB1.GE.1) PRINT *,'AFTER PORB0'
-tcard.f:349:    IF (IDB1.NE.0) WRITE(IOSP,*)'TCARD Exit: IRET=',IRET,NFD,ID(1) 
-tday.f:63:      IF (IDB2.GE.5) WRITE(IOSP,*) 'TDAY IQ,J4=',IQ,J4,jjo
-tday.f:544: 9   IF (IDB2.GE.6) WRITE(IOSP,*) 'TDAYx'tdisk.f:97:     IF (IDB3.GE.3) WRITE(IOSP,*)'TDISKa ',KODE,KREC,NCASE,J5,K4OUT
-tdisk.f:98:     IF (IDB3.GE.4) WRITE(IOSP,31)'TDISKa N3,N4+',N3,N4,N5,J5,MASE !<dbug
-tdisk.f:99:     IF (IDB3.GE.5) WRITE(*   ,31)'TDISKa N3,N4+',N3,N4,N5,J5,MASE !<dbug
-tdisk.f:421:        IRET=IDB3 !  +1=report many values   +2 report progress 
-tdisk.f:440:       IF (IDB3.GE.3) WRITE(IOSP,*)'TDISKc KREC=',KREC,LOPN2,IOD2,I
-tdisk.f:447:    IF (IDB3.GE.7) WRITE(IOSP,*)'TDISKx  KREC=',KREC
-
-tlats.f:56:     LQ1=IDB2.GE.3           ! once per season or latitude
-tlats.f:+       LQ2=IDB2.GE.6           ! each day
-tlats.f:+       IF (IDB2.NE.0) WRITE(IOSP,*)'TLATSa',N3,N4,J5,LATM,LQ1,LQ2
-tlats.f:422: 9      IF (IDB2.GE.3) WRITE(IOSP,*)'TLATSx',N1,N1PIB,N2,N24,J3
-tseas.f:41:     IF (IDB1.NE.0) WRITE(IOSP,*)'MSEASa',IQ,IR,J5,LSC,N5,LONE
-in tlats.f:
- 98:	IF (LQ1) THEN
-	   WRITE(75,*) 'J5+',J5,SUBS,SLOPE,SLOAZI,SKYFAC
-	   WRITE(75,*) 'MXX+',MXX,DIP,SAZ
-	   WRITE(75,*) 'PXX+',PXX
+tseas8.f:47:      IF (IDB1.NE.0) WRITE(IOSP,*)'MSEASa',IQ,IR,J5,LSC,N5,LONE
+tcard33.f:357:    IF (IDB1.NE.0) WRITE(IOSP,*)'TCARD Exit: IRET=',IRET,NFD,ID(1)
+tcard33.f:137:    IF (IDB1.GE.1) PRINT *,'Before PORB0'
+tcard33.f:139:    IF (IDB1.GE.1) PRINT *,'AFTER PORB0'
+tlats33.f:73:     IF (IDB2.NE.0) WRITE(IOSP,*)'TLATSa',N3,N4,J5,LATM,LQ1,LQ2
+tlats33.f:545: 9  IF (IDB2.GE.3) WRITE(IOSP,*)'TLATSx',N1,N1PIB,N2,N24,J3
+tlats33.f:451:    IF (IDB2.EQ.4) PRINT *,'J4,5 +',J4,J5,TEQUIL,TATMJ
+tcard33.f:89:     IF (IDB2.GE.5) WRITE(IOSP,*) 'TCARD-A',IQ
+tday33.f:63:      IF (IDB2.GE.5) WRITE(IOSP,*) 'TDAY IQ,J4=',IQ,J4,JJO
+tlats33.f:70:     LQ1=IDB2.GE.5             ! once per season or latitude
+tlats33.f:71:     LQ2=IDB2.GE.9             ! each time of day 
+tday33.f:755: 9   IF (IDB2.GE.6) WRITE(IOSP,*) 'TDAYx'
+tdisk33.f:98:     IF (IDB3.GE.3) WRITE(IOSP,*)'TDISKa ',KODE,KREC,NCASE,J5,K4OUT
+tdisk33.f:342:    IF (IDB3.GE.3) WRITE(IOSP,*)'TDISKc KREC=',KREC,LOPN2,IOD2,I
+tdisk33.f:99:     IF (IDB3.GE.4) WRITE(IOSP,31)'TDISKa N3,N4+',N3,N4,N5,J5,MASE
+tdisk33.f:100:    IF (IDB3.GE.5) WRITE(*   ,31)'TDISKa N3,N4+',N3,N4,N5,J5,MASE 
+tdisk33.f:323:    IRET=IDB3 !  +1=report many values   +2 report progress 
+tdisk33.f:350:    IF (IDB3.GE.7) WRITE(IOSP,*)'TDISKx  KREC=',KREC
+tday33.f:341:     IF (IDB4.GE.2) WRITE(*,'(a,2I4,2f8.5,f10.3,e12.5)')
+                                           KM,JJH,ARC3,CONVF,QQ,DTIM
+tday33.f:359:     IF (IDB4.GE.2) WRITE(IOSP,'(i3,2f12.3)') J,SCONVG(J),FBI(J)
+grep -in lq tlats33.f
+70:      LQ1=IDB2.GE.5             ! once per season or latitude
+71:      LQ2=IDB2.GE.9             ! each time of day
+72:      LQ3=LD19 .AND. (J5.EQ.JDISK) ! first recorded season
+73:      IF (IDB2.NE.0) WRITE(IOSP,*)'TLATSa',N3,N4,J5,LATM,LQ1,LQ2
+135:      IF (LQ1) THEN
+         WRITE(75,*) 'J5+',J5,SUBS,SDEC,DAU,SLOPE,SLOAZI
+         WRITE(75,*) 'MXX+',MXX,SKYFAC
+         WRITE(75,*) 'PXX+',PXX
+168:      IF (LQ1) PRINT *,'TLAT1 J5,TBLOW=',J5,TBLOW
 top of Lat loop
-130:    IF (LQ1) PRINT *,'TLAT1 J5,TBLOW=',J5,TBLOW
-170:	IF (LQ1) THEN
-	   WRITE(75,*)'FXX+',FXX,J4,DLAT
-	   WRITE(75,*)'RXX=',RXX  ! R should be 90 deg from F
-	   WRITE(75,*)'TXX=',TXX
-221:    IF (LQ1) print *,'TLATS: J4,SOLR...',J4,SOLR,ACOSLIM,COSIAM(1)
+208:      IF (LQ1) THEN
+         WRITE(75,*)'FXX+',FXX,J4,DLAT
+         WRITE(75,*)'RXX=',RXX  ! R should be 90 deg from F
+         WRITE(75,*)'TXX=',TXX
+262:      IF (LQ1) print *,'TLATS: J4,SOLR...',J4,SOLR,ACOSLIM,COSIAM(1)
+263:      IF (LQ3) WRITE(IOSP,701)'LQ3',NCASE,J5,J4,TATMAVE,PRES,OPACITY
  top of time loop
-299:	   IF (LQ1.AND.(MOD(JJ,24).EQ.1)) THEN
-     	      WRITE(75,*)'HXX+',HXX,JJ
-              WRITE(75,*)'ANG:',ANGLE,COSI,COS2,DIRECT,QI
-303:    IF (LQ2) WRITE(IOSP,*),'TLatc',JJ,COSI,COS3,DIRECT,DIFFUSE 
-309:    IF (LD19) WRITE(79,777) QA,QI,DIRECT,DIFFUSE,BOUNCE
+359:      IF (LQ1.AND.(MOD(JJ,24).EQ.1)) THEN
+363:      IF (LQ2) WRITE(IOSP,*),'TLatc',JJ,COSI,COS3,DIRECT,DIFFUSE 
+370:      IF (LQ3) WRITE(88,777) JJ,COSI,COLL,QA,QI,DIRECT,DIFFUSE,BOUNCE
  end time loop
-341:    IF (LQ1) then 
-           PRINT *,'AVEA ...',AVEA,AVEE,AVEI,AVEH
-           PRINT *,'CABR...',CABR,TAUD,TAUIR,FACTOR,TAUEFF
-           PRINT *,'BETA...',BETA,QS,SIGSB 
-           PRINT *,'TAEQ4,TSEQ4,TEQUIL',TAEQ4,TSEQ4,TEQUIL
-356:       IF (LQ1) PRINT *,'TSUR,TBOT',TEQUIL,TSUR,TBOT
-           IF (LQ1) PRINT *,'XCEN',XCEN 
-379:    IF (LQ1) PRINT *,'TTJ',TTJ
-453:    IF (LD16) THEN
+403:      IF (LQ1) then
+        PRINT *,'AVEA ...',AVEA,AVEE,AVEI,AVEH
+        PRINT *,'CABR...',CABR,TAUD,TAUIR,FACTOR,TAUEFF
+        PRINT *,'BETA...',BETA,QS,SIGSB 
+        PRINT *,'TAEQ4,TSEQ4,TEQUIL',TAEQ4,TSEQ4,TEQUIL
+419:      IF (LQ1) PRINT *,'TSUR,TBOT',TEQUIL,TSUR,TBOT 
+421:      IF (LQ1) PRINT *,'XCEN',XCEN 
+434:      IF (LQ1) PRINT *,'Radiation time, sec',QA 
+452:      IF (LQ1) PRINT *,'TTJ',TTJ
+
+527:    IF (LD16) THEN
 	   WRITE(76,761)SUBS,DLAT,ALB,SKRC,TAUD,PRES
            loop on hour: WRITE(76,762)QH,TSFH(I),ADGR(J),QS,TPFH(I)
 end lat loop
+ 9    IF (IDB2.GE.3) WRITE(IOSP,*)'TLATSx',N1,N1PIB,N2,N24,J3
 \end{verbatim}
 Set LD19 to write bottom-of-atmosphere downgoing fluxes to separate file
 for every time-step for every latitude, every time tlats is called.
@@ -999,7 +1091,7 @@ TSEAS call PORBIT to get Ls, the heliocentric range and the sub-solar latitude.
 \subsection{Lower boundary condition and resetting (jumping) layer temperatures.} %-----------
 At the start of a case, TLATS sets the temperature profile linear with depth
 in one of three ways:
-\qi IB=0: top and bottom at equilbrium temperature
+\qi IIB=0: top and bottom at equilbrium temperature
 \qi IIB=1: top at equilbrium temperature, the bottom at TDEEP
 \qi IIB=2: top and bottom at TDEEP
 
@@ -1017,6 +1109,16 @@ They may be made input parameters in later versions to address Mercury-like plan
 treated as zero atmosphere. The \nv{LATM} flag is used only in \np{tlats} and
 \np{tday}
 
+
+\subsection{Far-field temperatures 2016jun30}
+FFAR initially set by KRC to be 'no'; this is less than 3 characters, so
+far-field is considered turned off.
+
+An input card ' 8 3 x text': TCARD loads <text> into FFAR
+For each case, KRC then checks length of FFAR; if 3 of more, will call TFAR(1 
+to open a FAR file for read. If successful, TFAR sets LOPN3=.true. 
+\\ LOPN3 is used in TDAY as the flag that the far-field calculation is active
+(as opposed to self heating)
 
 \subsection{Seasonal variation of albedo or opacity or ``climate''}%-----------
 
@@ -1042,7 +1144,6 @@ seasons and 36 latitudes, and stores the file. Upon later calls from TLATS, it
 returns the two opacities at a requested Ls and latitude, using bi-linear
 interpolation.
 
-
 \subsection{Cap-dependent pressure} %-----------
 \vspace{-3.mm} 
 \begin{verbatim}
@@ -1058,13 +1159,49 @@ Tlats
           PCO2G = PCO2M -PCAP ! all changes are pure CO2
 
 \end{verbatim}
+\subsection{When parameter and layer tables appear} %-----------
+The flag LD18 means: a value has changed after the parameter and layer tables
+were last are printed. It is set: initially and by TCARD. It is cleared when the
+tabel are printed,
+
+ Can tell if zones are active by length of FZONE in common
+
+These two table are printed: initially, before TSEAS for each case if LP2 is
+set, or after TSEAS if an error occurs or if LD15
+
+When to print.
+\qi first case
+\qi if LP2 true
+\qi if an error and prints are out of date.
+\qii Something is out-of-date: initially, or if TCARD was called
+\qii but not for each season, LSC true.
+\\ What to print
+\qi parameters
+\qi layers
+\qi zones if active.
+
+If all the prints were at the same place, or controlled from the same place,
+that could set the ``current'' flag.
+
+As of 3.3.1, 
+parameters printed by TPRINT(2
+layers printed in TDAY(3
+zones printed by READZONE in TDAY(1 or 3, if active
+
+Because case change is done in KRC8, and errors return there with a code.
+ All the logic could be in  
 
 \section{Non-standard FORTRAN}
 
-In order to have the run-time and the purpose line (2nd line in input file) be carried into the output files, they are stored in REAL*4 variables DAYTIM(5) and TITLE(20) respectively, both of which are in  COMMON \/KRCCOM\/ which is coded in krccom.inc
+In order to have the run-time and the purpose line (2nd line in input file) be
+carried into the output files, they are stored in REAL*4 variables DAYTIM(5) and
+TITLE(20) respectively, both of which are in COMMON \/KRCCOM\/ which is coded in
+krccom.inc
 
 DAYTIM is returned by datime.f and printed in tprint.f and tdisk.f as 5A4.
-datime.f gets the time as I*4, uses the intrinsic function CTIME to convert it to CHARACTER and uses the routine B2B to manipulate the individual bytes and to load the return value.
+datime.f gets the time as I*4, uses the intrinsic function CTIME to convert it
+to CHARACTER and uses the routine B2B to manipulate the individual bytes and to
+load the return value.
 
 TITLE is read in tcard.f as 20A4 and printed in tprint.f as 20A4
 
@@ -1074,4 +1211,156 @@ TITLE is read in tcard.f as 20A4 and printed in tprint.f as 20A4
 \input{type52map}
 
 
+\section{Time-step doubling}
+In the JGR article, a convergence safety factor is defined as $ B_i / \sqrt{ 2
+  \Delta t_i \cdot \kappa_i}$ ; KRC[103]. In the code, the square of this, 
+ $B_i^2 / (2 \Delta t_i \cdot \kappa_i)$ is defined as SCONVG and printed.
+
+Proceeding from the top, if SCONVG is more than twice CONVF for a layer, then
+the time-step can be doubled for that layer.
+
+Code changed significantly when layer tables added; between 
+\qi v321: layer thickness BLAY set by FLAY (virtual) and RLAY 
+\qi and 331: BLAY set by FLAY (top physical) and RLAY
+ \vspace{-3.mm} 
+\begin{verbatim}
+v232
+        DIFFI(J)=QK(J)/QR(J)    ! layer diffusivity
+        K=1
+        IF (LOCAL) K=J
+        BLAY(J)= FLAY * RLAY**(J-1) * DSQRT(DIFFI(K)*PERSEC/PIVAL) ! thickness
+...
+
+      QQ=CONVF                  ! input safety factor
+      IF (QQ.LT.0.8) QQ=1.      ! avoid unstable binary time division
+      SAFE2=2.*QQ               ! safety convergence factor
+      IF (IC2 .LE. N1-2) THEN   ! check safety at first modified layer
+        QQ=BLAY(IC2)**2/(SAFE2*DTIM* DIFFI(IC2)) ! extra safety factor
+        IF (QQ .LT. 1.) THEN    ! must increase layer thickness
+          DO J=IC2,N1           ! set layer  IC just stable for local diffusivity
+            BLAY(J)= RLAY**(J-IC2) * SQRT(SAFE2*DTIM *DIFFI(J) )
+          ENDDO
+          KM=0                  ! allow no time doubling above this layer
+        ELSE                    ! allow upper layer changes
+          KM=LOG(QQ)/LOG(2.)    ! max # of doublings before  IC
+        ENDIF
+      ENDIF
+      IF (IDB2.GE.2) WRITE(*,*)'SAFE2,actual+',SAFE2,QQ,KM1,KM,DTIM
+C
+      DO J=2,N1                 ! layer loop
+..
+        SCONVG(J)=BLAY(J)**2/(2.*DTIMI* DIFFI(J)) ! Safety factor
+        IF (J.EQ.IC2) KM=KM1    ! remove constraint on upper layers
+        IF (K.LT.KM .AND. J.GT.2 .AND. MOD(KKK,2).EQ.0 
+     &       .AND. SCONVG(J).GT. SAFE2) THEN ! increase time step
+          DTIMI=2.*DTIMI
+          SCONVG(J)=SCONVG(J)/2.
+
+v321  BLAY(J)= FLAY * RLAY**(J-2)...
+ 
+v331==v342: 
+L296+
+          DIFFI(J)=KTT(J)/(DENN(J)*CTT(J)) ! layer diffusivity
+          K=1
+          IF (LOCAL) K=J
+          BLAY(J)= FLAY * RLAY**(J-2) * DSQRT(DIFFI(K)*PERSEC/PIVAL) ! thickness
+L366+
+if using a lower material, and its first layer not stable, make it just stable by factor CONVF
+        IF (QQ .LT. ARC3) THEN    ! must increase layer thickness
+          DO J=JJH,N1           ! set layer JJH just stable for local diffusivity
+            BLAY(J)= RLAY**(J-JJH) * DSQRT(CONVF*2.*DTIM *DIFFI(J))
+L376+
+      SCONVG(1)=0.
+      DO J=2,N1                 ! LAYER LOOP 1: compute safety factor
+        XCEN(J)= XCEN(J-1)+ (BLAY(J)+BLAY(J-1))/2. ! center depth
+        SCONVG(J)=BLAY(J)**2/(2.*DTIM* DIFFI(J)) ! Safety factor
+L385+  
+Loop 2    Find lowest safety factor at each layer or below; temporary use FBI
+      DO J=N1-1,2,-1            ! LAYER LOOP 2: minimum here or below
+        IF (SCONVG(J).LT.QQ) then 
+          QQ= SCONVG(J)
+          K=J
+        ENDIF
+        FBI(J) = QQ !  minimum safety factor at this layer or lower
+   if lowest  lt ARC3, quit
+L404+
+      DO J=2,N1                 ! LAYER LOOP 3: Assign time doubling
+        IF (K.LT.KM .AND. J.GT.3 .AND. MOD(KKK,2).EQ.0 
+     &    .AND. FBI(J).GT. QA*4.*CONVF) THEN ! double time step for this layer
+          DTIMI=2.*DTIMI
+          K=K+1                 ! have new binary interval
+          N1K(K)=J-1            ! bottom layer of prior interval
+          KKK=KKK/2          ! number of time steps for this and deeper layers
+          QA=QA*4.              ! 4^K   update forecast factor
+        ENDIF
+...
+        SCONVG(J)=SCONVG(J)/QA  ! safety after time doubling
+
+Then: replace factor of 4. on QA above with 2.
+
+\end{verbatim}
+In English: IF:  more doublings allowed 
+\qi AND at least 2 physical layers already 
+\qi AND number of time steps now is even
+\qi AND new time-step would be acceptably stable for all lower layers
+\\ then, do doubling and update forecast factor
+
+For same layer thicknesses, after first time doubling, 321 and 341 converg. factor disagree!
+
+
+
+
 \end{document} %===============================================================
+5 latitude 40 seas with  mean Mars zonal elevations. Effect of atmos.               
+KRCv3.2.1    RUN-CASE  1- 1   2016 Jul  1 06:06:38  PAGE=  3
+ Conductiv.= 3.864E-02  Dens*Cp= 1.035E+06  Diffu.= 3.733E-08  Scale= 3.248E-02
+         ___THICKNESS____    __CENTER_DEPTH__    Total  Converg.
+ LAYER    scale     meter     scale     meter   kg/m^2  factor         factor
+                                                         SCONVG(I) SCONVG(I)
+    1    0.1800    0.0058   -0.0900   -0.0029     0.000   0.000   0.000
+    2    0.2160    0.0070    0.1080    0.0035    11.224   2.851   2.851
+    3    0.2592    0.0084    0.3456    0.0112    24.693   4.106   4.106
+    4    0.3110    0.0101    0.6307    0.0205    40.856   5.913   2.956 2
+    5    0.3732    0.0121    0.9729    0.0316    60.251   4.257   2.129 2
+    6    0.4479    0.0145    1.3834    0.0449    83.525   6.130   3.065 2
+    7    0.5375    0.0175    1.8761    0.0609   111.455   4.414   2.207 2
+    8    0.6450    0.0209    2.4673    0.0801   144.970   6.356   3.178 2
+    9    0.7740    0.0251    3.1768    0.1032   185.188   4.576   2.288 2
+   10    0.9288    0.0302    4.0282    0.1308   233.449   6.590   3.295 2
+   11    1.1145    0.0362    5.0498    0.1640   291.363   4.745   2.372 2
+   12    1.3374    0.0434    6.2758    0.2038   360.860   6.832   3.416 2
+   13    1.6049    0.0521    7.7469    0.2516   444.256   4.919   2.460 2
+   14    1.9259    0.0625    9.5123    0.3089   544.332   7.084   3.542 2
+   15    2.3111    0.0751   11.6308    0.3777   664.422   5.100   2.550 2
+   16    2.7733    0.0901   14.1730    0.4603   808.531   7.344   3.672 2
+   17    3.3279    0.1081   17.2235    0.5594   981.461   5.288   5.288
+   18    3.9935    0.1297   20.8842    0.6783  1188.977   7.615   7.615
+   19    4.7922    0.1556   25.2771    0.8209  1437.997  10.965  10.965
+   20    5.7506    0.1868   30.5485    0.9921  1736.820  15.790  15.790
+0Bottom layers for time doubling:      4    6    8   10   12   14   16   20
+
+ 2016 Jul  2 06:32:21 
+         ___THICKNESS____    __CENTER_DEPTH__  Conductiv. Density Sp.Heat   Total Converg.
+ LAYER  D_scale     meter   D_scale     meter      W/m-K   kg/m^3   J/kg   kg/m^2  factor
+    1    0.1800    0.0058   -0.0900   -0.0029 0.3864E-01  1600.00  647.00     0.000   0.000
+    2    0.2160    0.0070    0.1080    0.0035 0.3864E-01  1600.00  647.00    11.224   2.851
+    3    0.2592    0.0084    0.3456    0.0112 0.3864E-01  1600.00  647.00    24.693   4.106
+    4    0.3110    0.0101    0.6307    0.0205 0.3864E-01  1600.00  647.00    40.856   2.956
+    5    0.3732    0.0121    0.9729    0.0316 0.3864E-01  1600.00  647.00    60.251   2.129
+    6    0.4479    0.0145    1.3834    0.0449 0.3864E-01  1600.00  647.00    83.525   3.065
+    7    0.5375    0.0175    1.8761    0.0609 0.3864E-01  1600.00  647.00   111.455   2.207
+    8    0.6450    0.0209    2.4673    0.0801 0.3864E-01  1600.00  647.00   144.970   3.178
+    9    0.7740    0.0251    3.1768    0.1032 0.3864E-01  1600.00  647.00   185.188   2.288
+   10    0.9288    0.0302    4.0282    0.1308 0.3864E-01  1600.00  647.00   233.449   3.295
+   11    1.1145    0.0362    5.0498    0.1640 0.3864E-01  1600.00  647.00   291.363   2.372
+   12    1.3374    0.0434    6.2758    0.2038 0.3864E-01  1600.00  647.00   360.860   3.416
+   13    1.6049    0.0521    7.7469    0.2516 0.3864E-01  1600.00  647.00   444.256   2.460
+   14    1.9259    0.0625    9.5123    0.3089 0.3864E-01  1600.00  647.00   544.332   3.542
+   15    2.3111    0.0751   11.6308    0.3777 0.3864E-01  1600.00  647.00   664.422   2.550
+   16    2.7733    0.0901   14.1730    0.4603 0.3864E-01  1600.00  647.00   808.531   3.672
+   17    3.3279    0.1081   17.2235    0.5594 0.3864E-01  1600.00  647.00   981.461   5.288
+   18    3.9935    0.1297   20.8842    0.6783 0.3864E-01  1600.00  647.00  1188.977   7.615
+   19    4.7922    0.1556   25.2771    0.8209 0.3864E-01  1600.00  647.00  1437.997  10.965
+   20    5.7506    0.1868   30.5485    0.9921 0.3864E-01  1600.00  647.00  1736.820  15.790
+ Bottom                     33.4238    1.0855
+ Lower layer of time doubling:   3  4  6  8 10 12 14 20    7 doublings, the limit for N2=384

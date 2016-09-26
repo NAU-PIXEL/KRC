@@ -1,25 +1,30 @@
 function readtxtcol, name, sp=sp, nskip=nskip,ncol=ncol,mrow=mrow,fill=fill $
-,quiet=quiet,top=top
+,quiet=quiet,cend=cend,ilun=ilun, top=top
 ;_Titl READTXTCOL Reads a columnar file of ASCII [space,comma,tab]-delimited text
-; name	in.  	File name
-; sp	In.	String for separater type. Valid are W=white, C=comma, T=tab
+; name	in.  File name
+; sp	In.  String for separater type. Valid are W=white, C=comma, T=tab
 ;		  D=comma, process Double quotes first, then 
 ;                 replace any interior commas with colons
 ;		  0[zero] = no separation done     :=:
 ;		  Default is white space
-; nskip	in_	Number of comment lines to skip; -=search for C_END. Default=0
-; ncol	in_	Number of columns to read. Default = all sep. by  delimiter
-;     If sp='0' ncol is number of characters required to retain line
-; mrow	in_	Max number of lines to read (after skip). Default=1000
+; nskip	in_  Number of comment lines to skip; -=search for C_END. Default=0
+; ncol	in_  Number of columns to read. Default = all sep. by  delimiter
+;              If sp='0' ncol is number of characters required to retain line
+; mrow	in_  Max number of lines to read (after skip). Default=1000
 ;               Negative value will be treated as average number of bytes/line
 ;                and program will compute lines needed for the file.
-; fill	in_	String: If set, will fill missing columns with this value with 
+; fill	in_  String: If set, will fill missing columns with this value with 
 ;                 leading blank. Else too few cols stops. 
 ;                 Default is to skip completely blank lines
-; quiet	in_	flag. If set, will not report rows with too few columns
-; top	out_	Strarr(*) each of the initial lines "skipped"
+; quiet	in_  flag. If set, will not report rows with too few columns
+; cend  in_  string  Pattern for the last line of comments. Default = C_END
+; ilun both  integer, Logical unit to continue reading. Out is the LUN used
+;             If in =0 (default) or negative, will open, read and close     
+;             If in is 1:99, will get new LUN, open file, read and not close. 
+;             If in is ge 100, assumes file is open. Will read and not close
+; top	out_ Strarr(*) each of the initial lines "skipped"
 ;                If nskip is negative, At most 50 lines will be retained
-; func	out.	StrArr(row,col). Scalar -1 if IO error before any good lines.
+; func	out. StrArr(row,col). Scalar -1 if IO error before any good lines.
 ; !dbug: ge 8= print nskip and all buffers.  ge 9= stop refore return
 ;_Desc
 ; Data may be proceeded by comment lines.
@@ -43,16 +48,22 @@ mtop=50                       ; maximum top lines saved when nskip negative
 ; 2009dec17 HK Set min non-blank line length to  nreq   rather than ncol 
 ; 2010jan19 HK Change blank output to value to blank + value of fill
 ; 2012mar03 HK For sp='0', negative ncol will retain blank lines
-; 2013jul23 HK Allow retention of "top" lines even if nskip is negative 
-;_End
+; 2013jul23 HK Allow retention of "top" lines even if nskip is negative
+; 2016mar08 HK Add the keywords cend and ilun
+;_End                 .comp readtxtcol
 
-openr, ilun, name,error=operr,/get_lun	; get a free logical unit & open file
-if operr ne 0 then begin
-	print,'READTXTCOL open ERROR # and file=',operr $
-		,' ',name,' ',strmessage(operr)
-	return,operr < 0 ; lun has not been assigned, don't need to free it
+if not keyword_set(ilun) then ilun=0
+if not keyword_set(cend) then cend='C_END'
+jlun=ilun 
+if jlun lt 100 then begin 
+  openr, jlun, name,error=operr,/get_lun ; get a free logical unit & open file
+  if operr ne 0 then begin
+    print,'READTXTCOL open ERROR # and file=',operr $
+          ,' ',name,' ',strmessage(operr)
+    return,operr < 0          ; lun has not been assigned, don't need to free it
+  endif
+  ilun=jlun                     ; output the LUN assigned
 endif
-
 nr = -1L			; index of successful rows
 ON_IOERROR, BAD
 
@@ -60,7 +71,7 @@ if not keyword_set(nskip) then nskip=0
 if not keyword_set(mrow) then mrow=1000
 maxrow=mrow
 if mrow lt 0 then begin 
-    stat=fstat(ilun)            ; file information
+    stat=fstat(jlun)            ; file information
     maxrow=round(stat.size/(-mrow))   ; estimated numnber of rows in file
 endif
 
@@ -84,16 +95,16 @@ nm1=long(maxrow-1)		; last allowed read
 buf = 'dum'
 if !dbug ge 8 then help,nskip
 if nskip gt 0 then for i=0,nskip-1 do begin 
-    readf, format='(A)',ilun,buf
+    readf, format='(A)',jlun,buf
     if savetop then top[i]=buf
 endfor
 kskip=0
 if nskip lt 0 then repeat begin 
-    readf,format='(A)',ilun,buf 
+    readf,format='(A)',jlun,buf 
     if savetop and (kskip lt mtop) then top[kskip]=buf ; save up to mtop lines
     kskip=kskip+1
-    i=strpos(buf,'C_END')
-endrep until i eq 0 or i eq 1 ; Found C_END at start of line
+    i=strpos(buf,cend)
+endrep until i eq 0 or i eq 1 ; Found C_END (or input cend) at start of line
 if savetop and nskip lt 1 then top=top[0:kskip-1]
 
 if !dbug ge 8 then print,buf
@@ -110,11 +121,11 @@ endif else begin        ; some separation
     if findcol then ncol=1 else xx=strarr(maxrow,ncol) ; create output array
 endelse
 
-point_lun,-ilun,pos             ; remember the position after header
+point_lun,-jlun,pos             ; remember the position after header
 
 ;_________________________________________________________________
-while not (eof(ilun) or (nr ge nm1)) do begin ; each line of table
-    readf,ilun, buf             ; read additional lines
+while not (eof(jlun) or (nr ge nm1)) do begin ; each line of table
+    readf,jlun, buf             ; read additional lines
     if !dbug ge 8 then print,buf
     if kode eq 0 then buf=strtrim(strcompress(buf),2) ; reduce each white space to one blank
     if strlen(buf) lt nreq then goto,empty ; skip [nearly] blank lines
@@ -178,7 +189,7 @@ if nr lt maxrow-1 then xx=xx[0:nr,*] ; extract only the part defined
 
 finish:
 ;; stop
-free_lun, ilun                  ; will close file first
+if ilun lt 7 then free_lun, jlun                  ; will close file first
 if !dbug ge 9 then stop
 return,xx
 

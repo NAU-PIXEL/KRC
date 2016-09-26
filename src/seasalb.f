@@ -5,8 +5,8 @@ C_Titl  SEASALB:  seasonally variable soil albedo
       PARAMETER (MROW=362)      ! max number of table entries
       PARAMETER (MSKIP=10)      ! max number of lines to skip through c_end
 C_Vars
-      INCLUDE 'units.inc'
-      INCLUDE 'filcom.inc'
+      INCLUDE 'unic8m.f'
+      INCLUDE 'filc8m.f'
 
 C_Args
       REAL LSUB               !in. season; l-sub-s in degrees.
@@ -18,6 +18,7 @@ C output will be negative if error occured
 C_Hist  Hugh_Kieffer  2006sep09
 C 2011jul31 HK  Use  FINTERP rather than  RNDEX (which was failing) and RNTERP
 C 2012feb26 HK Remove unused variables
+C 2016may12 HK Update include names
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
 
 C local variables
@@ -34,7 +35,8 @@ C local variables
         KK=READTXT360(FVALB,IOD3,XXX,YYY)
 D        WRITE (*,*) 'SEASALB FVALB=', FVALB
 D        WRITE (*,*) 'SEASALB kk=', KK
-D       DO I=1,KK
+D       DO I=1,KK312
+
 D          WRITE (*,*) I,XXX(I),YYY(I)
 D        ENDDO
         OUT=KK

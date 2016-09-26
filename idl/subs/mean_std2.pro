@@ -1,4 +1,4 @@
-function mean_std2, xin,one=one, wei=wei,snan=snan, STD=std
+function mean_std2, xin,one=one, wei=wei,snan=snan, STD=std,double=double
 ;_Titl  MEAN_STD2  Mean and standard deviation of 2-D array
 ; xin	in.	Array; statistics across 2nd element
 ; one	in_	   if set, do statistics along first dimension
@@ -19,12 +19,13 @@ function mean_std2, xin,one=one, wei=wei,snan=snan, STD=std
 ; MEAN_STD2 presumes input array is 2-D, and now accepts weights.
 ; 2001jan05  HHK   will treat NAN's as missing data by calls to MEAN_STD
 ; 2001feb05 HHK  Add option to output arr[*,2]
-; 2011novo8 HK  Add  snan  keyword.
+; 2011novo8 HK  Add  snan  keyword. 
+; 2014nov2 HK Add  double  keyword Ensure use of double if input is double 
 ;_End
 
-ssx=size(xin) 			; get array size
+ssx=size(xin) & type=ssx[ssx[0]+1]			; get array size
 if ssx[0] ne 2 then message,'Requires 2-D array [see MEAN_STD3]' ; formal error
-
+db=type eq 5 or type eq 9 or keyword_set(double) ; do totals in double precision
 if keyword_set(one) then begin
     kone=1B                     ; treat 2-nd dimension as vectors of data
     k=ssx[2]                    ; number of vectors to process
@@ -34,12 +35,12 @@ endif else begin
     k=ssx[1]  & l=ssx[2]   
 endelse
 
-if ssx[3] le 4 then mean=fltarr(k) else mean=dblarr(k); array to hold results
+if db then mean=dblarr(k) else mean=fltarr(k); array to hold results
 
 both=0B ; if true, then put both mean and std into output function
 if keyword_set(std) or arg_present(std) then begin ; must do Std Dev
     lstd=-1B                    ; set true
-    sdev=fltarr(k)              ; to hold Standard Deviation
+    if db then sdev=dblarr(k) else sdev=fltarr(k) ; to hold Standard Deviation
     if not arg_present(std) then both=1B
 endif else lstd=0B              ; set false
 unan=keyword_set(snan)          ; use NAN for StdDev of 1 point
@@ -64,10 +65,10 @@ for i=0L,k-1 do begin
         if kone then ww=wei[*,i] else ww=reform(wei[i,*])
     endif
     if lstd then begin
-        mean[i]=MEAN_STD(xx,wei=ww,std=st, /nan) ; look for NAN's
+        mean[i]=MEAN_STD(xx,wei=ww,std=st, /nan,double=double) ; look for NAN's
         if unan and st lt 0. then st=!values.F_NAN
         sdev[i]=st               ; transfer standard deviation
-    endif else mean[i]=MEAN_STD(xx,wei=ww, /nan)
+    endif else mean[i]=MEAN_STD(xx,wei=ww, /nan,double=double)
 endfor
 if lstd and not both then std=sdev; transfer Standard Deviation
 if both then return,reform([mean,sdev],k,2) else return,mean

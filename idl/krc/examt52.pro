@@ -10,10 +10,12 @@
 ;  ST0 STRWORD1  VEC2CODE
 ; Addition calls via kon99:  COLOR24BIT  DELAST0  GRAPH  MAKE99  
 ;    SETCOLOR  SETWIND  SUBTITLE  TOOTHB
-;_Hist 2012mar03 Hugh Kieffer Look at astroid KRC run output
-; 2013jul26 COmpare V1 and V2 outputs
+;_Hist 2012mar03 Hugh Kieffer Look at asteroid KRC run output
+; 2013jul26 HK COmpare V1 and V2 outputs
+; 2015sep14 HK Make sequences for testing Pluto atm runs.
+
  common SETCOLOR_COM2, kcc,linecol,kkc,kkl,kkp,fixkkc,fixkkl,fixkkp,kink,scex1
-;_End
+;_End                   .rnew examt52
 
 ;   .rnew examt52
 
@@ -27,6 +29,7 @@ parf=['/work1/krc/','RQ36p','.t52','testib','---']
 parf=['/work1/krc/mars/','VH1','.t52','testib','---']
 parf=['/work1/krc/mars/','masterA','.t52','master222','---'] ; V1, V2
 parf=['/work1/krc/mars/','InsERD1','.t52','---','---'] ; InSight ERD run
+parf=['/work1/krc/Tim/','PlutoN2','.t52','---','---'] ; Pluto run
 
 
 ;if dir eq '/u/hkieffer/' then parf[0]='/work/hkieffer/krc/test/' ; Mac
@@ -51,6 +54,8 @@ labg=['@722 K min',' " Xmax',' " Ymin',' " Ymax'  $
 Parg=[0., 24., -40., 25.,   0.7, 0.3, -0.03, 0.06,   0.15, 0.32, -0.03, 0.08]
 
 lab52=['Hour','item','Lat.','Season','Case'] ; dimensions of type52
+
+stid=strtrim(indgen(50),2) ; 0-based decimal
 
 kist=[101,103,109,115,117,119,207]; KRCCOM items in n*100+i format
 
@@ -119,8 +124,9 @@ end
 116: begin & parf[1]='testic' ; set to shallow ice
 parf[3]='testid' & parr[13]=28. & end
 
+117: kons=[20,21,22,29,251,252,570,571,572] ; PLuto tests
 
-117: clrr=replicate(kcc[9],6 ) ; set all colors to foreground
+; 117: clrr=replicate(kcc[9],6 ) ; set all colors to foreground
 ;..................................................................
 
 123: begin & lkon=1b & kkon=-1  ;- start auto-script 
@@ -620,6 +626,29 @@ end
 
 563: begin  & tsn=reform(ttt[(nhour+2)/2,0,*,*,0]) ; with atm
 CLOT,transpose(tsn),slat,locc=[.5,.95,-.02,.07],titl=['season','ts at midday','@56 '+ifile]
+end
+
+;<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+;<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+
+570: thslci=transpose(ttt,[0,3,2,4,1])
+
+571: begin  ; CLOT one ttt:  hour*seas for each Lat.
+i=0 & j=0
+read,i,j,prompt='Input ttt indexes for case and item > '
+i=(i>0)<(ncase-1) & j=(j>0)<4
+tx=reform(thslci[*,*,*,i,j])  ; [hour, season, latitude]
+CLOT,reform(tx,nhour*nseas,nlat),slat,locc=1 $
+,titl=['Hour * season',tit52[j],cased[i]]
+if nseas lt 49 then PLOTSECT,stid[1:nseas],.1
+end
+
+572: begin  ; CLOT one ggg:  seas for each Lat.
+i=0 & j=0
+read,i,j,prompt='Input ggg indexes for case and item > '
+i=(i>0)<(ncase-1) & j=(j>0)<5
+tx=reform(ggg[j,*,*,i]); [season, latitude]
+CLOT,transpose(tx),slat,locc=1,titl=['season',itemg[j],cased[i]]
 end
 
 61: begin & k1=nseas/2          ; look at change in last year file1

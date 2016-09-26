@@ -15,9 +15,8 @@ Pro kon91, ptitl,prior,hold,kon,kons,kitel, maxk=maxk,get=get
 ; Easiest to leave section before  ask: calling to setcolor in main routine
 ; because of surrogates for elements of kcc[]
 ;_Usage  The following actions are reserved here:
-; -3 -1 -9 100,1,2 121 122 340 344 8 80 800,1,2,3,4,8 80 81 850:860 880:899  
-; 9 99 990 991 992 994 995
-;
+; -8 -3 -1 100:3 121:2 340 344 8 80 801:4 808:810 81 82 850:860 87 88
+;    9 99 990:5 
 ;	992 To generate a line in storage for each kon.
 ;		Then 994 produces a full listing of all
 ;	991 To expand only the current kon
@@ -26,15 +25,18 @@ Pro kon91, ptitl,prior,hold,kon,kons,kitel, maxk=maxk,get=get
 ; setcolor calls COLOR24BIT  GETP  GETPAN  TOOTHB  st0 
 ; st0 calls DELAST0
 ;_Hist 2007aug14 Hugh Kieffer Adopt from KON99 by eliminating all
-;image function and all options
+;image function and call options
 ; 2007sep06 HK Activate calls to setcolor
 ; 2011jul13:15 HK Add .png output. Direct-code for .pjg output instead of TV2JPG
 ;          Direct-code for .eps output instead of TV2LP 
 ; 2012jan24 HK Incorporate call to SETWIND
 ; 2012mar29 HK Add action 808   
+; 2012may14 HK Add action 810   
 ;_Liens If caller uses   common SETCOLOR_COM2  he will have to detect kon in
 ;  range 850:882 to refresh any variable dependant upon that common.
-;_End
+;_End            .comp kon91
+
+common SETCOLOR_COM2, kcc,linecol,kkc,kkl,kkp,fixkkc,fixkkl,fixkkp,kink,scex1
 
 kite=ptitl+'@'+strtrim(kon,2)   ; follows date in subtitle      fils[2]+' '+
 if kon ge 850 and kon le 899 then begin ; set to set of high-contrast colors
@@ -43,7 +45,7 @@ if kon ge 850 and kon le 899 then begin ; set to set of high-contrast colors
 end 
 case kon of ;...................................................................
 
--9: stop                     ;- Stop in KON91 --------
+-8: stop                     ;- Stop in KON91 --------
 
 -3: i=1                         ;-  -------- KON91  null
 
@@ -60,7 +62,6 @@ case kon of ;...................................................................
 340: loadct,0                   ; Load gray scale
 
 344: lll=COLOR24BIT(r,lc=-2,/put) ; Load my color table
-
 
 ; gcmplot @79 generates a color test pattern
 
@@ -102,6 +103,10 @@ print,'Created 1-bit PS file >> epstopdf idlr.eps      mv idlr.pdf' & end
 809: Begin  ;- Message to move file, and wait.
 Print,'Move the file   Then any key to GO' & qi=get_kbrd(1) & end
 
+810: begin & kkc=scex1 ; Set colors to instrument bands (scex1)
+kink=scex1 & i=n_elements(scex1) & kcc[2]=i 
+kkl=replicate(0,i)  & kcc[3]=i & end  ; REQ that scex1 loaded
+
 80: CEPS0,-1                    ; Set figure type
 81: CEPS1                       ;+ Before plot
 82: CEPS2,cepsid                ;+ After plot
@@ -114,14 +119,15 @@ Print,'Move the file   Then any key to GO' & qi=get_kbrd(1) & end
 87: GRAPH,7,hard                ;- Close plot device, no spawn of plot
 9:  GRAPH,9,hard                ;- End a plot, save and print the file
 
-99: begin                       ; Action guide. Customise for each routine
-MAKE99,ptitl,prior,hold,maxk=maxk,get=get; make guide to calling program
-print,'-9=StopInKON91  -3=null  -1=pause    0=Stop    888=setcolorGuide'
+99: MAKE99,ptitl,prior,hold,maxk=maxk,get=get; make guide to calling program
+
+990: begin ; KON91 action guide
+print,'-8=StopInKON91  -3=null  -1=pause    0=Stop    888=setcolorGuide'
 print,'100=wset,0  101=erase  102=wset,2  103=window for output   899=wind'
 print,'121=kons=-3  122=Edit Kons  801/2/3/4 output to eps/png/jpg/-eps'
-print,'808=actionlabel at TopLeft   809=Warning to mv output file' 
+print,'340/4=load grey/myColor 808=actionlabel 809=Warning: mv  810=BandClr'
 print,'80/81/82=type/start/endFig  8=newPS 87=close 88=subtitle 9=plotPS'
-print,'MAKE99: 991=Expand current kons   992/995=1-line each   994=expand all'
+print,'MAKE99:  991=Expand kons  992/995=1-line each  994=expand all'
 print,'123: Do kons=',ST0(kons)
 end  
 
@@ -130,7 +136,9 @@ end
 992: MAKE99,ptitl,prior,hold,all=23  ,maxk=maxk,get=get ; Full 1 line each
 994: MAKE99,ptitl,prior,hold,all=8   ,maxk=maxk,get=get ; Expand all Kons
 995: MAKE99,ptitl,prior,hold,all=23  ,maxk=maxk,get=get,comf='./subs/kon91.pro'; And kon91
-  else: print,'KON91: Invalid entry'
+
+else: print,'KON91: Invalid entry'
+ 
 endcase
 
 return
