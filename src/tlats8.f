@@ -47,6 +47,10 @@ C 2016jul04:31 HK Add Keihm and Vasavada photometric functions. Set by ARC2
 C    0=Lambert  -0.x=Minnaert  -1=Lommell-Seeliger  +x=Keihm/Vasavada 
 C  Note: code as if could have photometric function with an atmosphere, 
 C  but version 3 has no free parameters to undo the overload of ARC2 
+C 2016sep09 HK Do not print T-equilb unless IDB2.ge.5
+C 2016oct02 HK Correct effective azimuth of tilted surfaces by reversing 
+C   diurnal Sun motion. Also, revise method of getting tilt surface normal.
+C   Remove ancient comments and code using trigonometry to get incidence angles
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
 C
       REAL*8 DERI(2,2)            ! diffuse irradiances from Delta-Eddington
@@ -60,8 +64,7 @@ C
      &,SD,SL,SOLR,SS,TAEQ4,TATMAVE,TATMSIG
      &,TAUICE,TAUVIS,TBOT,TOPUP,TSEQ4,TSUR,TWILFAC,TWILIM
       REAL*8 QI,QA,QH,QHS,QS      ! temporary use
-      REAL*8 FXX(3),HXX(3),MXX(3),PXX(3),RXX(3),TXX(3) ! cartesian vectors
-      REAL*8 YUNIT(3) / 0D0,1.D0,0.D0/  ! unit vector along  Y axis
+      REAL*8 FXX(3),HXX(3),MXX(3),PXX(3),TXX(3) ! Cartesian vectors
       REAL*8 TEQQ(MAXN4)        ! equilibrium temperature at first season
 C -------- variables related to albedo
 
@@ -123,10 +126,6 @@ C============ factors that do not depend upon season ===================
       RANG=2.0D0*PIVAL/N2      ! time step expressed in radians
       F23=2.D0/3.D0
       JHOT=INT(FLOAT(N24)*13.5D0/24.D0) ! index of warmest time of day
-C
-C for sloping terrain
-C;      SLONOR = SLOPE*COS(SLOAZI/RADC) ! north component of dip, degrees
-C;      RADEAST = (SLOPE/RADC)*SIN(SLOAZI/RADC) ! east " " , radians
       IF (SLOAZI .GT. -360.D0) THEN ! slope, if any, is regional
          SKYFAC = (1.D0+ DCOS(SLOPE/RADC))/2.D0 ! effective isotropic radiation.
          COSZLIM=0.            ! zenith angle default limit is 90 degrees
@@ -163,19 +162,17 @@ C precision conversion
       SUBS4=SUBS
 C     
       SOLR=SOLCON/(DAU*DAU)     ! solar flux at this heliocentric range
-      RSDEC=SDEC/RADC           ! current solar declination
+      RSDEC=SDEC/RADC           ! current solar declination in radians
       SD=DSIN(RSDEC)
       CD=DCOS(RSDEC)
-      MXX(1)=CD                 ! Sun at midnight
-      MXX(2)=0.
-      MXX(3)=SD
+      MXX(1)=CD    ! Sun at midnight in system with X on equator toward midnight
+      MXX(2)=0.    ! Y in equitorial plane, right-hand
+      MXX(3)=SD    ! and Z toward planet North pole
       DIP=SLOPE/RADC            ! dip in radians
       SAZ=SLOAZI/RADC           ! azimuth of dip, east from north
-      CALL ROTV (YUNIT,3,-SAZ,  PXX) ! PXX is temp. axis in equator
       IF (LQ1) THEN
          WRITE(75,*) 'J5+',J5,SUBS,SDEC,DAU,SLOPE,SLOAZI
          WRITE(75,*) 'MXX+',MXX,SKYFAC,FAC5X
-         WRITE(75,*) 'PXX+',PXX
       ENDIF
 C       set blowup test to a factor larger than perpendicular black surface
       TBLOW = 2.0D0*(SOLR / (EMIS*SIGSB))**0.25D0
@@ -262,7 +259,6 @@ C
       SS=SL*SD          
       CC=DMAX1(1.D-10,CL*CD)
       COSIAM(1)= DMAX1 (1.D-6,AVEDAY(SDEC,DLAT)) ! get average cosine incidence
-C;      COSIAM(2)= SS+CC        !  cos ( incidence angle at noon )
       COSAM=-SS/CC            !  find length of day and daylight intervals
       IF (DABS(COSAM).LT.1.) THEN
          DAM=RADC*ACOS(COSAM)      ! occurs in COMMON. Used only in tprint.f
@@ -273,19 +269,19 @@ C;         COSIAM(2) = 1.E-6    ! sun never rises
          DAM=180.D0
       ENDIF
 C Vector algebra version 2012may31  !VAv
-      
-! fxx=[-cos(rlat),0.,sin(rlat)]  ; level normal at midnight
-      FXX(1)=-CL
-      FXX(2)=0.
-      FXX(3)=SL
-!    rxx=ROTV(pxx,2,-!dtor*(90.-xlat)) ; axis around which to rotate dip
-      QA=PIVAL/2.-RLAT ! colat in radians
-      CALL ROTV (PXX,2,-QA,  RXX)  ! axis around which to rotate dip
-!    txx= VROTV(fxx,rxx,!dtor*tilt[0]) 
-      CALL VROTV(FXX,RXX,DIP,  TXX) ! tilted surface normal
+      FXX(1)=-CL                ! unit vector in Day system toward  the 
+      FXX(2)=0.                 ! regional zenith  at noon
+      FXX(3)=SL                 ! 
+      IF (SLOPE .EQ. 0.) THEN
+        CALL VEQUAL(FXX, TXX)    ! tilt normal is same as flat normal
+      ELSE    ! 2016oct02 Two rotations to create
+        CALL ROTV (FXX,2,DIP, PXX) ! rotate flat surface normal North by the dip
+        CALL VROTV(PXX,FXX,-SAZ, TXX) ! rotate it E around F by the slope azimuth
+      ENDIF
+
       IF (LQ1) THEN
          WRITE(75,*)'FXX+',FXX,J4,DLAT
-         WRITE(75,*)'RXX=',RXX  ! R should be 90 deg from F
+         WRITE(75,*)'PXX=',PXX 
          WRITE(75,*)'TXX=',TXX
       ENDIF
 C       
@@ -377,7 +373,7 @@ C
 C insolation at mid-step and its average. time origin is midnight.
 C  angle from noon is (j2/n2 * 2.pi) - pi, so cos of this is -cos(j2/n2 *2pi)
 C  cosi = cosine of solar incidence angle onto horizontal
-C  cos2 = cosine of solar incidence angle onto surface slope
+C  cos2 = cosine of solar incidence angle onto tilted surface
 C  cos3 = cosine of twilight angle onto horizontal
       AVEI=0.                  ! to sum solar absorbed by slope surface
       AVEH=0.                  ! to sum atm. heating
@@ -386,16 +382,9 @@ C  cos3 = cosine of twilight angle onto horizontal
       JJH = AH+.5D0            ! round to time step of first saving
       DO JJ =1,N2            ! ------------------time of day loop----------
          ANGLE=(DFLOAT(JJ)-0.5D0)*RANG ! rotation angle at middle of time step
-!     hxx=ROTV(mxx,3,k*dt)       ; Sun progress thru day
-!     cosi=VDOT(hxx,fxx)         ; incidence on level
-!     if cosi gt 0. then begin   ; daytime
-!         cos2=VDOT(hxx,txx)>0.  ; incidence on tilted
-!         if doa then cos2=cos2+sas*cosi ; add regional reflectance
-         CALL ROTV( MXX,3,ANGLE, HXX) !VAv  Sun progress thru day
-         CALL VDOT(HXX,FXX,COSI)      ! cos of incidence angle on horizontal
-         CALL VDOT(HXX,TXX,COS2)        ! cos of incidence angle onto slope
-C;         COSI= SS  -CC*COS (ANGLE) ! cos of incidence angle on horizontal
-C;         COS2= SS2 -CC2*COS (ANGLE+RADEAST) ! " " onto slope
+         CALL ROTV(MXX,3,-ANGLE, HXX) ! VAv  Sun progress thru day
+         CALL VDOT(HXX,FXX, COSI) ! cos of incidence angle on horizontal
+         CALL VDOT(HXX,TXX, COS2) ! cos of incidence angle onto tilted slope
 C     Get atmosphere transmission and heating for horizontal surface
          IF (COSI.GT.ACOSLIM) THEN ! Day: Sun is above horizon
            IF (EFROST .LE. 0.) THEN ! have a soil surface
@@ -519,9 +508,6 @@ C        AVEH=AMAX1(AVEH/DFLOAT(N2),0.) ! average atm. solar heating
           QS=TAUD*SOLR/PIVAL    ! small tau limit
           IF (LQ1) WRITE (IOPM,*) 'QS, small tau=',QA,QS
         ENDIF 
-
-C        TAEQ4=(QS+AVEI+GHF)/(SIGSB*(2.D0-AVEE*BETA)) ! equilib T_a^4 JGR eq 12
-C        TSEQ4=BETA*TAEQ4+(AVEI+GHF)/(SIGSB*AVEE) ! equilib T_s^4 JGR eq 11
         TAEQ4=(QS+AVEI+GHF)/(SIGSB*(2.D0-AVEE*BETA)) ! equilib T_a^4 JGR eq 12'
         TSEQ4=BETA*TAEQ4+(AVEI+GHF)/(SIGSB*AVEE) ! equilib T_s^4 JGR eq 11'
         TEQUIL = AMAX1( TSEQ4,1.D4)**0.25D0 ! equilib T_s, min of 10.
@@ -678,7 +664,7 @@ C
         ENDDO
       ENDIF
       IF (J4.LT.N4) GO TO 100
-      IF ( (.NOT. LONE) .AND. (J5.LE.1) ) ! avoid line in OnePoint output
+      IF ( LQ1 .AND. (.NOT. LONE) .AND. (J5.LE.1) ) ! avoid line in OnePoint output
      &  WRITE(IOSP,*)'TLATS: TEQQ',(TEQQ(I),I=1,N4) ! starting Tequil 
 C       
 C       ---------------------------------------------------------------------

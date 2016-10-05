@@ -37,10 +37,11 @@ C               replace R2R using 2*N with D2D
 C 2016aug12 HK Reset extreme numeric constants to Real*8 values. Use FILLMV set
 C              Allow redirect of monitor output. Improve return codes
 C 2016aug26 HK Automatically generate extensions for input and print files.
+C 2016oct03 HK Correct sense of azimuth in tlats. Move onePoint heading print.
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
 
       REAL ELAPSED,TIMES(2)     ! declare the types of DTIME()
-      INTEGER I,IQ, IRC,IRD,IRL,KREC
+      INTEGER I,IQ, IRC,IRD,IRL,KONE,KREC
       INTEGER IOST              ! returned by OPEN
       CHARACTER*80 CBUF         ! temporary use
       CHARACTER*1 BBUF          ! temporary use
@@ -49,7 +50,7 @@ C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
       REAL*8 QQ                 ! dummy  
       REAL*8 ZERO /0.0D0/       ! zero 
 
-      VERSIN='KRCv3.4.2'        ! set version number 12 bytes
+      VERSIN='KRCv3.4.3'        ! set version number 12 bytes
       KREC=84+20   ! number of bytes in TITLE +DAYTIM. Values from def. in KRCCOM
       IF (MOD(KREC,8).NE.0 .OR. MOD(N4KRC,2).NE.0) THEN 
         PRINT *,'BAD lengths',KREC,N4KRC
@@ -93,7 +94,7 @@ C      EXPMIN = 86.80D0          ! neg exponent that would almost cause underflo
       KREC=0                    ! ensure it has a storage location
       NRUN=0                    ! no output file yet
       NCASE=0                   ! initate this
-      WRITE(IOPM,*) 'This is KRC',VERSIN
+      WRITE(IOPM,*) 'This is KRC:  ',VERSIN
 C                       open input and print files 
       WRITE (IOPM,*)' .inp and .prt will be added to your input names'
       WRITE (IOPM,*)' Defaults:  input = krc , output = input' 
@@ -144,9 +145,8 @@ D         write(*,*)' k2' !<<< debug
         WRITE(IOSP,*)CBUF       ! write users title
         READ (IOIN,'(A80)',ERR=83,END=84) CBUF ! skip the col header line
 D         write(*,*)' k3' !<<< debug
-        WRITE(IOSP,'(A,A)')'C_END  Ls   Lat  Hour Elev  Alb Inerti '
-     &      ,'Opac Slop Azim  TkSur  TbPla             Comment'
         LONE=.TRUE.
+        KONE=NCASE              ! case when onePoint started
         CALL TCARD8 (2,IRC)      ! read first one-point case
 D       write(IOSP,*) 'KRC TCARD:2 return=',IRC !<<< debug
       ELSE
@@ -209,7 +209,11 @@ C If TLATS had failure >1, then IRL will be +30, terminate case
 C If have atmosphere and using fff, but fff does not have Tatm, IRL=41
  
 D       write(*,*)'TSEAS return IQ,IRL,N5,krec=',IQ,IRL,N5,krec !<<< debug
-      IF (LONE) CALL TPRINT8(9)  ! print results at requested one-point
+      IF (LONE) THEN
+        IF (NCASE.EQ.KONE) WRITE(IOSP,'(A,A)')'C_END  Ls   Lat  Hour '
+     & ,'Elev  Alb Inerti Opac Slop Azim  TkSur  TbPla Comment' 
+        CALL TPRINT8(9)         ! print results at requested one-point
+      ENDIF
       
  160  IF (IRL.GT.4 .AND. N5.GT.0) THEN ! There was a fatal error
         WRITE(IOPM,*)'Case had FATAL error=',IRL,' Will try next case'
