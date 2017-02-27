@@ -1,5 +1,5 @@
 # Makefile for KRC double precision version
-# Attempt to have minimum differences between versioins used for development and
+# Attempt to have minimum differences between versions used for development and
 # for formal distributions
 # 2014mar11  Hugh Kieffer Derive from single precision version
 # 2014jun19  HK Incorporate Version 3 PORB
@@ -9,6 +9,10 @@
 # 2016may26 Kenny Rios method to handle development vrs production environments 
 # 2016jun02 Comment out Rios distribution items
 # 2016aug20 Commented options for debugger
+# 2017feb23 HK Clarify differences between H3 and Distribution builds 
+# lines containing  #<>H should be active if and only if on Hughs computer
+# lines containing  #<>D should be active if and only if building a Distribution
+####################################################
 
 SHELL=/bin/csh
 
@@ -22,25 +26,23 @@ LD=gfortran
 #------------- Libraries -------------------------
 # Pointers to top of libraries to use. 
 HHKLIB=/home/hkieffer/linux/lib  # available only non H3
-# KRCLIB=.                         # in the KRC distribution
+ KRCLIB=.                         #<>D  Only for distribution
 
-#SYSLIBS = -L /usr/lib64  -lg2c -lgfortran -lc -lm  ## ? lgfortran 
-SYSLIBS = -L  -lgfortran -lc -lm 
+#SYSLIBS = -L /usr/lib64  -lg2c -lgfortran -lc -lm    ## ? lgfortran 
+ SYSLIBS = -L -lgfortran -lc -lm 
 
 # LDFLAGS= -fdump-tree-slim  # used, but does nothing 2014mar11
 
 # Library directories that always are searched
-LIBDIRS=-L$(HHKLIB)
-# LIBDIRS_DEV=-L$(KRCLIB) -L$(HHKLIB)
-# LIBDIRS_PROD=-L$(KRCLIB)
+#LIBDIRS=-L$(HHKLIB)                    #<>H
+ LIBDIRS_DEV=-L$(KRCLIB) -L$(HHKLIB)    #<>D
+ LIBDIRS_PROD=-L$(KRCLIB)               #<>D
 
 #  Special Kieffer library groups
 #HLIB=-lhk_fmath -lhk_fgeom -lhk_futil -lhk_fchar  ##2-lhk_fNumRec # -lhk_rad
 
-CLIB=/home/hkieffer/linux/lib/libhk_cisis.a
-# <<>> First of next 2 for H3   Second of next 2 for Distribution
-#CLIB=-lhk_cisis 
-# CLIB_P=./cfiles/libhk_cisis.a			# -lhk_crest   
+#CLIB=/home/hkieffer/linux/lib/libhk_cisis.a    #<>H
+ CLIB=./cfiles/libhk_cisis.a    # -lhk_crest    #<>D
 
 #------------- system dependencies -------------
 
@@ -59,7 +61,9 @@ OBJP3 = porbmn.o porbio.o ephemr.o ymd2j2.o porbig.o porbit.o porbel.o \
 OBJT = testrou.o alsubs.o averag.o aveyear.o bigend.o bigend1.o binf5.o \
  catime.o datime.o climtau.o dpythag.o dspline.o dsplint.o dsvbksb.o \
  dsvdcmp.o evrf4.o hratlsq.o  kratlsq.o ratval.o spline.o splint.o fillmv.o \
- white1.o tdif3.o cubuterp8.o r2r.o d2d.o d2md.o tfar8.o sigma8.o randomn.o
+ white1.o tdif3.o cubuterp8.o tfar8.o sigma8.o randomn.o \
+ rotmdp8.o vadddp8.o m2eul.o getpr8.o qtlats.o
+# r2r.o d2d.o d2md.o 
 
 OBJT1 = test8.o deding2.o deding28.o
 
@@ -92,7 +96,7 @@ test1: $(OBJT1)   # -
 	$(CLIB) $(SYSLIBS)
 
 
-# make routines for program dependencies   #< means code should be updated
+# make routines for program dependencies 
 #
 krc8.o:       krc8.f krcc8m.f latc8m.f dayc8m.f unic8m.f filc8m.f hatc8m.f
 tseas8.o:   tseas8.f krcc8m.f latc8m.f          unic8m.f          hatc8m.f porbc8m.f
@@ -105,9 +109,9 @@ tfar8.o:     tfar8.f krcc8m.f                   unic8m.f filc8m.f
 tun8.o:       tun8.f krcc8m.f          dayc8m.f                   hatc8m.f
 readzone.o: readzone.f krcc8m.f                 unic8m.f filc8m.f
 tdif3.o:     tdif3.f krcc8m.f                   unic8m.f filc8m.f
-seasalb.o: seasalb.f                            unic8m.f filc8m.f  #<  | update include statements
-seastau.o: seastau.f                            unic8m.f filc8m.f  #<  | to avoid the current links
-climtau.o: climtau.f                            unic8m.f filc8m.f  #< 
+seasalb.o: seasalb.f                            unic8m.f filc8m.f
+seastau.o: seastau.f                            unic8m.f filc8m.f
+climtau.o: climtau.f                            unic8m.f filc8m.f
 albvar8.o: albvar8.f krcc8m.f
 tint8.o:     tint8.f krcc8m.f   
 ephemr.o:   ephemr.f           porbc8m.f
@@ -129,6 +133,7 @@ deding28.o: deding28.f
 eccanom8.o: eccanom8.f
 evmono38.o: evmono38.f
 finterp.o: finterp.f
+getpr8.o: getpr8.f
 jdate.o:  jdate.f  
 julday.o:  julday.f  
 orbit8.o: orbit8.f
@@ -143,9 +148,13 @@ spcrev.o: spcrev.f
 tridag8.o: tridah8.f   # uses prior partial solution
 vlpres.o: vlpres.f
 white0.o: white0.f
-cocodp8.o: cocodp8.f  # collection
-rotmdp8.o: rotmdp8.f  # collection
-vadddp8.o: vadddp8.f  # collection
+cocodp8.o: cocodp8.f  # Contains: COCOCM  COCOMC  COCOSC  COCOCS  
+#                       COCOSM  COCEMC  COCECM 
+rotmdp8.o: rotmdp8.f  # Contains:  MEQUAL  MPROD3  ROTAX  ROTCOL  ROTDIA 
+#                      ROTEST  ROTEXM  ROTEXV  ROTMAT  ROTORB  ROTRIP  
+#                      ROTROW  ROTSHO  ROTV  ROTVEC  ROTZXM  TRANS3  VROTV
+vadddp8.o: vadddp8.f  # Contains:  VADD  VCROSS  VDOT  VEQUAL  VMAG  VNEG 
+ #                       VNORM  VPRF  VPRINT  VSCALE  VSHOW  VSUB  VUNIT 
 ymd2j2.o: ymd2j2.f
 
 #----------------------- added after remove use of all but C library
@@ -157,7 +166,8 @@ datime.o: datime.f
 d2d.o: d2d.f
 dmd.o: dmd.f
 d2md.o: d2md.f
-fillmv.o: fillmv.f  # FILLB FILLI FILLL FILLR FILLD MVB MVI MVL MVR MVRF MVRM
+fillmv.o: fillmv.f  # has  FILLB FILLI FILLL FILLR FILLD MVB MVI MVL MVR MVD
+#                     MVDF MVDM
 ksubs8.o: ksubs8.f  # has  AVEDAY  AVEYEAR  CO2PT  SIGMA
 r2r.o: r2r.f
 upcase.o: upcase.f
@@ -173,10 +183,12 @@ dpythag.o: dpythag.f # - /home/hkieffer/src/for/NumRec/dpythag.f
 dspline.o: dspline.f # -
 dsplint.o: dsplint.f # -
 dsvbksb.o: dsvbksb.f # -
-dsvdcmp.o: dsvdcmp.f # dpythag
+dsvdcmp.o: dsvdcmp.f # calls dpythag
 evrf4.o: evrf4.f
-hratlsq.o: hratlsq.f # spline splint
-kratlsq.o: kratlsq.f # dspline dsplint
+hratlsq.o: hratlsq.f # calls ratval,dsvbksb,dsvdcmp spline splint
+kratlsq.o: kratlsq.f # calls ratval,dsvbksb,dsvdcmp dspline dsplint
+m2eul.o: m2eul.f
+qtlats.o: qtlats.f
 ratval.o: ratval.f
 spline.o: spline.f # -
 splint.o: splint.f # -

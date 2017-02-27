@@ -17,9 +17,10 @@ PRO clot,yyy,txt,xx=xx,locc=locc,xran=xran,yran=yran,titl=titl,oplot=oplot $
 ;                      Number of curves set by yyy
 ;       oplot modes:
 ;        -9 or less: more data; use same line set, no addition to legend
-;        -n: alternate values. use line type -n, show within existing legend
+;        -n: alternate values. use line type -n mod 6, show within existing legend
 ;        +n: more curves, offset line index, add more items to legend
-;       100+n: n=line style and  new set of labels
+;       100+n: n=line style from common kkl and  new set of labels
+;       200+n: line style = IDL standard: n mod 6 ; no new labels
 ; abso  in_ flag  If set, plots absolute value, with symbol where negative
 ; yr2   in_ fltarr(2)  Yrange for 2nd plot on right half in one call.
 ;                          Ignored if values are equal
@@ -31,7 +32,7 @@ PRO clot,yyy,txt,xx=xx,locc=locc,xran=xran,yran=yran,titl=titl,oplot=oplot $
 ;
 ; omit  in_ Int    Omit every n'th line
 ; wait  in_ Float  Wait time in seconds; -=indefinite Ignored unless yyy 3D
-;                  -2 = STOP after each plot  -3= and ask for exit
+;              -2 = STOP after each plot  -3= and ask for exit  Default=1.
 
 ; Responds to !dbug : ge 8: stop at entry.    ge 7: stop before return
 ;_Hist 20209dec08 Hugh Kieffer
@@ -39,7 +40,7 @@ PRO clot,yyy,txt,xx=xx,locc=locc,xran=xran,yran=yran,titl=titl,oplot=oplot $
  ;2010apr09-11 HK Enable overplot, add keyword ksym.  Done only for color code
 ; 2010jul14 HK Allow auto scaling of all curves
 ; 2010dec10 HK Fix bug that could overwrite input xx
-; 2011dec31 HK Add oplot>100 mode
+; 2011dec31 HK Add oplot 100+n mode
 ; 2012jan18 HK Add keyword  tsiz
 ; 2012feb06 HK Add keyword abso
 ; 2013apr01 HK Make default X value Long so will handle >32767 properly
@@ -48,6 +49,8 @@ PRO clot,yyy,txt,xx=xx,locc=locc,xran=xran,yran=yran,titl=titl,oplot=oplot $
 ; 2015jun27 HK Add 3D movie capability
 ; 2015jul12 HK Add keyword omit
 ; 2015oct11 HK Apply charactersize to LABEL_CURVE also
+; 2016ocd28 HK Add 200+n mode
+; 2017jan17 HK Revise wait to be always available; allows caller do loops
 common SETCOLOR_COM2, kcc,linecol,kkc,kkl,kkp,fixkkc,fixkkl,fixkkp,kink,scex1
 ;_End                 .comp clot
 
@@ -78,7 +81,9 @@ if n_elements(yr2) lt 2 then yr2=[0,0]       ; dual plot, Y magnified on right
 dod = yr2[0] ne yr2[1] ; ignore if values the same
 
 dol= not idop and kok ge 5 and abs(loc2[2]) gt .3  ; put label on each curve
+if idop ge 200 then dol=0B
 dog= kok ge 1 and idop gt -5 and not dol      ; do curve Guide
+if idop ge 200 then dog=0B
 if dog and dop and not dos and kfix gt 0 then begin ; new line type for existing guide
         loc2[1]=loc2[1]+0.25*loc2[2] ; Y offset
         loc2[3]=.8*loc2[3]      ; shorter line, will offset symbol if used
@@ -89,7 +94,13 @@ ksya=abs(ksym)<8                  ; ensure not beyond psym valid range
 
 siz=size(yyy)
 dom = siz[0] eq 3 ; Will do movie
-if dom then nump=siz[3] else nump=1 ; number of plots
+if dom then begin 
+  nump=siz[3] 
+  if not keyword_set(wait) then wait=1.
+endif else begin 
+  nump=1                        ; number of plots
+  if not keyword_set(wait) then wait=0.
+endelse
 
 if siz[0] lt 2 and not dop then begin 
    help,yyy
@@ -172,6 +183,7 @@ for jp=0,nump-1 do begin ; each plot of movie  vvvvvvvvvvvvvvvvv
       clr=kkc[k2 mod kcc[2]]
       lin=kkl[k2 mod kcc[3]]
       if kfix gt 0 then lin=kfix
+      if idop ge 200 then lin=(idop -200) mod 6 ; Use IDL std line sequence
       j=lin                     ; for use by  CURVEGUIDE
       if ksym ge 0 then begin ; plot data line
         if omit eq 0 then oplot,xv,yy,line=lin,color=clr,_extra=e $ ; one curve
@@ -207,13 +219,13 @@ for jp=0,nump-1 do begin ; each plot of movie  vvvvvvvvvvvvvvvvv
       endif
     endelse
   endfor
-  if dom then begin ; pause, wait or stop between pages
-    if wait ge 0 then WAIT,wait else if wait le -2 then STOP  $
-    else begin                  ; wait for user
-      print,'Any key to go'
+
+  if wait gt 0 then wait,wait else if wait lt 0 then begin 
+    if wait le -2 then STOP else begin  
+      print,'Any key to go'     ; wait for user
       i=get_kbrd(1)
     endelse
-  endif
+  endif ; if wait is 0, does nothing
 
 endfor                          ; ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

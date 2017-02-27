@@ -6,16 +6,16 @@ pro make99, id,prior, hold, maxk=maxk,all=all,get=get,ofile=ofile,comf=comf $
 ; prior both. 	Strarr(2) of prior id and string(all). Reads source if changed.
 ; hold	both.	Strarr of the guide. Stored between calls 
 ; maxk	in_	Maximum number of kons to store. Default=200; last digit 7=debug
-; all	in_	Two meanings: If an integer, then
-;		Completeness: +1 = include ;[ keys.
-;			      +2 = include ;- keys 
-;			      +4 = separate output line for each
-;			      +8 = List kons expanded into LaTeX
-;                            +16 = Use 2nd lines for full descriptions
-;                                  if they start with a ";^"
+; all	in_	Two meanings: If an integer, then bit-encoded
+;		  Completeness: +1 = include ;[ keys.
+;	  	                +2 = include ;- keys 
+;			        +4 = separate output line for each
+;			        +8 = List kons expanded into LaTeX
+;                              +16 = Use 2nd lines for full descriptions
+;                                    if they start with a ";^"
 ;	    		Except for +8, these take effect only when the source 
-;	    		file is being read.
-;            if +2 and +4 and not +8, then Print each kon in LaTeX
+;	    		  file is being read.
+;                       If +2 and +4 and not +8, then Print each kon in LaTeX
 ;		If an Intarr, then this is list of kons to be explained
 ; get	in_	If set, specific processing for GETP family
 ; ofile	in_     String name of file for output. must be at least 2 characters
@@ -35,7 +35,7 @@ pro make99, id,prior, hold, maxk=maxk,all=all,get=get,ofile=ofile,comf=comf $
 ; Requires that there is only one space between the words  "case kon of".
 ; Requires that there are no spaces in "kons=[" . Can handle up to 2-line array.
 ; "begin" and "&" on kon line are not printed 
-; Code for first character after the semi-colon
+; Code for first character after the first semi-colon
 ; ;o = obsolete, do not print ever
 ; ;- = do not print unless bit2 set
 ; ;+ = append to current output line text before ;= or ;<   unless bit4, 
@@ -82,9 +82,10 @@ pro make99, id,prior, hold, maxk=maxk,all=all,get=get,ofile=ofile,comf=comf $
 ; 2013nov15 HK Ensure link is defined 
 ; 2015jul24 HK Add quiet option, usefull for KONLOOPFLOW calls
 ; 2016jun20 HK Increase maxk default from 200
+; 2016nov12 HK Address existing output file of same name
 ;_END        .comp make99
 
-; help, id,prior, hold, maxk,all,get,ofile,comf,quiet
+; help, id,prior, hold, maxk,all,get,ofile,comf,quiet & print,'prior=',prior
 
 maxd=5                        ; maximum directory descent
 ;^^^^^^^^^^^^^  firm-code
@@ -94,11 +95,12 @@ errs='' & link=-1               ; ensure defined
 if not keyword_set(maxk) then maxk=250 
 if not keyword_set(quiet) then quiet=0B 
 if n_elements(prior) lt 2 then prior=[';','0'] ; impossible idl routine name
+pin=prior[0]                                   ; use only for debugging
 dbug=(maxk mod 10) eq 7
 doget = keyword_set(get) ; do the special processing to GETP family
 nall=n_elements(all)
 if nall eq 0 then all=0  ; default is no special actions
-if nall le 1 then begin  ; was a bit-encoded contral
+if nall le 1 then begin  ; was a bit-encoded control
     bit1=      all     mod 2 eq 1 ;  +1 = include ;[ lines
     bit2=ishft(all,-1) mod 2 eq 1 ;  +2 = include ;- lines
     bit4=ishft(all,-2) mod 2 eq 1 ;  +4 = one item per line (ignore ;+)
@@ -111,15 +113,15 @@ endif else begin  ; was a list of kons to be printed
     sall=prior[1]               ; avoid doing construction again
 endelse
 ;;print,'bits',bit1,bit2,bit4,bit8,bit6
-
-if id ne prior[0] or (not bit8 and sall ne prior[1]) then begin 
+buf='' 
+if id ne prior[0] or (not bit8 and (sall ne prior[1]) ) then begin 
 ;;print,'Construction: id,sall=',id,sall
 prior=[id,sall]
 
 ; ---------------------- start of construction ----------------------
 ; ------------------------------------------------------------------------
 ; ------------------------------------------------------------------------
-buf='' & buf2=''
+buf2=''
 sqo=''''                        ; single quote
 tab=string(9B)                  ; horizontal Tab character
 hold=strarr(maxk)
@@ -294,7 +296,7 @@ addtolist:
             buf=buf2
             use2=0B
         endif else begin
-            READF,LUN,BUF & link=link+1 ; next line
+            readf,lun,buf & link=link+1 ; next line
         endelse
         j1=0 ; start next line at the beginning 
         goto, addtolist
@@ -361,20 +363,28 @@ endif  ; -------------------- end of construction -----------------
 ;-------------------------------------------------------------------------------
 ;-------------------------------------------------------------------------------
 
-
-
 ; print the holding array
 n= n_elements(hold) & k2=n-1
 if keyword_set(ofile) then ffile=ofile else ffile=''
 dot = strlen(ffile) le 1 and not quiet ; output to terminal
 dof = strlen(ffile) gt 1 ; output to file
 if dof then begin 
-    ffile=ffile+strtrim(all[0],2) ; make unique for way called
-    OPENW,lun,ffile,error=operr,/get_lun
-    if operr ne 0 then begin
-        print,'MAKE99: open ERROR # and file=',operr,ffile,strmessage(operr)
-        dot =1B
+  ffile=ffile+strtrim(all[0],2) ; make unique for way called
+fagin:  openw,lun,ffile,error=operr,/get_lun
+  if operr ne 0 then begin
+    message,' file open ERROR',/con 
+    print,'ERROR#,file,message:',operr,' , ',ffile,' , ',strmessage(operr)
+    cd,current=cwd 
+    print,'Current dir =',cwd,' Fix Dir or Remove existing file' 
+    read,buf,prompt='CR=tryAgain or append; n=noFile s=stop > '
+    if buf eq 's' then stop ; .con will add an s
+    if buf ne 'n' then begin  ; append buf to file and try again
+      ffile=ffile+buf
+      goto,fagin
     endif
+    dot=1B
+    dof=0B
+  endif
 endif
 
 if dot then print,'..====================== ',id,' =======================..' 

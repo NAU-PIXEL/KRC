@@ -13,8 +13,10 @@ All lines are read as list directed, so there must some blanks between items
 All angles are in degrees.   
 The reference coordinate systems are:
    orbital elements: heliocentric ecliptic J2000    
-   spin axis (pole): J2000 equatorial 
-Last valid object is   5   [update].    Beyond that should not be read
+   spin axis (pole): J2000 equatorial
+2015jan23 INclude NEO's 
+Last valid object is   9
+   [update].    Beyond that should not be read
 C_END    << Required to indicate end of comments
 1 Ceres 2456800.5 /1 -----------------------------------------
 e 	.07579779827230555 / 1.9592e-08  solution date 2013-Jul-16 08:45:50  	 
@@ -64,7 +66,7 @@ rot_per 	5.342 	h
 PoleRA  305.8   3.1
 PoleDec 41.4   1.5
 merid   292.
-101955 Bennu 2456400.5   /5 ----------------  (1999 RQ36) -------------
+101955 Bennu 2456400.5   /5   (1999 RQ36) OBSOLETE, use next object
 e 	.2037319346437232 	3.4131e-08 	 
 a 	1.126004277007048 	1.294e-10 	AU
 q 	.8966012472352957 	3.8364e-08 	AU
@@ -74,9 +76,21 @@ peri 	66.26860100390597 	6.4232e-06 	deg
 M 	72.82807637355893 	3.7237e-06 	deg
 rot_per 4.29746   ± 0.002 h, Nolan et al 2013.  JPL has  4.288 h 
 PoleRA  -67.9     Nolan: β = −88° (lat), λ = 45° and an uncertainty of 5°.  
-PoleDec -86.2    in ecliptic coordinates,  Convert using eclip2equat.pro 
+PoleDec -86.2    in ecliptic coordinates, conversion WRONG, SWITCHED 
 merid   0.
-1000036 1P/Halley 2449400.5 /6 ---------------
+101955 Bennu 2455562.5   /6   from Hergenrother 2014
+e       0.2037451146135014      2.123081E-08    J2000 orbital values 
+a 	1.126391025571644       4.111300E-11	AU    source cited as 
+q 	0.8968943569669300      2.390158E-08 	AU    JPL IOM 343R-13-00
+i 	6.03493867976381        4.721372E-08	deg   Chesley et al 2014
+node 	2.06086819910204        6.531279E-08	deg    
+peri    66.22306886293201       9.685025E-08	deg
+M 	101.70394725713800      2.6E-06 	deg  P=436.648727924 days
+rot_per 4.297461   ± 0.002 h, retrog. Nolan et al 2013.  JPL has  4.288 h 
+PoleRA  86.64   Nolan 2013 : β = −88° (lat), λ = 45° and an uncertainty of 5°.  
+PoleDec -65.11    in ecliptic coordinates,  Convert using eclip2equat.pro 
+merid   0.         Obliq=176 +/- 2
+1000036 1P/Halley 2449400.5 /7 ---------------
 e 	0.967142908462304 	5.035e-09  solution date 2001-Aug-02 13:51:39 	 
 a 	17.8341442925537 	3.8913e-08 	AU
 q 	0.585978111516909 	8.8924e-08 	AU  tp 	2446467.395317050925	
@@ -88,7 +102,7 @@ rot_per  24.0 / day
 PoleRA 19.0  / Sekenina pole
 PoleDec-27.0  
 merid   0 
-1003228 SidingSpring 2456505.5 /7 ----------C/2013 A1 (Siding Spring)----------
+1003228 SidingSpring 2456505.5 /8 ----------C/2013 A1 (Siding Spring)----------
 e 	1.000604515347663 	6.122e-06  / solution date 2014-Mar-14 12:52:28  
 a 	-2314.311724635852 	23.435 	AU  hyperbolic
 q 	1.399036956818885 	7.3372e-06 	AU tp 	2456955.886833306343
@@ -100,4 +114,16 @@ rot_per 	7.7 / h  NO DATA on rotation or pole
 PoleRA  7.7
 PoleDec 7.7
 merid   7.7
+357439 2004BL86 2457000.5 /9 ------- NEO 2015jan27 solution  
+e 	.4030731404243164 	3.8107e-08  / solution date  2015-Jan-23 05:27:02 
+a 	1.502202125158992 	8.9007e-09 	AU
+q 	.8967047970190752 	5.6293e-08 	AU
+i 	23.74358891084517 	1.9079e-05 	deg
+node 	126.7203487501305 	2.6541e-05 	deg
+peri 	311.2549678894206 	2.1939e-05 	deg
+M 	354.0330755978719 	8.3517e-06 	deg
+rot_per 	7.7 / h  NO DATA on rotation or pole
+PoleRA  7.7
+PoleDec 7.7
+Hmag   19.0
 ^^^^^^^^^^^^^ INSERT ABOVE this 12-line sets for additional bodies^^^^^^^^^^ 

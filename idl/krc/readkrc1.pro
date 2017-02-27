@@ -55,6 +55,8 @@ function readkrc1, file,fcom,icom,lcom, lsubs,ttou, vrs=vrs,ktype=ktype $
 ;   For type -n, use the logic from TFAR8.f to detect -1,-2 or -3
 ;_End                .comp readkrc1   
 
+; help,file,fcom,icom,lcom,lsubs,ttou,vrs,ktype,maxs,verb,dates,ddd,lab,desc
+
 dv2=5000. ; 2013-09-09 12:00   switch date between assumed Version 1 and 2
 ;^^^^^^^^^^^ firmcode
 
@@ -71,7 +73,7 @@ krc1=DEFINEKRC('KRC',param,  vrs=vrs,nword=nwkrc) ; define structure == krccom
      maxn5 =param[ 4] ;  161  unsure when this dropped from  KRCCOM
      i=1              ; however, DEFINE KRC no longer has MAXN5
      maxn6 =param[ 5-i] ;    6
-     maxnh =param[ 6-i] ;   48
+     maxnh =param[ 6-i] ;   48 or 96
     maxbot =param[ 7-i] ;    6
      numfd =param[ 8-i] ;   96
      numid =param[ 9-i] ;   40
@@ -112,20 +114,20 @@ endif else begin                ; type 0
   ihead=0
 endelse
 
-nrecl=nbyt*nwtot ; expected record length in bytes
-frec=float(len)/float(nrecl) ; should equal an integer
-numr=len/nrecl               ; number of records
+nrecl=nbyt*nwtot                ; expected record length in bytes
+frec=float(len)/float(nrecl)    ; should equal an integer
+numr=len/nrecl                  ; number of records
 if len mod nrecl ne 0 then print,'ALERT, non-integral records'
 if vrb then print,'File length and # records=',len,frec,numr
 nread=numr-ihead                 ; number of seasonRecords in the file
-nsea=nread/jpr ; seasons expected based on file size, holds for 0 and -n
+nsea=nread/jpr         ; seasons expected based on file size, holds for 0 and -n
 if not keyword_set(maxs) then maxs=nsea
 
 ; Read the first krccom, holds for types -n, 0 and +<50
 readu,lun1,krc1
 nhour=krc1.id[5] & lasth=nhour-1      ; N24
 nlat=krc1.id[3]  & lastlat=nlat-1     ; N4
-k4out=krc1.id[16] ; K4OUT should contain file type
+k4out=krc1.id[16]                     ; K4OUT should contain file type
 if vrb then print,'nhour & nlat=',nhour,nlat
 fout=reform([krc1.alat[0:lastlat],krc1.elev[0:lastlat]],nlat,2) ; lat and elevation
 fcom=krc1.fd                    ; return first season

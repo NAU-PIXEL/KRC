@@ -1,8 +1,9 @@
-\documentclass[draft]{article}  % See Skeleton.tex for examples of many things
+\documentclass{article}  
+%\documentclass[draft]{article}  % See Skeleton.tex for examples of many things
 % see definc.sty for other page format settings
 %\usepackage{epsfig}
 %\usepackage{definc}  % Hughs conventions  
-
+\usepackage{hyperref}  % hyperlinks
 \textheight=9.3in  \topmargin=-0.4in
 \textwidth=7.0in  \oddsidemargin=0.0in \evensidemargin=-0.0in 
 \parindent=0.em \parskip=1.ex %  no indent & paragraph spacing
@@ -75,17 +76,44 @@ to separate items and will terminate with a slash '/'. Thus, names and numbers
 must not have any internal space or /.  On each line, anything after the number
 of items in the READ list is ignored, so comments may be entered. The first body in each file has a ``/'' just after the items read on each line to indicate how many items are read. All but the planets files contain a skeleton form for adding objects.
 
-\subsection{Planets} 
+\subsection{Solar system Planets} 
 
 \begin{description} 
  \item [\textit{standish.tab}] \ \qcite{Standish06} Keplerian elements and rates of change for 9 planets in mean ecliptic and equinox of J2000 valid for 1800 to 2050.
 This file is valid for 1800 to 2050; it should not need any edits
 
+Planet 10 is Mars derived from \qcite{Allison00} Table 2. 
+
  \item [\textit{spinaxis.tab}] \ \qcite{Archinal11} Planets: Direction of the pole and rates of change in ICRF, which differs from J2000 equatorial system by less than 0.1 arcsecond. The planets and a few satellites are included; more satellites can be added.
 \end{description}
-
 \subsection{Minor planets / asteroids }
 
+There are two PORB-system ASCII files that differ slightly in format. Both
+contain one element per line and include spin-axis.
+
+\begin{description} 
+ \item [\textit{minor.tab}] Generally older entries.
+
+ \item [\textit{small.tab}]  Format designed to allow cut-and-paste from the JPL Small-Body Database 
+Browser. Rotation period in hours. Must get spin axis from other sources.
+\\ All entries were created 2013Aug 22 or later.
+\qii includes comet Halley.
+\begin{verbatim}
+Look up object with JPL Small-Body Database Browser  
+   http://ssd.jpl.nasa.gov/sbdb.cgi
+Copy the number and name line. There must be no blanks or / within the name
+    Append to this line the epoch
+copy elements lines  e through M
+Click on: Physical Parameters and copy 3 columns for the rotation period. E.g.,
+  rot_per 	7.210 	h
+Append 3 lines for: [data not in the JPL database]
+0. / Right Ascension of Pole, J2000 [deg]   
+0. / Declination of Pole, J2000 [deg]
+0. / Prime meridian at epoch [deg]
+   Then replace the zeros if you have real values.
+\end{verbatim}
+
+\end{description}
 
 \subsubsection{Web sources} %.........................................
 
@@ -109,43 +137,16 @@ You get to choose your favorite!
 \end{verbatim}
 
 
-\item [Minor Planet Center]  \  http://www.minorplanetcenter.net/iau/info/OrbElsExplanation.html 
+\item [Minor Planet Center]  \  \url{http://www.minorplanetcenter.net/iau/info/OrbElsExplanation.html} 
 \\ ArgPeri, Node and Inclin are in heliocentric ecliptic J2000.0
 \qi Must specify date for elements that is within requested ephemeris range
 
 \item [JPL Small-Body Database Browser]  \ http://ssd.jpl.nasa.gov/sbdb.cgi
 \\ Orbit elements are in heliocentric ecliptic J2000.  Rotation period in hours. \ No spin-axis data.
 
-\item [Ted Bowells database]   \ ftp://ftp.lowell.edu/pub/elgb/astorb.html
+\item [Ted Bowells database]   \ \url{ftp://ftp.lowell.edu/pub/elgb/astorb.html}
 \\ Enormous; more than 1/2 million objects. Frequent updates. 
 \\ ArgPeri, Node and Inclin are in J2000.0,  must be ecliptic. No spin-axis data.
-
-\end{description}
-
-\subsubsection{PORB input files} %.........................................
-There are two PORB-system ASCII files that differ slightly in format. Both
-contain one element per line and include spin-axis.
-
-\begin{description} 
- \item [\textit{minor.tab}] Generally older entries.
-
- \item [\textit{small.tab}]  Format designed to allow cut-and-paste from the JPL Small-Body Database 
-Browser. Rotation period in hours. Must get spin axis from other sources.
-\\ All entries were created 2013Aug 22 or later.
-\begin{verbatim}
-Look up object with JPL Small-Body Database Browser  
-   http://ssd.jpl.nasa.gov/sbdb.cgi
-Copy the number and name line. There must be no blanks or / within the name
-    Append to this line the epoch
-copy elements lines  e through M
-Click on: Physical Parameters and copy 3 columns for the rotation period. E.g.,
-  rot_per 	7.210 	h
-Append 3 lines for: [data not in the JPL database]
-0. / Right Ascension of Pole, J2000 [deg]   
-0. / Declination of Pole, J2000 [deg]
-0. / Prime meridian at epoch [deg]
-   Then replace the zeros if you have real values.
-\end{verbatim}
 
 \end{description}
 
@@ -159,7 +160,6 @@ Append 3 lines for: [data not in the JPL database]
 \end{description}
 Current values are available at: 
 \qi http://www.minorplanetcenter.net/iau/Ephemerides/Comets/Soft00Cmt.txt
-\qii Saved 2013 Jun 19 in MPC format as: -/krc/porb/MPcomets.tab
 \vspace{-6.mm}
 \begin{verbatim}
    Columns   F77            Use
@@ -191,16 +191,27 @@ J2000.0 was confirmed to be heliocentric ecliptic.
 \qi Need both semi-major axis and orbital period.
 \qi Direction of spin axis is specified by planet obliquity and $L_S$ of periapses
 \qiii Both these are rarely known, variations are illustrative.
+\qi A skeleton for additions is at the bottom of the file.
 \end{description}
 
-\np{porbmn} run will print an estimated factor for the ``solar constant'' . This value times the normal SOLCON in KRC input should replace SOLCON.
+\np{porbmn} run will print an estimated factor for the ``solar constant'' . This value times the normal SOLCON in KRC input should replace SOLCON. Currently the PORB system does not make use of the host star spectral type.
 
 The length of the synodic day (assuming prograde motion) is also printed; it should be used as PERIOD in the KRC input. 
 
-\begin{verbatim} 
-http://en.wikipedia.org/wiki/List_of_exoplanetary_host_stars 
-12 extracts at the bottom of the file.
-\end{verbatim}
+
+One list of stars with planets is: 
+\url{http://en.wikipedia.org/wiki/List_of_exoplanetary_host_stars}
+\subsection{Obsolete} %.....................
+
+\textit{sturms.tab} \ \qcite{Sturms71} earliest source
+
+\textit{seidelOld.tab} \ \qcite{Seidelmann74}  without Mars updates
+
+\textit{seidel.tab} \ \qcite{Seidelmann74} Mars updated to 2008
+
+\textit{MPcomets.tab} \ \qcite{} List of 251 objects from 
+\qi http://www.minorplanetcenter.net/iau/Ephemerides/Comets/Soft00Cmt.txt
+\qii Saved 2013 Jun 19 
 % \pagebreak
 \section{PORBEL: get elements} %--------------
 Will read elements and spin-vector data for one object from a (or two) data file, move several values into common and return others.

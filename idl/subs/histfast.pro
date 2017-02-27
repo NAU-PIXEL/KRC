@@ -44,6 +44,7 @@ pro histfast,aa,sigin=sigin,bisin=bisin,xlab=xlab,linear=linear,sub=sub $
 ; 2011nov09 HK Fix small bug that allowed long(huge) 
 ; 2014apr12 HK Deal with pathologic case of all same but SD is roundoff
 ; 2015jan09 HK Do not test integer arrays for finite. And test range as longs
+; 2016dec11 HK Fix bug that left a1 undefined when some NAN's present
 ;_End
 
 ;on_error,2 ; to handle the "Array has a corrupted descriptor: H1" upon return
@@ -60,10 +61,10 @@ if nbad gt 0 then begin
     if nin-nbad gt 0 then begin ; some finite
         ff=aa[where(finite(aa))] ; create array of only finite points
         mean=MEAN_STD(ff,std=sd) ; only finite elements
+        a1=min(ff,max=a2)
         if finite(mean) eq 0 then begin
-           a1=min(ff,max=a2)
            print,'HISTFAST: ',xtit,' mean is not finite' 
-           print,'Min and max of finite=',min(ff,max=a1),a1
+           print,'Min and max of finite=',a1,a2
            b1=mean & b2=a2 & bsize=-1. & j1=0 & j2=0 & nbin=1 
            message,'; may need to swap_endien.',/con
            goto,done 

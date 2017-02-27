@@ -12,7 +12,7 @@
 \parindent=0.em \parskip=1.ex %  no indent & paragraph spacing
 
 \title{KRC planetary surface temperatures: Helplist}
-\author{Hugh H. Kieffer  \ \ File=-/krc/Doc/helplist.tex Version 3.3 2016feb14}
+\author{Hugh H. Kieffer  \ \ File=-/krc/Doc/helplist.tex Version 3.4.3 2016nov21}
 %_History
 % 2016feb08  HK Update spare parameters
 
@@ -46,7 +46,8 @@ v.118, 451-570 (2013) [Ref. 1]
 
 The evolution of KRC code is contained in:  evolve.txt 
 
-A crude diagram of the call architecture is in:  flow.txt 
+A crude diagram of the call architecture is in:  flowV33.txt 
+ \qi 
 
 \subsection{Notation use here}
 The following fonts styles have been partially implemented: 
@@ -56,6 +57,9 @@ The following fonts styles have been partially implemented:
 \qi Code variable names are shown as \nv{variab} and within equations as $\nvf{variab}$.  
 \qi Input parameters are shown as \nj{INPUT} and within equations as $\njf{INPUT}$
 
+When KRC was made double-precision, an '8' was added to many routine names, both
+as the source-code file and as they are called; this 8 is commonly omitted in
+this documentation.
 
 \section{METHOD}
 
@@ -64,8 +68,8 @@ global set of latitudes at a full set of seasons, with enough depth to capture
 the annual thermal wave, and to compute seasonal condensation mass. For historic
 reasons, the code has substantial optimization. Although developed for Mars,
 there are generalities that allow this code set to be used for any solid body
-with any spin vector, in any orbit (around any star); this is also the source of
-some of the complexity.
+with any spin vector, in any orbit (around any star), with or without an
+atmosphere; this is also the source of some of the complexity.
  
 Method is explicit forward finite differences with exponentially increasing
 layer thickness and binary time increase with depth where allowed by stability.
@@ -94,15 +98,21 @@ comets) by the PORB code set.
 Units are SI, except for use of days for orbital motion and rotation period 
 
 Options:
-\qi  Different Physical properties below a set layer (IC).
-\qi  Regional slope
-\qi  Three ways to handle seasonal global pressure variation
+\qi  Different Physical properties below a set layer (IC). 
+\qii May define many zones via an input table
+\qi  Regional slope. Self- or far-field heating
+\qi  Three ways to handle seasonal global pressure variation.
+\qi  Up to two zones of temperature-dependent conductivity and specific heat
+\qi Non-Lambertion solar absorption.
+\qi Global geothermal heat flow.
 
 Atmosphere condensation: 
-\qi Global integral of CO2 frost-gas budget can control surface pressure.
+\qi Global integral of frost-gas budget can control surface pressure.
+\qii Can have virtually any single condensing gas desired.
 \qi Allows different surface elevation for each latitude zone.
 \qii  Zonal frost saturation temperature tracks local surface pressure.
 \qi Option for cap albedo to depend upon mean daily insolation.
+\qii Frost albedo cay vary continuously with frost amount
 
 \subsection{Convergence Notes} %-----			
 
@@ -133,7 +143,7 @@ touched; they could be replaced by running PORBMN carefully.
 
 The parameter title lines are skipped, so that you may put comments there carefully.
 
-The first input line is always KOLD,KEEP (I*), which sets file usage; these are
+The first input line is always KOLD,KEEP [I*], which sets file usage; these are
 described in \S \ref{dbf}. If KOLD=0, then a full set of input values is read.
 \qi If and only if there is a third non-zero integer, then KRC will read the next
 card as 6 debug flags, IDB1 to IBD6, which are normally zero.
@@ -145,11 +155,10 @@ Change lines may follow immediately after the geometry matrix (see \S \ref{pc})
 . The end of definition of a "case" is indicated by a "0/" line. Two successive
 "0/" lines ends the run.
 
-Items with numbers inset 2 spaces below are computed, not input.                
-The source code for 'krccom.inc' indicates which subroutine sets many of the 
+The source code for 'krcc8m.f' indicates which subroutine sets many of the 
 parameters; as the routine name in lowercase just below the parameter name.
 \vspace{-3.mm} 
-\begin{verbatim}
+\begin{verbatim} 
  - - - - - - - - - - - - - - - - - - - -
 Type 4	Title (20A4) 80 characters of anything to appear at top of each page.
 
@@ -250,7 +259,7 @@ Type 1	Real parameters  (8F10.2) ================================
 63  SphLo2  Quadratic    "
 64  SphLo3  Cubic coeff. "
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  Computed REAL*4 values 
+  Computed REAL values 
 65  HUGE    = 3.3E38   nearly largest  REAL*4 value
 66  TINY    = 2.0E-38  nearly smallest REAL*4 value
 67  EXPMIN  = 86.80  neg exponent that would almost cause underflow
@@ -319,21 +328,24 @@ Type 2 Integer Parameters (8I10) ====================================
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 17  K4OUT   Disk output control: See details in DISK BINARY FILES section
              Three modes of direct access Fortran files;  one case per file.
-                  -=KRCCOM(once), then TSF & TPF;
-                  0=KRCCOM,LATCOM each season
+               -=KRCCOM(once), then TSF [,TPF [,TAF]]
+                 -1 saves TST, the surface kinetic temperature
+                 -2 also saves TPF, the top-of-atmosphere bolometric temperature
+                 -3 also saves TAF, the 1-layer atmosphere kinetic temperature
+               0=KRCCOM,LATCOM each season
                1:49=KRCCOM,DAYCOM for the last latitude; each season
-              Modes of bin5 file for multiple cases
-               51=(Hours, 2 min/max,  lat, seasons, cases)
-               52=(hours,  7 items, lat, seasons, cases)
-               54=[many seasons, 5 items,lats, cases]
-               55=[many seasons,9 items, cases]
-               56=[packed T hour and depth, latitude,season,case]
+              Modes of bin5 file for multiple cases. ONLY 52 IS STILL SUPPORTED
+               x51=(Hours, 2 min/max,  lat, seasons, cases)
+               52=(hours,  7 items, lat, seasons, cases) 
+               x54=(many seasons, 5 items,lats, cases)
+               x55=(many seasons,9 items, cases)
+               x56=(packed T hour and depth, latitude,season,case)
 18  JBARE   J5 season count at end of which to set frost amount to 0. 0-->never
 19  NMOD    Spacing of season for notification. minimum of 1
 20  IDISK2  Last season to disk for which TDISK prints notice
              Note: Special routines MKRC,KRCA and TYEARP use TDISK differently
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-Computed I*4 values
+Computed Integer values
 21  KOLD    Season index for reading starting conditions
 22  KVALB   Flag: to use seasonal surface albedo ALB
 23  KVTAU   Flag: 1:TAUD=SEASTAU(SUBS)  2:CLIMTAU opacities for dust and ice
@@ -383,7 +395,7 @@ followed in 'krccom' by:
 [real*4] DAYTIM(5)	20-character run  date and time
 ================================================================
 
-Latitude(s) (10F7.2)   N4 latitudes in degrees, no internal separations.
+Latitude(s) (10F7.2)   N4 latitudes in degrees
 Latitudes to be in order; south to north. [[If last latitude is
 .LE. 0, will assume symmetric results for global integrations]]
 
@@ -397,9 +409,9 @@ editor. see PORBCM.INC
 
 \section{PARAMETER CHANGES \label{pc}}
 
-Fortran List Directed.  Change the values in KRCCOM	
-White-separated, a "/" terminates the read and leaves remaining values unchanged
-The 4 required items are:
+Fortran list-directed.  Change the values in KRCCOM.  Lines of four (or more) 
+white-separated values, a "/" terminates the read and leaves remaining values
+unchanged.  The 4 required items are:
 \vspace{-3.mm} 
 \begin{verbatim}
     1: Type (integer): see table below
@@ -425,7 +437,8 @@ what you intended.
    6   New Orbital Parm Cards Follow (LPORB Must be True)  any
    7   Text becomes new Title                              any
    8   Text becomes new  output or input file name
-         if index=3, name of far-field temperature file
+         if index=3, name of far-field temperature file to read
+                       value 0/1 sets report of each read off/on
          if index=5, is name of type 5x (52) packed output file
          if index=21, this is name of direct-access file
          if index=22, call SEASALB to read variable ALBEDO
@@ -457,13 +470,13 @@ read a binary array (72 seasons, 36 latitudes, 2=dust/ice) of opacities. The
 sample file \nf{THEMIS1yearDustIce.bin5} is described in section [159] of Ref 1.
  
 \section{Contents of COMMOMS } %_______________________
- COMMON /KRCCOM/ \ Input and transfer variables. See krccom.inc  
-\\ COMMON /DAYCOM/ \ Layer and time-of-day items. See daycom.inc  
-\\ COMMON /FILCOM/ \ File names. See filcom.inc  
-\\ COMMON /HATCOM/ \ Store post-2003 items. See hatcom.inc  
-\\ COMMON /LATCOM/ \ Latitude-dependent items. See latcom.inc  
+ COMMON /KRCCOM/ \ Input and transfer variables. See krcc8m.f  
+\\ COMMON /DAYCOM/ \ Layer and time-of-day items. See dayc8m.f  
+\\ COMMON /FILCOM/ \ File names. See filc8m.f  
+\\ COMMON /HATCOM/ \ Store post-2003 items. See hatc8m.f  
+\\ COMMON /LATCOM/ \ Latitude-dependent items. See latc8m.f  
 \\ COMMON /PORBCM/ \ PORB system geometry matrix.  See porbcm.inc  
-\\ COMMON /UNITS/ \ Logical units for I/O and errors.  See units.inc  \\
+\\ COMMON /UNITS/ \ Logical units for I/O and errors.  See unic8m.f  \\
 
 Because the binding routines to IDL are intolerant of any errors, changes to
 KRCCOM, DAYCOM and LATCOM are avoided if possible. Rather, in 2004July HATCOM
@@ -472,7 +485,7 @@ was added as a "catch-all" for any new items.
 A listing of all Fortran commons can be generated by these Linux commands: \\ 
 cd /home/hkieffer/krc/src [replace top part of path with local installation] \\ 
 rm allinc.txt \\ 
-cat krccom.inc latcom.inc daycom.inc hatcom.inc filcom.inc units.inc porbcm.inc $>$ allinc.txt 
+cat krcc8m.f latc8m.f dayc8m.f hatc8m.f filc8m.f unic8m.inc porbcm.inc $>$ allinc.txt 
               
 \section{Error Returns} %_______________________
 \subsection{Tday Blowup} %------------------------------------
@@ -501,10 +514,12 @@ TDAY: LRESET   Reset midnight T's for all but top layer.
 
 \section{DISK BINARY FILES \label{dbf} } %_______________________
 
-The routine TDISK is used to read or write direct-access binary files or bin5
-files. The first season to write is specified by JDISK, all following seasons
-will go to the same file. For direct-access files, each file record consists of
-KRCCOM plus LATCOM or KRCCOM plus DAYCOM.
+The routine TDISK is used to read or write seasonal/global direct-access binary
+files and to write multi-case bin5 files. The first season to write is specified
+by JDISK, all following seasons will go to the same file. For direct-access
+files, each file record consists of KRCCOM plus LATCOM or KRCCOM plus
+DAYCOM. Writing of bin5 and direct-access files are independent of each other
+and may be simultaneous.
 
 Disk output is largely controlled by the KRC and TSEAS routines.
 
@@ -528,13 +543,14 @@ JDISK sets the first season to save results
 
 N5    sets the last season to run
 
-K4OUT sets the record content:
- -      Will output first record of KRCCOM,ALAT,ELEV, then records of TSF & TPF
+K4OUT sets the direct-access record content: (ignored for Type 52)
+ -1:-3  Will output first record of KRCCOM,ALAT,ELEV, then records of TSF & TPF
  0      Will output records of KRCCOM+LATCOM. Usual for large data-base.
  +n<=50 Will output records of KRCCOM+DAYCOM for the last computed latitude.
 \end{verbatim}
-$>$50 Will write custom bin5 file at the end of a run, with dimensionality from
-3 to 5 (more possible). All 5x outputs allow multiple cases, each with a
+
+If a change  ' 8 5 0 <filename> ' has been set, then will write a type 52
+bin5 file at the end of a run, with dimensionality of 5. This allows multiple cases, each with a
 "prefix" for each case consisting of 4 size integers (converted to Float)
 followed by KRCCOM; after this may come vectors of parameters versus season. The
 next-to-last dimension is increased to allow room for the prefix to be embedded
@@ -563,29 +579,27 @@ The first 4 words of the prefix, and thus of the bin5 array, are:
 (2)=FLOAT(IDX)     ! 1-based index of dimension with extra values
 (3)=FLOAT(NDX)     ! Number of those extra
 (4)=FLOAT(NSOUT)   ! [Available of other use]
-\end{verbatim} 
-
-Although five 5x types are defined, Type 52 contains all the information
-available in any of the 5x types and is recommended for all but the most expert
-users.
-
-WARNING: Only type 52 has been extensively tested.
+\end{verbatim}
 
 See also Appendix \ref{type52} for a detailed description and how it is unpacked.
 
 \vspace{-3.mm}
 \begin{verbatim}
-    51=(N24 hours, 2: TSF TPF, N4 lats, NDX+ seasons, cases)
+    52=(N24 hours, 7 items, N4 lats, NDX+ seasons, cases)
 The prefix section contains: sub_array(seasons,5)(0-based index)
   0)=DJU5  1)=SUBS  2)=PZREF  3)=TAUD  4)=SUMF
 
-    52=(N24 hours, 7 items, N4 lats, NDX+ seasons, cases)
 The 7 items are:  1)=TSF  2)=TPF  3)=TAF  4)=DOWNVIS  5)=DOWNIR
 6) packed with [NDJ4,DTM4,TTA4,      followed by TIN(2+
 7) packed with [FROST4,AFRO4,HEATMM, followed by TAX(2+
   The number of layers for TIN and TAX is the smaller of: the number computed 
 and that fit here.
-The prefix is identical to Type 51
+
+---------- The other type 5x listed below are no longer supported ------
+
+    51=(N24 hours, 2: TSF TPF, N4 lats, NDX+ seasons, cases)
+The prefix is identical to Type 52
+  0)=DJU5  1)=SUBS  2)=PZREF  3)=TAUD  4)=SUMF
 
     54= (seasons, 5 items, NDX +nlat, cases)
         Items are (0-based index): 
@@ -605,7 +619,7 @@ The prefix is identical to Type 51
     56= [vectors&items, latitudes, NDX+ seasons, cases]
 The first dimension is: TSF for all hours, TPF at all hours, 
  T4 for all layers at midnight, then FROST4,HEATMM,TTA4
-The prefix is identical to Type 51
+The prefix is identical to Type 52
 \end{verbatim}
 Once a disk file is opened, any records written will go into that file until a
 new filename is specified (Type 8 Change line), which closes the current file.
@@ -615,7 +629,7 @@ larger than needed.
 
 \subsection{Maximum sizes} %---------------------------
 Values for latest version of KRC in this section are in square brackets. All are
-firm-coded in krccom.inp
+firm-coded in krcc8m.f
 
 For any run, even without recorded output, there are three limits:
 \qi maximum number of layers, N1 [50]  
@@ -635,9 +649,9 @@ no limit to the number of seasons allowed.
 
 \subsubsection{Type 52 files} %.....
 
-For type 52, the primary limit is the total Real*4 words available to accumulate
-results into a bin5 array; this is the parameter KOMMON in krccom.inp, currently
-set at 10000000. The size needed for one case is approximately:  
+For type 52, the primary limit is the total words available to accumulate
+results into a bin5 array; this is the parameter KOMMON in krcc8m.f, currently
+set at 10,000,000. The size needed for one case is approximately:  
 N24*7*N4*(N5-JDISK+3).
 
 All five limits mentioned above are in effect.
@@ -712,7 +726,7 @@ Example: \nf{/work1/mars/opacity/THEMIS1yearDustIce.bin5}
 
 \section{Handy things} %_______________________
 
-The first "hour" in printout and output arrays is 1/24 (strictly, 1/N24) of a
+The first "hour" in printout and output arrays is  1/N24 of a
 sol after midnight. E.g., the last time is midnight, not the first.
 
 Atmospheric scale height, SCALEH, depends upon physical constants GRAV [input] 
@@ -724,13 +738,13 @@ To run and save various cases for a single season, set N5 and JDISK to 1.
 To extract a detailed day by saving DAYCOM to disk, set JDISK=N5, set a new
 file name, and set K4OUT to desired latitude index (normally 1):
 
-To run continuously with output every K ((1-3) days, set DELJUL=K*PERIOD
+To run continuously with output every K (1-3) days, set DELJUL=K*PERIOD
 This will force prediction terms to near 0.
 \qi        setting N3=1 will turn off all prediction.
 \qi        set GGT large (to avoid iteration for convergence)
 \qi        set NRSET=999 (to avoid reset of layers)
 
-To continue run with new parameters (e.g., DELJUL)
+To continue a run with new parameters (e.g., DELJUL)
 \qi	3 21 1 'flag set to continue' \\
 Note: changing DELJUL will cause reset of DJUL \\
 Must increase the value of N5: e.g., 2 5 [bigger] 'Increase stopping season' 
@@ -966,7 +980,7 @@ Set LD19 to write bottom-of-atmosphere downgoing fluxes to separate file
 for every time-step for every latitude, every time tlats is called.
  
 
-\section{Reading type 5x files} %______________________
+\section{Accessing KRC output in IDL} %______________________
 
 IDL routines do not access files directly unless specifically listed.
 
@@ -986,10 +1000,18 @@ Calls: DEFINEKRC \\
 Files: bin5 \\
 HOLD is: 0]=logical unit  1]=number of words in a case  2]=\# cases in the file 
 
+READKRC1 \ Read KRC direct access filesC \\
+Calls:  DEFINEKRCC \\
+Read type -1,-2 or -3 files. Caller sets the KRC version that wrote the file. 
+
+READKRC52 \ Reads a KRC type 52 bin5 file \\
+Calls:  BIN5read  READKRCCOM \\
+Reads and unpacks type 52 file, returning 5 multi-dimensional arrays
+
 KRCHANGE   Find changes in KRC input values in common KRCCOM \\
 Calls:  READKRCCOM  MAKEKRCVAL \\
 Reads and stores krccom for first case. For each additional case, makes a 
-list of any changes in the flaot, integer or logical input values. 
+list of any changes in the float, integer or logical input values. 
 
 KRCCOMLAB \ Print KRC common input items \\
  all items via arguments \\
@@ -1114,7 +1136,7 @@ treated as zero atmosphere. The \nv{LATM} flag is used only in \np{tlats} and
 FFAR initially set by KRC to be 'no'; this is less than 3 characters, so
 far-field is considered turned off.
 
-An input card ' 8 3 x text': TCARD loads <text> into FFAR
+An input card ' 8 3 x text': TCARD loads $<$text$>$ into FFAR. 
 For each case, KRC then checks length of FFAR; if 3 of more, will call TFAR(1 
 to open a FAR file for read. If successful, TFAR sets LOPN3=.true. 
 \\ LOPN3 is used in TDAY as the flag that the far-field calculation is active
@@ -1184,26 +1206,15 @@ If all the prints were at the same place, or controlled from the same place,
 that could set the ``current'' flag.
 
 As of 3.3.1, 
-parameters printed by TPRINT(2
-layers printed in TDAY(3
-zones printed by READZONE in TDAY(1 or 3, if active
+\qi parameters printed by TPRINT(2
+\qi layers printed in TDAY(3
+\qi zones printed by READZONE in TDAY(1 or 3, if active
 
-Because case change is done in KRC8, and errors return there with a code.
- All the logic could be in  
+Because case change is done in KRC8, and errors return there with a code,
+ the top contol logic could be there.  
 
 \section{Non-standard FORTRAN}
-
-In order to have the run-time and the purpose line (2nd line in input file) be
-carried into the output files, they are stored in REAL*4 variables DAYTIM(5) and
-TITLE(20) respectively, both of which are in COMMON \/KRCCOM\/ which is coded in
-krccom.inc
-
-DAYTIM is returned by datime.f and printed in tprint.f and tdisk.f as 5A4.
-datime.f gets the time as I*4, uses the intrinsic function CTIME to convert it
-to CHARACTER and uses the routine B2B to manipulate the individual bytes and to
-load the return value.
-
-TITLE is read in tcard.f as 20A4 and printed in tprint.f as 20A4
+All thought to be removed in Version 3+
 
 \appendix %=================================================================
 
@@ -1222,6 +1233,93 @@ the time-step can be doubled for that layer.
 Code changed significantly when layer tables added; between 
 \qi v321: layer thickness BLAY set by FLAY (virtual) and RLAY 
 \qi and 331: BLAY set by FLAY (top physical) and RLAY
+\\ With zone table, at each layer must know the minimum pre-doubling safty factor at all lower layer
+
+For same layer thicknesses, after first time doubling, 321 and 341 converg. factor disagree!
+
+\subsection {Version 343}
+
+Code includes several loops for setting layer parameters, starting at the indicated line number ( 2016 sept 5 source code):
+
+Set the thermophysical properties for each layer. Seperate exclusive loops for
+\qi  156:  zone table or not.
+\qi  278: no zone table
+
+327: Print temperature-dependent properties for up to two zones 
+
+369: If not a zone table, check lower material stabilty and increase layer thickness if needed. 
+
+379: LOOP 1 compute safety factor for each layer before any doubling SCONVG(J)
+
+387: LOOP 2. Find the minimum safety factor at or below each layer before any time doubling; ZDZ (temporary)  
+
+406 LOOP 3 Assign time doubling, from top to depth. In English: 
+\qi IF:  have not yet reach maximum number of time doublings allowed 
+\qi AND at least 2 physical layers already 
+\qi AND number of time steps now is even
+\qi AND new time-step would be acceptably stable for all lower layers
+\\ THEN, do doubling at current layer and update forecast factor.
+
+436: Generate the last-layer versus time comb KJ
+
+480: Print the layer table
+
+\end{document} %===============================================================
+
+5 latitude 40 seas with  mean Mars zonal elevations. Effect of atmos.  
+KRCv3.2.1    RUN-CASE  1- 1   2016 Jul  1 06:06:38  PAGE=  3
+ Conductiv.= 3.864E-02  Dens*Cp= 1.035E+06  Diffu.= 3.733E-08  Scale= 3.248E-02
+         ___THICKNESS____    __CENTER_DEPTH__    Total  Converg.
+ LAYER    scale     meter     scale     meter   kg/m^2  factor         factor
+                                                         SCONVG(I) SCONVG(I)
+    1    0.1800    0.0058   -0.0900   -0.0029     0.000   0.000   0.000
+    2    0.2160    0.0070    0.1080    0.0035    11.224   2.851   2.851
+    3    0.2592    0.0084    0.3456    0.0112    24.693   4.106   4.106
+    4    0.3110    0.0101    0.6307    0.0205    40.856   5.913   2.956 2
+    5    0.3732    0.0121    0.9729    0.0316    60.251   4.257   2.129 2
+    6    0.4479    0.0145    1.3834    0.0449    83.525   6.130   3.065 2
+    7    0.5375    0.0175    1.8761    0.0609   111.455   4.414   2.207 2
+    8    0.6450    0.0209    2.4673    0.0801   144.970   6.356   3.178 2
+    9    0.7740    0.0251    3.1768    0.1032   185.188   4.576   2.288 2
+   10    0.9288    0.0302    4.0282    0.1308   233.449   6.590   3.295 2
+   11    1.1145    0.0362    5.0498    0.1640   291.363   4.745   2.372 2
+   12    1.3374    0.0434    6.2758    0.2038   360.860   6.832   3.416 2
+   13    1.6049    0.0521    7.7469    0.2516   444.256   4.919   2.460 2
+   14    1.9259    0.0625    9.5123    0.3089   544.332   7.084   3.542 2
+   15    2.3111    0.0751   11.6308    0.3777   664.422   5.100   2.550 2
+   16    2.7733    0.0901   14.1730    0.4603   808.531   7.344   3.672 2
+   17    3.3279    0.1081   17.2235    0.5594   981.461   5.288   5.288
+   18    3.9935    0.1297   20.8842    0.6783  1188.977   7.615   7.615
+   19    4.7922    0.1556   25.2771    0.8209  1437.997  10.965  10.965
+   20    5.7506    0.1868   30.5485    0.9921  1736.820  15.790  15.790
+0Bottom layers for time doubling:      4    6    8   10   12   14   16   20
+
+ 2016 Jul  2 06:32:21 
+         ___THICKNESS____    __CENTER_DEPTH__  Conductiv. Density Sp.Heat   Total Converg.
+ LAYER  D_scale     meter   D_scale     meter      W/m-K   kg/m^3   J/kg   kg/m^2  factor
+    1    0.1800    0.0058   -0.0900   -0.0029 0.3864E-01  1600.00  647.00     0.000   0.000
+    2    0.2160    0.0070    0.1080    0.0035 0.3864E-01  1600.00  647.00    11.224   2.851
+    3    0.2592    0.0084    0.3456    0.0112 0.3864E-01  1600.00  647.00    24.693   4.106
+    4    0.3110    0.0101    0.6307    0.0205 0.3864E-01  1600.00  647.00    40.856   2.956
+    5    0.3732    0.0121    0.9729    0.0316 0.3864E-01  1600.00  647.00    60.251   2.129
+    6    0.4479    0.0145    1.3834    0.0449 0.3864E-01  1600.00  647.00    83.525   3.065
+    7    0.5375    0.0175    1.8761    0.0609 0.3864E-01  1600.00  647.00   111.455   2.207
+    8    0.6450    0.0209    2.4673    0.0801 0.3864E-01  1600.00  647.00   144.970   3.178
+    9    0.7740    0.0251    3.1768    0.1032 0.3864E-01  1600.00  647.00   185.188   2.288
+   10    0.9288    0.0302    4.0282    0.1308 0.3864E-01  1600.00  647.00   233.449   3.295
+   11    1.1145    0.0362    5.0498    0.1640 0.3864E-01  1600.00  647.00   291.363   2.372
+   12    1.3374    0.0434    6.2758    0.2038 0.3864E-01  1600.00  647.00   360.860   3.416
+   13    1.6049    0.0521    7.7469    0.2516 0.3864E-01  1600.00  647.00   444.256   2.460
+   14    1.9259    0.0625    9.5123    0.3089 0.3864E-01  1600.00  647.00   544.332   3.542
+   15    2.3111    0.0751   11.6308    0.3777 0.3864E-01  1600.00  647.00   664.422   2.550
+   16    2.7733    0.0901   14.1730    0.4603 0.3864E-01  1600.00  647.00   808.531   3.672
+   17    3.3279    0.1081   17.2235    0.5594 0.3864E-01  1600.00  647.00   981.461   5.288
+   18    3.9935    0.1297   20.8842    0.6783 0.3864E-01  1600.00  647.00  1188.977   7.615
+   19    4.7922    0.1556   25.2771    0.8209 0.3864E-01  1600.00  647.00  1437.997  10.965
+   20    5.7506    0.1868   30.5485    0.9921 0.3864E-01  1600.00  647.00  1736.820  15.790
+ Bottom                     33.4238    1.0855
+ Lower layer of time doubling:   3  4  6  8 10 12 14 20    7 doublings, the limit for N2=384
+
  \vspace{-3.mm} 
 \begin{verbatim}
 v232
@@ -1299,68 +1397,31 @@ L404+
 Then: replace factor of 4. on QA above with 2.
 
 \end{verbatim}
-In English: IF:  more doublings allowed 
-\qi AND at least 2 physical layers already 
-\qi AND number of time steps now is even
-\qi AND new time-step would be acceptably stable for all lower layers
-\\ then, do doubling and update forecast factor
 
-For same layer thicknesses, after first time doubling, 321 and 341 converg. factor disagree!
+KM,JJH,ARC3,CONVF,QQ,DTIM=   9   7 0.80100 3.00000     9.903 0.57722E+02
+LZONE,LALCON,JJH, IK1:4=  F  T     7     1     0     0     0
+ 37   43413.549   43413.549
+ 36   32826.880   32826.880
+ 35   24821.838   24821.838
+ 34   18768.875   18768.875
+ 33   14191.966   14191.966
+ 32   10731.165   10731.165
+ 31    8114.303    8114.303
+ 30    6135.579    6135.579   3067.789= Converg.factor
 
-
-
-
-\end{document} %===============================================================
-5 latitude 40 seas with  mean Mars zonal elevations. Effect of atmos.               
-KRCv3.2.1    RUN-CASE  1- 1   2016 Jul  1 06:06:38  PAGE=  3
- Conductiv.= 3.864E-02  Dens*Cp= 1.035E+06  Diffu.= 3.733E-08  Scale= 3.248E-02
-         ___THICKNESS____    __CENTER_DEPTH__    Total  Converg.
- LAYER    scale     meter     scale     meter   kg/m^2  factor         factor
-                                                         SCONVG(I) SCONVG(I)
-    1    0.1800    0.0058   -0.0900   -0.0029     0.000   0.000   0.000
-    2    0.2160    0.0070    0.1080    0.0035    11.224   2.851   2.851
-    3    0.2592    0.0084    0.3456    0.0112    24.693   4.106   4.106
-    4    0.3110    0.0101    0.6307    0.0205    40.856   5.913   2.956 2
-    5    0.3732    0.0121    0.9729    0.0316    60.251   4.257   2.129 2
-    6    0.4479    0.0145    1.3834    0.0449    83.525   6.130   3.065 2
-    7    0.5375    0.0175    1.8761    0.0609   111.455   4.414   2.207 2
-    8    0.6450    0.0209    2.4673    0.0801   144.970   6.356   3.178 2
-    9    0.7740    0.0251    3.1768    0.1032   185.188   4.576   2.288 2
-   10    0.9288    0.0302    4.0282    0.1308   233.449   6.590   3.295 2
-   11    1.1145    0.0362    5.0498    0.1640   291.363   4.745   2.372 2
-   12    1.3374    0.0434    6.2758    0.2038   360.860   6.832   3.416 2
-   13    1.6049    0.0521    7.7469    0.2516   444.256   4.919   2.460 2
-   14    1.9259    0.0625    9.5123    0.3089   544.332   7.084   3.542 2
-   15    2.3111    0.0751   11.6308    0.3777   664.422   5.100   2.550 2
-   16    2.7733    0.0901   14.1730    0.4603   808.531   7.344   3.672 2
-   17    3.3279    0.1081   17.2235    0.5594   981.461   5.288   5.288
-   18    3.9935    0.1297   20.8842    0.6783  1188.977   7.615   7.615
-   19    4.7922    0.1556   25.2771    0.8209  1437.997  10.965  10.965
-   20    5.7506    0.1868   30.5485    0.9921  1736.820  15.790  15.790
-0Bottom layers for time doubling:      4    6    8   10   12   14   16   20
-
- 2016 Jul  2 06:32:21 
-         ___THICKNESS____    __CENTER_DEPTH__  Conductiv. Density Sp.Heat   Total Converg.
- LAYER  D_scale     meter   D_scale     meter      W/m-K   kg/m^3   J/kg   kg/m^2  factor
-    1    0.1800    0.0058   -0.0900   -0.0029 0.3864E-01  1600.00  647.00     0.000   0.000
-    2    0.2160    0.0070    0.1080    0.0035 0.3864E-01  1600.00  647.00    11.224   2.851
-    3    0.2592    0.0084    0.3456    0.0112 0.3864E-01  1600.00  647.00    24.693   4.106
-    4    0.3110    0.0101    0.6307    0.0205 0.3864E-01  1600.00  647.00    40.856   2.956
-    5    0.3732    0.0121    0.9729    0.0316 0.3864E-01  1600.00  647.00    60.251   2.129
-    6    0.4479    0.0145    1.3834    0.0449 0.3864E-01  1600.00  647.00    83.525   3.065
-    7    0.5375    0.0175    1.8761    0.0609 0.3864E-01  1600.00  647.00   111.455   2.207
-    8    0.6450    0.0209    2.4673    0.0801 0.3864E-01  1600.00  647.00   144.970   3.178
-    9    0.7740    0.0251    3.1768    0.1032 0.3864E-01  1600.00  647.00   185.188   2.288
-   10    0.9288    0.0302    4.0282    0.1308 0.3864E-01  1600.00  647.00   233.449   3.295
-   11    1.1145    0.0362    5.0498    0.1640 0.3864E-01  1600.00  647.00   291.363   2.372
-   12    1.3374    0.0434    6.2758    0.2038 0.3864E-01  1600.00  647.00   360.860   3.416
-   13    1.6049    0.0521    7.7469    0.2516 0.3864E-01  1600.00  647.00   444.256   2.460
-   14    1.9259    0.0625    9.5123    0.3089 0.3864E-01  1600.00  647.00   544.332   3.542
-   15    2.3111    0.0751   11.6308    0.3777 0.3864E-01  1600.00  647.00   664.422   2.550
-   16    2.7733    0.0901   14.1730    0.4603 0.3864E-01  1600.00  647.00   808.531   3.672
-   17    3.3279    0.1081   17.2235    0.5594 0.3864E-01  1600.00  647.00   981.461   5.288
-   18    3.9935    0.1297   20.8842    0.6783 0.3864E-01  1600.00  647.00  1188.977   7.615
-   19    4.7922    0.1556   25.2771    0.8209 0.3864E-01  1600.00  647.00  1437.997  10.965
-   20    5.7506    0.1868   30.5485    0.9921 0.3864E-01  1600.00  647.00  1736.820  15.790
- Bottom                     33.4238    1.0855
- Lower layer of time doubling:   3  4  6  8 10 12 14 20    7 doublings, the limit for N2=384
+...
+ 11      30.293      30.293
+ 10      22.906      22.906
+  9      17.320      17.320
+  8      13.096      13.096
+  7       9.903       9.903   4.951   first of lower material
+  6       7.488       7.488   3.744
+  5       5.662       5.662   5.662
+  4       4.281       4.281
+  3       3.237       3.237
+  2       2.448       2.448    2.448
+ Time-doubling fraction:  0.55405408    
+ 1.035E+06=Dens*Cp   3.733E-08=Diffu.      0.0325=Scale      200.00=Inertia
+ Beginning at layer   7  At      0.0219 m.
+ 1.588E+06=Dens*Cp   1.745E-06=Diffu.      0.2220=Scale     2097.20=Inertia
+ table ident to thin9

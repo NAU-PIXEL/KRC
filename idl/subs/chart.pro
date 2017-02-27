@@ -55,6 +55,7 @@ PRO chart, yyy, title=title,parti=parti,xtit=xtit,range=range,dlin=dlin,psy=psy 
 ; 2015may31 HK  Add display of ranges used for an overplot 
 ; 2015jun07 HK  Add keyword rangu
 ; 2015aug10 HK  Add cclr keyword
+; 2016dec14 HK  Fix X position of text if oplot and csize
 ;_End          .comp chart
 
 ssy=size(yyy) & nd=ssy[1]
@@ -120,7 +121,7 @@ if psy ne 0 then xa=min(xax,max=xb) ; if symbol, allow random order
 if c1 then PLOT,xax,yyy(*,0),xrange=[xa,xb],yrange=[0.,mp],/nodata $
 	,xstyle=1,ystyle=1,xtit=xtit,ytit=ytit,tit='Chart:  '+title
 
-if c1 then xp=0.03 else xp=0.85
+if c1 then xp=0.03 else xp=1.-0.15*csize
 xloc=xa+xp*(xb-xa)	; a small % from left edge
 rangu=fltarr(2,mp)
 for k=0,mp-1 do begin           ; each panel

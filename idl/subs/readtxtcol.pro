@@ -20,7 +20,8 @@ function readtxtcol, name, sp=sp, nskip=nskip,ncol=ncol,mrow=mrow,fill=fill $
 ; cend  in_  string  Pattern for the last line of comments. Default = C_END
 ; ilun both  integer, Logical unit to continue reading. Out is the LUN used
 ;             If in =0 (default) or negative, will open, read and close     
-;             If in is 1:99, will get new LUN, open file, read and not close. 
+;             If in is 1:99, will get new LUN, open file, read and not close
+;                            and return the open lun number 
 ;             If in is ge 100, assumes file is open. Will read and not close
 ; top	out_ Strarr(*) each of the initial lines "skipped"
 ;                If nskip is negative, At most 50 lines will be retained
@@ -50,11 +51,12 @@ mtop=50                       ; maximum top lines saved when nskip negative
 ; 2012mar03 HK For sp='0', negative ncol will retain blank lines
 ; 2013jul23 HK Allow retention of "top" lines even if nskip is negative
 ; 2016mar08 HK Add the keywords cend and ilun
+; 2017feb01 HK Correct actions with ilun that left LUN assigned
 ;_End                 .comp readtxtcol
 
 if not keyword_set(ilun) then ilun=0
 if not keyword_set(cend) then cend='C_END'
-jlun=ilun 
+jlun=ilun                       ; will become the unit to use
 if jlun lt 100 then begin 
   openr, jlun, name,error=operr,/get_lun ; get a free logical unit & open file
   if operr ne 0 then begin
@@ -62,7 +64,6 @@ if jlun lt 100 then begin
           ,' ',name,' ',strmessage(operr)
     return,operr < 0          ; lun has not been assigned, don't need to free it
   endif
-  ilun=jlun                     ; output the LUN assigned
 endif
 nr = -1L			; index of successful rows
 ON_IOERROR, BAD
@@ -187,10 +188,9 @@ endwhile ; ____________________________________________________________
 done:
 if nr lt maxrow-1 then xx=xx[0:nr,*] ; extract only the part defined
 
-finish:
-;; stop
-if ilun lt 7 then free_lun, jlun                  ; will close file first
-if !dbug ge 9 then stop
+finish: if !dbug ge 9 then stop
+if ilun lt 7 then free_lun, jlun  $           ; will close file first
+else if ilun lt 100 then ilun=jlun ; return new lun assigned. leave file open
 return,xx
 
 bad: print,'READTXTCOL read error,nr,err_string=',nr,!err_string

@@ -1,66 +1,143 @@
+#!/bin/bash
 ###################################
 # Script and comments for making a distribution package of the KRC thermal
 # model file system. See the file AAREADME for additional description
-#  This step to ensure documentation products up to date
+#  This step to ensure documentation products up to date by checking if
+#  source .tex files are newer than the .pdf file
 # 2012 Nov 21 Hugh Kieffer 
 # 2013nov13, 2014mar03   HK Update
+# 2017feb24 HK Try using bash and testing if .tex is newer
+# Note:  must be space on inside of [ and ] 
+
+# .tex containing .eps  must use latex and  dvipdf
+# .tex with .png but no .eps  should use pdflatex
+# .tex with no figs can use either
+# but with my commands, cannot tell from source file.
+
 ###################################
 
+cd ~/krc/Doc/DV3 ; pwd
 
-########## Ensure that the Guides are the latest version 
+QQ='V34UG' ; Q2='farg' ; Q3='fard' ; Q4='v34p' # has citations and figures
 
-cd ~/xtex/AGU/
+# if [[ $QQ'.tex' -nt $QQ'.pdf' -o  $Q2'.tex' -nt $QQ'.pdf' ]]; then
+ if [ $QQ'.tex' -nt $QQ'.pdf' ] || [ $Q2'.tex' -nt $QQ'.pdf' ] || [ $Q3'.tex' -nt $QQ'.pdf' ] || [ $Q4'.tex' -nt $QQ'.pdf' ]; then
+    echo 'some .tex  was newer'
+    latex $QQ			# has references
+    bibtex $QQ
+read -rsp $'Next is 2x pdf Press any key to continue...\n' -n1 key
+    pdflatex $QQ
+    pdflatex $QQ
+read -rsp $'Next is tth Press any key to continue...\n' -n1 key
+    tth < $QQ'.tex' > $QQ'.html' 	# and to html  2014mar03 does not find .bbl
+    echo '-------- Done '$QQ
+    read -rsp $'Press any key to continue...\n' -n1 key
+else
+    echo $QQ'.pdf  was newer'
+fi
 
-latex krcV3 			# process the .tex file	
-bibex krcV3 			# resolve the bibliograhy
-latex krcV3 			# process the .tex file	
-latex krcV3 			#   twice to resolve references	
-dvipdf krcV3.dvi		# and to pdf
+cd ~/krc/Doc ; pwd   # no citations no figs
+QQ='helplist'
+if [[ $QQ'.tex' -nt $QQ'.pdf' ]]; then
+    echo $QQ'.tex  was newer'
+    pdflatex helplist		
+    echo '-------- Done '$QQ
+    read -rsp $'Press any key to continue...\n' -n1 key
+else
+    echo $QQ'.pdf  was newer'
+fi
 
-cd ~/krc/Doc
+QQ='hporb'    # no figures   has citations
+if [[ $QQ'.tex' -nt $QQ'.pdf' ]]; then
+    echo $QQ'.tex  was newer'
+    latex $QQ		
+    latex $QQ
+    dvipdf $QQ'.dvi'		# and to pdf
+    echo '-------- Done '$QQ
+    read -rsp $'Press any key to continue...\n' -n1 key
+else
+    echo $QQ'.pdf  was newer'
+fi
 
-latex hporb			# has references included
-latex hporb
-dvipdf hporb.dvi		# and to pdf
+QQ='PUG'	# has cites  no figs
+if [[ $QQ'.tex' -nt $QQ'.pdf' ]]; then
+    echo $QQ'.tex  was newer'
+    latex $QQ		
+    bibtex $QQ
+    pdflatex $QQ
+    pdflatex $QQ
+read -rsp $'Next is tth Press any key to continue...\n' -n1 key
+    tth <$QQ'.tex' >$QQ'.html' 	# and to html  2014mar03 does not find .bbl
+    echo '-------- Done '$QQ
+    read -rsp $'Press any key to continue...\n' -n1 key
+else
+    echo $QQ'.pdf  was newer'
+fi
 
-latex PUG			# has references
-bibtex PUG
-latex PUG
-latex PUG
-dvipdf PUG.dvi          	# and to pdf
-tth <PUG.tex >PUG.html		# and to html  2014mar03 does not find .bbl
+#exit #^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-latex helplist			# no refs
-dvipdf helplist.dvi		# and to pdf
+cd ~/krc/VER/ ; pwd    # has .eps  no cites
+QQ='Vtest'
+if [[ $QQ'.tex' -nt $QQ'.pdf' ]]; then
+    echo $QQ'.tex  was newer'
+    latex $QQ
+    dvipdf $QQ'.dvi'	# and to pdf
+    echo '-------- Done '$QQ
+else
+    echo $QQ'.pdf  was newer'
+fi
 
-cd ~/krc/VER/
+cd ~/xtex/themis/ ; pwd
+QQ='cement'
+if [[ $QQ'.tex' -nt $QQ'.pdf' ]]; then
+    echo $QQ'.tex  was newer'
+    latex $QQ			# process the .tex file	
+    latex $QQ			#   twice to resolve references
+    dvipdf $QQ'.dvi'	# and to pdf
+    echo '-------- Done '$QQ
+else
+    echo $QQ'.pdf  was newer'
+fi
 
-latex Vtest
-dvipdf Vtest.dvi	# and to pdf
+cd ~/xtex/tes/krc/ ; pwd
 
-cd ~/xtex/themis/
+QQ='mkrc'
+if [[ $QQ'.tex' -nt $QQ'.pdf' ]]; then
+    echo $QQ'.tex  was newer'
+    latex $QQ
+    dvipdf $QQ'.dvi'
+    echo '-------- Done '$QQ
+else
+    echo $QQ'.pdf  was newer'
+fi
 
-latex cement 			# process the .tex file	
-latex cement			#   twice to resolve references
-dvipdf cement.dvi	# and to pdf
+QQ='HeatOfT'
+if [[ $QQ'.tex' -nt $QQ'.pdf' ]]; then
+    echo $QQ'.tex  was newer'
+    latex $QQ 			# process the .tex file	
+    latex $QQ			#   twice to resolve references
+    dvipdf $QQ'.dvi'		# and to pdf
+    echo '-------- Done '$QQ
+else
+    echo $QQ'.pdf  was newer'
+fi
 
-cd ~/xtex/tes/krc/
+cd ~/xtex/AGU/ ; pwd
+QQ='krc'
+if [[ $QQ'.tex' -nt $QQ'.pdf' ]]; then
+    echo $QQ'.tex  was newer'
+    latex $QQ 			# process the .tex file	
+    bibex $QQ 			# resolve the bibliograhy
+    latex $QQ 			# process the .tex file	
+    latex $QQ 			#   twice to resolve references	
+    dvipdf $QQ'.dvi'		# and to pdf
+    echo '-------- Done '$QQ
+else
+    echo $QQ'.pdf  was newer'
+fi
 
-latex mkrc
-dvipdf mkrc.dvi
-latex HeatOfT 			# process the .tex file	
-latex HeatOfT			#   twice to resolve references
-dvipdf HeatOfT.dvi		# and to pdf
-
+pwd
 exit #========================================================
-
-##########  template
-
-latex q 			# process the .tex file	
-bibtex q 			# get th references
-latex q				#   twice to resolve references
-latex q				#   
-dvipdfm q.dvi			# and to pdf
 
 ### obsolete
 cd ~/krc  

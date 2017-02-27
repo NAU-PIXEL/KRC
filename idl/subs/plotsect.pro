@@ -1,14 +1,15 @@
-PRO plotsect, lab, yf,  xv=xv, cs=cs ,lins=lins, xp=xp,yr=yr
+PRO plotsect, lab, yf,  xv=xv, lins=lins, xp=xp,yr=yr,_extra=tra
 ;_Titl  PLOTSECT Plot section lines and titles when several things on one abcissa
 ; lab  in. strarr(N)    Section labels
 ; yf   in. float        Fraction of way up for labels.
 ; xv   in_ fltarr(N-1)  X values of the separations. Default is uniform
-; cs   in_ float        Character size of labels. Default is 1.5
+; NOPE cs   in_ float        Character size of labels. Default is 1.5
 ; lins in_ integer      Line style, Default is 1=dotted. -1 is solid, -2 is none
 ; xp   in_ intarr(2)    Delta of X axis from data range. 
 ;                          commonly [-1,1] to avoid symbol plotting on edges
 ; yr   in_ fltarr(2)    Fraction of way up for the vertical lines.
 ;                           Default is entire plot
+; _extra in  Any keyword accepted by xyouts, e.g., orientation
 ;_Hist  2013sep01 Hugh Kieffer  When can't find any prior version
 ; 2014may08 HK  Accomodate Y -log axis
 ; 2014mar01 HK  Fix bug in xv index
@@ -16,6 +17,7 @@ PRO plotsect, lab, yf,  xv=xv, cs=cs ,lins=lins, xp=xp,yr=yr
 ; 2015aug13 HK  Allow lines to be omitted. ; 2015oct07 HK  Add keyword yr
 ; 2016jan19 HK  Constrain Y positions to be within data range, 
 ;               Y inputs always fractions
+; 2016sep13 HK Remove keyword cs and add _extra
 ;_End             .comp plotsect
 
 nlab=n_elements(lab)            ; number of section
@@ -51,7 +53,7 @@ cs=(cs>.5)<6.                   ; reasonable limits
 
 if lins ge 0 then for j=1,nlab-1 do plots,[1.,1.]*xx[j],ylen,line=linu ; separate sections
 
-for j=0,nlab-1 do xyouts,xc[j],ya,lab[j],align=.5,charsiz=cs ; each lable
+for j=0,nlab-1 do xyouts,xc[j],ya,lab[j],align=.5,_extra=tra ; each lable
 
 if !dbug ge 7 then stop
 return

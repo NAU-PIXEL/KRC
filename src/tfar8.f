@@ -2,6 +2,7 @@
 C     _Titl  TFAR8  Open and read KRC type -N direct-access file
 C     _Vars
       INCLUDE 'krcc8m.f'        ! has IMPLICIT NONE
+C Here refer to:  DAYTIM  FD  ID  KFARAC  LD  MAXNH  MAXN4  NUMFD  NUMID  NUMLD 
 C     INCLUDE 'latc8m.f'
 C     INCLUDE 'dayc8m.f'
 C     INCLUDE 'hatc8m.f'
@@ -12,7 +13,7 @@ C     _Args
 C               1 = Open file .  KREC: +1=check KRCCOM  +2=stat file
 C                 will set  LOPN3=.true. if open successful
 C               2 = Return help about the file
-C                     KREC can be used to set reporting ACTion
+C                  KREC can be used to set continuing reporting action. NOPE  
 C               3 = Read a season.  input  KREC as virtual record number
 C               4 = Close the file.  KREC ignored
       INTEGER*4 KREC            !in  Record to read, 1-based.
@@ -56,11 +57,11 @@ C Note: Direct write zero-fills unused part of record
       INTEGER*4 NLF     ! number of latitudes defined
       INTEGER*4 MREC    ! number of seasons in the file
       REAL*4 FREC       ! " " , as a real number
-      INTEGER*4 ACT     ! reporting action for each read
+      INTEGER*4 KACT     ! reporting action for each read  REPLACED by KFARAC
       INTEGER*4 I,II,ILEN,IOST,ITOP,NWTOT,NRECL
       INTEGER*4 BUFF(13) ! for file status
 
-      SAVE ACT,JREC,MREC,FELP        ! insure these remembered
+      SAVE KACT,JREC,MREC,FELP        ! insure these remembered
 C     
       ILEN = LNBLNK(FFAR)
       IF (IDB3.EQ.2) WRITE(IOSP,*)'TFAR:0 ',KODE,KREC
@@ -130,7 +131,7 @@ C        PRINT *,' FELP',FELP !dbb
         GOTO 7
 
       CASE(2)          ! only provide help info        2  2  2  2  2  2  2  2
-        ACT=KREC                ! remenber the setting
+        KACT=KREC                ! remember the setting NO LONGER USED
         IF (LOPN3) GOTO 7       ! just return help
         DELP(3)=0.              ! Flag as no data available
         WRITE (IOERR,*) 'TFAR:2, file is not open'
@@ -151,7 +152,7 @@ C
            IF (MINT.EQ.3) READ(IOD3,REC=II,ERR=81,IOSTAT=IOST)FTA
           ENDIF
 
-          IF (ACT.EQ.1) WRITE(IOSP,310)FFAR(1:ILEN),KREC
+          IF (KFARAC.EQ.1) WRITE(IOSP,310)FFAR(1:ILEN),KREC
  310      FORMAT(' TFAR: READ FILE= ',A,' RECORD=',I4)
           IERR=IOST
           JREC=KREC

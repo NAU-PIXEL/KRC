@@ -1,8 +1,8 @@
-FLOWV33.TXT KRC System Version 3.3: Subroutine Calls and COMMON usage  2016mar19
+flow.txt KRC System Version 3.3: Subroutine Calls and COMMON usage 2016mar19
 
-References to COMMON's  .f unless otherwise noted             
-                                          .inc          porbx8m for only KRC8
-        krc33c  latc8m  dayc8m  hatc8m  units.  fil33c. porbc8m
+References to COMMON's  All are ---.f 
+                                                       porbx8m for only KRC8
+        krcc8m  latc8m  dayc8m  hatc8m  unic8m  filc8m porbc8m
         KRCCOM  LATCOM  DAYCOM  HATCOM  UNITS   FILCOM  PORBCM 
 KRC8      *       *       *               *       *                .
 TSEAS8    *       *               *       *                        .
@@ -20,34 +20,40 @@ PORB0                                                     *        .
 A final "8" in routine name may be omitted
 Call sequence, prepared for slide: crop  left=.22 bot=.72
 .
-KRC           /-> TSEAS        /--------------------------->TDAY (1
-  R2R         ^  |->season     ^ /---->TLATS                  k EVMONO  4x
-  CATIME      ^  |  ~TCARD (2  ^ ^      ROTV                   ~READZONE
-  TCARD (1    ^  |  ^TDAY (1 ->/ ^      ~VLPRES 
-    PORB0     ^  |  +PORBIT      ^      ~TPRINT (8          
-  ~TPRINT (1  ^  |  ~SEASALB     ^ |-> latitude loop                             
-  DTIME       ^  |  ~SEASTAU     ^ |    AVEDAY                    -/krc/flow  
--> case       ^  2  TLATS--->----/ |    ROTV                                     
-|  ~TCARD (2  ^  |  .~TINT         |    VROTV                                    
-|   TDAY (1   ^  |  ~TPRINT (5     |   .SIGMA                                    
-|  ~TPRINT (2 ^  |  ~TPRINT (6     |   .~CLIMTAU                                 
-|  ~TDISK (1  ^  |  ~TDISK (5      |   .~ALBVAR                                  
-|  DATIME     ^  |  ~TDISK (2      |   .~CO2PT          /--->TDAY (2             
-1 TSEAS --->--/  \<--season        ||->  timestep       ^  |>-day loop           
-|  ~TPRINT (9                      ||    ROTV           ^  ||>-timestep loop     
-|  TCARD (2                        34   .DEDING2 (cos i ^  |||>-layer loop       
-\<-case                            ||   .DEDING2 (cos t ^  456  k EVMONO  4x     
- +TDISK (4                         |\<-- timestep       ^  ||\<-layer            
-                                   |    AVEYEAR         ^  |\<-timestep          
- : always                          |   ~TPRINT (3       ^  \<-day                
-+: usually                         |    TDAY (2 --->---/    [only if blowup]     
-~: if invoked                      |    EPRED 5x             TPRINT (7           
-.: if an atmosphere                |   ~TPRINT (4            TPRINT (2           
-k: if T-dependent                  \<---latitude             TPRINT (4           
-: (n call with control code n  
-: nx  Called x times   
-.
-Expanded Call map #######################################################
+KRC           /-> TSEAS        /--------------------->-----TDAY (1 
+  FILLD 3x    ^    CPU_TIME    ^  /-->TLATS                 k EVMONO3  4x  
+  CATIME      ^    PORBIT (2   ^  ^     TFAR                 ~READZONE    
+  TCARD (1    ^    TFAR (2     ^  ^     CUBUTERP8             FLAYER(int) 2x
+  DTIME       ^  ->season      ^  ^     ROTV                k EVMONO3  4x 
+-> case       ^  |  ~TCARD (2  ^  ^     ~VLPRES       
+|  ~TCARD (2  ^  |  ^TDAY (1 ->/  ^     ~TPRINT (8    
+|  ~TPRINT (2 ^  |   CPU_TIME     ^  |-> latitude loop   
+|   TDAY (1   ^  |  ~SEASALB      ^  |    MVD   4x        : always          
+|   FILLL     ^  |  ~SEASTAU      ^  |    CUBUTERP8 2x   +: usually          
+|  ~TDISK (1  ^  |   TFAR (3      ^  |    AVEDAY         ~: if invoked         
+|  ~TDISK (6  ^  |   MVDF 2x      ^  |    VEQUAL         .: if an atmosphere 
+|  ~TUN (1    ^  |   TFAR (3      ^  |    ROTV           k: if T-dependent      
+|  ~TFAR (1   ^  |   MVDA 2x      ^  |    VROTV           : nx Called x times
+1 TSEAS --->--/  2   TLATS--->----/  |   .SIGMA           : (n call with 
+|  ~TPRINT (9    | .~TINT            |  .~CLIMTAU              control code n
+|  ~TPRINT (2    |  ~TPRINT (5       |  .~ALBVAR       
+|   TDAY (3      |  ~TPRINT (6       |  .~CO2PT            /--->TDAY (2    
+|   TDISK (4     |  ~TDISK (5        ||-> timestep         ^  |>-day loop    
+|   TCARD (2     |  ~TDISK (2        ||    ROTV            ^  ||>-timestep loop
+|   DTIME        \<--season          ||    VDOT 2x         ^  |||>-layer loop 
+\<-case              CPU_TIME        34   .DEDING2 (cos i  ^  456  k EVMONO3 4x
+  +TDISK (4                          ||   .DEDING2 (cos t  ^  ||\<-layer     
+  ~TFAR (4                           |\<-- timestep        ^  |\<-timestep    
+  +TDISK (7                          |    AVEYEAR          ^  \<-day 
+                                     |   ~TPRINT (3        ^  [only if blowup]
+                                     |    TDAY (2 --->-----/    TPRINT (7 
+                                     |   ~TUN                   TPRINT (2 
+                                     |    EPRED 5x              TPRINT (4  
+                                     |   ~TPRINT (4     
+                                     \<---latitude      
+
+ 
+Expanded Call map ############################ Obsolete
 see codes above, and       @: calls listed above at prior mention
                          sys: System routine
 

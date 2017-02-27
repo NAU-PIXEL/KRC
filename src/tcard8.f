@@ -52,6 +52,7 @@ C 2016feb13 HK Add zone-table  option
 C 2016mar23 HK Set the LD18 flag if anything other than onePoint is changed
 C 2016may18 HK Incorporate far-field file
 C 2016aug11:22 HK Clarify comments. Separate errors 439 from 430
+C 2016sep09 HK Use KFARAC to set reporting of TFAR8 reads
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
 
       INTEGER*4 LNBLNK          ! function
@@ -78,14 +79,14 @@ C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
      & ,'SPECHEAT','DENSITY','CABR','AMW','ABRPHA','PTOTAL','FANON'     !7
      & ,'TATM','TDEEP','SpHeat2','TAUD','DUSTA','TAURAT','TWILI'         !7
      & ,'ARC2/PHT','ARC3','SLOPE','SLOAZI','TFROST','CFROST','AFROST'    !7
-     & ,'FEMIS','AF1','AF2','FROEXT','spare','RLAY','FLAY','CONVF'       !8
+     & ,'FEMIS','AF1','AF2','FROEXT','SatPrB','RLAY','FLAY','CONVF'       !8
      & ,'DEPTH','DRSET','DDT','GGT','DTMAX','DJUL','DELJUL','SolarDec'   !8
      & ,'DAU','L_S','SOLCON','GRAV','Atm_Cp','ConUp0','ConUp1','ConUp2'  !8
      & ,'ConUp3','ConLo0','ConLo1','ConLo2','ConLo3','SpHUp0','SpHUp1'   !7
      & ,'SpHUp2','SpHUp3','SpHLo0','SpHLo1','SpHLo2','SpHLo3'/ !6  total 64
 
       DATA TITI /'N1','N2','N3','N4','N5','N24','IIB','IC2'
-     & ,'NRSET','NMHA','NRUN','JDISK','IDOWN','I1','I15','KPREF'
+     & ,'NRSET','NMHA','NRUN','JDISK','IDOWN','I14','I15','KPREF'
      & ,'K4OUT','JBARE','NMOD','IDISK2'/
 
       DATA TITL /'LP1','LP2','LP3','LP4','LP5','LP6'
@@ -161,7 +162,7 @@ C  READ a set of parameter change cards  (IQ = 2)
  166    FORMAT (A,' New case',A 
      & ,/,' --------- TYPE LOC  VALUE -------- Parameter ',A)
         IF (IG.GT.3) WRITE (IOSP,167) IG,IREAD,XREAD,TEXT(1:ILEN)
- 167    FORMAT (' Changed>>',2I4,G12.4,1X,A,2x,A)
+ 167    FORMAT (' Changed>>',2I4,G12.4,1X,A10,2x,A10)
       ENDIF
       GO TO (210,220,230,240,250,260,270,280,290,300,310,320,330), IG
 C             1   2   3   4   5   6   7   8   9   10  11  12  13
@@ -224,6 +225,7 @@ C  IG=8  Read file name
  280  IF (IREAD.EQ.3) THEN       ! far field temperatures 
         IF (LOPN3) CALL TFAR8(4,0,Q8)    ! close prior file
         FFAR=TEXT
+        KFARAC=INT(XREAD)       ! flag to notify each read
       ELSEIF (IREAD.EQ.5) THEN  ! new bin5 disk file name,
         IF (LOPN4) CALL TDISK8 (7,0) ! close current bin5
         FDISK = TEXT            !   move new file name into common

@@ -22,7 +22,7 @@ C       PARAMETER (MAXN5 =161)     ! dimension of saved seasons
 
       INTEGER*4 N1,N2,N3,N4,N5,  N24,IIB,IC2,NRSET,NMHA              !  1:10
      &,NRUN,JDISK,IDOWN,I14,I15,  KPREF,K4OUT,JBARE,NMOD,IDISK2   ! 11:20
-     &,KOLD,KVALB,KVTAU,ID24(3), NBKRC,NFD,NID,NLD                ! 21:30
+     &,KOLD,KVALB,KVTAU,ID24(2), KFARAC,NBKRC,NFD,NID,NLD                ! 21:30
      &,N1M1,NLW,JJO,KKK,N1PIB,  NCASE,J2,J3,J4,     J5            ! 31:40
 
       REAL*8 ALB,EMIS,SKRC,COND2,DENS2, PERIOD,SPHT,DENS,CABR,AMW          ! 1:10
@@ -76,7 +76,7 @@ Cset   -----------lats--------- tint ---lats-------      ---lats----
 Cset   seas lat day2   lats -------day1------- --main------
      7,N1,N2,N3,N4,N5,  N24,IIB,IC2,NRSET,NMHA                       !  1:10
      8,NRUN,JDISK,IDOWN,I14,I15,  KPREF,K4OUT,JBARE,NMOD,IDISK2      ! 11:20
-     9,KOLD,KVALB,KVTAU,ID24,  NBKRC,NFD,NID,NLD                     ! 21:30
+     9,KOLD,KVALB,KVTAU,ID24, KFARAC,NBKRC,NFD,NID,NLD                     ! 21:30
 Cset             ----card---
      A,N1M1,NLW,JJO,KKK,N1PIB,  NCASE,J2,J3,J4,     J5               ! 31:40
 Cset   ---day1- lat ----day1-    main -day2- lats  seas
@@ -109,5 +109,6 @@ C 2014may04 HK Increase N2 by factor of 256
 C 2016mar:may HK Move ALAT,ELEV from near end. Change IB to IIB,  IC to IC2
 C             LNOTIF to LZONE
 C 2016aug12 HK Add NBKRC to common
+C 2016sep09 HK Add KFARAC to common  Set by TCARD 
 C_End _______________________________________________________________________
  

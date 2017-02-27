@@ -36,6 +36,7 @@ C 2014feb05 HK LKEY true will compute date of first season
 C 2014feb25 HK Specify most variables as *4  Untabify and justify
 C 2014mar10 HK Make  REAL*8  version 
 C 2014may16:aug22 HK Incorporate option of far-field file for slopes
+C 2016oct10 HK Make print after TFAR optional
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
 
 C 
@@ -81,7 +82,7 @@ C CPU_TIME is real with resolution microseconds
           GOTO 9
         ENDIF
         CALL TFAR8(2,1,DELP, FTS,FTP,FTA) 
-        WRITE(*,132)'DELP1:15',(DELP(I),I=1,40)  
+        IF (IDB1.EQ.3) WRITE(*,132)'DELP1:40',(DELP(I),I=1,40)  
  132    FORMAT(A10,/(10F8.3))
         NHF=INT(DELP(1))        ! number of hours in fff
         NLF=INT(DELP(2))        ! number of latitudes  in fff

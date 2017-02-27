@@ -9,7 +9,7 @@
 %\newcommand{\ql}[1]{\label{eq:#1} \end{equation} } % for final
 
 \title{Guide to KRC version 3.4, and background }
-\author{Hugh H. Kieffer  \ \ File=-/krc/Doc/V34UG.tex  2016sep05}
+\author{Hugh H. Kieffer  \ \ File=-/krc/Doc/V34UG.tex  2017feb23}
 \begin{document} %==========================================================
 \maketitle
 \tableofcontents
@@ -19,15 +19,15 @@
 % \pagebreak 
 
 \section{Preamble}
-This accompanies an alpha release of KRC version 3.4.2 . ASU latest formal
-release is version 2.4.1, latest version in the ASU repository is 3.2.1 .
+This accompanies release of KRC version 3.4.3 . ASU last formal
+release is version 2.4.1; prior latest version in the ASU repository is 3.2.1 .
 
 The prior version 3.3 has been abandoned; that alpha release should be ignored.
 
 This document includes both a Users Guide and a detailed description of the development.
 
 Sections \ref{UG} to \ref{invis} are a Users Guide to changes since the prior formal release.
-\\ The Users Guide ends with  \S \ref{zform}; most users should not need to read beyond that, where the tone of this document becomes closer to lab notes.  
+\\ \textbf{ The Users Guide ends with  \S \ref{zform}; most users should not need to read beyond that,} where the tone of this document becomes closer to lab notes.  
 
 Sections \ref{devd} to \ref{issu} have some development details.
  
@@ -45,10 +45,10 @@ running a large grid of sloped models and post-processing the output files; see
 
 \subsection{Distribution files}
  Organization into directories is the same as other recent KRC distributions. 
-Files in the V3.4 alpha distribution: 
+Files in the V3.4.3 distribution: 
 \qi All source code and a Makefile
 \qi Revised helplist
-\qi Updated KRC evolution 
+\qi Updated KRC evolution and flow diagrams
 \qi Several example input files for V3.4
 \qii Some annotated sample zone tables.
 \qii One lengthy file for generating a grid of slopes 
@@ -235,7 +235,7 @@ value will be used.  If a zone definition violates the convergence stability
 requirements or the number of layers specified by N1, the case will be skipped
 with a warning.
 
-If the second debug parameter is set to 3, a detailed list of layer generation will be printed. 
+If the second debug parameter (optional 2nd line of input file) is set to 3, a detailed list of layer generation will be printed. 
 
 To cancel a zone table, specify a file path-name containing a single character.
 
@@ -262,6 +262,41 @@ A type 52 file can be terminated by setting the file path-name to less than 4
 characters; e.g., 'off'. A direct-access file opened for write is automatically
 closed after one case.
 
+\subsection{Must change from earlier versiins}
+ Two small things about KRC 3.4.n that have caused some confusion.
+
+1) The second number for change card type 8 has changed. This is
+   described in the latest version of helplist, section 4. E.g.,
+   8 5 0 'filename.t52' / specifies the type 52 file, regardless of K4OUT.
+   The prior K4OUT=-1  would now be K4OUT =-2 to get  Tsurf and Tplan.
+   And the type -n output file name is specifed by change line: e.g.,
+   8 21 0 'filename.tm2' / type -2 output file
+
+2) KRC now adds the extension ".inp" to the name you give it for
+  the input file and adds ".prt" to the print file.
+  The leading part of the print file defaults to the same as the input file.
+  This is all in the new prompts, but you may have missed 
+
+Specifically:
+A)  To write a type 52 file, you must have a change line
+\qi  8 5 0 '<filename>'
+ \qi The value of the third field (0) is ignored but some number must be there
+    The value of K4OUT is ignored
+
+B) To write a direct-access file, as used for THEMIS production runs or to save a far-field
+\qi set K4OUT to -1, or -2, or -3 to save Tsurf, or that and Tplan, or those and Tatm.
+\qi Use a change line \hspace{1cm}      8 21 0 '<filename>'
+\qi  Direct-access files can only hold one case, and are closed automatically after the last season.
+
+C) For either kind of file, putting a change line with a new <filename>  will close an open file.
+\qi     A new file will be started only if <filename> has 4 or more characters.
+ \qi  Thus,  <filename> less than 4 characters can be used to turn output off.
+
+D)  To read a far-field file, use a change line \hspace{1cm}  8  3 0 '<filename>'
+\qi    K4OUT is ignored, as the number of temperature types contained is specified in the far-file.
+\qi   This will stay in effect until the closed by a short name; e.g. \hspace{1cm}      8 3 0 'off'
+
+
 \section{Far-field for sloped surfaces} 
 
 \input{farg} %<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -279,7 +314,7 @@ TUN8 has two required arguments:
 \qi Arg. 2 (integer) is a stage:
 \qii 1 writes case count and expected sizes 
 \qii Else: writes a line of data
-\qi Two addition arguments are available to the user.
+\qi Two additional arguments are available to the user.
 \qii Arg. 3, Integer
 \qii Arg. 4, Real*8
 
@@ -602,7 +637,7 @@ require an additional loop to handle longitude. This will be a major
 restructuring.
 
 
-\section{ Error codes}
+\section{Error codes}
  The code-set has progressed toward a consistent usage: IRET is the return code argument in a routine,
  IRL is the name in a call to a lower routine.
 

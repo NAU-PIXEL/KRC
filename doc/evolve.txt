@@ -2,6 +2,9 @@ evolve.txt    Notes on evolution of KRC code, after the first 17 years.
 Newest on top.  Does not include all minor changes.
 ............................................................................
 
+2017feb23 V 3.4.3 Released. Correct effective azimuth of tilted surfaces 
+by reversing diurnal Sun motion (TLATS).
+
 2016sep05 V 3.4.2 Released as alpha. Correct the version 3 layer-doubling factor
 from 4 to 2. The convergence safety factor in code SCONVG and the input minimum
 CONVF are both the square of that described in the JGR article in section 3.2.3

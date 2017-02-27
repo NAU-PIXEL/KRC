@@ -40,25 +40,22 @@ IF transferring BIG files:
   do: step4b 
 endif
 
-in /work2/KRC 
-mv krcdist.tar.gz  krcNNN.tar.gz        where NNN is the version number
-mv krcbig.tar  krcNNNbig.tar
+in /work2
+mv krcdist.tar.gz ./KRC/krcNNN.tar.gz    << edit the version number
+mv krcbig.tar  ./KRC/krcNNNbig.tar      Only if new BIG files
 
-in ~/cop
-ln -s /work2/krcNNN.tar.gz .
+in ~/cop                        steps to transfer distor to ASU
+ln -s /work2/KRC/krc342.tar.gz .     << edit the version number
 cd
 gp p cop/krcNNN.tar.gz asu 
 
 ---------------  Install a Distro ------------------
 
-in /work2/:
-  mv krcdist.tar.gz krc231.tar.gz  << edit the version number
-
-cd KRC
-mkdir NNN  <- version number. Need do only onve for each version
+cd /work2/KRC
+mkdir NNN  <- version number. Need do only once for each version
 cd NNN
       if Dir not empty: rm -Rf *
-tar -xzf /work2/krc230.tar.gz  << edit the version number
+tar -xzf /work2/KRC/krc230.tar.gz  << edit the version number
 
 NOPE: in /work2/KRC/NNN/ , do: source ~/krc/uniq/step6
 

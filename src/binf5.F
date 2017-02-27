@@ -51,7 +51,7 @@ C_Lien
 C Machine architecture firmcoded as 64-bit
 C_Bugs
 C This version can do byte-swapping after a read, but assumes  R*4 word type
-C_Call  PIO_ system  B2B  BIGEND  CATIME  SWAPBYTE4  U_MOVE4  U_SWAPN  WHITE1 
+C_Call  PIO_ system  FILLB  BIGEND  CATIME  SWAPBYTE4  U_MOVE4  U_SWAPN  WHITE1 
 C_Hist  98may12  HHKieffer  Adopted from  binfil.f
 C 98sep07  HHK replace  B2B use for character varable
 C 98dec29  HHK disable byteswap on read ???
@@ -69,6 +69,7 @@ C 2015mar10 HK Remove WRITE erroneous 2nd call to pio_in.
 C     Always print values @99 if any error. 
 C     Replace WRITE looping to determine header size with calculation 
 C 2016jan10 HK If a PIO write error, ask if keep or delete
+C 2016sep25 HK Replace B2B with FILLB call
 C_End
 
         INTEGER*4  BT2,BA1,BA2,BC1 ! fixed byte locations
@@ -186,7 +187,7 @@ C     kb           call u_datime(buf) !isis
         ENDIF
         IF (KBLOCK.EQ.PLAN) THEN
           JOG=BT2-(K+I)         ! gap between end of text and ARCH
-          IF (JOG.GT.0) CALL B2B (BLNK,HH(K+I+1),-JOG) ! blank fillin
+          IF (JOG.GT.0) CALL FILLB (BLNK,HH(K+I+1),JOG) ! blank fillin
           CC(BA1:BA2) =ARCH(JCPU+1) ! place byte architecture
           CC(BC1:NBH) ='C_END'  !   and ending
         endif

@@ -56,8 +56,8 @@ ln -s /home/hkieffer/xtex/definc.sty .  # Latex shorthand
 #ln -s /work2/apps/tetex/tex/latex/natbib/natbib.sty .
 ln -s /home/hkieffer/idl/bin5.txt .
 ln -s /home/hkieffer/krc/Doc/evolve.txt .     # evolution of changes to KRC
-ln -s /home/hkieffer/krc/Doc/flowV33.txt .  # crude diagram of calls
-ln -s /home/hkieffer/krc/src/How3 .     	# how some things in KRC work
+ln -s /home/hkieffer/krc/Doc/flow.txt .       # crude diagram of calls
+ln -s /home/hkieffer/krc/src/How3 .           # how some things in KRC work
 #ln -s /home/hkieffer/krc/liens.txt .
 #ln -s /home/hkieffer/krc/notes .  # scattered notes from development
 #ln -s /home/hkieffer/krc/Dist/aaa/makeNotes .
@@ -71,11 +71,11 @@ ln -s /home/hkieffer/krc/Doc/SIMP/simple.pdf .  # convergence and performance te
 ln -s /home/hkieffer/krc/Doc/ASH/Ash.tex .
 ln -s /home/hkieffer/krc/Doc/ASH/Ash.pdf .     # comparison with Vasavada models
 ln -s /home/hkieffer/krc/Doc/DV3/V34UG.tex .   # Guide to v3.4 in LaTeX
-ln -s /home/hkieffer/krc/Doc/DV3/v34p.tex .
-ln -s /home/hkieffer/krc/Doc/DV3/fard.tex .
-ln -s /home/hkieffer/krc/Doc/DV3/farg.tex .
-ln -s /home/hkieffer/krc/Doc/DV3/Beaming.tex .
+ln -s /home/hkieffer/krc/Doc/DV3/v34p.tex .    # into V34UG: photometric function
+ln -s /home/hkieffer/krc/Doc/DV3/fard.tex .    #  " Far-field Detailed design
+ln -s /home/hkieffer/krc/Doc/DV3/farg.tex .    #  " Far-field for sloped surfaces
 ln -s /home/hkieffer/krc/Doc/DV3/V34UG.pdf .   # Guide to v3.4
+ln -s /home/hkieffer/krc/Doc/DV3/Beaming.tex . # thermal beaming
 
 echo "Done copy to doc"
 
@@ -106,7 +106,8 @@ ln -s /home/hkieffer/krc/porb/PORBCM.mat .   # set of geometry matrices
 ln -s /work1/mars/opacity/THEMIS1yearDustIce.bin5 . # climate opacities
 #+ added after 3.0.0 on Mar 21
 ln -s /home/hkieffer/krc/tes/zoneX.tab .  # zone table, result close to default
-ln -s /home/hkieffer/krc/tes/valb1.tab .  # zone table exercise options
+ln -s /home/hkieffer/krc/tes/zoneZ.tab .  # zone table, exercise options
+ln -s /home/hkieffer/krc/tes/valb1.tab .  # season-variable albedo
 ln -s /home/hkieffer/krc/tes/beamK.inp .  # Grid of slopes
 ln -s /home/hkieffer/krc/tes/master34.inp .  # 37 latitudes and mean elevations
 ln -s /home/hkieffer/krc/tes/342v3t.inp .  # 8 test cases
@@ -114,7 +115,8 @@ echo "Done copy to run"
 
 cd $RTOP/src       # Most source code and Makefile
 rm -f *
-ln -s /home/hkieffer/krc/src/MakefileDist Makefile        #  Makefile 
+ln -s /home/hkieffer/krc/src/Makefile .   # krc and porb makefile
+ln -s /home/hkieffer/krc/src/buildKRC .   # Must edit for a distibution:
 ln -s /home/hkieffer/krc/src/dayc8m.f .
 ln -s /home/hkieffer/krc/src/filc8m.f .
 ln -s /home/hkieffer/krc/src/latc8m.f .
@@ -197,6 +199,7 @@ ln -s /home/hkieffer/krc/porb/ymd2j2.f .
 #Nln -s /home/hkieffer/krc/src/tridag8.f . # needed only for Crank-N. version
 #Nln -s /home/hkieffer/krc/src/tridah8.f . # needed only for Crank-N. version
 echo "done copy from krc"
+
 ln -s /home/hkieffer/src/for/NumRec/dpythag.f .
 ln -s /home/hkieffer/src/for/NumRec/dsvbksb.f .
 ln -s /home/hkieffer/src/for/NumRec/dsvdcmp.f .
