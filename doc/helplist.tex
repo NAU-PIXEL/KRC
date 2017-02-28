@@ -1,22 +1,17 @@
-\documentclass[draft]{article}  % See Skeleton.tex for examples of many things
-% epstopdf fig.eps       TO convert .eps fig to pdf
-% pdflatex  file[.tex]   TO generate .pdf
-% dvipdfm krcCor.dvi     TO Produce PDF files directly from DVI files
+\documentclass{article} 
+%\documentclass[draft]{article}  % See Skeleton.tex for examples of many things
+
 
 \usepackage{underscore} % accepts  _ in text mode
-% see definc.sty for other page format settings
-%\usepackage{epsfig}
-%\usepackage{definc}  % Hughs conventions
-\textheight=9.3in  \topmargin=-0.4in
-\textwidth=7.0in  \oddsidemargin=0.0in \evensidemargin=-0.0in 
-\parindent=0.em \parskip=1.ex %  no indent & paragraph spacing
-
-\title{KRC planetary surface temperatures: Helplist}
-\author{Hugh H. Kieffer  \ \ File=-/krc/Doc/helplist.tex Version 3.4.3 2016nov21}
-%_History
-% 2016feb08  HK Update spare parameters
+% Comment the next two so can have explicit new commands for html
+% \usepackage{ifpdf} % detects if processing is by pdflatex
+% \usepackage{/home/hkieffer/xtex/newcom}  % Hughs conventions
 
 % local definitions
+\textheight=9.6in  \topmargin=-0.5in 
+\textwidth=7.70in  \oddsidemargin=-0.7in \evensidemargin=-0.7in
+\parindent=0.em \parskip=1.ex %  no indent & paragraph spacing
+
 %\newcommand{\short}{full}    % dummy for format
 \newcommand{\qi}{\\ \hspace*{2.em}}      % indent 1
 \newcommand{\qii}{\\ \hspace*{4.em}}     % indent 2
@@ -28,6 +23,11 @@
 \newcommand{\nvf}{\mathtt} % name of code variable in equation
 \newcommand{\nj}{\textsf}  % name of input parameter in text
 \newcommand{\njf}{\mathsf} % name of input parameter in equation
+
+\title{KRC planetary surface temperatures: Helplist}
+\author{Hugh H. Kieffer  \ \ File=-/krc/Doc/helplist.tex Version 3.4.3 2016nov21}
+%_History
+% 2016feb08  HK Update spare parameters
 
 \begin{document}
 \maketitle
@@ -46,8 +46,7 @@ v.118, 451-570 (2013) [Ref. 1]
 
 The evolution of KRC code is contained in:  evolve.txt 
 
-A crude diagram of the call architecture is in:  flowV33.txt 
- \qi 
+A crude diagram of the call architecture is in:  flow.txt 
 
 \subsection{Notation use here}
 The following fonts styles have been partially implemented: 
@@ -93,7 +92,7 @@ and diffuse, with possible twilight extension.
 
 Keplerian orbital motion; seasons are at uniform increments of time. Mean 
 orbital elements are pre-calculated for any epoch (all planets and several
-comets) by the PORB code set.
+comets and asteroids) by the PORB code set.
 
 Units are SI, except for use of days for orbital motion and rotation period 
 
@@ -101,7 +100,7 @@ Options:
 \qi  Different Physical properties below a set layer (IC). 
 \qii May define many zones via an input table
 \qi  Regional slope. Self- or far-field heating
-\qi  Three ways to handle seasonal global pressure variation.
+\qi  Three (for Mars) ways to handle seasonal global pressure variation .
 \qi  Up to two zones of temperature-dependent conductivity and specific heat
 \qi Non-Lambertion solar absorption.
 \qi Global geothermal heat flow.
@@ -132,7 +131,7 @@ All parameters for KRC are set by a formatted text file.  An example is
 master.inp , which has default values for a 19 latitude set for a run of three
 martian years, with the last output to disk. Parameter values are listed below
 their titles, which are in many cases identical to the code name, and last
-charater of the title is above the last location in the field. Thus, integer
+character of the title is above the last location in the field. Thus, integer
 values MUST be aligned. Titles with a leading "[" indicate that the value is not
 used. The recommended procedure is to copy master.inp and edit only the values
 you wish to change. The number of lines of Latitudes and Elevations must match
@@ -149,7 +148,7 @@ described in \S \ref{dbf}. If KOLD=0, then a full set of input values is read.
 card as 6 debug flags, IDB1 to IBD6, which are normally zero.
   See \S \ref{debug} below \\
 The next (normally second) line is free text where you can outline the purpose 
-of your run.
+of your run; up to 84 characters.
 
 Change lines may follow immediately after the geometry matrix (see \S \ref{pc})
 . The end of definition of a "case" is indicated by a "0/" line. Two successive
@@ -160,8 +159,6 @@ parameters; as the routine name in lowercase just below the parameter name.
 \vspace{-3.mm} 
 \begin{verbatim} 
  - - - - - - - - - - - - - - - - - - - -
-Type 4	Title (20A4) 80 characters of anything to appear at top of each page.
-
 Type 1	Real parameters  (8F10.2) ================================
   Surface Properties
 1   ALB    Surface albedo
@@ -388,11 +385,12 @@ Type 3 Logical Parameters (10L7) ====================================
 18  LD18    Print of parameters and layers was done after last change
 19  LD19    Output to fort.79 [TLATS] insolation and atm.rad. arrays 
 20  LONE    (Computed) Set TRUE if KRC is in the "one-point" mode
+================================================================
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 followed in 'krccom' by: 
-[real*4] TITLE(20)	80-character title
-[real*4] DAYTIM(5)	20-character run  date and time
+84 character KITLE	Description/purpose of this run.
+20 character DAYTIM	run  date and time
 ================================================================
 
 Latitude(s) (10F7.2)   N4 latitudes in degrees
@@ -403,7 +401,7 @@ Elevation(s) (10F7.2)  N4 values in Km corresponding to latitudes
 
 Orbital Parameters (LPORB=T) Format identical to that produced by PORB
 program set ASCII file output. So these can be directly pasted with an
-editor. see PORBCM.INC
+editor. see porbc8m.f
  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 \end{verbatim}
 
@@ -429,9 +427,9 @@ what you intended.
  Type     Meaning                                      Valid Index
 
    0   End of Current Changes                              any
-   1   Real Parameter                                     1:NFDR
-   2   Integer Parameter                                  1:NIDR
-   3   Logical Parameter                                  1:NLDR
+   1   Real Parameter                                     1:NFDR=64
+   2   Integer Parameter                                  1:NIDR=20
+   3   Logical Parameter                                  1:NLDR=20
    4   New Latitude Card(s) Follow                         any
    5   New Elevation Card(s) Follow                        any
    6   New Orbital Parm Cards Follow (LPORB Must be True)  any
@@ -459,11 +457,11 @@ the type on the same line, with no intervening index or text
 For Type 8, SEASALB and SEASTAU read 2-column, white-separated text files. \\
 To start variable albedo, use input card: 
 \qi  8 22 0 'AlbedoFileName' / Variable albedo text file name \\
-Can revert to constant albedo by hokey technique of using a bad name. E.g.,
+Can revert to constant albedo by using a non-existant file name. E.g.,
 \qi  8 22 0 'badName' / turn variable albedo off \\
 Text table files of value versus season will be read at the start of a
 run. These will apply to ALL latitudes. See example  \nf{valb1.tab}   \\
-Variable Tau done the same way, with 22 being replaced with 23 \\
+Variable dust opacity done the same way, with 22 being replaced with 23 \\
 
 CLIMTAU files have dust and ice opacity over season and latitude. Uses BINF5 to
 read a binary array (72 seasons, 36 latitudes, 2=dust/ice) of opacities. The
@@ -475,7 +473,7 @@ sample file \nf{THEMIS1yearDustIce.bin5} is described in section [159] of Ref 1.
 \\ COMMON /FILCOM/ \ File names. See filc8m.f  
 \\ COMMON /HATCOM/ \ Store post-2003 items. See hatc8m.f  
 \\ COMMON /LATCOM/ \ Latitude-dependent items. See latc8m.f  
-\\ COMMON /PORBCM/ \ PORB system geometry matrix.  See porbcm.inc  
+\\ COMMON /PORBCM/ \ PORB system geometry matrix.  See porbc8m.f  
 \\ COMMON /UNITS/ \ Logical units for I/O and errors.  See unic8m.f  \\
 
 Because the binding routines to IDL are intolerant of any errors, changes to
@@ -485,7 +483,7 @@ was added as a "catch-all" for any new items.
 A listing of all Fortran commons can be generated by these Linux commands: \\ 
 cd /home/hkieffer/krc/src [replace top part of path with local installation] \\ 
 rm allinc.txt \\ 
-cat krcc8m.f latc8m.f dayc8m.f hatc8m.f filc8m.f unic8m.inc porbcm.inc $>$ allinc.txt 
+cat  *c8m.f $>$ allinc.txt 
               
 \section{Error Returns} %_______________________
 \subsection{Tday Blowup} %------------------------------------
@@ -499,6 +497,7 @@ and to close the file. TPRINT is called to print out the full input set and the
 latest daily convergence.
 
 \subsection{Other errors: INCOMPLETE} %---
+If you run into errors that are not related to blunders in the input file, please contact the author. 
 \vspace{-3.mm} 
 \begin{verbatim}
  "Parameter error in TDAY(1)" : Convergence factor < .8 classic. 
@@ -549,13 +548,13 @@ K4OUT sets the direct-access record content: (ignored for Type 52)
  +n<=50 Will output records of KRCCOM+DAYCOM for the last computed latitude.
 \end{verbatim}
 
-If a change  ' 8 5 0 <filename> ' has been set, then will write a type 52
-bin5 file at the end of a run, with dimensionality of 5. This allows multiple cases, each with a
-"prefix" for each case consisting of 4 size integers (converted to Float)
-followed by KRCCOM; after this may come vectors of parameters versus season. The
-next-to-last dimension is increased to allow room for the prefix to be embedded
-in the bin5 array.   Each dimension is adjusted to the
-necessary size. Each case has the same structure; this simplifies coding
+If a change ' 8 5 0 $<$filename$>$ ' has been set, then will write a type 52
+bin5 file at the end of a run, with dimensionality of 5. This allows multiple
+cases, each with a "prefix" for each case consisting of 4 size integers
+(converted to Float) followed by KRCCOM; after this may come vectors of
+parameters versus season. The next-to-last dimension is increased to allow room
+for the prefix to be embedded in the bin5 array.  Each dimension is adjusted to
+the necessary size. Each case has the same structure; this simplifies coding
 although some items are then present redundantly.
 
 KRC input items that would increase any of the bin5 dimensions are not allowed
@@ -643,9 +642,9 @@ For all file output types, there are two more limits:
 
 MAXN5 and MAXN6 are not limits for standard KRC.
 
-\subsubsection{Type 0 and 1 files} %.....
-For type 0 and -1 files, each recorded season is a logical record, so there is
-no limit to the number of seasons allowed.
+\subsubsection{Direct acccess files} %.....
+For type 0, -1, -2 and -3 files, each recorded season is a logical record, so
+there is no limit to the number of seasons allowed.
 
 \subsubsection{Type 52 files} %.....
 
@@ -787,7 +786,7 @@ tlats.f:   for each time-step
 
 \subsection{ To run two material types } %--------------
 
-Set IC2 to the first layer to have the lower material properties ( >= 3) \\
+Set IC2 to the first layer to have the lower material properties ( $\geq 3$) \\
 Set COND2 to the lower material conductivity \\
 Set DENS2 to the lower material density \\
 Set SPHT2 to the lower material specific heat \\
@@ -1103,10 +1102,9 @@ parameters. The next set of changes could include a revised (larger) IDOWN.
 
 
 \subsection{Use of common PORBCM}%-----------
-Contents are described in porbcm.inc \\
+Contents are described in porbcm8.f \\
 PORBCM is filled by TCARD calling PORB0, which reads the first 30 items in 
 5G15.7 from the input file and sets the value of $\pi$ and radians-to-degrees. 
-KRC references porbcm.inc but does not use it.
 
 TSEAS call PORBIT to get Ls, the heliocentric range and the sub-solar latitude.
 
@@ -1133,11 +1131,11 @@ treated as zero atmosphere. The \nv{LATM} flag is used only in \np{tlats} and
 
 
 \subsection{Far-field temperatures 2016jun30}
-FFAR initially set by KRC to be 'no'; this is less than 3 characters, so
+FFAR initially set by KRC to be 'no'; this is less than 4 characters, so
 far-field is considered turned off.
 
 An input card ' 8 3 x text': TCARD loads $<$text$>$ into FFAR. 
-For each case, KRC then checks length of FFAR; if 3 of more, will call TFAR(1 
+For each case, KRC then checks length of FFAR; if 4 or more, will call TFAR(1 
 to open a FAR file for read. If successful, TFAR sets LOPN3=.true. 
 \\ LOPN3 is used in TDAY as the flag that the far-field calculation is active
 (as opposed to self heating)
@@ -1218,9 +1216,8 @@ All thought to be removed in Version 3+
 
 \appendix %=================================================================
 
-\section{Type 52 map \label{type52}}
+\section{Map of type 52 file \label{type52}}
 \input{type52map}
-
 
 \section{Time-step doubling}
 In the JGR article, a convergence safety factor is defined as $ B_i / \sqrt{ 2
