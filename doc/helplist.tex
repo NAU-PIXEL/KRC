@@ -190,7 +190,8 @@ Type 1	Real parameters  (8F10.2) ================================
 20  TWILI   Twilight extension angle [deg]
 21  ARC2    Henyey-Greenstein asymmetry factor     ARC2/Pho
              If no atmosphere, this is photometric function control
-             0=Lambert  -=Lommel-Seeliger  +<1=Minnaert exponent
+             0=Lambert  <-1=Lommel-Seeliger  + Kheim-Vasavada
+             else (-1< x <0) Minnaert with exponent -x (is positive)
 22  ARC3    Minimum allowable numerical convergence factor   Theory is 1.
 23  SLOPE   Ground slope, degrees dip. Only pit may slope beyond pole.
 24  SLOAZI  Slope azimuth, degrees east from north. <-360 is a pit
@@ -210,7 +211,7 @@ Type 1	Real parameters  (8F10.2) ================================
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
   Thermal Solution Parameters
 33  RLAY    Layer thickness ratio
-34  FLAY    First layer thickness (in skin depths)
+34  FLAY    First physical layer thickness (in skin depths)
 35  CONVF   Safety factor for classical numerical convergence
               0 for no binary time division of lower layers
              >0.8 for binary time division. Larger is more conservative
@@ -230,10 +231,8 @@ Type 1	Real parameters  (8F10.2) ================================
 43  SDEC    Solar declination in degrees. (if Not LPROB)
 44  DAU     Distance from Sun in astronomical units (if Not LPROB)
 45  SUBS    Aerocentric longitude of Sun, in degrees. For printout 
-             only. Computed from date unless N5=0(for printout only)
-46  SOLCON  Solar constant Applied Optics 1977 v.16, p.2693: 1367.9 W/m^2
-             1366.2 Based on figure in Frohlich, Observations of 
-             irradiance variations, Space Sci. Rev.,94,15-24,2000
+             only. Computed from date unless N5=0 (for printout only)
+46  SOLCON  Solar constant. Total stellar irradiance at 1 AU  [W/m^2]
 47  GRAV    Surface gravity.  MKS-units
 48  AtmCp   Specific heat at constant pressure of the atmosphere [J/kg/K]
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -300,14 +299,14 @@ Type 2 Integer Parameters (8I10) ====================================
 3   N3      Maximum # days to iterate for solution (lim MAXN3)
              This can be 1, but then must use  DELJUL ~= PERIOD
              If N3 lt 3, first day starts on midnight. else at 18H 
-4   N4      # latitudes (lim MAXN4=19). Global integrations done for N4>8
+4   N4      # latitudes (lim MAXN4). Global integrations done for N4>8
 5   N5      # 'seasons' total for this run. If 0, then DAU and SDEC will be 
              used as entered for a single season.
 6   N24     # 'hours' per day stored, should be divisior of  N2 (lim MAXNH)
 7   IIB     Bottom control: 0=insulating, -1=constant temperature 
              -2=start all layers =TDEEP & constant temperature 
               += geothermal heat flow in milliwats/m^2
-8   IC2     First layer (remember that 1 is air) of changed properties. 
+8   IC2     First layer (remember that 1 is virtual) of changed properties. 
              <3 will be changed to 999 =homogeneous
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 9   NRSET   # days before reset of lower layers first season;  >N3=no reset
@@ -386,8 +385,7 @@ Type 3 Logical Parameters (10L7) ====================================
 19  LD19    Output to fort.79 [TLATS] insolation and atm.rad. arrays 
 20  LONE    (Computed) Set TRUE if KRC is in the "one-point" mode
 ================================================================
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
 followed in 'krccom' by: 
 84 character KITLE	Description/purpose of this run.
 20 character DAYTIM	run  date and time
@@ -497,7 +495,8 @@ and to close the file. TPRINT is called to print out the full input set and the
 latest daily convergence.
 
 \subsection{Other errors: INCOMPLETE} %---
-If you run into errors that are not related to blunders in the input file, please contact the author. 
+If you run into errors that are not related to blunders in the input file,
+please contact the author.
 \vspace{-3.mm} 
 \begin{verbatim}
  "Parameter error in TDAY(1)" : Convergence factor < .8 classic. 
@@ -678,9 +677,11 @@ file. Then the zones will be expanded into an appropriate number of layers. If
 the zone definitions violate the convergence stability requirements or the
 number of layers assigned, the case will be skipped with a warning.
 
-MAXN1 [firm-coded as 50 in KRCCOM] zones are allowed, any beyond this will be ignored.
+MAXN1 [firm-coded as 50 in KRCCOM] zones are allowed, any beyond this will be
+ignored.
 
-If the number of layers generated exceeds N1, a warning is printed and the case is skipped.
+If the number of layers generated exceeds N1, a warning is printed and the case
+is skipped.
 
 \subsubsection{Seasonal albedo table}
 Name is defined by a change card: `` 8 22 x 'fileName' / `` and stored as FVALB
@@ -1091,8 +1092,8 @@ When J5 reaches IDOWN, TSEAS calls TCARD, which will set IRET=3 before reading
 the new parameters. May change DELJUL to get finer seasonal resolution, but must
 NOT change N5
 
-Use: Normal restrictions for what may not change for Type 5x files apply.
-E.g., type 56 must NOT change number of latitudes nor total number of seasons.
+Use: Normal restrictions for what may not change for Type 52 files apply.
+% E.g., type 56 must NOT change number of latitudes nor total number of seasons.
 
 Set N5 to be the total number of seasons desired, including those
 after any number of parameter changes; it must NOT be changed later.
@@ -1130,7 +1131,7 @@ treated as zero atmosphere. The \nv{LATM} flag is used only in \np{tlats} and
 \np{tday}
 
 
-\subsection{Far-field temperatures 2016jun30}
+\subsection{ Far-field temperatures 2016jun30}
 FFAR initially set by KRC to be 'no'; this is less than 4 characters, so
 far-field is considered turned off.
 
@@ -1140,7 +1141,7 @@ to open a FAR file for read. If successful, TFAR sets LOPN3=.true.
 \\ LOPN3 is used in TDAY as the flag that the far-field calculation is active
 (as opposed to self heating)
 
-\subsection{Seasonal variation of albedo or opacity or ``climate''}%-----------
+\subsection{ Seasonal variation of albedo or opacity or ``climate''}%-----------
 
 When TCARD encounters a type of 8 and an index of 23(tau) [or 22(albedo)], it
 transfers the text item into FVTAU (which is in COMMON /FILCOM/) and then calls
@@ -1164,7 +1165,7 @@ seasons and 36 latitudes, and stores the file. Upon later calls from TLATS, it
 returns the two opacities at a requested Ls and latitude, using bi-linear
 interpolation.
 
-\subsection{Cap-dependent pressure} %-----------
+\subsection{ Cap-dependent pressure} %-----------
 \vspace{-3.mm} 
 \begin{verbatim}
 TSEAS:   BUF(1)=0.       ! flag for  TINT to compute areas
@@ -1179,7 +1180,7 @@ Tlats
           PCO2G = PCO2M -PCAP ! all changes are pure CO2
 
 \end{verbatim}
-\subsection{When parameter and layer tables appear} %-----------
+\subsection{ When parameter and layer tables appear} %-----------
 The flag LD18 means: a value has changed after the parameter and layer tables
 were last are printed. It is set: initially and by TCARD. It is cleared when the
 tabel are printed,
@@ -1232,11 +1233,13 @@ Code changed significantly when layer tables added; between
 \qi and 331: BLAY set by FLAY (top physical) and RLAY
 \\ With zone table, at each layer must know the minimum pre-doubling safty factor at all lower layer
 
-For same layer thicknesses, after first time doubling, 321 and 341 converg. factor disagree!
+For same layer thicknesses, after first time doubling, 321 and 341
+converg. factor disagree!
 
 \subsection {Version 343}
 
-Code includes several loops for setting layer parameters, starting at the indicated line number ( 2016 sept 5 source code):
+Code includes several loops for setting layer parameters, starting at the
+indicated line number ( 2016 sept 5 source code):
 
 Set the thermophysical properties for each layer. Seperate exclusive loops for
 \qi  156:  zone table or not.
@@ -1244,11 +1247,13 @@ Set the thermophysical properties for each layer. Seperate exclusive loops for
 
 327: Print temperature-dependent properties for up to two zones 
 
-369: If not a zone table, check lower material stabilty and increase layer thickness if needed. 
+369: If not a zone table, check lower material stabilty and increase layer
+thickness if needed.
 
 379: LOOP 1 compute safety factor for each layer before any doubling SCONVG(J)
 
-387: LOOP 2. Find the minimum safety factor at or below each layer before any time doubling; ZDZ (temporary)  
+387: LOOP 2. Find the minimum safety factor at or below each layer before any
+time doubling; ZDZ (temporary)
 
 406 LOOP 3 Assign time doubling, from top to depth. In English: 
 \qi IF:  have not yet reach maximum number of time doublings allowed 
@@ -1262,6 +1267,9 @@ Set the thermophysical properties for each layer. Seperate exclusive loops for
 480: Print the layer table
 
 \end{document} %===============================================================
+%============================================================================
+%============================================================================
+
 
 5 latitude 40 seas with  mean Mars zonal elevations. Effect of atmos.  
 KRCv3.2.1    RUN-CASE  1- 1   2016 Jul  1 06:06:38  PAGE=  3
