@@ -39,6 +39,7 @@ function readkrccom, arg1,khold
 ; 2010jan14 HK Add action to free logical unit  Jan 28 add nwkrc to khold
 ; 2014mar16:28 HK Accomodate R*8 version of KRC
 ; 2016jun22 HK Khold[4] now 2-dig version number, was DP flag. line adjustments
+; 2017mar30 HK Account for possible longer header
 ;_End       .comp readkrccom
 
 k=size(arg1,/type)            ; word type of first argument 
@@ -70,6 +71,12 @@ if k eq 7 then begin          ; open file ;=========================
   ndim=idd[0]                   ; number of dimensions in array
   ncase=idd[ndim]               ; number of cases
   ityp=idd[ndim+1]              ; word type
+  ilen=idd[ndim+3]              ; actual header length
+  if ilen gt hlen then begin ; may never occur for type 52
+    bb=bytarr(ilen-hlen)        ; additional header
+    readu,lun,bb                ; read past it
+    print,ilen-hlen,' extended header is',string(bb)
+  endif
   dodp=ityp eq 5                ; file is double precision
                                 ; KRC files never have  >512 byte header.
   i1=strpos(hh,'>>')            ; locate before version
@@ -84,6 +91,8 @@ if k eq 7 then begin          ; open file ;=========================
 ;  to read some older-style file
 ;idx=front[1]
   if idx ne ndim-1 then begin 
+    print,'hh=',hh
+    print,'front=',front
     message,'Unexpected IDX in file '+arg1,/con
     print,'.com to continue' & stop
     return,-2

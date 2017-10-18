@@ -1,3 +1,4 @@
+#!/bin/bash
 #################################################################
 # Script to write distribution tar file of KRC system
 #  step3  script[s] must be executed first
@@ -5,32 +6,29 @@
 # 2009may12 HK minor cleanup
 # 2011oct17 HK Make generic
 # 2013oct2 HK Move BIG to step4b
+# 2017feb25 HK Convert from tsch to bash without the -f 
+# 2017mar01 HK Remove the unused "big" file stuff. It is all in step4b
 #################################################################
 
-set RT1='/work2/'		# one level above distribution constuction area
-set RT2='DistKRC'		# distribution construction area
-set NAME='krc' 			# name for this distribution
-set SKEL='dist.tar.gz'		# last part of tar file name	
-#set SKEB='big.tar'     # last part of BIG tar file name
+RT1='/work2/'		# one level above distribution constuction area
+RT2='DistKRC'		# distribution construction area
+NAME='krc' 			# name for this distribution
+SKEL='dist.tar.gz'		# last part of tar file name	
   
 # name construction
-set IN=$RT1$RT2			# construction area
-set OUT=$RT1$NAME$SKEL 		# output tar file
-#set OBIG=$RT1$NAME$SKEB 	# output tar file
+IN=$RT1$RT2			# construction area
+OUT=$RT1$NAME$SKEL 		# output tar file
 
 echo "IN="$IN
 echo "OUT="$OUT
 
 cd $IN
-tar -chzf  $OUT aaa doc idl run src  	 # tar following all links
 
-#echo "OBIG="$OBIG
-#tar -chf  $OBIG big	 # tar following all links	
-	
+tar -chzf  $OUT aaa doc idl run src  	 # tar following all links
 
 pwd
 cd ~/krc/aaa   # return to parent directory
 pwd
 
-echo "Now rename "$OUT" to actual version"
+echo "Now:  mv "$OUT"  KRC/krc---.tar.gz"
 exit

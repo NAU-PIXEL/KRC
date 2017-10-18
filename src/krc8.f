@@ -38,33 +38,40 @@ C 2016aug12 HK Reset extreme numeric constants to Real*8 values. Use FILLMV set
 C              Allow redirect of monitor output. Improve return codes
 C 2016aug26 HK Automatically generate extensions for input and print files.
 C 2016oct03 HK Correct sense of azimuth in tlats. Move onePoint heading print.
+C 2017mar20 HK V 3.5.1 Incorporate eclipses and planetary heating
+C 2017sep30 HK V 3.5.4 Error log name to the millisec to avoid failure on cluster
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
 
       REAL ELAPSED,TIMES(2)     ! declare the types of DTIME()
       INTEGER I,IQ, IRC,IRD,IRL,KONE,KREC
       INTEGER IOST              ! returned by OPEN
-      CHARACTER*80 CBUF         ! temporary use
-      CHARACTER*1 BBUF          ! temporary use
+      CHARACTER*80 C80,CBUF         ! temporary use
+      INTEGER*4 IZERO/0/        ! zero 
+      INTEGER vals(8)           ! dummy arg for date_and_time
+      LOGICAL FEXIST            ! file exists
+      CHARACTER(LEN=12) CDATE,CTIME ! args for date_and_time
+C-      CHARACTER*1 BBUF          ! temporary use
       CHARACTER*25 SEPER        ! print separation line
       REAL TOTIME               ! Total Elapsed Time 
       REAL*8 QQ                 ! dummy  
       REAL*8 ZERO /0.0D0/       ! zero 
 
-      VERSIN='KRCv3.4.3'        ! set version number 12 bytes
-      KREC=84+20   ! number of bytes in TITLE +DAYTIM. Values from def. in KRCCOM
+      VERSIN='KRCv3.5.4'        ! set version number   12 bytes
+      KREC=84+20                ! number of bytes in TITLE +DAYTIM. Values from def. in KRCCOM
       IF (MOD(KREC,8).NE.0 .OR. MOD(N4KRC,2).NE.0) THEN 
         PRINT *,'BAD lengths',KREC,N4KRC
         STOP
       ENDIF
-      NBKRC=4*N4KRC             ! number of bytes in KRCCOM 
-C Zero out commons
-        CALL FILLD (ZERO,ALB, NWKRC ) !  KRCCOM includes R*8, int*4, logi*4, char
-        CALL FILLD (ZERO,DTM4,NWLAT ) !  LATCOM
-        CALL FILLD (ZERO,XCEN,NWDAY ) !  DAYCOM
+      NBKRC=4*N4KRC   ! number of bytes in KRCCOM   2017apr06 not used anywhere
+C     Zero out commons, which contain some of the constants below
+      CALL FILLD (ZERO,ALB, NWKRC )  !  KRCCOM includes R*8, int*4, logi*4, char
+      CALL FILLD (ZERO,DTM4,NWLAT )  !  LATCOM
+      CALL FILLD (ZERO,XCEN,NWDAY )  !  DAYCOM
+      CALL FILLD (ZERO,FARTS,NWHAT)  !  HATCOM
 
-      FDISK='no'           !| ensure files turned off
-      FDIRA='no'           !| by making their length
-      FFAR='no'            !| less than 4
+      FDISK='no'                !| ensure files turned off
+      FDIRA='no'                !| by making their length
+      FFAR='no'                 !| less than 4
 C               set logical units. See   units.com   for description
       IOD1 = 1                  ! explanation file & zone table (briefly open)
       IOD2 = 2                  ! direct-access write ( and read)
@@ -93,8 +100,30 @@ C      EXPMIN = 86.80D0          ! neg exponent that would almost cause underflo
       SEPER=' ========================' ! 25 characters long
       KREC=0                    ! ensure it has a storage location
       NRUN=0                    ! no output file yet
-      NCASE=0                   ! initate this
+      NCASE=0                   ! initate this 
       WRITE(IOPM,*) 'This is KRC:  ',VERSIN
+C 2017sep30 replace error-file name to nearest min with name to nearest millisec
+C- Lines are to redirect error to monitor, but IDB4 not yet known!
+      CALL CATIME (CBUF)
+      DAYTIM=CBUF(2:21)
+C-      IF (MODULO(IDB4,2) .EQ. 1) THEN ! no error file 
+C-         IOERR=IOPM              ! send error to monitor, no error file
+C-       ELSE                      ! create error file
+C      CBUF=DAYTIM(10:11)//DAYTIM(6:8)//DAYTIM(13:14)//DAYTIM(16:17) ! ddMONhhmm
+C      BBUF=CBUF(1:1)
+C     IF (BBUF.EQ.' ') CBUF(1:1)='0' ! avoid a blank in the name for days 1:9
+      FEXIST=.TRUE. ! Following delay loop in case many runs on cluster
+      IQ=-1
+      DO WHILE (FEXIST .EQV. .TRUE.) ! delay loop to ensure unique file name
+        CALL DATE_AND_TIME(CDATE,CTIME,C80,VALS) !  3rd arg  is not needed
+        IQ=IQ+1 ! how may loops of delay needed
+        C80='eLog'//CDATE//'T'//CTIME ! full file name, current directory
+        CALL NOWHITE(C80, I,CBUF) ! retain only printable characters
+        INQUIRE (FILE=CBUF(1:I),EXIST=FEXIST) ! does such a file already exist?
+      ENDDO
+      PRINT *,'DAYTIM = ',DAYTIM,IQ,'=IQ   errorfile = ',CBUF(1:I) 
+      OPEN (UNIT=IOERR,FILE=CBUF(1:I),STATUS='NEW',err=85) ! quit if open fails
+C-       END IF
 C                       open input and print files 
       WRITE (IOPM,*)' .inp and .prt will be added to your input names'
       WRITE (IOPM,*)' Defaults:  input = krc , output = input' 
@@ -112,14 +141,7 @@ C                       open input and print files
       FOUT =CBUF(1:IQ)//'.prt'  ! add extension 
       OPEN (UNIT=IOSP,FILE=FOUT,err=82)
 C                       read and check a complete set of input parameters
-D       write(iosp,*) 'before TCARD LP2=',LP2 !<<< debug 
-      CALL CATIME (CBUF)
-      DAYTIM=CBUF(2:21)
-      CBUF=DAYTIM(10:11)//DAYTIM(6:8)//DAYTIM(13:14)//DAYTIM(16:17) ! ddMONhhmm
-      BBUF=CBUF(1:1)
-      IF (BBUF.EQ.' ') CBUF(1:1)='0' ! avoid a blank in the name for days 1:9
-      PRINT *,'DAYTIM >',DAYTIM,'<  errorfile>',CBUF,'<' !!!
-      OPEN (UNIT=IOERR,FILE='eLog'//CBUF,STATUS='NEW',err=9)! quit if open fails.
+D       write(iosp,*) 'before TCARD LP2=',LP2 !<<< debug
 
       CALL TCARD8 (1,IRC)
 D       write(iosp,*) 'after TCARD IR,LP2=',IRC, LP2 !<<< debug
@@ -158,17 +180,22 @@ D     write(IOSP,*)'KRC TDAY 1 return, LP2',IRD,LP2 !<<< debug
         CALL TPRINT8 (2)        ! print input parameters
         I=3                     ! this will print layer table
       ENDIF
+      IF (PARC(1).GT.0. .OR. PARW(1).GT.0. ) 
+     & WRITE(IOSP,131) 'Eclipse or PlanHeat on',PARC(1),PARW(1)
+ 131  FORMAT(1X,A,2F10.3)
+
       CALL TDAY8 (I,IRD)   ! initialize day computations. Can print layer table
+
       IF (I.EQ.3) LD18=.FALSE.  ! clear the "something changed" flag
 C Above changes some items used in TPRINT8 (2) 2016feb NOPE ?
       IF (IRD.NE.1) THEN
         WRITE(IOSP,*)' PARAMETER ERROR IN TDAY(1)'
         IRL=4                   ! Fake error return from TSEAS
         J5=JDISK                ! fake being at first output season
-        CALL FILLL (0,NDJ4,MAXN4E)  ! set all iteration days to 0 as a flag
+        CALL FILLL (IZERO,NDJ4,MAXN4E)  ! set all iteration days to 0 as a flag
         GOTO 160                ! write error messages, then try next case
       ENDIF
-      IQ = IRC                  ! transfer "continuing" flag from  TCARD to  TSEAS
+      IQ = IRC                ! transfer "continuing" flag from  TCARD to  TSEAS
       IF (LONE) IQ=1            ! set TSEAS to start fresh
 
       IF (N5.GE.JDISK) THEN     ! there may be some file output  
@@ -228,11 +255,7 @@ D       write(*,*)'TSEAS return IQ,IRL,N5,krec=',IQ,IRL,N5,krec !<<< debug
       IF (LOPN2) CALL TDISK8 (4,KREC) ! close FDIRA, cannot hold multiple cases
       FDIRA='NO'                ! ensure it stays closed ( length < 3 )
 C
-      CALL TCARD8 (2,IRC)        ! read set of parameter changes
-C
-D       WRITE(IOSP,*)'TCARD:2 IR=',IRC,krec  !<<< Debug
-      IF (IRL.EQ.3) NCASE=NCASE-1 ! do not increment case when continu from memory
-      IF (.NOT. LONE .OR. IRC.GE.5 ) THEN ! 
+      IF (.NOT. LONE ) THEN ! 
         CALL DTIME(TIMES,ELAPSED) ! elapsed seconds
  133    FORMAT(1X,'Case',i3,2x,a1,'TIME: total, user, system=',3f10.4)
         WRITE(   *,133)NCASE,'D', ELAPSED,TIMES ! always to monitor
@@ -240,14 +263,20 @@ D       WRITE(IOSP,*)'TCARD:2 IR=',IRC,krec  !<<< Debug
         WRITE(IOSP,133)NCASE,'D', ELAPSED,TIMES ! to the print file
         TOTIME=TOTIME+ELAPSED   ! increment total time
       ENDIF
+
+      CALL TCARD8 (2,IRC)        ! read set of parameter changes
+C
+D       WRITE(IOSP,*)'TCARD:2 IR=',IRC,krec  !<<< Debug
+      IF (IRL.EQ.3) NCASE=NCASE-1 ! case stays the same when continue from memory
       IF (IRC.LT.5) GOTO 140    ! 5 is END of data
 C
  170  IF (LOPN2) CALL TDISK8 (4,KREC) ! all done: close disk files
       IF (LOPN3) CALL TFAR8  (4,KREC) ! far-field
       IF (LOPN4) CALL TDISK8 (7,KREC) ! type 5x
-      WRITE (   *,*)'     END KRC   Total time [s]=',totime
-      WRITE (IOPM,*)'     END KRC   Total time [s]=',totime
- 9    WRITE (IOSP,*)'     END KRC   Total time [s]=',totime
+ 134  FORMAT(6X,'END KRC   Total time [s]=',F11.3 )
+      WRITE (   *,134)TOTIME
+      WRITE (IOPM,134)TOTIME
+ 9    WRITE (IOSP,134)TOTIME
       STOP
 
 C error section
@@ -259,6 +288,9 @@ C error section
  83   WRITE(IOERR,*)'KRC: error reading one-point header lines',FDISK 
       GOTO 9
  84   WRITE(IOERR,*)'KRC: unexpected EOF reading one-point header' 
+      GOTO 9
+ 85   PRINT *,'KRC: failed opening error log file'  
+      WRITE(IOPM,*)'KRC: failed opening error log file'  
       GOTO 9
 
       END

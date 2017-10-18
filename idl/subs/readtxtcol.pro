@@ -26,7 +26,7 @@ function readtxtcol, name, sp=sp, nskip=nskip,ncol=ncol,mrow=mrow,fill=fill $
 ; top	out_ Strarr(*) each of the initial lines "skipped"
 ;                If nskip is negative, At most 50 lines will be retained
 ; func	out. StrArr(row,col). Scalar -1 if IO error before any good lines.
-; !dbug: ge 8= print nskip and all buffers.  ge 9= stop refore return
+; !dbug: ge 8= help, print nskip and all buffers.  ge 9= stop refore return
 ;_Desc
 ; Data may be proceeded by comment lines.
 ; Blank or too-short lines are skipped
@@ -52,7 +52,10 @@ mtop=50                       ; maximum top lines saved when nskip negative
 ; 2013jul23 HK Allow retention of "top" lines even if nskip is negative
 ; 2016mar08 HK Add the keywords cend and ilun
 ; 2017feb01 HK Correct actions with ilun that left LUN assigned
+; 2017apr04 HK fix typo in above action
 ;_End                 .comp readtxtcol
+
+if !dbug ge 8 then  help,name,sp,nskip,ncol,mrow,fill,quiet,cend,ilun,top
 
 if not keyword_set(ilun) then ilun=0
 if not keyword_set(cend) then cend='C_END'
@@ -97,6 +100,7 @@ buf = 'dum'
 if !dbug ge 8 then help,nskip
 if nskip gt 0 then for i=0,nskip-1 do begin 
     readf, format='(A)',jlun,buf
+    if !dbug ge 9 then print,'SKIP',i,' ',buf
     if savetop then top[i]=buf
 endfor
 kskip=0
@@ -105,10 +109,11 @@ if nskip lt 0 then repeat begin
     if savetop and (kskip lt mtop) then top[kskip]=buf ; save up to mtop lines
     kskip=kskip+1
     i=strpos(buf,cend)
+    if !dbug ge 9 then print,'B',kskip,i,' ',buf
 endrep until i eq 0 or i eq 1 ; Found C_END (or input cend) at start of line
 if savetop and nskip lt 1 then top=top[0:kskip-1]
 
-if !dbug ge 8 then print,buf
+if !dbug ge 8 then print,'C- ',buf
 if verb and kskip gt 0 then help,kskip
 
 if kode eq 4 then begin  ; do no separation
@@ -127,7 +132,7 @@ point_lun,-jlun,pos             ; remember the position after header
 ;_________________________________________________________________
 while not (eof(jlun) or (nr ge nm1)) do begin ; each line of table
     readf,jlun, buf             ; read additional lines
-    if !dbug ge 8 then print,buf
+    if !dbug ge 8 then print,'D- ',buf
     if kode eq 0 then buf=strtrim(strcompress(buf),2) ; reduce each white space to one blank
     if strlen(buf) lt nreq then goto,empty ; skip [nearly] blank lines
     if kode eq 4 then begin     ; do no separation

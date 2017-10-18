@@ -2,22 +2,23 @@ C_Titl  krcc8m.f = KRCCOM common for input and transfer variables
 C_Limitations 
       IMPLICIT NONE             ! none-the-less, try to code with usage
       INTEGER*4 MAXN1,MAXN2,MAXN3,MAXN4,MAXN6,MAXNH,MAXBOT
-     &,MAXN1P,NUMFD,NUMID,NUMLD,N4KRC,NWKRC,KOMMON,MAXN4E
+     &,MAXN1P,NUMFD,NUMID,NUMLD,N4KRC,NWKRC,KOMMON,MAXN4E,MAXFF
 C Here are all the dimension-defining parameters for items in any common
       PARAMETER (MAXN1 =50)     ! dimension of layers
-      PARAMETER (MAXN2 =384*4*256)  ! dimension of times of day: 384=24*16
+      PARAMETER (MAXN2 =384*4*256)  ! dimension of times of day
       PARAMETER (MAXN3 =16)     ! dimension of iteration days
       PARAMETER (MAXN4 =37)     ! dimension of latitudes
-      PARAMETER (MAXN4E =38)     ! " "  Even needed for LATCOM NDJ4
-C       PARAMETER (MAXN5 =161)     ! dimension of saved seasons
-      PARAMETER (MAXN6 =6)       ! dimension of saved years
+      PARAMETER (MAXN4E =38)    ! " "  Even needed for LATCOM NDJ4
+      PARAMETER (MAXFF=384*4*4) ! dimension of far-field times of day
+C       PARAMETER (MAXN5 =161)    ! dimension of saved seasons
+      PARAMETER (MAXN6 =6)      ! dimension of saved years
       PARAMETER (MAXNH =96)     ! dimension of saved times of day, multiple of 24
-      PARAMETER (MAXBOT=14)      ! dimension of time doublings  MUST BE EVEN
+      PARAMETER (MAXBOT=14)      ! dimension of time doublings  MUST  BE  EVEN
       PARAMETER (MAXN1P=MAXN1+1) ! dimension layer temperature points
       PARAMETER (NUMFD=96, NUMID=40, NUMLD=20) ! number of each type
       PARAMETER (N4KRC=NUMFD*2+NUMID+NUMLD+2*MAXN4*2+104/4) ! # of 4-byte words
-              ! above is size of common in 32-bit words. it MUST be even
-      PARAMETER (NWKRC=N4KRC/2) ! number of Real words in krccom. Used by tdisk
+              ! above is size of common in 32-bit words. it  MUST  BE  EVEN
+      PARAMETER (NWKRC=N4KRC/2) ! number of 8-byte words in krccom. Used by tdisk
       PARAMETER (KOMMON=10000000) ! Storage used by tdisk
 
       INTEGER*4 N1,N2,N3,N4,N5,  N24,IIB,IC2,NRSET,NMHA              !  1:10
@@ -76,7 +77,7 @@ Cset   -----------lats--------- tint ---lats-------      ---lats----
 Cset   seas lat day2   lats -------day1------- --main------
      7,N1,N2,N3,N4,N5,  N24,IIB,IC2,NRSET,NMHA                       !  1:10
      8,NRUN,JDISK,IDOWN,I14,I15,  KPREF,K4OUT,JBARE,NMOD,IDISK2      ! 11:20
-     9,KOLD,KVALB,KVTAU,ID24, KFARAC,NBKRC,NFD,NID,NLD                     ! 21:30
+     9,KOLD,KVALB,KVTAU,ID24, KFARAC,NBKRC,NFD,NID,NLD               ! 21:30
 Cset             ----card---
      A,N1M1,NLW,JJO,KKK,N1PIB,  NCASE,J2,J3,J4,     J5               ! 31:40
 Cset   ---day1- lat ----day1-    main -day2- lats  seas
@@ -85,7 +86,7 @@ Cset   ---day1- lat ----day1-    main -day2- lats  seas
      D, KITLE,DAYTIM  ! 
 Cset   tcard tprint tcard tcard 
 C
-      EQUIVALENCE (FD(1),ALB), (ID(1),N1), (LD(1),LP1)
+      EQUIVALENCE (FD(1),ALB), (ID(1),N1), (LD(1),LP1) ! alignment
 
 C_Hist  85may12  Hugh Kieffer  USGS_Flagstaff major revision
 C  86jul01  HK add comments of where variable is set
@@ -110,5 +111,6 @@ C 2016mar:may HK Move ALAT,ELEV from near end. Change IB to IIB,  IC to IC2
 C             LNOTIF to LZONE
 C 2016aug12 HK Add NBKRC to common
 C 2016sep09 HK Add KFARAC to common  Set by TCARD 
+C 2017apr06 HK Move MAXFF here from  HATCOM
 C_End _______________________________________________________________________
  

@@ -126,4 +126,28 @@ rot_per 	7.7 / h  NO DATA on rotation or pole
 PoleRA  7.7
 PoleDec 7.7
 Hmag   19.0
+100000 JupTrojan  22451545. /10 -------Ideal Jupiter Trojan-------
+e     0.0   / 	eccentricity. circular orbit
+a     5.202887    / SMA for Jupiter
+q     5.202887    / 	perihelion distance [AU] same SMA
+i     1.30439695 / Jupiter, could as well be 0.
+node  100.47390909  / longitude of the ascending node [deg] = Jup.
+peri  293.923	/ argument of perihelion Jup. = LongPeri-LongNode
+M       79.668  / mean anomaly [deg] Jup. = meanLong-LongPeri  =19.668    +60.
+rot_per 8.0 / h  Typical
+PoleRA  273.85  / Invariable plane
+PoleDec  66.99  / Invariable plane
+merid   7.7     / no data
+588 Achilles 2457800.5 /11 ------- first Jupiter trojan discovered
+e	.1465234179263199	6.1057e-08	 
+a	5.208069727822055	7.2895e-08	au
+q	4.444965550502968	3.1768e-07	au
+i	10.31674030867057	5.8988e-06	deg
+node	316.5449272991328	3.4002e-05	deg
+peri	133.5971357312067	3.9771e-05	deg
+M	171.8023028071369	2.1249e-05	deg
+rot_per 	7.306 / from JPL Small-Body Database Browser
+PoleRA  7.7
+PoleDec 7.7
+merid   7.7
 ^^^^^^^^^^^^^ INSERT ABOVE this 12-line sets for additional bodies^^^^^^^^^^ 

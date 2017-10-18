@@ -16,7 +16,8 @@
 # fails, after a fix the script can be run again by replacing the '0' with the 
 # number of the last step that was successful. 
 # 2016mar21 Hugh Kieffer
-# 2016may22 HK Add comments   
+# 2016may22 HK Add comments  
+# 2017feb24 HK Drop V2C from name of krc executable
 #_End #########################################################################
 
 #echo "4. argv==$#="$#
@@ -27,10 +28,11 @@
 if [[ $# -ne 3 ]] ; then                 # If wrong Num. arguments, print help.
     echo "Build a KRC distribution from a tar file "
     echo "Usage: buildKRC  <dir containing tar file>  <version>  step"
-    echo "  where step is the last step successfully accomplished: "
-    echo " 0=none  1=make Dir  2=untar  3=good Makefile  4=make C library"
-    echo " 5=make IDL SOL  6=make PORB  7=make KRC "
-    echo "e.g.         buildKRC /work2/KRC 232 3"
+    echo "  where version is without the decimal points"
+    echo "  and step is the last step successfully accomplished: "
+    echo " 0=none  1=make Dir  2=untar  3=good Makefile"
+    echo " 4=make C library  5=make IDL SOL  6=make PORB  7=make KRC"
+    echo "e.g.         buildKRC /work2/KRC 341 3"
     echo "Number of arguments you used is off by "$(( $#-3 )) 
     exit 0
 fi

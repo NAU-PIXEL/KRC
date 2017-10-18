@@ -25,10 +25,10 @@
 \newcommand{\njf}{\mathsf} % name of input parameter in equation
 
 \title{KRC planetary surface temperatures: Helplist}
-\author{Hugh H. Kieffer  \ \ File=-/krc/Doc/helplist.tex Version 3.4.3 2016nov21}
+\author{Hugh H. Kieffer  \ \ File=-/krc/Doc/helplist.tex Version 3.5.4 2017oct01}
 %_History
 % 2016feb08  HK Update spare parameters
-
+% 3.4.3 2016nov21
 \begin{document}
 \maketitle
 
@@ -46,7 +46,13 @@ v.118, 451-570 (2013) [Ref. 1]
 
 The evolution of KRC code is contained in:  evolve.txt 
 
-A crude diagram of the call architecture is in:  flow.txt 
+A crude diagram of the call architecture is in:  flow.txt
+
+Capabilites new in version 3.4.x are decribed in: V34UG.tex (or .dvi or .pdf versions)
+
+Eclipse capabilites (V3.5) are described in: eclipse.tex  (``)
+
+[[ Development for thermal beaming of asteroids is described in: Beaming.tex (``) ]] not released
 
 \subsection{Notation use here}
 The following fonts styles have been partially implemented: 
@@ -190,7 +196,7 @@ Type 1	Real parameters  (8F10.2) ================================
 20  TWILI   Twilight extension angle [deg]
 21  ARC2    Henyey-Greenstein asymmetry factor     ARC2/Pho
              If no atmosphere, this is photometric function control
-             0=Lambert  <-1=Lommel-Seeliger  + Kheim-Vasavada
+             0=Lambert  <-1=Lommel-Seeliger  +=Kheim-Vasavada
              else (-1< x <0) Minnaert with exponent -x (is positive)
 22  ARC3    Minimum allowable numerical convergence factor   Theory is 1.
 23  SLOPE   Ground slope, degrees dip. Only pit may slope beyond pole.
@@ -380,9 +386,12 @@ Type 3 Logical Parameters (10L7) ====================================
 14  LZONE   Use a zone depth table file to set layers.
 15  LOCAL   Use each layer for scaling depth
 16  LD16    Print hourly table to fort.76 [TLATS] 
+              SUBS,DLAT,ALB,SKRC,TAUD,PRES at end of every latitude
+              and every hour:  Hour  T_K  IR_Inc  Solar  T_Planet
 17  LD17    Print temperatures at end of last day of each season
 18  LD18    Print of parameters and layers was done after last change
 19  LD19    Output to fort.79 [TLATS] insolation and atm.rad. arrays 
+            for every time-step for every latitude, every time tlats is called.
 20  LONE    (Computed) Set TRUE if KRC is in the "one-point" mode
 ================================================================
 
@@ -447,6 +456,14 @@ what you intended.
           For this type, 9 values must appear in a rigid format
   12   Set of 2*4 coefficents for T-dep. conductivity.  List-directed IO
   13   Set of 2*4 coefficents for T-dep. specific heat. List-directed IO 
+  14   Set of 10 values for eclipse. See -/Doc/v35/eclipse.pdf sec. 4.4 
+  e.g. 14  1 5.2026 71492. 0.6711D6 3121.6 3.551 0.01 6000. 12.  2 / Europa
+  15   Set of 7 values for flux load from primary body (planet). " sec. 6.1
+  e.g. 15  0.62 0. 0.  0.21 0.21  0.  12. / Jupiter heat load on Europa, nearside center
+  16   Latitude and name for high-time-resolution surface temperature file
+         See eclipse.pdf section. 7
+
+
 \end{verbatim}
 
 For Type 12 and 13, 8 white-space-separated coefficients must follow after 
@@ -495,6 +512,8 @@ and to close the file. TPRINT is called to print out the full input set and the
 latest daily convergence.
 
 \subsection{Other errors: INCOMPLETE} %---
+Case had FATAL error=          41 ... Running with atmosphere but FFF has none 
+
 If you run into errors that are not related to blunders in the input file,
 please contact the author.
 \vspace{-3.mm} 
@@ -752,37 +771,20 @@ Must increase the value of N5: e.g., 2 5 [bigger] 'Increase stopping season'
 
 
 \subsection{ASCII Output Files} %------------------
+Reconstructed  2017oct01
 \vspace{-3.mm}
 \begin{verbatim}
-krc.prt  General results. Stuff output is controlled by LP1:6 & LPGLOB
+----.prt  General results. Things in output are controlled by LP1:6 & LPGLOB
 
-fort.76
-tlats.f: mimic Mike Mellon ASCII files
-        if (ld16) then
-          write(76,761)subs,dlat,alb,skrc,taud,pres
- 761      format(/,'      Ls      Lt       A       I    TauD       P'
- 762      format(f7.2,f9.3,f8.3,f9.3)
-            write(76,762)qh,tsfh(i),adgr(j),qs
+eLog---.---   Error Log, named for time as yyyymmddThhmmss.fff
 
-          do i=1,n24
-            j=(i*n2)/n24
-            qh=i*qhs
-            qs=(1.-alb)*asol(j) ! absorbed insolation
-            write(76,762)qh,tsfh(i),adgr(j),qs
-          enddo
+fort.75  tlats8.f:  Debug geometry details
 
-fort.78
-tlats.f:  for average and maximum:
-        if (ld18) write(78,*)cosi_(i), t_(i),ADGs(i),ADGP(i)
-        if (ld18) write(78,*)j5,j4,sol,ave_a,adgir,c52,beta
+fort.76   tlats.f: mimic Mike Mellon ASCII files
 
-fort.79
-tlats.f:   for each time-step
-       if (ld19) write(79,*)adgr(jj),qa,direct,diffuse
-   col 1 = downgoing thermal radiation
-   col 2 = total insolation reaching surface
-   col 3 = direct  fraction of insolation
-   col 4 = diffuse fraction of insolation
+fort.77    tun8.f:  Special items, firmcoded
+fort.43. 44  and 47. tfin8.f , Usually only if eclipse case. see eclipse.tex 
+
 \end{verbatim}
 
 \subsection{ To run two material types } %--------------
@@ -835,7 +837,6 @@ inertia at 220K for nominal density and specific heat.
  20000.     0.185706  0.119913  0.030938  0.007877   425.5 
  50000.     0.283361  0.250283  0.089327  0.016714   525.6 
 \end{verbatim}
-
 
 --------------------------------------------------------------------------------
 
@@ -917,68 +918,103 @@ white-separated debug-control integers: IDB1 to IDB6
 
 \vspace{-3.mm} 
 \begin{verbatim}
-tseas8.f:47:      IF (IDB1.NE.0) WRITE(IOSP,*)'MSEASa',IQ,IR,J5,LSC,N5,LONE
-tcard33.f:357:    IF (IDB1.NE.0) WRITE(IOSP,*)'TCARD Exit: IRET=',IRET,NFD,ID(1)
-tcard33.f:137:    IF (IDB1.GE.1) PRINT *,'Before PORB0'
-tcard33.f:139:    IF (IDB1.GE.1) PRINT *,'AFTER PORB0'
-tlats33.f:73:     IF (IDB2.NE.0) WRITE(IOSP,*)'TLATSa',N3,N4,J5,LATM,LQ1,LQ2
-tlats33.f:545: 9  IF (IDB2.GE.3) WRITE(IOSP,*)'TLATSx',N1,N1PIB,N2,N24,J3
-tlats33.f:451:    IF (IDB2.EQ.4) PRINT *,'J4,5 +',J4,J5,TEQUIL,TATMJ
-tcard33.f:89:     IF (IDB2.GE.5) WRITE(IOSP,*) 'TCARD-A',IQ
-tday33.f:63:      IF (IDB2.GE.5) WRITE(IOSP,*) 'TDAY IQ,J4=',IQ,J4,JJO
-tlats33.f:70:     LQ1=IDB2.GE.5             ! once per season or latitude
-tlats33.f:71:     LQ2=IDB2.GE.9             ! each time of day 
-tday33.f:755: 9   IF (IDB2.GE.6) WRITE(IOSP,*) 'TDAYx'
-tdisk33.f:98:     IF (IDB3.GE.3) WRITE(IOSP,*)'TDISKa ',KODE,KREC,NCASE,J5,K4OUT
-tdisk33.f:342:    IF (IDB3.GE.3) WRITE(IOSP,*)'TDISKc KREC=',KREC,LOPN2,IOD2,I
-tdisk33.f:99:     IF (IDB3.GE.4) WRITE(IOSP,31)'TDISKa N3,N4+',N3,N4,N5,J5,MASE
-tdisk33.f:100:    IF (IDB3.GE.5) WRITE(*   ,31)'TDISKa N3,N4+',N3,N4,N5,J5,MASE 
-tdisk33.f:323:    IRET=IDB3 !  +1=report many values   +2 report progress 
-tdisk33.f:350:    IF (IDB3.GE.7) WRITE(IOSP,*)'TDISKx  KREC=',KREC
-tday33.f:341:     IF (IDB4.GE.2) WRITE(*,'(a,2I4,2f8.5,f10.3,e12.5)')
-                                           KM,JJH,ARC3,CONVF,QQ,DTIM
-tday33.f:359:     IF (IDB4.GE.2) WRITE(IOSP,'(i3,2f12.3)') J,SCONVG(J),FBI(J)
-grep -in lq tlats33.f
-70:      LQ1=IDB2.GE.5             ! once per season or latitude
-71:      LQ2=IDB2.GE.9             ! each time of day
-72:      LQ3=LD19 .AND. (J5.EQ.JDISK) ! first recorded season
-73:      IF (IDB2.NE.0) WRITE(IOSP,*)'TLATSa',N3,N4,J5,LATM,LQ1,LQ2
-135:      IF (LQ1) THEN
+      2017sep30   ]$ grep -in IDB *8.f
+krc8.f:141:      IF (IDB6.GT.6 .AND. IDB6.LE.99) THEN
+krc8.f:142:        WRITE (IOPM,*) 'Switching IOPM output to  fort.',idb6
+krc8.f:143:        IOPM=IDB6
+porb08.f:16:        LOP=IDB1.GT.3
+tcard8.f:97:      IF (IDB2.GE.5) WRITE(IOSP,*) 'TCARD-A',IQ
+tcard8.f:112:      Set all IDB to 0, read and write them
+tcard8.f:145:      IF (IDB1.GE.1) WRITE(IOPM,*)'Before PORB0'
+tcard8.f:147:      IF (IDB1.GE.1) WRITE(IOPM,*)'AFTER PORB0'
+tcard8.f:421:      IF (IDB1.NE.0) WRITE(IOSP,*)'TCARD Exit: IRET=',IRET,NFD,ID(1) !< dbug
+tday8.f:84:      IF (IDB2.GE.5) WRITE(IOSP,*) 'TDAY IQ,J4=',IQ,J4,JJO
+tday8.f:157:        IF (IDB2.GE.3) WRITE(IOSP,*)'Zlay  K  J   DSCAL     DDZ'
+tday8.f:230:          IF (IDB2.GE.3) WRITE(IOSP,'(a,2i3,6f8.3,i3,f8.4)')  
+tday8.f:386:      IF (IDB4.GE.2) WRITE(*,'(a,2I4,2f8.5,f10.3,e12.5)') 
+tday8.f:404:        IF (IDB4.GE.2) WRITE(IOSP,'(i3,2f12.3)') J,SCONVG(J),ZDZ(J)
+tday8.f:596:      IF (IDB2.EQ.2) WRITE(IOSP,119) LZONE,LALCON,j5,IK1,IK2,IK3,IK4
+tday8.f:651:              IF (IDB5.GE.4)WRITE(47,22)(TTJ(I),I=1,N1) ! coarse  T
+tday8.f:778:          IF (J7.GT.0 .AND. IDB5.GE.7) WRITE(46,244) 
+tday8.f:853:      IF (IDB2.EQ.2) WRITE(IOSP,119) LZONE,LALCON,j5,IK1,IK2,IK3,IK4
+tday8.f:873: 9    IF (IDB2.GE.6) WRITE(IOSP,*) 'TDAYx'
+tdisk8.f:115:      IF (IDB3.GE.3) WRITE(IOSP,*)'TDISKa ',KODE,KREC,NCASE,J5,K4OUT
+tdisk8.f:116:      IF (IDB3.GE.4) WRITE(IOSP,31)'TDISKa N3,N4+',N3,N4,N5,J5,MASE !<dbug
+tdisk8.f:117:      IF (IDB3.GE.5) WRITE(*   ,31)'TDISKa N3,N4+',N3,N4,N5,J5,MASE !<dbug
+tdisk8.f:282:        IF (IDB3.GE.3) WRITE(IOSP,*)'TDISKc KREC=',KREC,LOPN2,IOD2,I
+tdisk8.f:341:        IRET=IDB3               !  +1=report many values   +2 report progress 
+tdisk8.f:358:      IF (IDB3.GE.7) WRITE(IOSP,*)'TDISKx  KREC=',KREC
+tfar8.f:67:      IF (IDB3.EQ.2) WRITE(IOSP,*)'TFAR:0 ',KODE,KREC
+tfar8.f:82:        IF (IDB3.GE.3) WRITE(IOSP,*)'TFARc KREC=',KREC,LOPN3,IOD3
+tfar8.f:191:      IF (IDB3.GE.7) WRITE(IOSP,*)'TFARx:  KODE,KREC=',KODE,KREC
+tfine8.f:93:      IF (IDB5.GE.1) WRITE(IOSP,*) 'TFINE IQ,J4=',IQ,J4
+tfine8.f:123:      IF (IDB5.GE.1) PRINT *,'QB..',QB,RLAY,RLAF,BF1,N1F,JLOW
+tfine8.f:139:        IF (IDB5.GE.6) WRITE(IOPM,30),'I,j..',I,J,QB,DIFFI(I)
+tfine8.f:184:      IF (IDB5.GE.1) WRITE(IOSP,'(a,i3,f12.3)') 
+tfine8.f:208:        IF (IRET.LT.1 .OR. IDB5.GE.2) WRITE(42,'(A,I4,2G12.5,F8.1)')  !
+tfine8.f:302:      IF (IDB5.GE.4) THEN
+tfine8.f:318:      IF (IDB5.GE.3) WRITE(IOSP,'(a,2f12.4,g13.5)') 
+tfine8.f:334:      IF (IDB5.GE.2) WRITE(IOSP,119) LZONE,LALCON,j5,IK1,IK2,IK3,IK4
+tfine8.f:451:      IF (IDB5.GE.4) THEN
+tfine8.f:476:        I=IDB3                  !  +1=report many values   +2 report progress 
+tfine8.f:492: 9    IF (IDB5.GE.1) WRITE(IOSP,*) 'TFINE exit'
+tlats8.f:52:C 2016sep09 HK Do not print T-equilb unless IDB2.ge.5
+tlats8.f:128:      LQ1=IDB2.GE.5             ! once per season or latitude
+tlats8.f:129:      LQ2=IDB2.GE.9             ! each time of day
+tlats8.f:130:      IF (IDB2.NE.0) WRITE(IOSP,*)'TLATSa',N3,N4,J5,LATM,LQ1,LQ2
+tlats8.f:179:      IF (IDB2.GT.0 .AND. J5.EQ.1) WRITE(IOPM,*)'SKYFAC,FAC5X=',
+tlats8.f:265:          IF (IDB2.GE. 5) then
+tlats8.f:282:            IF (IDB2.GE. 5) then
+tlats8.f:651:      IF (IDB2.EQ.4) WRITE(IOPM,*)'J4,5 +',J4,J5,TEQUIL,TATMJ
+tlats8.f:754:        I=IDB3                  !  +1=report many values   +2 report progress 
+tlats8.f:766: 9    IF (IDB2.GE.3) WRITE(IOSP,*)'TLATSx',N1,N1PIB,N2,N24,J3
+tseas8.f:62:      IF (IDB1.NE.0) WRITE(IOSP,*) 'TSEASa',IQ,J5,LSC,N5,LONE
+tseas8.f:88:        IF (IDB1.EQ.3) WRITE(*,132)'DELP1:40',(DELP(I),I=1,40)  
+tseas8.f:95:        IF (IDB3.GE.3) WRITE(IOSP,'(a,3i5,f9.3,f9.4)') 
+tseas8.f:159:        IF (IDB3.GE.3) WRITE(IOSP,'(a,f8.4,2f9.3,f9.5,2i4)')
+        grep -in lq tlats33.f
+128:      LQ1=IDB2.GE.5             ! once per season or latitude
+129:      LQ2=IDB2.GE.9             ! each time of day
+130:      IF (IDB2.NE.0) WRITE(IOSP,*)'TLATSa',N3,N4,J5,LATM,LQ1,LQ2
+131:D       WRITE(IOPM,*)'TLATSa',N3,N4,J5,LATM,LQ1,LQ2 !<dbug
+175:        IF (LQ1) I=3
+197:      IF (LQ1) THEN
          WRITE(75,*) 'J5+',J5,SUBS,SDEC,DAU,SLOPE,SLOAZI
-         WRITE(75,*) 'MXX+',MXX,SKYFAC
-         WRITE(75,*) 'PXX+',PXX
-168:      IF (LQ1) PRINT *,'TLAT1 J5,TBLOW=',J5,TBLOW
-top of Lat loop
-208:      IF (LQ1) THEN
+         WRITE(75,*) 'MXX+',MXX,SKYFAC,FAC5X
+241:      IF (LQ1) WRITE(IOPM,*)'TLAT1 J5,TBLOW=',J5,TBLOW
+    243:top of Lat loop
+247:      LQ3=LD19 .AND. (J5.EQ.JDISK) .AND. (J4.EQ.1) ! first recorded season
+270:          IF (LQ1) KODE=4 ! do debug print in  CUBUTERP8
+325:      IF (LQ1 .AND. J5.EQ.1) THEN
          WRITE(75,*)'FXX+',FXX,J4,DLAT
-         WRITE(75,*)'RXX=',RXX  ! R should be 90 deg from F
+         WRITE(75,*)'QXX=',QXX 
          WRITE(75,*)'TXX=',TXX
-262:      IF (LQ1) print *,'TLATS: J4,SOLR...',J4,SOLR,ACOSLIM,COSIAM(1)
-263:      IF (LQ3) WRITE(IOSP,701)'LQ3',NCASE,J5,J4,TATMAVE,PRES,OPACITY
- top of time loop
-359:      IF (LQ1.AND.(MOD(JJ,24).EQ.1)) THEN
-363:      IF (LQ2) WRITE(IOSP,*),'TLatc',JJ,COSI,COS3,DIRECT,DIFFUSE 
-370:      IF (LQ3) WRITE(88,777) JJ,COSI,COLL,QA,QI,DIRECT,DIFFUSE,BOUNCE
- end time loop
-403:      IF (LQ1) then
-        PRINT *,'AVEA ...',AVEA,AVEE,AVEI,AVEH
-        PRINT *,'CABR...',CABR,TAUD,TAUIR,FACTOR,TAUEFF
-        PRINT *,'BETA...',BETA,QS,SIGSB 
-        PRINT *,'TAEQ4,TSEQ4,TEQUIL',TAEQ4,TSEQ4,TEQUIL
-419:      IF (LQ1) PRINT *,'TSUR,TBOT',TEQUIL,TSUR,TBOT 
-421:      IF (LQ1) PRINT *,'XCEN',XCEN 
-434:      IF (LQ1) PRINT *,'Radiation time, sec',QA 
-452:      IF (LQ1) PRINT *,'TTJ',TTJ
-
-527:    IF (LD16) THEN
-	   WRITE(76,761)SUBS,DLAT,ALB,SKRC,TAUD,PRES
-           loop on hour: WRITE(76,762)QH,TSFH(I),ADGR(J),QS,TPFH(I)
+         WRITE(75,*)'PXX+',PXX,LPH,PARW(7),COSP
+409:      IF (LQ1) WRITE(IOPM,*)'TLATS: J4+.',J4,SOLR,ACOSLIM,COSIAM(1)
+411:C3      IF (LQ3) WRITE(IOSP,701)'LQ3',NCASE,J5,J4,TATMAVE,PRES,OPACITY
+   431  top of time loop
+529:         IF (LQ2.AND.(MOD(JJ,24).EQ.1)) THEN
+           WRITE(75,*)'HXX+',HXX,JJ
+           WRITE(75,*)'ANG:',ANGLE,COSI,COS2,DIRECT,QI
+533:         IF (LQ2) WRITE(IOSP,*),'TLatc',JJ,COSI,COS3,DIRECT,DIFFUSE 
+548:C3         IF (LQ3) WRITE(88,777)JJ,COSI,COLL,HUV,QI,DIRECT,DIFFUSE,BOUNCE
+551:          IF (LQ3) WRITE(88,777)JJ,COSI,COS2,AVET,HALB,DIRECT,ATMHEAT
+    559: end time loop
+582:          IF (LQ1) WRITE (IOPM,*) 'QS, small tau=',QA,QS
+602:      IF (LQ1) then
+        WRITE(IOPM,*)'AVEA...',AVEA,AVEE,AVEI,AVEH
+        WRITE(IOPM,*)'CABR...',CABR,TAUD,TAUIR,FACTOR,TAUEFF
+        WRITE(IOPM,*)'BETA...',BETA,QS,SIGSB 
+        WRITE(IOPM,*)'TAEQ4,TSEQ4,TEQUIL',TAEQ4,TSEQ4,TEQUIL
+618:        IF (LQ1) WRITE(IOPM,*)'TSUR,TBOT',TEQUIL,TSUR,TBOT 
+620:        IF (LQ1) WRITE(IOPM,*)'XCEN',XCEN 
+634:          IF (LQ1) WRITE(IOPM,*)'Radiation time, sec',QA 
+652:      IF (LQ1) WRITE(IOPM,*)'TTJ',TTJ
+    759:  end of lat loop
+761:      IF (LQ1 .AND.(.NOT. LONE) .AND. (J5.LE.1)) ! avoid line in  OnePoint output
+     &  WRITE(IOSP,*)'TLATS: TEQQ',(TEQQ(I),I=1,N4) ! starting  Tequil 
 end lat loop
- 9    IF (IDB2.GE.3) WRITE(IOSP,*)'TLATSx',N1,N1PIB,N2,N24,J3
 \end{verbatim}
-Set LD19 to write bottom-of-atmosphere downgoing fluxes to separate file
-for every time-step for every latitude, every time tlats is called.
- 
 
 \section{Accessing KRC output in IDL} %______________________
 

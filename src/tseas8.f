@@ -37,6 +37,8 @@ C 2014feb25 HK Specify most variables as *4  Untabify and justify
 C 2014mar10 HK Make  REAL*8  version 
 C 2014may16:aug22 HK Incorporate option of far-field file for slopes
 C 2016oct10 HK Make print after TFAR optional
+C 2017mar05 HK Improve notice when there is an error
+C 2017apr29 HK Define SJA if not using PORB
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
 
 C 
@@ -77,8 +79,9 @@ C CPU_TIME is real with resolution microseconds
       ENDIF
 
       IF (LOPN3) THEN           ! prepare for fff each season           !
-        IF (LATM .AND. MINT .NE. 3) THEN ! If atmosphere
+        IF (LATM .AND. MINT .NE. 3) THEN ! If atmosphere, MINT is in /UNITS/
           IRET=41                ! then require fff atm, needed in TDAY
+          WRITE(IOERR,*)'Case',NCASE,' Atm. needed in Far-field file'
           GOTO 9
         ENDIF
         CALL TFAR8(2,1,DELP, FTS,FTP,FTA) 
@@ -118,7 +121,11 @@ D     write (*,*)'TSEAS: ',J5,N5,LOPN2,IDOWN,IRL !<< ,KVALB,alb
         WRITE(IOPM,115) TIME3,'start',J5,N5
  115    FORMAT(1X,F9.3,' seconds at ',A,' of season ',I4,' of ',I4)
       ENDIF
-      IF (LPORB) CALL PORBIT (1, DJU5,SUBS,SDEC,DAU) ! Get current Ls, AU and sub-solar lat
+      IF (LPORB) THEN
+        CALL PORBIT (1, DJU5,SUBS,SDEC,DAU) ! Get current Ls, AU and sub-sol lat
+      ELSE
+        SJA=DAU                 ! TLATS uses SJA for annual average
+      ENDIF
 C
       SUBS4=SUBS                ! get R*4 version
       IF (KVALB .GT. 0) THEN

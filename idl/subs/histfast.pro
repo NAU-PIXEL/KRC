@@ -45,6 +45,7 @@ pro histfast,aa,sigin=sigin,bisin=bisin,xlab=xlab,linear=linear,sub=sub $
 ; 2014apr12 HK Deal with pathologic case of all same but SD is roundoff
 ; 2015jan09 HK Do not test integer arrays for finite. And test range as longs
 ; 2016dec11 HK Fix bug that left a1 undefined when some NAN's present
+; 2017sep12 HK If invalid array, return with message rather than stop
 ;_End
 
 ;on_error,2 ; to handle the "Array has a corrupted descriptor: H1" upon return
@@ -52,6 +53,13 @@ pro histfast,aa,sigin=sigin,bisin=bisin,xlab=xlab,linear=linear,sub=sub $
 sizea=SIZE(aa) & wordtype = sizea[sizea[0]+1] ; size of input array
 isint=wordtype le 3 or wordtype ge 12; some form of integer
 nin=sizea[sizea[0]+2]             ; number of input elements
+if nin lt 1 or wordtype eq 7 then begin 
+  message,'Invalid input: number='+strtrim(nin,2)+'  type=' $
+  +strtrim(wordtype,2),/con
+  h1=fltarr(2) & i1=intarr(4) & r1=fltarr(7) ; ensure defined, but nuts
+  r1[2]=1.                                   ; binsize not zero
+  return
+ endif
 
 if keyword_set(xlab) then xtit=xlab else xtit='X value'
 

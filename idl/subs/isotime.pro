@@ -6,9 +6,10 @@ function isotime, form, tz=tz
 ;           2:  yyyymondd hh:mm:ss as 2 words
 ;           3:  yyyymmdd  hh:mm:ss as 2 words
 ;           4:  monddThh:mm        as one word
-;           5:  ddmonhh:mm         as one word  Short but POSSIBLY CONFUSING 
-;          12:  yyyymondd hhmmss as 2 words
-;          15:  ddmonhhmm         as one word  Short but POSSIBLY CONFUSING 
+;           5:  ddmonhh:mm         as one word  Short but POSSIBLY CONFUSING
+;          12:  yyyymondd hhmmss   as 2 words 
+;          14:  monddThhmm         as one word
+;          15:  ddmonhhmm          as one word  Short but POSSIBLY CONFUSING 
 ;      else= :  MJD to 4 decimal places as one word   Don't use tz 
 ; tz  in_  Integer in range -11:11, local standard time zone for label
 ;           Or 'Z' for zero=UTC=Zulu (actually, any string)
@@ -27,6 +28,7 @@ function isotime, form, tz=tz
 ;              and account for USA Daylight Savings Time = DST
 ; 2011nov18 HK Make  form  an optional argument, add forms 4,5,6
 ; 2015may12 HK Add two forms with no colons; add 10 to index. 
+; 2017jun21 HK Add fomr 14
 ;_End            .comp isotime
 
 cpuz=-8                         ; standard time zone this computer is on
@@ -85,6 +87,7 @@ case form of
     4:    out=ss[1]+day+'T'+strmid(hcs,0,5) ; monddThh:mm
     5:    out= ss[2]+ss[1]+strmid(hcs,0,5) ;ddmonhh:mm POSSIBLY CONFUSING 
     12:   out=[ss[4]+ss[1]+day, hms] ; yyyymondd hhmmss  as 2 words
+    14:   out=ss[1]+day+'T'+hhmm ; monddThhmm
     15:   out= ss[2]+ss[1]+hhmm  ; ddmonhhmm POSSIBLY CONFUSING 
    else:   begin ; requested MJD
     dd=SYSTIME(1)               ; seconds from 1970jan01, double precision

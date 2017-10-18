@@ -54,45 +54,8 @@ The symbols \bq and \eq  are used here to bound direct quotes from articles.
 
 \end{enumerate}
 
-\hrulefill MOVE: \hrulefill
+% \hrulefill MOVE: \hrulefill
 
-For distant observations, if the body shape is not spherical one could weight
-each hour/latitude grid point with a form factor to reflect the relative size of
-each grid facet. This is an excellent approximation (exact) where the body is
-not concave
-
-The Near-Earth Asteroid Thermal Model (NEATM) \qcite{Harris98} is unlikely to be
-adequate for Bennau, with an TI of about 300., but it is used by \qcite{Emery14}
-for their Table 5.
-
-p24.6a, beaming parameter derived from $D_{eff}$ and $T_{SS}$
-
-p 24.7b spherical section craters serve as macroscopic roughness elements 
-
-$\eta$ is not used in this model. In this step, we con-
-tinue to assume that the asteroid is spherical.
-
-p32.6b I=768 for  CM meteorite Cold Bokkeveld.NWA 5515 has I=1450 
-
-Gundlach, B., Blum, J., 2013. A new method to determine the grain size of planetary regolith. Icarus 223, 479–492.
-
-
-Emery, J.P., Sprague, A.L., Witteborn, F.C., Colwell, J.E., Kozlowski, R.W.H.,
-Wooden,D.H., 1998. Mercury: Thermal modeling and mid-infrared (5–12 lm)
-observations. Icarus 136, 104–123.
-
-
-Although in the KRC runs, non-Lambertian emission can be modeled, in the
-integration of rought surfaces, each facet is initially assumed to have
-Lambertian emission; this Lambertian assumption could be relaxed with additional
-code.
- 
-Assume all azimuths equally probable 
-
-2016oct24 Post Banfield phone call.
-
-Probable tmeperature of the far field for rough surfaces, will depend strongly on azimuth and time of day. E.g., west-facing slope in the afternoon will see east-facing, and hence hot, slopes.
- 
 \subsection{Notation \label{nota} }
 Quotes and comments on journal articles are not required to follow this notation.
 Geometry notation is in \$\ref{geom}'
@@ -258,11 +221,37 @@ Importance of  flat far-ground? Requires KRC version 3.4+ to treat this.
 \qi sumR =summing radiance at each loop level
 \\ For 4 views and 11 wavelengths, mean value of sumQ/sumR=0.999961, StdDev=3.26951e-05
 
+\subsection{From the literature}
+
+\subsubsection{Emery 2014}
+The Near-Earth Asteroid Thermal Model (NEATM) \qcite{Harris98} is unlikely to be
+adequate for Bennau, with an TI of about 300., but it is used by \qcite{Emery14}
+for their Table 5.
+
+p24.6a, beaming parameter derived from $D_{eff}$ and $T_{SS}$
+
+p 24.7b spherical section craters serve as macroscopic roughness elements 
+
+$\eta$ is not used in this model. In this step, we con-
+tinue to assume that the asteroid is spherical.
+
+p32.6b I=768 for  CM meteorite Cold Bokkeveld.NWA 5515 has I=1450 
+
+Gundlach, B., Blum, J., 2013. A new method to determine the grain size of planetary regolith. Icarus 223, 479–492.
+
+
+Emery, J.P., Sprague, A.L., Witteborn, F.C., Colwell, J.E., Kozlowski, R.W.H.,
+Wooden,D.H., 1998. Mercury: Thermal modeling and mid-infrared (5–12 lm)
+observations. Icarus 136, 104–123.
+
+
 \section{Implimentation using KRC}
 Use Bandfield approach; precompute data sets of tilts as cases in
 normal KRC runs; save as type 52. Azimuth at 20\qd~ intervals; slope at 2\qd~
 intervals up to 40\qd; each slope is one .t52 file. 361 cases per material.
 
+A basic simplification is to assume that all surface tilt azimuths equally probable.
+ 
 Use equal-area zones from pole-to-poles, with one centered on the equator, so
 there is an odd number total; $N=2j+1$.  Normalized area of a zone is: $\sin
 \theta_2 - \sin \theta_1$ where $\theta$ is the zone boundary latitude. Thus
@@ -318,7 +307,23 @@ check @11 \nv{parf} items 0:3 and @12 \nv{pari} items 1:3
 
 \end{enumerate} 
 
+\subsection{Thoughts not incorporated yet}
 
+For distant observations, if the body shape is not spherical one could weight
+each hour/latitude grid point with a form factor to reflect the relative size of
+each grid facet. This is an excellent approximation (exact) where the body is
+not concave
+
+Although in the KRC runs, non-Lambertian emission can be modeled, in the
+integration of rough surfaces, each facet is initially assumed to have
+Lambertian emission; this Lambertian assumption could be relaxed with additional
+code.
+ 
+2016oct24 Post Banfield phone call: 
+\\ Probable temperature of the far field for rough surfaces will depend strongly
+on azimuth and time of day. E.g., west-facing slope in the afternoon will see
+east-facing, and hence hot, slopes.
+ 
 % \pagebreak
 \section{User Guide to IDL beaming.pro}
 Must first have used KRC to generate at least one full tilt-set for the object
@@ -916,6 +921,25 @@ merid   0.         Obliq=176 +/- 2
 % after lon/lat switch correction, equatorial pole values agree with conversion using NED: NASA/IPAC EXTRAGALACTIC DATABASE, to $,.0001$ degree.
 
 \subsection{Production Runs}  % ----------
+
+\begin{table} [!h]
+\caption{KRC tilt-set runs. All have: EMISS=1., RLAY=1.15, FLAY=.12, N1=37.; for which the bottom is at  D=121.7 or 1.5048m }
+\label{runt}
+\begin{center}
+\begin{tabular}{| c  r  r  c | c | r | } \hline \hline
+Label & Albedo & Inertia & Photom. & Other conditions & run time\\
+       &       &        & Function &  & seconds\\  \hline
+K & .03 & 100 & Kheim & & 2474 \\ 
+L & .03 & 100 & Lambert & & 2386 \\   % 1592+794
+A & .10 & 100 & Kheim & &  2373 \\ 
+I & .03 & 200 & Kheim & &  2490 \\ 
+J & .03 & 400 & Kheim & & 2480 \\ 
+D & .03 & 100 & Kheim & I=600 below D=.3 \\
+P & .03 & 100 & Kheim & far-field is slope=30 at azimuth+180 & 2458\\ 
+ \hline
+\end{tabular} \end{center}
+\end{table}
+
  Start with basic model representative of asteroids using a nominal orbit and
  spin axis (e.g., Bennu). Offset individually various model parameters to
  generate partial derivatives.
@@ -951,24 +975,6 @@ analysis.
 \label{BenSdec}  BenSdec.png  }
 \end{figure} 
 % how made: 
-
-\begin{table} [!h]
-\caption{KRC tilt-set runs. All have: EMISS=1., RLAY=1.15, FLAY=.12, N1=37.; for which the bottom is at  D=121.7 or 1.5048m }
-\label{runt}
-\begin{center}
-\begin{tabular}{| c  r  r  c | c | r | } \hline \hline
-Label & Albedo & Inertia & Photom. & Other conditions & run time\\
-       &       &        & Function &  & seconds\\  \hline
-K & .03 & 100 & Kheim & & 2474 \\ 
-L & .03 & 100 & Lambert & & 2386 \\   % 1592+794
-A & .10 & 100 & Kheim & &  2373 \\ 
-I & .03 & 200 & Kheim & &  2490 \\ 
-J & .03 & 400 & Kheim & & 2480 \\ 
-D & .03 & 100 & Kheim & I=600 below D=.3 \\
-P & .03 & 100 & Kheim & far-field is slope=30 at azimuth+180 & 2458\\ 
- \hline
-\end{tabular} \end{center}
-\end{table}
 
 % \pagebreak
 \bibliography{heat,moon,mars}   %>>>> bibliography data
@@ -1145,6 +1151,7 @@ both
 \end{verbatim}
 \vspace{-3.mm} 
 
+%\clearpage %__________________________________________________________
 
 \section{Testing sep 8}
 \vspace{-3.mm} 
@@ -1232,6 +1239,8 @@ Expect
 
 \end{verbatim} 
 
+%\clearpage %__________________________________________________________
+
 \section{Testing sep 22}
  Indices in @64 loops i=hour, j=latitude, k=azimuth, m=slope, n=view.
  Use l=wavelength
@@ -1271,7 +1280,7 @@ With date 6090, near equinox, hour profile even weaker compared to N/S,
   Latitude=0. at date 5858. Left side is viewer traverse in hour, from 7 to 17,
   and is magnified by a factor of 10; the variation is about $\pm 4$\%.  Right
   side is viewer traverse in latitude from 75 S to 75 N. showing flux variation,
-  normalized to viewing from the zenith, show almost 40\% variation at 5\um and
+  normalized to viewing from the zenith, show almost 40\% variation at 5\um~ and
   about 7\% at 50\um. The left legend relates line colors to wavelengths, the
   right legend indicates the line type for each of the three tilt-set
   runs. Annotations near the figure bottom indicate the viewer direction;
@@ -1283,13 +1292,16 @@ With date 6090, near equinox, hour profile even weaker compared to N/S,
 Check on Solar dec is in Fig \ref{slope20noon}, when the sdec plot @253 would indicate it was near minimum
 
 \begin{figure}[!ht] \igq{slope20noon}
-\caption[slope20noon]{Temperatures at all latiitudes and azimuths at noon for
+\caption[slope20noon]{Temperatures at all latitudes and azimuths at noon for
   slope 20\qd; using t4 for date=6090 and slope index 10. Sub-solar declination
   must be near the crossing point, as sun near zenith would minimize effect of
   azimuth.
 \label{slope20noon}  slope20noon.png  }
 \end{figure} 
 % how made:
+
+%\clearpage %__________________________________________________________
+
  \section{Testing Oct3+}
 After fixing sun motion, erase all prior beam runs and do run for A alone, then
 K and L at the same time; elapsed clock time about 26 min for one and 27 min for
@@ -1301,7 +1313,7 @@ Make files thru radiance for 3 dates:
 \qi 6100 Sun 0.6 N, spring equinox
 
  Run local views for several roughnesses. The fraction of high-angle slopes not
- covered by the KRC slope set is given in the following table:Last 2 columns are
+ covered by the KRC slope set is given in the following table; last 2 columns are
  with 40 and 60\qd~ max. slope files
 \begin{tabbing}
 inputWW \= not covered \=  High slopes\= High slopes \kill
@@ -1319,7 +1331,7 @@ input   \> computed \> 40\qd  \> 60\qd \\
 Add source file to plot title. Result for sun 30N are in Figure 
 \ref{30N72}
 \begin{figure}[!ht] \igq{30N72}
-\caption[Beam profiles with Sun 30N]{
+\caption[Beam profiles with Sun 30N]{Viewer traverses at 30 N. See caption to Fig. \ref{KLAx}
 \label{30N72} 30N72 .png  }
 \end{figure} 
 % how made: beaming 147 123 

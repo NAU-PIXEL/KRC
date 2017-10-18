@@ -1,8 +1,9 @@
 C_Titl  KSUBS8  A collection of R*8 routines with same name as R*4 versions
 C_Hist 2014sapril  Hugh Kieffer.  Create
 C 2015sep14 HK Modify CO2PT to accomodate any gas
+C 2017sep01 HK Remove CO2PT; it was replaced 2017may03 by gaspt8.f 
 C
-C Includes  AVEDAY  AVEYEAR  CO2PT  SIGMA 
+C Includes  AVEDAY  AVEYEAR  SIGMA 
 
       REAL*8 FUNCTION AVEDAY (SDEC,XLAT)
 C_Titl  AVEDAY average daily exposure of surface to sunlight.
@@ -10,7 +11,7 @@ c   this is the average daily insolation, normalized to the solar flux at
 C    current distance from the sun.
       IMPLICIT NONE
 C_Args
-        REAL*8 SDEC ! in. solar declination in degrees.
+        REAL*8 SDEC ! in. Solar declination in degrees.
 C                       (the sub-solar latitude on the planet)
         REAL*8 XLAT ! in. latitude on surface; in degrees. 
 C
@@ -59,7 +60,7 @@ C solar flux over the orbit
 C_Args
         REAL*8 BLIQ ! in. Obliquity in degrees.
 C                       (the maximum sub-solar latitude on the planet)
-        REAL*8 XLAT ! in. latitude on surface; in degrees. 
+        REAL*8 XLAT ! in. Latitude on surface; in degrees. 
 C
 C_Desc formula from  WARD in  MARS p309 Eq 12
 C Input angles should be no greater magnitude than 90. degrees, 
@@ -98,55 +99,14 @@ C 1/(2 pi^2) * sum*delp=  1/(2 pi^2) * sum*(2 pi/N)= sum/(N pi)
         END
 
 
-
-      REAL*8 FUNCTION CO2PT (KODE, ARG2)
-C_Titl  GASPT  Gas saturation pressure / temperature relation
-C_Vars
-      INCLUDE 'krcc8m.f'  ! has  IMPLICIT NONE 
-C_Args
-      INTEGER KODE            !in. 1=P-to-T  2=T-to-P
-      REAL*8 ARG2               !in. pressure (pascal) or temperature (kelvin)
-C_Desc
-C  Clausius-Clapeyron equation based on  MARS p 959
-C  ln  P = a -  b/T   or  T = b/(a - ln  P)
-C this relation is good to ~ 1% for 120-160 kelvin or .4 to 314 pascal
-C_Hist  Hugh_Kieffer  97feb11
-C 2010jan11 HK Go to implicit none
-C 2015sep14 HK Allow any gas by getting parameter from krccom
-C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
-
-      REAL*8 A !  /27.9546D0/  ! first  C-C coefficient for  CO2 (mb) mars p 959
-      REAL*8 B !  /3182.48D0/  ! second  C-C coefficient for  CO2  (1/K)
-      REAL*8 OUT,P, T
-
-C transfer two items from KRCCOM explicitly for clarity. 
-C as of 2015sep14 these are the only two spare Real input parameters
-      A=ABRPHA                  ! first Clausius-Clapeyron coefficient
-      B=FD32                    ! second  " " "  
-
-      IF (KODE.EQ.1) THEN
-        P=ARG2
-        IF (P.LE.0.) P=1.D-3  ! dumb insurance to avoid log failure
-        OUT = B/(A-DLOG(P))
-      ELSE
-        T=ARG2
-        IF (T.LT.10.D0) T=10.D0 ! dumb insurance to avoid numerical failure
-        OUT = DEXP( A-B/T)
-      ENDIF
-      CO2PT = OUT
-      RETURN
-      END
-
-
-
       SUBROUTINE SIGMA (BUF,N, AVE,SIG)
 C_TITLE SIGMA Computes mean and standard deviation of real array 
       IMPLICIT NONE
 C_ARGS
-      REAL*8 BUF(*)             ! [In] array
-      INTEGER N                 ! [In]  number of items in BUF
-      REAL*8 AVE                ! [Out] average value of input array
-      REAL*8 SIG                ! [Out] standard deviation of input array
+      REAL*8 BUF(*)             ! [In]  Array of values to process
+      INTEGER N                 ! [In]  Number of items in BUF
+      REAL*8 AVE                ! [Out] Average value of input array
+      REAL*8 SIG                ! [Out] Standard deviation of input array
 C               will be 0. if  N less than 2.
 C_KEYS  MATH STATISTICS 
 C_DESC Sums the values and value_squared for entire array, then computes 

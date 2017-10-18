@@ -15,7 +15,7 @@
 
 % Used in place of  \qen for development to identify equation labels 
 %\newcommand{\ql}[1]{\label{eq:#1} \hspace{1cm} \mathrm{eq:#1} \end{equation}}
-%\newcommand{\ql}[1]{\label{eq:#1} \end{equation} } % for final
+\newcommand{\ql}[1]{\label{eq:#1} \end{equation} } % for final
 
 \title{Simple thermal model}
 \author{Hugh H. Kieffer  \ \ File=-/krc/Doc/simple.tex  2015dec28+}
@@ -32,15 +32,15 @@ with no temperature-dependence and no atmosphere to test against KRC.
 
  KRC run: no atmosphere, Fake the geometry matrix for circular orbit with same semi-major axis as Mars, but zero eccentricity and obliquity.
 
- Fiddle with declination of planets spin axis, but then discover that the BFRM matix is all that matters; set its elements to 1. or 0. Then test print (LP2 true, set flags to print solar dec and half day at evey latitude and season) 
+ Fiddle with declination of planets spin axis, but then discover that the BFRM matrix is all that matters; set its elements to 1. or 0. Then test print (LP2 true, set flags to print solar dec and half day at every latitude and season) 
 
  Test run has downvis at -60 same as at +60 all year, so obliquity must be zero.
 
 \subsection{Take-away}
 Should not allow time doubling in the first two physical layers.
-For 0.1 K numerical accuracy, KRC runs should use finer layers than current standard and extend to depth of about 100 diurnal skin-deepths
+For 0.1 K numerical accuracy, KRC runs should use finer layers than current standard and extend to depth of about 100 diurnal skin-depths
 
-For a 2-year spinup for Mars, best to have total depth of about 130 D (D= diurnal skin depth) 
+For a 2-year spin-up for Mars, best to have total depth of about 130 D (D= diurnal skin depth) 
 
 \subsection{earlier studies}
 -/cr/InSight/HP3/Thermod.tex  2014 March
@@ -49,7 +49,7 @@ For a 2-year spinup for Mars, best to have total depth of about 130 D (D= diurna
 
 \section{Formulation} 
 
-Start with initial temperature profile, Compute average radiation flux for the first interval. Use this and T set from prior step to find new $T_S$, and then use that boundary condition to set the heat flow into the top layer for the next time istep.
+Start with initial temperature profile, Compute average radiation flux for the first interval. Use this and T set from prior step to find new $T_S$, and then use that boundary condition to set the heat flow into the top layer for the next time step.
 
 Thus, model times are at the end of the interval over which the boundary condition was averaged. With 0-based indexing and N times per sol; local Hour is 24*i/N .
 
@@ -118,9 +118,9 @@ The safety factor relative to classical convergence, $ B/\sqrt{2 \kappa \Delta t
 
 SIMPLE run L, 20 models listed in Table \ref{srunL}.  Models 16:19 had the same
 layer structure: changes were increasing steps/hour and for 19, reducing ggt
-1.e-5 to 1.e-8 and reducing the ``last season'' criterium of the maximum change
+1.e-5 to 1.e-8 and reducing the ``last season'' criterion of the maximum change
 in midnight temperature of any layer from 1.e-7 to 1.e-10. This last change in
-tolerance had negligable effect, $T_S$ at the 48 times of day for Model 18 -
+tolerance had negligible effect, $T_S$ at the 48 times of day for Model 18 -
 Model 19 had a mean of 1.65e-08 and StdDev of 5.38e-09.
 
 Variation with RLAY and FLAY is shown in Fig \ref{ksclotL18}.  Similar tests with KRC; see Figure \ref{krcCirB}. 
@@ -130,7 +130,7 @@ KRC case 10 -SIMPLE L:9 has range of -0.19 to +0.16
 
 \begin{table} \caption[SIMPLE parameters]{Parameters of the KRCSIMPLE routine. 
 Those marked with '-' do not affect the numerical result; those marked with 'c' were constant 
-for this study; primary changes are maked with '+'} \label{sparm}
+for this study; primary changes are marked with '+'} \label{sparm}
 \begin{verbatim}
 -  0    mod.        0.0000  Flag to modify this, +2=only compute depth chart
 +  1    nlay        49.000  n1: number of real layers
@@ -160,9 +160,9 @@ c 15      Cp        647.00  specific heat
 \hrulefill \end{table} 
 
 
-Run L, Model 19 versus 18 shows that tighter tolerances had negligable effect.
+Run L, Model 19 versus 18 shows that tighter tolerances had negligible effect.
 
-\begin{table} \caption [KRCsimple run L models]
+\begin{table} \caption [KRCSIMPLE run L models]
 {Values for the models in SIMPLE run L.  
 Columns with numbers correspond to model parameters in Table \ref{sparm}; 
 saFac is the stability safety factor for the top layer. Tdel is the surface
@@ -262,9 +262,9 @@ Columns in legend for KRCSIMPLOT, e.g., Figure \ref{ksclotL18}:
 \begin{figure}[!ht] \igq{ksclotL18}
 \caption[Deltas for set L]{ Last-season diurnal temperatures for model set L,
   relative to model L19. Legend linked to Table \ref{sparm}, see text. Models 0:6
-  all have flay=0.12 with decreaseing rlay and similar depth; models 7:9 have
+  all have flay=0.12 with decreasing RLAY and similar depth; models 7:9 have
   flay=.10 . Models 11:19 (dashed lines) all have flay=0.05, 10:15 with
-  decreasing rlay. Models 15:19 approach an ideal case by first increasing the
+  decreasing RLAY. Models 15:19 approach an ideal case by first increasing the
   total depth, then the time resolution and finally the convergence
   requirements.
 \label{ksclotL18} ksclotL18.png }
@@ -292,7 +292,7 @@ sec. Flay=0.05, steps=64 had MAR=.06 in 5.8 sec.
 \clearpage
 
 \section{KRC runs and comparisons} %---------------------------------------
-Generate idealised geometry matrix with circular orbit and zero obliquity. Use equator ( and $\pm$ 30 and 60 \qd ). After first few runs, generate KRC version 3.2.3 by making these changes:
+Generate idealized geometry matrix with circular orbit and zero obliquity. Use equator ( and $\pm$ 30 and 60 \qd ). After first few runs, generate KRC version 3.2.3 by making these changes:
 \qi increase first layer for time doubling to 4 (third physical layer)
 \qiii tday8.f, line 171, change J.GT.2 to J.GT.3
 \qi set FLAY to be the first physical layer. This is just for convenience of the user.  
@@ -326,9 +326,9 @@ Did all these changes between Run E and F. Runs:
 KRC MarsCirC run, starting with case 3 has first physical layer of 0.100 to
 match SIMPLE runs. MarsCirC vers L:19; sets differing only in depth at about 6,12 and 16 diurnal
 skim depths are virtually the same. 5,11 and 17 have time-steps per
-$\frac{1}{2}$ hour of 96, 32 and 16 respectively and rlay=1.1 . Cases 8,14 and
-20 have the same set of time-steps but rlay=1.2.  Closest match to SIMPLE L:19
-is rlay=1.1 and 32 time steps, see Fig. \ref{krcCirC}.
+$\frac{1}{2}$ hour of 96, 32 and 16 respectively and RLAY=1.1 . Cases 8,14 and
+20 have the same set of time-steps but RLAY=1.2.  Closest match to SIMPLE L:19
+is RLAY=1.1 and 32 time steps, see Fig. \ref{krcCirC}.
 
 \begin{figure}[!ht] \igq{krcCirC}
 \caption[KRC flay=.1 tests]{KRC run C with flay set so that top physical layer
@@ -338,7 +338,7 @@ is rlay=1.1 and 32 time steps, see Fig. \ref{krcCirC}.
 % how made:
 
 KRC run D. Cases 1:6 have 50 uniform layers of 0.1 to total 4.9 D; cases 7:12
-have Rlay=1.2 with first physical layer 0.10, 18 layers to 10.5 D, which
+have RLAY=1.2 with first physical layer 0.10, 18 layers to 10.5 D, which
 executed 3 times faster. Each set of 6 had standard convergence, then
 individually DDT/10, GGT/10, DTMAX/10, add DDT/10, add GGT/10. Virtually no
 difference between the 6 cases of either set, see Fig. \ref{krcCirD}. The last
@@ -357,7 +357,7 @@ case similar to first six, suggesting that KRC standard CONVG is too small.
 
 KRC run E.  All with 18432 time-steps/sol, or 384 each 1/2 hour, and depths of
 about 7. Matrix of RLAY=1.3, 1.2, 1.1 and first physical layer of 0.1, 0.05, and
-0.025.  Preceeded by one case with NLAY=50, rlay=1.1 . First 4 cases started
+0.025.  Preceded by one case with NLAY=50, rlay=1.1 . First 4 cases started
 time doubling at layer 2, then layer 4 or more. Results relative to SIMPLE L19
 shown in Fig. \ref{krcCirE}; all relative maxima are in the morning and
 minima at night.  Larger RLAY move relative maximum later in the day and
@@ -380,14 +380,14 @@ KRC run F. Apart from adjusting FLAY to the new convention, same input as run E.
 Cases 4:9 differences from Run E are less than 7.5e-7 K. See Fig. \ref{krcCirF}
 
 \begin{figure}[!ht] \igq{krcCirF}
-\caption[KRC flay/rlay tests]{KRC run E relative to SIMPLE M:8; all with N2=18432 or 384 per 1/2 hour, CONVF=8., Matrix of RLAY=1.3, 1.2, 1.1 and first physical layer of 0.1, 0.05, and 0.025. 
+\caption[KRC flay/RLAY tests]{KRC run E relative to SIMPLE M:8; all with N2=18432 or 384 per 1/2 hour, CONVF=8., Matrix of RLAY=1.3, 1.2, 1.1 and first physical layer of 0.1, 0.05, and 0.025. 
 \label{krcCirF} krcCirF.png }
 \end{figure} 
 % how made:
 
 \clearpage
 Run G, several sets of 10 cases, first for each is NLAY=20 (very first is 50),
-then then 3x3 matrix of flay and rlay. Set 1 is N2=24576 (512 per 1/2hour),
+then then 3x3 matrix of flay and RLAY. Set 1 is N2=24576 (512 per 1/2hour),
 convg=8; then 256, convg=4; then 128, convg=2; then 64, convg=1, then 31 and
 then 16 per 1/2hour
 
@@ -408,12 +408,12 @@ Run H, similar to G, with some additional fine cases; results shown in Fig. \ref
 
 \begin{table} \caption[KRC run H]{Summary results for KRC run on MarsCirH.inp . 
 Columns are: i= 0-based case index; RLAY= layer thickness geometric ratio; FLAY=
-top physical layer in diurnal skin depths; CVG= convergence safety factor; Nlay=
+top physical layer in diurnal skin depths; CVG= convergence safety factor; NLAY=
 number of layers, including the virtual; Ntime= time-steps per sol; Deep= scaled
 depth to the bottom of physical layers; Scong= Convergence safety factor for top
 physical layer; secs= execution time in seconds for one latitude; MAR= Mean
 Absolute Residual in K relative to case 0; Tdel= difference in K at 7 Hours
-relative to case 0.
+relative to case 0.}
 % Last partial column in time-steps per Hour (1/24 of a sol)} 
 \label{runH}
 \begin{verbatim}
@@ -462,7 +462,7 @@ relative to case 0.
 \vspace{-3.0mm}
 \hrulefill \end{table} 
 
-Run I: all with RLAY=1.1, FLAY=0.05and N2=6144.; set of decreasing number of layers from 30 to 22. Three sets, with CONVG 2,4 and 8; if adequately deep (D=5.), MAR is .140, .042, and  0.029 respectively. Increase in error less than factor of 2 if NLAY=24 or more; D=3.98 .  
+Run I: all with RLAY=1.1, FLAY=0.05 and N2=6144.; set of decreasing number of layers from 30 to 22. Three sets, with CONVG 2,4 and 8; if adequately deep (D=5.), MAR is .140, .042, and  0.029 respectively. Increase in error less than factor of 2 if NLAY=24 or more; D=3.98 .  
 
 
 Run J: same style as I, but FLAY=0.1 and N2=1536, then 768; NLAY 21 to 18.
@@ -624,7 +624,7 @@ DTM is the RMS of change in layer temperatures at midnight: $=\sqrt{ \sum_1^{N1}
 If DTM is less than DTMAX or if the fractional change in DTM over the prior day is less than DDT, the next day will be the last for the current season, unless DTM then increases or becomes greater than DTMAX. 
 
 Convergence results stored in .t52 files ares:
- \qi NDJ4, the number of days computed in each seasson, for each latitude
+ \qi NDJ4, the number of days computed in each season, for each latitude
 \qi DTM4, DTM for each latitude
 
 Run V:  2048  per hour, RLAY=1.062, FLAY=0.024, 50 layers and CONVF=8, with each of GGT, DDT, and DTMAX set to twice, 1/2 and 1/5 their normal values; MAR 1.e-13 at most. Setting CONVG=2 yielded MAR=0.11 .
@@ -641,8 +641,8 @@ KRC run X; MarsCirX.inp, all 2048/hour up to 16384/hour.
 
 The succession of increasing the number of time steps by a factor of 2 shown in
 Fig. \ref{g781X3} suggests that the finest used, case 3, is within 0.002 K of
-limit.  A corrollary is that with 2048 times per hour, Case 1, the MAD from the
-limit is about .025 K.  Case 4 and 5, which differ only in depth, hav a mean
+limit.  A corollary is that with 2048 times per hour, Case 1, the MAD from the
+limit is about .025 K.  Case 4 and 5, which differ only in depth, has a mean
 absolute difference (MAD) of 1.e-5 K . Case 1 (blue) and 4 (purple) are similar
 except to RLAY being 1.062 and 1.1 and have a MAD of .025 K.
 
@@ -671,9 +671,9 @@ with mset=3.
 \begin{figure}[!ht] \igq{ksclotX4}
 \caption[SIMPLE with small timesteps]{SIMPLE run X, matching the finest
   time-steps of KRC. All models have 49 physical layers, corresponding to
-  maximum of KRC, a total depth of 6.99 D, and rlay=1.06, matching KRC run
+  maximum of KRC, a total depth of 6.99 D, and RLAY=1.06, matching KRC run
   X. Models 0 to 6 have time steps of 512 to 32768 per Hour. Models 8:9 have
-  flay=0.05 (and are deeper, which matters little). See Fig. \ref{??}
+  flay=0.05 (and are deeper, which matters little).
 \label{ksclotX4} ksclotX4.png }
 \end{figure} 
 % how made: 
@@ -686,7 +686,7 @@ KRC has slightly lower thermal inertia.
 
 
 \begin{figure}[!ht] \igq{ksclotXmKRCX3}
-\caption[SIMPLE-KRC]{SIMPLE run X relative to KRC run X case 3 (n2=max
+\caption[SIMPLE-KRC]{SIMPLE run X relative to KRC run X case 3 (N2=max
   allowed). Model 4 (red) had the same conditions as case 3 but MAR is .032; shape
   looks like KRC has slightly lower thermal inertia.
 \label{ksclotXmKRCX3} ksclotXmKRCX3.png }
@@ -704,7 +704,7 @@ Real Mars geometry matrix, 40 season/year, N2=1536, CONVF=3. FLAY=0.1, RLAY=1.1,
 
 Run A: as above
 
-Run B:  Rlay=1.125 to get deeper. N1 from 50 to 18 by 2's. Case 0 has bottom of  256.0 . Layer Tmin and Tmax stored only to number of hours (48) -2, so Case 2 with 46 layers and D=159.5 is the first for which the bottom layer is stored in the .t52 file; for this maximum range of the lowest layer is $\Delta T$=0.004 K
+Run B:  RLAY=1.125 to get deeper. N1 from 50 to 18 by 2's. Case 0 has bottom of  256.0 . Layer Tmin and Tmax stored only to number of hours (48) -2, so Case 2 with 46 layers and D=159.5 is the first for which the bottom layer is stored in the .t52 file; for this maximum range of the lowest layer is $\Delta T$=0.004 K
 \vspace{-3.mm} 
 \begin{verbatim}
  yy=NUMGEOMLAY(46,flay=[.1,.07,.05],rlay=[1.1,1.11,1.12,1.125, 1.13, 1.14, 1.15]) 
@@ -784,7 +784,7 @@ to 0.2 K, need model depth of about 200 D and runs of 16 years.; see Fig
 \end{figure} 
 % how made: 
 
-The average annual temperature for the surface is within 0.1K by the eand of year 2; see Fig \ref{tm643taD} 
+The average annual temperature for the surface is within 0.1K by the end of year 2; see Fig \ref{tm643taD} 
 
 \begin{figure}[!ht] \igq{tm643taD}
 \caption[Run D bottom]{Annual average surface temperatures for each year and
@@ -828,7 +828,7 @@ years for 117D , and 13 years for 134D.
 \end{figure} 
 % how made: kv3: 785
 
-The seasonal variation of the mean diurnal temperature for the same depth is little effected byt having additional deeper layers, see Fig. \ref{tm640D2L40}, although convergence is slowed.
+The seasonal variation of the mean diurnal temperature for the same depth is little effected by having additional deeper layers, see Fig. \ref{tm640D2L40}, although convergence is slowed.
 
 \begin{figure}[!ht] \igq{tm640D2L40}
 \caption[Seasonal variation at a fixed depth]{Seasonal variation of layer 40, 145 D, for 60S; this is the bottom layer for case 6 [orange]. Annual oscillation is slightly attenuated by having one additional layer, case 5 [purple] but little more with deeper layers. Bottom layer amplitude increases a factor of about 2 if there is one less total layer [gray]; however the annual average has nearly converged in 16 years for case 7. 
@@ -843,7 +843,7 @@ The seasonal variation of the mean diurnal temperature for the same depth is lit
 % how made: 
 
 
-Comparing Ts each year with that of the last year for each hour,lat,season of reference case 0, see that the mjor departures are related to different number of convergence days NDJ4.
+Comparing Ts each year with that of the last year for each hour,lat,season of reference case 0, see that the major departures are related to different number of convergence days NDJ4.
  The time of day of maximum difference is not consistent, but can form the MAR over hours, and then over season, showing that surface temperature errors can be under 0.05K by using total depth of at least 100D and 3 years (spin-up of 2 years), see Figure \ref{tm645yD}.
 
 \begin{figure}[!ht] \igq{tm645yD}
@@ -865,7 +865,7 @@ With atmosphere for Mars. Without atm. for some eccentric-orbit asteroid
 \qi Run both skip and soly versions
 \qi  homogeneous and layered
 \qi  with and without temperature dependence
-\qi A few inertias
+\qi A few inertia's
 \qi Shallow and deep that bracket practical annual cases
 \qi minimum and large annual variation (latitudes of 0,-30,-60 )
 \qi ? a case that ignores annual wave?
@@ -878,7 +878,7 @@ Runs:
 \qi  N2= 384, 768,1536, 12288 ; large for only the base case
 \qii Total depth: [7, 25,]130 D
 \qi Cases: 
-\qii  Homogeneous inertias: I=50, 200 (base case), 1800
+\qii  Homogeneous inertia's: I=50, 200 (base case), 1800
 \qii  Two materials: 50 over 1800, IC=small and large
 
 \section{J. Spencer model}
@@ -912,7 +912,7 @@ Energy Conservation Report at end of each run:
 Done in gcmcomp @ 7799. Found that I need to shift Spencer earlier by one hour to match. Compare to MarsCirG:24, which has same number of time steps. Spencer always warmer; MAR= 3.2; see Fig. \ref{Spenc}.  A quick look at the code did not see that any roughness parameters are involved.
 
 \begin{figure}[!ht] \igq{Spenc}
-\caption[Spencer model]{Spencer model run with inertia 200 SI and 256 timestep per hour, plus signs, compared to KRC run with the same number of time-steps, line.
+\caption[Spencer model]{Spencer model run with inertia 200 SI and 256 time-step per hour, plus signs, compared to KRC run with the same number of time-steps, line.
 \label{Spenc} Spenc.png }
 \end{figure} 
 % how made: 
@@ -928,7 +928,7 @@ If TDAY(1) detects potential instability (convergence too small), it prints mess
 
 TDISK writes each case place, so cannot omit a case; need to set some flag in
 that case.  Because t5x values stored in FFF, which is not re-zeroed with each
-file, it could contatin values toha look reasonalbe for a prior file in same KRC
+file, it could contain values that look reasonable for a prior file in same KRC
 run. Thus, the safe thing to do would be to write the first season with null
 values for some flag.
 
@@ -1016,7 +1016,7 @@ BINF5 in v 3.2.3,\nf{binf5.2015mar11} deletes file after a write error!  Modifie
 \\ Pari[15] sets reference year. Form the diurnal average relative to the reference case, \nv{trel}
 \\ pari[7:8] set the range of cases to be retained  in  \nv{trek} and \nv{trf}
 
-Beginning 2016jan20, begin to convert all \np{ttmod} layer indicies for input,
+Beginning 2016jan20, begin to convert all \np{ttmod} layer indices for input,
 plots and print to be compatible with KRC, which is the 1-based number including
 the virtual layer. Thus in IDL code referring to the ddd array, which starts
 with the top physical layer, the values are 2 smaller.  In the 3-column
@@ -1045,7 +1045,7 @@ IDL layer index is 2 smaller.
 \end{verbatim}
 
 
-Using TTTMOD @113,123, which leads to @64 to show the diurnal average temperture
+Using TTTMOD @113,123, which leads to @64 to show the diurnal average temperature
 through each year relative to that of the last year.  See that there can be
 noise at the 0.005K level in Ts, especially for the deepest case;
 Fig. \ref{tm64bD0}.

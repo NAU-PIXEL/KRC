@@ -78,7 +78,8 @@ tv, image ; write negative image to ps device. All colors -> black
 device,/close
 set_plot,'x' ; , wasdev  Return plotting to original device
 if !P.background eq 0 then print,'WARNING, will yield black background' 
-print,'Created 1-bit PS file >> epstopdf idl.eps      mv idl.pdf' & end
+print,'Created 1-bit PS file.   mv idl.eps   or  epstopdf idl.eps  Then mv' 
+end
 
 802: begin & write_png,'idl.png',transpose(tvrd(true=3),[2,0,1]) ;- Write .png
 print,'Created PNG file >> mv idl.png' & end
@@ -95,7 +96,8 @@ tv,not image ; write negative image to ps device.
 device,/close
 set_plot,'x' ; , wasdev  Return plotting to original device
 if !P.background ne 0 then print,'WARNING, may yield black background' 
-print,'Created 1-bit PS file >> epstopdf idlr.eps      mv idlr.pdf' & end
+print,'Created 1-bit PS file.   mv idlr.eps   or epstopdf idlr.eps  Then mv' 
+end
 
 ; available: 805,806,807
 808: xyouts,0.,.983,strtrim(kitel,2),/norm ; add action to top-left of plot

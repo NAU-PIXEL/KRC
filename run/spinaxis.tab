@@ -2,7 +2,7 @@ Values from Report of the IAU Working Group on Cartographic
 Coordinates and Rotational Elements: 2009, Archinal et al.
 Celest. Mech. Dyn. Astr. (2011) 109:101-135
 http://www.dtic.mil/cgi-bin/GetTRDoc?AD=ADA538254
- Cut/paste/edited by hand  Hugh Kieffer  2013feb04  
+ Cut/paste/edited by hand  Hugh Kieffer  2013feb04 2017mar15 
 Pluto from Seidelman2006
 Columns (0-based)
  0: Object name
@@ -27,6 +27,9 @@ Pluto    312.993     0.    6.163  0.     237.305   56.3625225
 Moon     269.9949  .0031  66.5392 0.0130 38.3213   13.17635815 higher
 Phobos   317.68    -0.108  52.90  -0.061   35.06  1128.8445850 higher
 Deimos   316.65    -0.108  53.52  -0.061   79.41   285.1618970 higher
+Io       268.05    -0.009  64.50   0.003  200.39   203.4889538 higher
+Europa   268.08    -0.009  64.51   0.003  36.022   101.3747235 higher
+Ganymede  268.20   -0.009  64.57   0.003  44.064    50.3176081 higher
 Callisto 268.72    -0.009  64.83  +0.003  259.51    21.5710715 higher
 InvPla   273.85     0.     66.99   0.       0.       0.        Invariable Plane
 lastLine

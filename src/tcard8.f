@@ -4,6 +4,7 @@ C_Vars
       INCLUDE 'krcc8m.f'      ! has IMPLICIT NONE
       INCLUDE 'latc8m.f'
       INCLUDE 'dayc8m.f'
+      INCLUDE 'hatc8m.f'
       INCLUDE 'filc8m.f'
       INCLUDE 'unic8m.f'
 C_Args
@@ -53,6 +54,7 @@ C 2016mar23 HK Set the LD18 flag if anything other than onePoint is changed
 C 2016may18 HK Incorporate far-field file
 C 2016aug11:22 HK Clarify comments. Separate errors 439 from 430
 C 2016sep09 HK Use KFARAC to set reporting of TFAR8 reads
+C 2017mar12 HK Incorporate eclipses.  Minor format changes
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
 
       INTEGER*4 LNBLNK          ! function
@@ -69,8 +71,7 @@ C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
       CHARACTER*8 TITF(NFDR) 
       CHARACTER*6 TITI(NIDR) 
       CHARACTER*6 TITL(NLDR) 
-      CHARACTER*25 SEPER /' ========================'/
-      CHARACTER*7 qc /'changes'/
+      CHARACTER*30 SEPER /' ============================='/
       INTEGER*4 KOUNT           ! number of changes cards read for this call
 
       INTEGER*4 I,IG,IIIN,ILEN,IREAD,JERR,KEEP,NEW,KDB
@@ -135,7 +136,7 @@ C initiate commons from input file or from disk saved record  (IQ = 1)
         READ (IOIN,'(/8F10.2)'  ,ERR=431,END=430) (FD(I),I=1,NFD)
         READ (IOIN,'(/8I10)'    ,ERR=432,END=430) (ID(I),I=1,NID)
         READ (IOIN,'(/10L7)'    ,ERR=433,END=430) (LD(I),I=1,NLD)
-        WRITE(IOPM,*) 'TCARD:notice N4,MAXN4=',n4,MAXN4
+        WRITE(IOPM,*) 'TCARD notice: N4,MAXN4=',N4,MAXN4
         READ (IOIN,'(/(10F7.2))',ERR=434,END=430) (ALAT(I),I=1,N4)
         READ (IOIN,'(/(10F7.2))',ERR=435,END=430) (ELEV(I),I=1,N4)
       ENDIF
@@ -155,17 +156,19 @@ C  READ a set of parameter change cards  (IQ = 2)
       READ (RBUF,*,ERR=437,END=439) IG
       IF (IG.LT.1) GOTO 370     ! no more changes
       IF (IG.NE.11) LD18=.TRUE.  ! something other than onePoint will change
+      IF (.NOT. LONE .AND. KOUNT.EQ.1) WRITE(IOSP,166)SEPER,SEPER
+ 166  FORMAT (/,/,A,' New case',A 
+     & ,/,' --------- TYPE LOC  VALUE ------- Parameter Changes')
       IF (IG.LT.11) THEN        ! read a single parameter
         READ (RBUF,*,ERR=438,END=439) IG,IREAD,XREAD,TEXT
         ILEN = LNBLNK(TEXT)
-        IF (.NOT. LONE .AND. KOUNT.EQ.1) WRITE(IOSP,166)SEPER,SEPER,QC
- 166    FORMAT (A,' New case',A 
-     & ,/,' --------- TYPE LOC  VALUE -------- Parameter ',A)
         IF (IG.GT.3) WRITE (IOSP,167) IG,IREAD,XREAD,TEXT(1:ILEN)
  167    FORMAT (' Changed>>',2I4,G12.4,1X,A10,2x,A10)
       ENDIF
-      GO TO (210,220,230,240,250,260,270,280,290,300,310,320,330), IG
 C             1   2   3   4   5   6   7   8   9   10  11  12  13
+      GO TO (210,220,230,240,250,260,270,280,290,300,310,320,330 
+     & ,340,350,360), IG
+C        14  15  16
 C IG=Type     Meaning                                     Valid Index
 C
 C    0   End of Current Changes                              any
@@ -190,8 +193,11 @@ C   11   This is a set of parameters for "one-point" model   none
 C           For this type, 9 values must appear in a rigid format
 C   12   Set of 2*4 coefficents for T-dep. conductivity.  List-directed IO
 C   13   Set of 2*4 coefficents for T-dep. specific heat. List-directed IO 
-C For 12 and 13, 8 white-space-separated coefficients must follow after 
-C the type on the same line, with no interveening index or text 
+C   14   Set of 10 values for eclipse
+C   15   Set of 7 values for flux load from primary body (planet)
+C   16   Latitude and name for high-time-resolution surface temperature file 
+C For 12 to 15, the required number of white-space-separated coefficients must 
+C follow after the type on the same line, with no interveening index or text 
 
  210  IF (IREAD.LT.1 .OR. IREAD.GT.NFDR) GOTO 295
       FD(IREAD)=XREAD           !  IG=1: change  REAL parm
@@ -284,16 +290,33 @@ C                  ls   lat hour Elev  Alb Iner Opac Slop Azim
       GOTO 390                  ! skip limit checks that one-point file cannot change
       
  320  WHAT='8-Cond.'
-!     write(IOSP,*)' CCK Was',CCKU,CCKL
+!     WRITE(IOSP,*)' CCK Was',CCKU,CCKL
       READ (RBUF,*,ERR=417,END=418) IG,CCKU,CCKL !ConUp0:ConLo3
-      write(IOSP,322)' CCK Now',CCKU,CCKL
- 322    FORMAT(1X,A8,4G13.5,/,9X,4G13.5)
+      WRITE(IOSP,322)WHAT,CCKU,CCKL
+ 322  FORMAT(' TCARD:'1X,A8,4G13.5,/,16X,5G13.5) ! 1 xtra to avoid another line
       GO TO 160 
 
  330  WHAT='8-SpHt.'
-!     write(IOSP,*)' CCP Was',CCPU,CCPL
+!     WRITE(IOSP,*)' CCP Was',CCPU,CCPL
       READ (RBUF,*,ERR=417,END=418) IG,CCPU,CCPL !SphUp0:SphLo3
-      write(IOSP,322)' CCP Now',CCPU,CCPL
+      WRITE(IOSP,322)WHAT,CCPU,CCPL
+      GO TO 160
+
+340   WHAT='10-eclip'
+      READ (RBUF,*,ERR=417,END=418) IG,PARC !
+      WRITE(IOSP,342)WHAT,PARC
+ 342  FORMAT(' TCARD:'1X,A8,5G13.5,/,16X,6G13.5) ! 1 xtra to avoid another line
+      GO TO 160
+
+350   WHAT='7-fluxes'
+      READ (RBUF,*,ERR=417,END=418) IG,PARW !
+      WRITE(IOSP,322)WHAT,PARW
+      GO TO 160
+
+360   WHAT='Lat+name'
+      READ (RBUF,*,ERR=417,END=418) IG, NLAD,FMOON !
+      I=LEN_TRIM(FMOON)
+      WRITE(IOSP,*) 'TCARD:16 ',WHAT,NLAD,' ',FMOON(1:i)
       GO TO 160
 C
 C quit if there was no interactive input
@@ -322,11 +345,12 @@ C
         WRITE (IOERR,388) 'JDISK',JDISK,NEW
         JDISK = NEW
       ENDIF
-      IF (JBARE.LE.0 ) THEN       ! never remove frost
-        NEW=9999      
-        WRITE (IOERR,388) 'JBARE',JBARE,NEW
-        JBARE = NEW
-      ENDIF
+c 2017sep25, should not need the following, as j5 is never 0 when relevent routines called
+C      IF (JBARE.LE.0 ) THEN       ! never remove frost
+C        NEW=9999      
+C        WRITE (IOERR,388) 'JBARE',JBARE,NEW
+C        JBARE = NEW
+C      ENDIF
       IF (N2.LT.32 .OR. N2.GT.MAXN2) THEN
         NEW = MAXN2/2           ! ensure within dimen
         WRITE (IOERR,388) 'N2',N2,NEW
@@ -382,7 +406,8 @@ C
  432  JERR=JERR+1 ! format error reading ID
  431  JERR=JERR+1 ! format error reading FD
       WRITE (IOSP,*),'TCARD: IO error: at ',430+JERR
-      N4=MAX(N4,1)
+      IF (JERR.GE.6) WRITE (IOSP,*)'   RBUF=',RBUF
+      N4=MAX(N4,1)  ! 
       IF (JERR.LT.9) THEN 
         CALL TPRINT8 (2)
         IRET=8

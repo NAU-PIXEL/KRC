@@ -1,5 +1,5 @@
 
-\section{Special tabular output; routine tun8.f}
+\section{Special tabular output; routine tun8.f}    % 2017oct01
 Beginning with version 3.2.1, the user can request tabular output of items not
 in the type 52 files. This output is triggered by setting I15 to a value of
 100+N where N is an option coded in the subroutine TUN8 (T unique). For each
@@ -19,7 +19,7 @@ columns are those values as integers. The rest of the columns are [normally]
 floating-point values for that instant on the final convergence day of each
 season.
 
-The two options coded so far are:
+The three options coded as of 2017 Mar 2 are:
 \qi N=1: Temperatures for each layer at each hour, layer number increases to the right
 \qii the virtual layer is omitted
 \qi N=2: Down-going solar fluxes, atmosphere and apparent sky temperatures
@@ -29,6 +29,14 @@ The two options coded so far are:
 \qiii 3: Atmosphere kinetic temperature (redundant with Type 52)
 \qiii 4: Apparent zenith sky temperature: $^4 \sqrt{ \beta} \ T_a$, see [40] in the JGR KRC paper.
 \qiii 5: Effective hemispheric sky temperature:  $^4 \sqrt{1-e^{-\tau_r}} \ T_a$, see [42] 
+\qi N=3: Photmetric albedoes
+\qii floating-point columns are: 
+\qiii 1: time index 
+\qiii 2: collimated insolation onto slope surface
+\qiii 3: all downward insolation except collimated 
+\qiii 4: solar heating of atm. $H_v$ 
+\qiii 5: cos of incidence angle on horizontal 
+\qiii 6: current hemispheric albedo
 
 Output is always to a file 'fort.77' in the directory where KRC was invoked, so for preservation it must be renamed before the next KRC run. 
 

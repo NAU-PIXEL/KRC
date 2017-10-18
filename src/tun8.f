@@ -3,7 +3,8 @@ C_Titl  TUN8  Various special outputs as fortran text file
 C_Vars  
       INCLUDE 'krcc8m.f'      ! has IMPLICIT NONE
       INCLUDE 'dayc8m.f'
-      INCLUDE 'hatc8m.f'
+      INCLUDE 'hatc8m.f'     ! has SOLDIF
+      INCLUDE 'unic8m.f'      ! for IOERR
 C_Args
       INTEGER K15       !in. what kind of output + 100
       INTEGER ISTEP     !in.  phase: 1= write expected sizes  2=write data
@@ -36,32 +37,46 @@ C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
 
       IF (J5.LT.JDISK) GOTO 9 ! not past spinup
 
-      IF (KODE.EQ.1) THEN
-C KODE=1  Call each output hour 
-C In krccom: j4 j5 n1       In daycom: TTJ
-C I3 must be IH; output hour index
+      SELECT CASE (KODE)        !vvvvvvvvvvvvvvvvvvvvvvvv
+
+      CASE(1)                   ! KODE=1  Call each output hour 
+C     In krccom: j4 j5 n1       In daycom: TTJ
+C     I3 must be IH; output hour index
         WRITE(77,701)I3,J4,J5,(TTJ(I),I=2,N1) ! Layer temperatures
  701    FORMAT(3I4,50F8.3)
-      ENDIF
-
-      IF (KODE.EQ.2) THEN
-C KODE=2:   Call at end of each final day. Use insolation values from before 
-C TDAY call and atm temp from TAF in HATCOM
-C ARG4 must be SOLDIF; all downward insolation except collimated
-C Here, assume that N2 is an exact multiple of N24
+        
+      CASE(2)                   ! KODE=2:   Call at end of each final day. Use insolation values 
+C     from before  TDAY call and atm temp from TAF in HATCOM
+C     ARG4 must be SOLDIF; all downward insolation except collimated
+C     Here, assume that N2 is an exact multiple of N24
         QA=BETA**0.25           ! BETA is in KRCCOM
         QH=(1.-EXP(-TAUIR))**0.25 ! TAUIR is in KRCCOM
         K = N2/N24              ! time steps between saving results
         DO J=1,N24              ! each output Hour
           I=J*K                 ! time step
           DIRECT=ASOL(I)-ARG4(I) ! arg4 is SOLDIF
-          QT=TAF(J,J4)             ! TAF(hour,lat) is in HATCOM
+          QT=TAF(J,J4)          ! TAF(hour,lat) is in HATCOM
           TSKY=QA*QT            ! 4-th root of BETA * TATM
           TZEN=QH*QT            ! 4'th root of 1-e^-tau_ir  *TATM
           WRITE(77,702) J,J4,J5,DIRECT,ARG4(I),QT,TZEN,TSKY
         ENDDO
  702    FORMAT(3I4,F9.3,4F8.3)
-      ENDIF
 
+      CASE(3)                   ! KODE=3 Print photmetric albedoes
+C     ASOL(JJ)=QI            ! collimated insolation onto slope surface dayc8m
+C     SOLDIF(JJ) ; all downward insolation except collimated            hatc8m
+C     ADGR(JJ)=HUV            ! solar heating of atm. H_v               dayc8m
+C     ARG4 must be COSJ; cos of incidence angle on horizontal    arg.
+C     ALBJ(JJ)=MIN(MAX(HALB,0.D0),1.D0) ! current hemispheric albedo    hatc8m 
+        WRITE(77,700) NCASE, N2,J4,J5,-77,-77
+        DO J=1,N2
+          WRITE(77,703) J,ASOL(J),SOLDIF(J),ADGR(J),ARG4(J),ALBJ(J)
+        ENDDO
+ 703    FORMAT(I6,3F9.3,2F9.5)
+        
+      CASE DEFAULT              ! undefined  
+        WRITE (IOERR,*) ' Invalid arg1 to TUN8=',K15 
+      END SELECT                !^^^^^^^^^^^^^^^^^^^^^^^^
+C KODE=2:
  9    RETURN
       END

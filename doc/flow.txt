@@ -1,4 +1,4 @@
-flow.txt KRC System Version 3.3: Subroutine Calls and COMMON usage 2016mar19
+flow.txt KRC System Version 3.5: Subroutine Calls and COMMON usage 2016mar30
 
 References to COMMON's  All are ---.f 
                                                        porbx8m for only KRC8
@@ -25,9 +25,10 @@ KRC           /-> TSEAS        /--------------------->-----TDAY (1
   CATIME      ^    PORBIT (2   ^  ^     TFAR                 ~READZONE    
   TCARD (1    ^    TFAR (2     ^  ^     CUBUTERP8             FLAYER(int) 2x
   DTIME       ^  ->season      ^  ^     ROTV                k EVMONO3  4x 
--> case       ^  |  ~TCARD (2  ^  ^     ~VLPRES       
-|  ~TCARD (2  ^  |  ^TDAY (1 ->/  ^     ~TPRINT (8    
-|  ~TPRINT (2 ^  |   CPU_TIME     ^  |-> latitude loop   
+-> case       ^  |  ~TCARD (2  ^  ^     ~VLPRES              ~ECLIPSE 
+                                        ~ECLIPSE             ~TFINE (1   
+|  ~TCARD (2  ^  |  ^TDAY (1 ->/  ^     ~TPRINT (8              ECLIPSE
+|  ~TPRINT (2 ^  |   CPU_TIME     ^  |-> latitude loop          FILLI
 |   TDAY (1   ^  |  ~SEASALB      ^  |    MVD   4x        : always          
 |   FILLL     ^  |  ~SEASTAU      ^  |    CUBUTERP8 2x   +: usually          
 |  ~TDISK (1  ^  |   TFAR (3      ^  |    AVEDAY         ~: if invoked         
@@ -40,18 +41,20 @@ KRC           /-> TSEAS        /--------------------->-----TDAY (1
 |   TDAY (3      |  ~TPRINT (6       |  .~CO2PT            /--->TDAY (2    
 |   TDISK (4     |  ~TDISK (5        ||-> timestep         ^  |>-day loop    
 |   TCARD (2     |  ~TDISK (2        ||    ROTV            ^  ||>-timestep loop
-|   DTIME        \<--season          ||    VDOT 2x         ^  |||>-layer loop 
-\<-case              CPU_TIME        34   .DEDING2 (cos i  ^  456  k EVMONO3 4x
-  +TDISK (4                          ||   .DEDING2 (cos t  ^  ||\<-layer     
-  ~TFAR (4                           |\<-- timestep        ^  |\<-timestep    
-  +TDISK (7                          |    AVEYEAR          ^  \<-day 
-                                     |   ~TPRINT (3        ^  [only if blowup]
-                                     |    TDAY (2 --->-----/    TPRINT (7 
-                                     |   ~TUN                   TPRINT (2 
-                                     |    EPRED 5x              TPRINT (4  
-                                     |   ~TPRINT (4     
-                                     \<---latitude      
-
+|   DTIME        \<--season          ||    VDOT 2x         ^  || ~TFINE (2 **
+\<-case              CPU_TIME        34   .DEDING2 (cos i  ^  |||>-layer loop   
+  +TDISK (4                          ||   .DEDING2 (cos t  ^  456  k EVMONO3 4x 
+  ~TFAR (4                           |\<-- timestep        ^  ||\<-layer        
+  +TDISK (7                          |    AVEYEAR          ^  |\<-timestep      
+                                     |   ~TPRINT (3        ^  \<-day            
+** TFINE (2                          |    TDAY (2 --->-----/  [only if blowup]  
+     DSPLINE, DSPLINT                |   ~TUN                   TPRINT (7       
+///->EVMONO3D 4x                     |    EPRED 5x              TPRINT (2       
+567  MVD                             |   ~TPRINT (4             TPRINT (4  
+||\<-layer                           \<---latitude      
+|\<-fine-time      
+\<-timestep        
+    BINF5,TPRINT (7 (4
  
 Expanded Call map ############################ Obsolete
 see codes above, and       @: calls listed above at prior mention

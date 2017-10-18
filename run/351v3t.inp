@@ -1,5 +1,5 @@
  0 0 1 / KOLD: season to start with;  KEEP: continue saving data in same disk file
- 0 4 0 0 0 0 / six debug flags
+ 0 0 0 0 0 0 / six debug flags
 V34 test cases compat with V232.   5 lat, 40 seas with 2 yr spinup
     ALBEDO     EMISS   INERTIA     COND2     DENS2    PERIOD SPEC_HEAT   DENSITY
        .25      0.95     200.0      2.77     928.0    1.0275      647.     1600.
@@ -40,10 +40,10 @@ Latitudes: in 10F7.2  _____7 _____7 _____7 _____7 _____7 _____7 _____7
   0.2936298      0.1381285       0.000000     -0.4256703      0.9048783 
 1 34  .2160 'FLAY' / match first physical layer of older versions
 1 35 3 'CONVF' / attempt to match V2 run
-8 5 0 './out/342v3tb.t52' / Type 52 file to write
+8 5 0 './out/351v3tb.t52' / Type 52 file to write
 3 2 1 'LP2' / turn on printing parameters and layer table
 2 17 -2 'K4OUT' / file type
-8 21 0 './out/342v3tb.tm2' / Direct-access file to write one case
+8 21 0 './out/351v3tb.tm2' / Direct-access file to write one case
 0/ 
 3 2 0 'LP2' / turn on printing parameters and layer table 
 3 10 1 'LkofT' /2 T-dependent properties 

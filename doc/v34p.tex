@@ -7,6 +7,7 @@ H[x.x] and equations by H(x.x)
 \qi $e$ is the emergence (viewing) angle from the surface normal. $\mu \equiv \cos e$
 \qi $g$ is phase angle
 \qi $\psi$ is the azimuthal angle between the planes of incidence and emergence 
+\qi $\xi$ is a general azimuthal angle (used in integrals)
 \\ Other symbols
 \qi $I$ radiance, usually in the emergence direction
 \qi $J$ irradiance, usually the incident power per unit are normal to the incidence
@@ -24,8 +25,7 @@ weighted by the solar spectrum.
 
 Compute the absorbed direct, diffuse and bounce insolation in TLATS where it has
 been done.  For thermal models, need an \textbf{absorption} photometric
-function; equivalent to $1-A_h$ H[10.D].  KRC does not need the full BRDF.
-
+function; equivalent to $1-A_H$ H[10.D].  KRC does not need the full BRDF.
 
 \subsubsection{Thrashing with Hapke} %..........................
 
@@ -44,8 +44,6 @@ reflectance of a surface under diffuse illumination, H[10.D.4]. It has no
 geometric dependence.
 
 Prior to KRC v3.3, all albedoes were considered to be Lambertian.  
-
-
 
 In general, Hapke uses $r$ for ``reflectance'', however, there are many of them.
 
@@ -67,7 +65,7 @@ under the same conditions is $\frac{\pi}{\mu_0}r(i,e,g)$ H(10.3)
 Also: H[8.E.1] starts with ``the scattered radiance $I(i,e,\psi)
 =Jr(i,e,\psi)$.
 The scattering of light from a (planar) surface is in general described by its
-bidirectional-reflectance distribution function(\textbf{BRDF}) or
+bidirectional-reflectance distribution function (\textbf{BRDF}) or
 $r(i,e,g)/\mu_0$ H(10.1).
 
 Whatever the photometric function, it should obey reciprocity.
@@ -77,8 +75,8 @@ The incident power (no atmosphere) on a surface is $\mu_0 J = S_m \cos i $
 
 
 In Hapke terminology of his Table 8.1, the two albedos KRC needs are the:
-\qi  $r_h \equiv r_{dh}$ or ``hemispherical albedo'' or hemispherical reflectance, =$\mathbf{A_h}(i)$ H(10.33) 
-\qi spherical reflectance, his $r_s$, my $\mathbf{A_S}$. 
+\qi  $r_h \equiv r_{dh}$ or ``hemispherical albedo'' or hemispherical reflectance, =$A_h(i)$ H(10.33) 
+\qi spherical reflectance, his $r_s$, my $A_S$. 
 
 I found Hapke to have many similiar reflectance terms that are not needed 
 here, and the normalization is obscure.  Here, I will simply treat the
@@ -87,10 +85,10 @@ direction $e,\psi$ for an irradiance from direction $i$; and heuristically
 determine the normalization required by KRC.
 
 H[10.D.2] has ``The general expression for hemispherical reflectance is
-$r_h(i)= \frac{1}{\mu_0} \int_{2 \pi} r(i,e,g) \mu \ d\Omega_e $ H(10.10) where
-$d\Omega_e = \sin e \ d e \ d \psi$ .
+$r_h(i)= \frac{1}{\mu_0} \int_{2 \pi} r(i,e,g) \ \mu \ d\Omega_e $ H(10.10) 
+\qi where $d\Omega_e = \sin e \ d e \ d \psi$ .
 
- H[10.D.4] has ``the spherical reflectance is $r_s= \frac{1}{\pi} \int_{2 \pi}  \int_{2 \pi}  r(i,e,g) \mu \ d\Omega_e  \ d\Omega_i $ H(10.21)
+ H[10.D.4] has ``the spherical reflectance is $r_s= \frac{1}{\pi} \int_{2 \pi}  \int_{2 \pi}  r(i,e,g) \ \mu \ d\Omega_e  \ d\Omega_i $ H(10.21)
 
 \subsubsection{Procedure here} %.........................................
 We shall (must) assume that the planar surface has no preferred orientation;
@@ -103,28 +101,28 @@ hemipherical and spherical albedo will be used to establish any normalization
 factors needed by KRC.
 
 If $ r(i,e,\psi)$ does not involve $\psi$ (or $g$), which is true for the simple
-photometric functions considered here, then the integration over $\phi$ or $\xi$
+photometric functions considered here, then the integration over $\psi$ or $\xi$
 simply results in a factor of $2 \pi$
 
 Desire that the ALB used in KRC retain its historic meaning of the fraction of
 energy reflected by the surface. By conservation of energy, this can never
-exceed unity, so must scale some of the results here for $A_h(0)$ and $A_s$. See
+exceed unity, so must scale some of the results here for $A_H(0)$ and $A_S$. See
 table in \S \ref{all},
 
 % \pagebreak
 % \large
 \subsubsection{Lambert}
   A Lambertian surface by definition has the same radiance when viewed from any
-  direction, and that radiance scales with $\cos i$. Thus $A_h$ must be
+  direction, and that radiance scales with $\cos i$. Thus $A_H$ must be
   independent of $i$. However, here develop the mathmatical formalities to be
   used for other photometric function.
 
 $ r(i,e,\psi)=A_L \frac{\mu_0}{\pi}$ \ H(8.13)
 
 Hemispherical:
-\qbn A_h(i)= \frac{1}{\mu_0}  \int_{\psi=0}^{2\pi} \int_{e=0}^{\pi/2} r(i,e,\psi) \cdot \cos e \ \sin e \ de \ d\psi \ql{Ahr}
+\qbn A_H(i)= \frac{1}{\mu_0}  \int_{\psi=0}^{2\pi} \int_{e=0}^{\pi/2} r(i,e,\psi) \cdot \cos e \ \sin e \ de \ d\psi \ql{Ahr}
 
-\qbn A_h(i) = \frac{2 \pi}{\mu_0} \int_{e=0}^{\pi/2}  r(i,e,\psi) \cdot \cos e \ \sin e \ de \ql {gah}
+\qbn A_H(i) = \frac{2 \pi}{\mu_0} \int_{e=0}^{\pi/2}  r(i,e,\psi) \cdot \cos e \ \sin e \ de \ql {gah}
 
 \qb  = \frac{2 \pi}{\mu_0} \int_{e=0}^{\pi/2} A_L \frac{\mu_0}{\pi} \cdot  \cos e \ \sin e \ de \qe
 
@@ -136,9 +134,9 @@ Hemispherical:
 
 Spherical:
 
-\qb A_s= \frac{1}{\pi} \int_{2 \pi}  \int_{2 \pi}  r(i,e,g)  \cdot \cos e  \ d \Omega_e  \ d \Omega_i \qe
+\qb A_S= \frac{1}{\pi} \int_{2 \pi}  \int_{2 \pi}  r(i,e,g)  \cdot \cos e  \ d \Omega_e  \ d \Omega_i \qe
 
-\qbn A_s= \frac{1}{\pi} \int_{i=0}^{\pi/2}  \int_{\psi=0}^{2\pi}  \int_{e=0}^{\pi/2} \int_{\xi=0}^{2\pi} r(i,e,\psi) \cdot \cos e   \sin i  \sin e  \  d\xi  \ de \ d\psi \ di \ql{Asr}
+\qbn A_S= \frac{1}{\pi} \int_{i=0}^{\pi/2}  \int_{\psi=0}^{2\pi}  \int_{e=0}^{\pi/2} \int_{\xi=0}^{2\pi} r(i,e,\psi) \cdot \cos e   \sin i  \sin e  \  d\xi  \ de \ d\psi \ di \ql{Asr}
  
 \qbn = 4 \pi^2\frac{1}{\pi} \int_{i=0}^{\pi/2} \int_{e=0}^{\pi/2} r(i,e,\psi) \cdot \sin i \ \cos e \sin e \ de \ di \ql {gas}
  
@@ -146,44 +144,46 @@ Spherical:
 
 \qb = 4 \pi  \frac{ A_L}{\pi} \int_{i=0}^{\pi/2} \left[_{e=0} ^{\pi/2}  \ \frac{sin^2 e}{2} \right]  \cos i\sin i \ di  \qe
 
-\qb = 4 \frac{ A_L}{2} \left[_{i=0}^{\pi/2} \  \frac{sin^2 i}{2} \right] = A_L 
-\mc{;}  \frac{A_S}{A_h(0)}=1.  \qe
+\qb = 4 \frac{ A_L}{2} \left[_{i=0}^{\pi/2} \  \frac{sin^2 i}{2} \right] = A_L \qe
 
 Can use the forms of \qr{gah} and \qr{gas} for other photometric functions.
 
 Comparing \qr{gah} and \qr{gas}, find
-\qbn A_s= 4 \pi \int_{i=0}^{\pi/2}   \frac{\mu_0}{2 \pi} Ah(i) \cdot \sin i  \ di =  2 \int_{i=0}^{\pi/2}  Ah(i) \cdot  \cos i \ \sin i  \ di \ql{Ahs} 
+\qbn A_S= 4 \pi \int_{i=0}^{\pi/2}   \frac{\mu_0}{2 \pi} A_H(i) \cdot \sin i  \ di =  2 \int_{i=0}^{\pi/2}  A_H(i) \cdot  \cos i \ \sin i  \ di \ql{Ahs} 
 
-Confirm by substitution for Lambert, Minnaert, Lommel-Seliger. 
+% Confirm by substitution for Lambert, Minnaert, Lommel-Seliger. 
 
 \subsubsection{Minnaert}  
  $ r(i,e,\psi) =A_M \mu_0^\nu \mu^{(\nu-1)}$  \  where: $0<\nu \le 1$ H(8.14)
 \qi When $\nu=1$ , $r=A_M \mu_0$ is Lambert behaviour and $A_M=A_L/\pi$ 
 \qi Minnaert breaks down at limb, where $\mu=0$
 
-\qb A_h(i) = \frac{2 \pi}{\mu_0} \int_{e=0}^{\pi/2} A_M \cos^\nu i \cos^{\nu-1} e \cdot  \cos e \ \sin e \ de \qe
+\qb A_H(i) = \frac{2 \pi}{\mu_0} \int_{e=0}^{\pi/2} A_M \cos^\nu i \cos^{\nu-1} e \cdot  \cos e \ \sin e \ de \qe
 
-\qb A_h(i) =  A_M \frac{2 \pi}{\mu_0} \left[_{e=0}^{\pi/2} \ - \frac{\cos^{\nu+1}e}{\nu+1} \right| \cos^\nu i \qe
+\qb A_H(i) =  A_M \frac{2 \pi}{\mu_0} \left[_{e=0}^{\pi/2} \ - \frac{\cos^{\nu+1}e}{\nu+1} \right| \cos^\nu i \qe
 
-\qb A_h(i) =  A_M \frac{2 \pi}{\mu_0} [ \frac{1}{\nu+1}] \mu_0^{\nu}  
+\qb A_H(i) =  A_M \frac{2 \pi}{\mu_0} [ \frac{1}{\nu+1}] \mu_0^{\nu}  
 =  A_M \frac{2 \pi}{(\nu+1) } \mu_0^{\nu-1}  \qe
 
-Spherical:
+Spherical: using \qr{Ahs}
 
-\qb A_s = 4 \pi  \int_{i=0}^{\pi/2}  \int_{e=0}^{\pi/2}  A_M \cos^\nu i  \cos^{\nu-1} e \cdot \sin i \ \cos e \ \sin e \ de \ di  \qe
+\qb A_S = 2 \int_{i=0}^{\pi/2} A_M \frac{2 \pi}{(\nu+1) } \mu_0^{\nu-1}  \cdot  \cos i \ \sin i  \ di \qe
 
-\qb = 4 \pi  A_M  \int_{i=0}^{\pi/2} \int_{e=0}^{\pi/2} \cos^\nu i \sin i \ di \ \ \cos^\nu e  \sin e \ de  \qe
+\qb =\frac{A_M 4 \pi}{\nu +1}  \int_{i=0}^{\pi/2} \cos^\nu i  \cdot \sin i \ \cos e \ \sin e \ de \ di  \qe
 
-\qb = 4 \pi  A_M  \int_{i=0}^{\pi/2} \left[_{e=0}^{\pi/2} \ - \frac{\cos^{\nu+1}e}{\nu+1} \right| \ \cos^\nu i  \sin i \ di  \qe
+
+%\qb A_S = 4 \pi  \int_{i=0}^{\pi/2}  \int_{e=0}^{\pi/2}  A_M \cos^\nu i  \cos^{\nu-1} e \cdot \sin i \ \cos e \ \sin e \ de \ di  \qe
+
+%\qb = 4 \pi  A_M  \int_{i=0}^{\pi/2} \int_{e=0}^{\pi/2} \cos^\nu i \sin i \ di \ \ \cos^\nu e  \sin e \ de  \qe
+
+%\qb = 4 \pi  A_M  \int_{i=0}^{\pi/2} \left[_{e=0}^{\pi/2} \ - \frac{\cos^{\nu+1}e}{\nu+1} \right| \ \cos^\nu i  \sin i \ di  \qe
 
 \qb = 4 \pi  A_M   \left[ \frac{1}{\nu+1} \right]  \left[_{i=0}^{\pi/2} \ - \frac{\cos^{\nu+1} i}{\nu+1} \right| \qe
 
 \qb = 4 \pi  A_M   \left[ \frac{1}{\nu+1} \right]  [\frac{1}{\nu+1}] = A_M \frac{ 4 \pi }{(\nu+1)^2} \qe
 
-\qbn P_f \equiv A_h(0)/A_M  = \frac{2 \pi}{(\nu+1) } \mc{;}  P_s  \equiv \frac{A_s}{A_h(0)}= \frac{2}{\nu+1} \ql{aam}
-
 \begin{figure}[!ht] \igq{minnHemi}
-\caption [Minnaert $A_s$]{Spherical albedo for Minnaert reflectance.
+\caption [Minnaert $A_S$]{Spherical albedo for Minnaert reflectance.
 \label{minnHemi}  minnHemi.png }
 \end{figure} 
 % how made: hemialb 46 48
@@ -194,7 +194,7 @@ Spherical:
 thus $r= \frac{A}{4 \pi} \frac{\cos i}{\cos i+ \cos e} $
 
 Hemispherical:
-\qb A_h(i) = \frac{2 \pi}{\mu_0} \int_{e=0}^{\pi/2} \frac{A}{4 \pi} \frac{\cos i}{\cos i+ \cos e}  \cdot  \cos e \ \sin e \ de \qe
+\qb A_H(i) = \frac{2 \pi}{\mu_0} \int_{e=0}^{\pi/2} \frac{A}{4 \pi} \frac{\cos i}{\cos i+ \cos e}  \cdot  \cos e \ \sin e \ de \qe
 
 \qb  = \frac{2 \pi}{\mu_0} \frac{A}{4 \pi} \cos i \int_{e=0}^{\pi/2} \frac{ \cos e}{\cos i+ \cos e} \ \sin e \ de \qe
 
@@ -202,34 +202,30 @@ Hemispherical:
 
 \qb  = \frac{A}{2} \left[_{e=0}^{\pi/2} \  \cos i \ln ( \cos i + \cos e )- \cos e  \right| \qe
 
-\qbn A_h(i) = \frac{A}{2} \left( \cos i \ln\frac { \cos i}{\cos i+1} +1) \right)  
+\qbn A_H(i) = \frac{A}{2} \left( \cos i \ln\frac { \cos i}{\cos i+1} +1) \right)  
  \ = \frac{A}{2} \left(\mu_0 \ \ln \frac{\mu_0}{ 1+ \mu_0} +1 \right) \ql{LSAh}
 
 Spherical:
-
-\qb A_S= 4 \pi  \int_{i=0}^{\pi/2}  \int_{e=0}^{\pi/2} \frac{A}{4 \pi} \frac{\cos i}{\cos i+ \cos e} \cdot \sin i \ \cos e \ \sin e \ de \ di  \qe
-
-\qb = 4 \pi \frac{A}{4 \pi}  \int_{i=0}^{\pi/2} \cos i \sin i \ \int_{e=0}^{\pi/2} \frac{\cos e \ \sin e }{\cos i+ \cos e}\ de \ di  \qe
-
-\qb =A  \int_{i=0}^{\pi/2} \cos i \sin i  \left[_{e=0}^{\pi/2} \  \cos i \ln ( \cos i + \cos e )- \cos e  \right| \ di  \qe
+\qb  A_S= 2 \int_{i=0}^{\pi/2}  \frac{A}{2} \left(\mu_0 \ \ln \frac{\mu_0}{ 1+ \mu_0} +1 \right) \cdot  \cos i \ \sin i  \ di \qe
 
 \qbn =A  \int_{i=0}^{\pi/2} \cos i \sin i   \left[  \underbrace{1}_1 +  \underbrace{\cos i \ln \cos i}_2 - \underbrace{\cos i \ln (1+ \cos i) }_3 \right] \ di  \ql{LSAs}
 Numerical integration yields $A$ 0.20483 . Using Wolfram integral solver for each part, many opportunities for a blunder: 
 % \pagebreak
 
-\qb A_s=A \left[_{i=0}^{\pi/2} \ \underbrace{\frac{\sin^2 i}{2} }_1 
+\qb A_S=A \left[_{i=0}^{\pi/2} \ \underbrace{\frac{\sin^2 i}{2} }_1 
 - \underbrace{\frac{1}{9} \cos^3 i \ (3 \ln(\cos i) -1 ) }_2   \right. \qe
-\qb \left. - \underbrace{\frac{1}{36} \left( -3 \cos 2i + \cos 3i -6 \ln \cos \frac{i}{2} + \cos i ( 15-9 \ln(1+\cos i) )  -3 \cos 3i \ln( 1+\cos i) -9 \ln(1+\cos i) \right) }_3  \right| \qe
- \qbn A_s=  0.20457 A \ql{LSAa}
-\qb A_s=A \left( \underbrace{ \frac{1}{2} -0 }_1 
+
+\qbn \left. - \underbrace{\frac{1}{36} \left( -3 \cos 2i + \cos 3i -6 \ln \cos \frac{i}{2} + \cos i ( 15-9 \ln(1+\cos i) )  -3 \cos 3i \ln( 1+\cos i) -9 \ln(1+\cos i) \right) }_3  \right| \ql{LSAa}
+
+ Above coded in hemialb @ 46,  yields $A_S=  0.204568552 A $  
+
+\qb A_S=A \left( \underbrace{ \frac{1}{2} -0 }_1 
 - \underbrace{\frac{1}{9} [ 0-(-1 (3 \cdot 0 -1) ]  }_2  \right. \qe
 \qb \left.  - \underbrace{\frac{1}{36} [ -3(-1-1) +(0-1)-6(\ln \sqrt{2} -0) +(0-1(15-9 \ln2)) -3(0- \ln 2)-9(0 - \ln2) }_3 \right)  \qe
-   Yields 0.542315 A, some blunder in part 3  above.
-
-\qbn  P_f \equiv A_h(0)/A  =\frac{\ln (1/2) +1 }{2}=0.153426  \mc{;}  P_s  \equiv \frac{A_s}{A_h(0)}=1.3333333 =4/3  \ql{aal}
+   Yields 0.320093 A, some blunder in part 3  above.
 
 \begin{figure}[!ht] \igq{LomSee}
-\caption[Lommel-Seeliger $A_h$ ]{Hemispherical albedo for Lommel-Seeliger reflectance, and the integrand for $A_s$ 
+\caption[Lommel-Seeliger $A_H$ ]{Hemispherical albedo for Lommel-Seeliger reflectance, and the integrand for $A_S$ 
 \label{LomSee} LomSee.png }
 \end{figure} 
 % how made: hemialb 48 49   
@@ -246,12 +242,12 @@ In both cases $\theta$ in degrees is equivalent $i$ in radians. See Appendix \S
 
 Implimentation in KRC 34 is a slightly more generalized form:
 
- \qbn A_h(i)= A \left( 1. + x \left( \theta /45\right)^3 + (0.14/0.12) \left( \theta /90 \right)^8 \right) = A \left( 1. + x \underbrace{ (\frac{4}{\pi})^3}_{f3} i^3
+ \qbn A_H(i)= A \left( 1. + x \left( \theta /45\right)^3 + (0.14/0.12) \left( \theta /90 \right)^8 \right) = A \left( 1. + x \underbrace{ (\frac{4}{\pi})^3}_{f3} i^3
 +  \underbrace{ \frac{0.14}{0.12}( \frac{2}{\pi})^8}_{f8}  i^8 \right)   \qen
 
 Thus $x=0.25$ yields Keihm and  $x=0.375$ yields Vasavada for $A=0.12$.
 
-\qb A_s=  2 A  \int_{i=0}^{\pi/2}\left( 1. + x f_3 i^3 + f_8 i^8 \right) \cos i \sin i \ di 
+\qb A_S=  2 A  \int_{i=0}^{\pi/2}\left( 1. + x f_3 i^3 + f_8 i^8 \right) \cos i \sin i \ di 
  = A \left[ 1. + 2f_3 D_3 \ x \ + 2f_8 D_8 \right] \qe 
 
 where  (Wolframalpha.com)
@@ -262,10 +258,7 @@ $ [_0^{\pi/2} = \frac{1}{32} \pi ( \pi^2-6) \sim 0.37989752  \equiv  D_3 $
 $ \int x^8 \cos x \sin x \ dx = \frac{1}{4}(4 x^6 -42 x^4 +210 x^2 -315) \sin(2 x)-\frac{1}{8} (2 x^8 -28 x^6 +210 x^4 -630 x^2 +315) \cos (2 x)+constant$ 
 and $ [_0^{\pi/2} = \frac{80640-20160 \pi^2+1680 \pi^4-56 \pi^6+\pi^8}{1024} \sim 0.944125 \equiv  D_8 $
 
-\qbn A_s=  A \left(1.0 + 1.5683 \ x \ + 0.05944\right) \ql{KAs}
-
-\qbn P_f \equiv A_h(0)/A = 1  \mc{;} P_s  \equiv  \frac{A_s}{A_h(0)}=  1.05944 + 1.5683 \ x \ql{aak}
-
+\qbn A_S=  A \left(1.0 + 1.5683 \ x \ + 0.05944\right) \ql{KAs}
 % 1.5682916  + 0.059435709
  See Figure \ref{KeihmAh} 
  
@@ -275,12 +268,12 @@ and $ [_0^{\pi/2} = \frac{80640-20160 \pi^2+1680 \pi^4-56 \pi^6+\pi^8}{1024} \si
 \end{figure} 
 % how made: hemialb 48 50 
 
-\small
+\footnotesize
 
 The following coded in IDL but not needed; eventually good agreement between
 analytic and numeric integration.
 
-\qbn A_s=  2 A \left[_{i=0}^{\pi/2} \ \underbrace{\frac{\sin^2 i}{2}}_{p1} 
+\qbn A_S=  2 A \left[_{i=0}^{\pi/2} \ \underbrace{\frac{\sin^2 i}{2}}_{p1} 
 +  x \underbrace{ \overbrace{\frac{64 }{\pi^3}}^{f3} \cdot  
 \left[ \overbrace{ \frac{3}{8}(2 i^2-1) \sin i \cos i }^{b21}
 - \overbrace{\frac{i}{8} (2i^2-3) \cos 2i }^{b22} \right] }_{p2}  \right. \ql{LLAs}
@@ -326,22 +319,24 @@ $a$ is the albedo for grazing incidence, $b$ the backscatter ratio (Albedo at ze
 \normalsize
 
 \subsubsection{All \label{all}} 
- The following table lists $A_h$ and $A_s$ factors for several reflectance types.
-\qi yf is $A_h(0)$
-\qi ys is the spherical albedo based on $A_h(i)$
-\qi ys/yf is the spherical albedo based on $A_h(i)$ with $A_h(0)$ scaled to unity.
-\qii values greater than 1.0 are non-physical.
-\vspace{-3.mm} 
-\begin{verbatim}
- yid=  Lambert Lomm-See    Kheim     Vasa Minnk0.3 Minnk0.5 Minnk0.7 Minnk0.9
-  yf=  1.00000  0.15343  1.00000  1.00000  4.83322  4.18879  3.69599  3.30694
-  ys=  1.00000  0.50000  1.92259  2.28435  7.43572  5.58505  4.34823  3.48099
-ys/yf  1.00000  3.25889  1.92259  2.28435  1.53846  1.33333  1.17647  1.05263
-\end{verbatim} 
+
+To minimize normalization issues, choose to treat $A_H(0)$ as the ALB that is input to KRC. \\
+\large Then compute $P_S \equiv A_S/A_H(0)  $ \ and \ $ P_H(i)  \equiv A_H(i)/A_H(0)$
+
+Lambertian: $P_S =1 $ \ and \ $ P_H(i)=1$
+
+Minnaert:  $P_S = 2 / (\nu+1) $ \ and \ $ P_H(i)= \mu_0^{\nu-1} $
+ 
+Lommel-Seeliger:  $P_S =4/3 $ \ and \ $ P_H(i)=  \left(\mu_0 \ \ln \frac{\mu_0}{ 1+ \mu_0} +1 \right) / (1+ \ln (1/2)) $, denominator is  0.30685282
+
+Lunar-like: $P_S =1.05944 + 1.5683 x  $ \ and \ $ P_H(i)= \left( 1. + x (\frac{4}{\pi})^3 i^3
++   \frac{0.14}{0.12}( \frac{2}{\pi})^8  i^8 \right) $
+
+\normalsize
 
 Each of these relations has hemispherical albedo decreasing as insolation
 becomes more oblique; Lommell-Seeliger is close to $cos^{0.3} i$ from 0 to
-45\qd; see Fig. \ref{hem55n} and \ref{hem55c}. $A_h(i)$ increases with $i$ for
+45\qd; see Fig. \ref{hem55n} and \ref{hem55c}. $A_H(i)$ increases with $i$ for
 all models here. All but Lambert and high-k Minnaert have the property of
 becoming larger than 1 at high incidence angles, so that the absorped power can
 become negative for reasonable values of ALB, see Figure \ref{hem55a}. The only
@@ -364,7 +359,7 @@ value at normal incidence. % Values above unity are non-physical
 \begin{figure}[!ht] \igq{hem55a}
 \caption[Absorbed power]{Absorbed power for ALB=.2 as a function of incidence
  angle for several photometric models; see legend. 
-Values are $\cos i \ (1.-0.2 A_h(i)/A_h(0)$ .
+Values are $\cos i \ (1.-0.2 A_H(i)/A_H(0)$ .
 \label{hem55a}  hem55a.png }
 \end{figure} 
 % how made: q.pro @ 46 48 55
@@ -373,9 +368,9 @@ Values are $\cos i \ (1.-0.2 A_h(i)/A_h(0)$ .
 Version 3.4 does not allow photometric functions when there is an atmosphere
 because of input parameter overloading.
 
-The use of $A_h$ and $A_s$ is shown in \S \ref{fffd}
+The use of $A_H$ and $A_S$ is shown in \S \ref{fffd}
 
-SALB is $A_s$ and is a constant for a case.
+SALB is $A_S$ and is a constant for a case.
 
 Frost is always considered Lambertian
 
@@ -383,10 +378,10 @@ Each photometric function is normalized to unity at normal incidence, so that
 the midday temperatures for low thermal inertia would be the same. The same
 scaling is applied to the spherical albedos. Thus, the absorbed flux, using the
 traditional KRC input parameter \nv{ALB}$\equiv A$ :
-\qi Collimated: $(1-A P_f) \cos i$ where $P_f = A_h(i)/A_h(0)$ and 
+\qi Collimated: $(1-A P_f) \cos i$ where $P_f = A_H(i)/A_H(0)$ and 
 $A P_f$=\nv{HALB=ALBJ(JJ)} for the sloped surface.
-\qi Diffuse and bounce: $(1-A P_s)$ where $P_s = A_S/A_h(0)$ = \nv{ASF} and 
-$A P_s$=\nv{SALB}
+\qi Diffuse and bounce: $(1-A P_S)$ where $P_S = A_S/A_H(0)$ = \nv{ASF} and 
+$A P_S$=\nv{SALB}
 
 Items in COMMON (see also the comments in TLATS)
 \vspace{-3.mm} 
@@ -493,5 +488,81 @@ ASOL[jj]
 Both use LFROST at the start of the season and do not treat a change during a season.
 \end{verbatim} 
 
-
 % See detailed treatment of kv3@7846, still get 0.8 W/m2. 
+
+
+\subsection{A word about frost albedo}
+ Frosts are considered to be Lambertian, although the albedo may depend upon the
+ mean diurnal insolation. The frost albedo is set at the start of each season in
+ TLATS, has no dependance upon $i$ (time of day), is not changed in TDAY and
+ therefor is constant throughout a season. The effective albedo of a frost is
+ based on transparency to the underlying albedo, also Lambertian, using the
+ columnar-mass extinction coefficient FROEXT, which is evaluated each time-step
+ in TDAY.
+
+\subsection{Logic structure within TLATS}
+\vspace{-3.mm} 
+\begin{verbatim}
+set twilight values depending on if atm.
+C============ factors that do not depend upon season ============
+Set factors depending on slopes or pits
+Set geothermal heatflow
+If fff open, initiate that, including possible hour interpolation
+C============ factors constant over latitude that depend upon season ==========
+direction to the Sun, blowup T-limit,
+global frost sum, Pressure at reference level
+C  ----------------new latitude loop loop loop--------------------------
+  If fff open, find matching latitude or quit, get the fff temperatures
+  Calc length of day and average cosine incidence
+  set default albedoes and opacities
+  If atm.: compute opacities and albedoes and frost-point
+     else, set bare-goound values
+  Set photometric code and spherical albedo A_S=SALB
+  Set diurnal sums to 0
+ ! ------------------time of day loop----------
+    Calc incidence angle on flat and tilt
+    If daytime 
+        calc hemispherical albedo for flat: A_H=AVEA (can be frosty)
+        If atm.: compute direct delta-Eddington stuff, else bare ground
+      else: set to night
+    If in day or twilight,
+        compute diffuse delta-Eddington
+      else: no diffuse
+    If target is directly illuminated
+        calc hemispherical albedo for tilt: A_H=HALB --> ALBJ(JJ) (no frost)
+      else direct=0
+    Save values for each time-step
+  !-------------end time-of-day loop-------
+  Calc equilbrium temperatures: with or without atm.
+  If first season: set temperature profile linear with depth, 
+    else use prior season predictions
+  CALL TDAY8 (2,IRL)      ! execute day loop
+  If had blowup, quit
+  Store results; using prediction
+^^^^ end of  Latitude loop
+\end{verbatim} 
+ 
+Albedo has two parts: $A_H = A_0 P_H$; and can apply separately to three locations:
+\qi the ``target'' (flat or tilt or pit) surface for which T is being computed
+\qi the ``region'' for Bounce and Diffuse fluxes, flat or tilt ?
+\qi the surface under a  delta-Eddington atmosphere 
+\qii For simplicity, assume this is the same as region.
+\\ Conditions may be: no atmosphere or with atmosphere; then frosty or not.
+If there is frost on target,  then $A_0=$ AFNOW = frost albedo at start of current season (may depend upon mean insolation)
+\qi else  target $A_0=$ ALB.
+
+ If there is not a fff, then decision of regional frost or not can only be based
+ on the current frost flag. If there is a fff, in theory could use its
+ temperaure to decide if region was frosty, but have no information on frost
+ thickness. Thus only realistic choice is to assume regional frost condition is
+ same as target.
+
+Any place/time that is frosty, $P_H =1$.
+
+ Delta-Eddington assumes surface is Lambertian, but KRC allows $\Delta$Edd lower
+ boundary reflectance to follow $A_H$ for the selected photometric function. As
+ of 3.4.4, input parameters do not allow non-Lambertian surface if there is an
+ atm.; plan to remove this constraint in later versions.
+
+
+

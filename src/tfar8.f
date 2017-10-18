@@ -72,13 +72,13 @@ C
         IF (LOPN3) CLOSE (IOD3)
         LOPN3=.FALSE.
 C     recl may be bytes or longwords, depending upon  OS and compiler options.
-        NWTOT=MAXNH*MAXN4       !  TSF TPF and TATM
+        NWTOT=MAXNH*MAXN4       ! each of TSF TPF and TATM
         NRECL=8*NWTOT    ! bytes: or  NRECL=NWTOT  ! depends upon compiler <<<<
         OPEN (UNIT=IOD3,FILE=FFAR,ACCESS='DIRECT',STATUS='OLD'
      &       ,RECL=NRECL,ERR=191,IOSTAT=IOST)
         WRITE(IOSP,110)FFAR(1:ILEN),NWTOT, NRECL,DAYTIM
- 110    FORMAT (/'0TFAR:  Opened direct access file = ',A
-     &       /' NWTOT & NRECL used=',2I7,'  NOW=',A)
+ 110    FORMAT (/'TFAR:  Opened direct access file = ',A
+     &       /' NWTOT & NRECL used=',2I7,'  Now=',A)
         IF (IDB3.GE.3) WRITE(IOSP,*)'TFARc KREC=',KREC,LOPN3,IOD3
         II=1 ! record containing KRCCOM
         READ (IOD3,REC=II,IOSTAT=IOST) F3FD,F3LA,F3EV,F3ID,F3LD

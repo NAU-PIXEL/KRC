@@ -56,6 +56,7 @@ PRO chart, yyy, title=title,parti=parti,xtit=xtit,range=range,dlin=dlin,psy=psy 
 ; 2015jun07 HK  Add keyword rangu
 ; 2015aug10 HK  Add cclr keyword
 ; 2016dec14 HK  Fix X position of text if oplot and csize
+; 2017mar29 HK  Incorporate common SETCOLOR_COM2,
 ;_End          .comp chart
 
 ssy=size(yyy) & nd=ssy[1]
@@ -77,7 +78,7 @@ if not keyword_set(tloc) then tloc=replicate(0.4,mp) ; strip label Y location
 if not keyword_set(psy) then psy=0         ; no symbols
 if not keyword_set(clr) then begin 
     kok= !D.name eq 'X'        ; color ok for this device. false for B&W printer
-    if kok then clr=!binc[255] else clr=0 ; color or white
+    if kok then clr=!P.color else clr=0 ; color or white
 endif
 if keyword_set(range) then nr=n_elements(range)/2 else nr=-1 ; # of ranges
 if keyword_set(fmt) then fmt='(2'+fmt+')' else fmt='(2g12.5)'; range format

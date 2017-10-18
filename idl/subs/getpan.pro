@@ -24,6 +24,7 @@ PRO getpan, desc, var,low,high,labs=labin,ido=ido
 ; 2004aug17 HK Add print-only mode if low gt high. Add test on size of  var.
 ; 2015may18 HK Handle 2-dimension arrays. Will process higher but return as 2
 ;            and expand if logic to individual lines
+; 2017jun19 HK Fix fault if labs no defined.
 ;_End        .comp getpan
 
 ; Internal logic controls:
@@ -54,13 +55,19 @@ u=uu[type]                  ; header spacing for current type
 ON_IOERROR,bad
 info=0B                         ; default is to allow changes
 lidx=-1                         ; minimum idx with specific action
-if not keyword_set(labin) then kode=0 $ ; no labels or extensions
-  else if n_elements(labin) eq nv and size(labin,/type) eq 7 then kode=1 $ ; labels, fixed dimension
+
+if not keyword_set(labin) then begin 
+  labs=replicate(' -?- ',nv)
+  kode=1                        ; no  extensions
+endif else begin
+  labs=labin
+  if n_elements(labin) eq nv and size(labin,/type) eq 7 then kode=1 $ ; labels, fixed dimension
   else begin ; individual limits
-  kode=2 
-  lidx=-4 
-endelse ; allow change of dimension
-labs=labin
+    kode=2 
+    lidx=-4 
+  endelse                       ; allow change of dimension
+endelse
+
 if n_elements(ido) gt 0 then begin ; demote all but requested
     jj=where(ido ge 100,i)      ; items for emphasis
     dem='     [ '
@@ -96,38 +103,24 @@ show:
 print,desc
 ;;svar=string(var)                ; convert to string
 ;;dvar=delast0(svar)              ; delete trailing 0's past decimal point
-case kode of
-0: begin                   ; no individual labels
-    case lim of
-        0: print,' Now=',ST0(var)
-        1: begin & print,'Limits=',low,high
-          print,' Now=',ST0(var) 
-        end
-        2: begin 
-            print,top
-            for i=0,nv-1 do print, low[i],high[i], i,var[i],format=fmt
-          end
-    endcase 
-  end
-1: begin                    ; individual labels
-    case lim of
-        0: for i=0,nv-1 do print, i,var[i],'  ',labs[i]
-        1: begin 
-            print,'  Limits=',low,high
-            for i=0,nv-1 do print, i,var[i],'  ',labs[i]
-        end
-        2: begin 
-            print,top
-            for i=0,nv-1 do print, low[i],high[i], i,var[i],labs[i],format=fmt
-            end
-    endcase 
-  end
-2: begin          ; variable size, fixed limits 
-    if lim gt 0 then print,'Limits=',low[0],high[0]
-    print,' -3 3 = delete last    -4 4 = append dummy value'
-    print,'Now= ',ST0(var)
-   end
-endcase
+
+if kode eq 1 then begin         ; individual labels, perhaps faked
+  case lim of
+    0: for i=0,nv-1 do print, i,var[i],'  ',labs[i]
+    1: begin 
+      print,'  Limits=',low,high
+      for i=0,nv-1 do print, i,var[i],'  ',labs[i]
+    end
+    2: begin 
+      print,top
+      for i=0,nv-1 do print, low[i],high[i], i,var[i],labs[i],format=fmt
+    end
+  endcase 
+endif else begin                ; variable size, fixed limits 
+  if lim gt 0 then print,'Limits=',low[0],high[0]
+  print,' -3 3 = delete last    -4 4 = append dummy value'
+  print,'Now= ',ST0(var)
+endelse
 
 if info then begin ;  in informational mode
   if md gt 1 then var=reform(var,md1,md2,/over)
@@ -156,7 +149,7 @@ if idx eq -3 then begin         ; delete last item
 endif
 if idx lt -3 then begin   ; append an item
   if md gt 1 then print,'May not change Multi-Dim size' else begin 
-    var=[var,high[0]]      ; append the high limit, in case input was out of range
+    var=[var,high[0]]    ; append the high limit, in case input was out of range
     idx=nv 
     nv=nv+1 
   endelse

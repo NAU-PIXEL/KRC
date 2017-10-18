@@ -32,6 +32,7 @@ PRO toothb, kp,jj, vv=vv,fmt=fmt,ran=ran, tab=tab
 ;_Hist 99jul15  Hugh Kieffer  Original IDL version of toothbar
 ; 2012nov14 HK Always use pseudo-color. Delete history: see  .2012mar19
 ; 2012dec31 HK Include character thickness for values
+; 2017jun26 HK Increase maximum ncr by 1
 ;_End
 
 labr=['X-location of left end of bar, normalized','Y-location of base "' $
@@ -93,7 +94,7 @@ siz=vv[4]                       ; Y size ( of the bar between teeth)
 
 bot=(0>Fix(vv[17]))<127         ; lowest color level, 0 to 127
 ncr=fix(vv[8])                  ; number of colors and | bars
-ncr=(ncr > 2) < (top-bot)       ; ensure not larger than number of colors
+ncr=(ncr > 2) < (top-bot+1)       ; ensure not larger than number of colors
 ; Set the height of all teeth
 tooth=replicate(1.,ncr) & ii=indgen(ncr) ; make height of each character
 j=where(ii mod 5  eq 0) & tooth[j]=vv[5] ; a little taller for each 5

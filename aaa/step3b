@@ -1,36 +1,27 @@
+#!/bin/bash
 #====================================
 # Script and comments for making a distribution package of the KRC thermal
-# model file system see the file AAREADME for additional description
-# Run after step 2 and before step 4
+# model file system. See the file AAREADME for additional description
+# Run after step 2 and before step 4b
 #
 # 2013sep03 HK Update to 2.2.4  Separate tar file for large output files.
 # 2013sep28 HK Make a separate command file for BIG files
+# 2017mar01 HK Convert to bash and undate files included
+#====================================
 
-set RTOP='/work2/DistKRC'	# Top of the distribution tree 
+RTOP='/work2/DistKRC'	# Top of the distribution tree 
 #echo "RTOP="$RTOP 
 # Large output files
 
+rm -f $RTOP/big/*     # ensure directory is empty
 cd $RTOP/big
 pwd
-rm -f *
-ln -s /home/hkieffer/krc/tes/master.prt  master.txt  # new master print
-ln -s /home/hkieffer/krc/tes/mast37.prt  mast37.txt  # print file
-ln -s /home/hkieffer/krc/tes/master5x.prt  master5x.txt
-#ln -s /home/hkieffer/krc/tes/oneA.prt    oneA.txt
-ln -s /home/hkieffer/krc/tes/VerTest.prt VerTest.txt
-ln -s /work1/krc/mars/mast37.t52 .
-ln -s /work1/krc/mars/masterA.t52 .
-#ln -s /work1/krc/mars/V221B5.t51 .
-#ln -s /work1/krc/mars/V221B5.t52 .
-#ln -s /work1/krc/mars/V221B5.t54 . 
-#ln -s /work1/krc/mars/V221B5.t55 . 
-#ln -s /work1/krc/mars/V221B5.t56 .
-ln -s /home/hkieffer/krc/tes/V232Mone.prt V232Mone.txt #<<<
-ln -s /home/hkieffer/krc/tes/out/V232test1.t52  .  #<<<
-ln -s /home/hkieffer/krc/tes/out/V232test2.t52  .  #<<<
-ln -s /home/hkieffer/krc/tes/out/V232test2.tm1  .  #<<<
-ln -s /home/hkieffer/krc/tes/out/V232test2.t0   .  #<<<
-echo "Done copy to BIG files"
+
+ln -s /home/hkieffer/krc/tes/master.inp .        # the input file
+ln -s /home/hkieffer/krc/tes/master.prt .        # the print file
+ln -s /home/hkieffer/krc/tes/out/master34.t52 .  # the binary file
+
+echo "Done links to BIG files.  Now run step4b"
 
 cd ~/krc/aaa   # return to parent directory
 
