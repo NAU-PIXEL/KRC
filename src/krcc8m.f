@@ -1,7 +1,7 @@
 C_Titl  krcc8m.f = KRCCOM common for input and transfer variables
 C_Limitations 
       IMPLICIT NONE             ! none-the-less, try to code with usage
-      INTEGER*4 MAXN1,MAXN2,MAXN3,MAXN4,MAXN6,MAXNH,MAXBOT
+      INTEGER*4 MAXN1,MAXN2,MAXN3,MAXN4,MAXN6,MAXN5,MAXNH,MAXBOT
      &,MAXN1P,NUMFD,NUMID,NUMLD,N4KRC,NWKRC,KOMMON,MAXN4E
 C Here are all the dimension-defining parameters for items in any common
       PARAMETER (MAXN1 =1000)     ! dimension of layers
@@ -11,14 +11,14 @@ C Here are all the dimension-defining parameters for items in any common
       PARAMETER (MAXN4E =38)     ! " "  Even needed for LATCOM NDJ4
       PARAMETER (MAXN5 =2161)     ! dimension of saved seasons
       PARAMETER (MAXN6 =6)       ! dimension of saved years
-      PARAMETER (MAXNH =9600)     ! dimension of saved times of day, multiple of 24
+      PARAMETER (MAXNH =86400)     ! dimension of saved times of day, multiple of 24
       PARAMETER (MAXBOT=14)      ! dimension of time doublings  MUST BE EVEN
       PARAMETER (MAXN1P=MAXN1+1) ! dimension layer temperature points
       PARAMETER (NUMFD=96, NUMID=40, NUMLD=20) ! number of each type
       PARAMETER (N4KRC=NUMFD*2+NUMID+NUMLD+2*MAXN4*2+104/4) ! # of 4-byte words
               ! above is size of common in 32-bit words. it MUST be even
       PARAMETER (NWKRC=N4KRC/2) ! number of Real words in krccom. Used by tdisk
-      PARAMETER (KOMMON=5120000000) ! Storage used by tdisk
+      PARAMETER (KOMMON=512000000) ! Storage used by tdisk
 
       INTEGER*4 N1,N2,N3,N4,N5,  N24,IIB,IC2,NRSET,NMHA              !  1:10
      &,NRUN,JDISK,IDOWN,I14,I15,  KPREF,K4OUT,JBARE,NMOD,IDISK2   ! 11:20
