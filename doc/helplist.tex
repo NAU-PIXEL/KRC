@@ -1,7 +1,6 @@
 \documentclass{article} 
 %\documentclass[draft]{article}  % See Skeleton.tex for examples of many things
 
-
 \usepackage{underscore} % accepts  _ in text mode
 % Comment the next two so can have explicit new commands for html
 % \usepackage{ifpdf} % detects if processing is by pdflatex
@@ -26,7 +25,7 @@
 \newcommand{\qd}{$^\circ$}        % degree symbol
 
 \title{KRC planetary surface temperatures: Helplist}
-\author{Hugh H. Kieffer  \ \ File=-/krc/Doc/helplist.tex Version 3.6.1 2018oct30}
+\author{Hugh H. Kieffer  \ \ File=-/krc/Doc/helplist.tex Version 3.6.1 2018nov08}
 %_History
 % 2016feb08  HK Update spare parameters
 % 2016nov21  HK 3.4.3
@@ -122,8 +121,9 @@ Options:
 \qi  Up to two zones of temperature-dependent conductivity and specific heat
 \qi Non-Lambertion solar absorption.
 \qi Global geothermal heat flow.
-\qi Eclipses by the planet of satellite.
-\qi Incident flux from a planet onto a satellite, sinusoidal.
+\qi Eclipses by the planet or satellite.
+\qi Incident flux from a planet onto a satellite, thermal is sinusoidal.
+\qi For sloped surfaces, the ``far-field'' radiation can be defined by a prior KRC run.
 
 Atmosphere condensation: 
 \qi Global integral of frost-gas budget can control surface pressure.
@@ -157,10 +157,9 @@ used. The recommended procedure is to copy master.inp and edit only the values
 you wish to change. The number of lines of Latitudes and Elevations must match
 the value of N4, e.g., 2 lines for N4=11:20, entries beyond the N4 position may
 be left blank or contain the end of the line. The 7 lines following Elevations
-are a geometry matrix for Mars orientation and orbit in 2010, and should not be
-touched; they could be replaced by the results of running PORBMN .
+are a geometry matrix, default is for Mars orientation and orbit in 2010. This matrix should not be edited; but can be replaced by the matirx for other objects by the results of running PORBMN .
 
-The parameter title lines are skipped, so that you may put comments there
+The parameter title lines are skipped, so that you could put comments there
 carefully.
 
 The first input line is always KOLD,KEEP [I*], which sets file usage; these are
@@ -176,7 +175,7 @@ Change lines may follow immediately after the geometry matrix (see \S \ref{pc})
 "0/" lines ends the run.
 
 The source code for 'krcc8m.f' indicates for many of the parameters which
-subroutine setsit; as the routine name in lowercase just below the parameter
+subroutine sets it; as the routine name in lowercase just below the parameter
 name.
 \vspace{-3.mm} 
 \begin{verbatim} 
@@ -427,7 +426,7 @@ Elevation(s) (10F7.2)  N4 values in Km corresponding to latitudes
 
 Orbital Parameters (LPORB=T) Format identical to that produced by PORB
 program set ASCII file output. So these can be directly pasted with an
-editor. see porbc8m.f
+editor. See porbc8m.f
  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 \end{verbatim}
 
@@ -502,9 +501,9 @@ CLIMTAU files have dust and ice opacity over season and latitude. Uses BINF5 to
 read a binary array (72 seasons, 36 latitudes, 2=dust/ice) of opacities. The
 sample file \nf{THEMIS1yearDustIce.bin5} is described in section [159] of Ref 1.
 
-Index=3 will read .tmx file; if that has Tatm it will set the held fff
-atmosphere only if prior index=4 is not active. Index=4 will set held fff
-atmosphere; file must be .tm3 or KRC will quit.
+Index=3 or =4 will read type -n file to be used for far-field surface and atmosphere.  See \S \ref{fff}
+
+Index=5 writes a dense type 52 file that can hold many cases and contains virtually all the input and output values! See \S \ref{type52}. It cannot be input to KRC but an IDL reader \np{readkrc52} is provided.
 
 \subsubsection{Other types}
 For Type 12 and 13, 8 white-space-separated coefficients must follow after 
@@ -600,13 +599,12 @@ latest daily convergence. The return code is set to 2.
 \section{DISK BINARY FILES \label{dbf} } %_______________________
 
 The routine TDISK is used to read or write seasonal/global direct-access binary
-files and to write multi-case bin5 files. The first season to write is specified
-by JDISK, all following seasons will go to the same file. For direct-access
-files, each file record consists of KRCCOM plus LATCOM or KRCCOM plus
-DAYCOM. Writing of bin5 and direct-access files are independent of each other
-and may be simultaneous.
-
-Disk output is largely controlled by the KRC and TSEAS routines.
+files and to write multi-case type 52 (.bin5) files. The first season to write
+is specified by JDISK, all following seasons will go to the same file. For
+direct-access files type 0 or positive, each file record consists of KRCCOM plus
+LATCOM or KRCCOM.  plus DAYCOM. Type -n have one record the contines KRCCOM
+followed by n records of temperature for each season. Writing of type 52 and
+direct-access files are independent of each other and may be simultaneous.
 
 \subsection{Items which control file I/O } %------------
 \vspace{-3.mm} 
@@ -888,6 +886,80 @@ File is read and bi-linear interpolated by CLIMTAU; which is called by TLATS.
 Firm-coded for 72 seasons and 36 latitudes, both uniformly spaced. 
 
 Example: \nf{/work1/mars/opacity/THEMIS1yearDustIce.bin5}
+
+\subsection{Far-field files (fff) \label{fff} }
+Prior to version 3.4.1, for sloped surfaces the radiation coming from ``below
+the horizon'', the ``far-field'', was assumed to be from a surface with the same
+temperature and properties as the sloped surface being calculated; this is
+called ``self-heating'' And, the atmosphere temperature was calculated as if the
+entire surface was at the current slope. Version 3.4.1 introduced the concept of
+a far-field file (fff), output from a prior KRC run, that set the far field
+surface temperature and was used for the atmosphere temperature.
+
+Version 3.6.1 allows the far-field surface temperature and the atmosphere
+temperature to come from different prior runs. Specifically, the atmosphere
+would typically be from a ``flat'' run; as commonly the surface regionally, say
+over a radius similar at least as great as the atmospheric scale height, is
+close to level. The far-field surface viewed by a slope is typically flat or
+tilted toward the current slope, i.e., of opposite azimuth.
+
+Reminder: KRC direct-access -n files have records that are a fixed size, based on
+the maximum sizes of N24 and N4, and have one record for each temperature stored
+, Ts [Tp, [Ta]] (based on the value of K4OUT) for each season. HOw many of theseThe original run input parameters are stored in the first record.
+
+However, only the emissivity is extracted from the first record. The atmosphere paramters of an fff should match the current run.
+
+Type -n direct-access files are written by a change line:
+\vspace{-4.mm} 
+\begin{verbatim}
+8 21 0  'fineName.tmx' / output a direct-access filere
+\end{verbatim}
+\vspace{-4.mm} 
+which lasts only for one case.
+
+Type -n direct-access files to be used as fff are read by a change line
+\vspace{-4.mm} 
+\begin{verbatim}
+8 3 0  'fineName.tmx' / read a fff to be used for far surface
+8 4 0  'fineName.tm3' / read a fff to be used for atmosphere
+\end{verbatim}
+\vspace{-4.mm} 
+which is active until turned off by using a similar change line except the entire file name has no more than 4 characters; e.g.,
+\vspace{-4.mm} 
+\begin{verbatim}
+8 3 0  'off' / 
+\end{verbatim}
+
+If there is no atmosphere, use is simple. Type -1,-2, or -3 can be used, but only Tsurface is active.
+
+With an atmosphere, it is more complex. An 8 3 ... change line will read a file
+to be used for the far surface. If that file is type -3, its atmosphere values
+will be used. If not, then an 8 4 ... change line specifying a type -3 file must
+be present; such a line overrides any active fff atmosphere values.  Both 8 3 ... and 8 4 ... values remain in effect until turned off by
+a corresponding change line with a short file name.
+\vspace{-3.mm} 
+\begin{verbatim}
+8 4 0  'fineName.tmx' / read a fff to be used for the atmosphere
+\end{verbatim}
+
+\subsubsection{fff Algorithm Details:} 
+All interface with an fff, except closing the unit, is through TFAR.
+\\ TCARD:
+\qi 8 3 ... closes logical unit IOD3, sets IOPN3 false, and updates the FFAR file name
+\qi 8 4 ... closes logical unit IODA, sets LFATM false and updates the FFATM file name
+\\ KRC: 
+\qi If IOPN3 false and FFAR length 4+, calls TFAR(1 to open FFAR 
+\qi If LFATM false and FFATM length 4+, calls TFAR(11 to open FFATM
+\qii If that  fff case was sloped, prints warning 
+\qi If the only type -3 read is FFAR, uses that for Tatm and sets FAME true (same file for both T's)
+\qi If case has an atmosphere, and fff surface is specified but no fff atm is specifed; case will be skipped as invalid.
+\\ TSEAS:
+\qi Calls TFAR to interpolate to current season
+\qii If LOPN3 true, updates Tsurf using FFAR. If fff is type -3, Tatm is also updated. 
+\qii If KRC case has an atmosphere and LFAME=false, then updates Tatm using FFATM
+\\ TFAR:
+\qi Updates IOPN3 or LFATM when it opens the associated file
+\qi Returns as many temperatures as are in the file.
 
 \section{Handy things} %_______________________
 
