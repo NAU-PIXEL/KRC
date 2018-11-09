@@ -4,13 +4,14 @@ function scalelin, xx, vv=vv, first=first, out=out
 ; vv    in_     Output interval, Default is -1:+1
 ; first in_     If set, scaled=(xx*func[1])-func[0]   xx=(out+f[0])/f[1]
 ;           Default is  scaled=(xx-func[0])*func[1]   xx=out/f[1] + f[0]
-; out	out_	input array scaled onto [-1,1]
+; out	out_	input array scaled onto vv
 ; func.	out	fltarr(2) = [offset and multiplier] such that:
 ;		   scaled xx has same range as vv
 ;_Hist 99jan28  Hugh Kieffer
 ; 1999jul15 HK Add  out  keyword
 ; 2009may16 HK Add option for scaling onto any range
 ; 2012oct05 HK Add option for multiply before offset
+; 2018feb18 HK comment typos only
 ;_End
 
 if n_elements(xx) lt 2 then message,'Must have >1 values' ; impossible

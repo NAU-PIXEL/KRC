@@ -61,6 +61,9 @@ case kon of ;...................................................................
 16: GETPAN,'Float values',parr,0.,0.,labs=labr ;-  " " , no limits
 18: help,dd             ;<<< Guides and help
 
+123: begin & lkon=1b & kkon=-1  ;- Start auto-script 
+lastkon=n_elements(kons)-1 & end ; last preset command 
+
 ; INSERT with new actions
 
 else: begin 

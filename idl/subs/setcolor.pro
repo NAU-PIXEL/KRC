@@ -64,7 +64,9 @@ minl=50                         ; minimum number of lines always defined
 ; 2015oct02 HK Add 865 for strong colors on black
 ; 2015dec29 HK revise 860 colors; brightest first. 
 ; 2016jan18 HK Increase minl from 42 to 50
-; 2016feb22 HK Include hink and kink in initiation, rather than test them for size
+; 2016feb22 HK Include hink and kink in initiation, rather than test them for
+; size
+; 2018jun29 HK Add 884 as 37 progressive colors without black or white
 ;_END         .comp setcolor
 
 ; common COLORS, Rorig,gorig,borig,rcur,gcur,bcur
@@ -149,7 +151,7 @@ if inj ge 851 then begin
     858: if n_elements(hink) gt 2 then kink=hink ; recover colors saved @857,863
     859: GETPINTS,'kink==!binc index set',kink,0,255
     860: kink=[255,130,197,209,254,40,225,15,52,110] ; 10 on black
-    861: kink=[15,33,40,50,85,112,130,145,170,195,209,221,254,255] ; 14 on black
+    861: kink=[15,33,40,50,85,112,130,150,170,195,209,221,254,255] ; 14 on black
     862: kink=[13,30,32,40,50,60,85,114,130,143,170,197,209,221,232,254,255] ;17
     863: begin & if kcc[6] gt 2 then hink=kink ; black and gray
             kink=[cblack,15]  & end   
@@ -176,7 +178,10 @@ end
 880: device, decomposed = 0 ; color is index into current table
 881: device, decomposed = 1 ; color is composite RGB value e.g., !binc
 882: TOOTHB                 ; default toothbar for all 256 colors
-883: CLOC,kink,[.55,.89,-.03,.08] ; display defined current line colors
+883: CLOC,kink,[.55,.93,-.022,.08] ; display defined current line colors
+884: kink=[11,19,26,32,37,40,47,54,60,65,70,80,100,106,112,120,127,135 $ ; 37 cols
+,142,150,155,160,166,175,182,187,192,200,204,208,215,223,228,234,240,246,254]
+;885,886,887,889 spare
 888: begin & print   ; Guide 
 print,'851=black background  852=white background  853=printer preview' 
 print,'854,6=4,6 for BorW  855=use kink in common  857=all black for printer'
@@ -184,14 +189,14 @@ print,'858=recover colors saved @857  859=modif. kink       882:TOOTHB'
 print,'860,1,2=10,14,17 colors for black  863=B&gray        883:line display'
 print,'864,6,8,9=4,6,8,11reset colors for white 865=7 black 888:color Guide'
 print,'876,7,8,9 OLI scan:blk/wht  bands on black,white     899:window Guide'
-print,'880/1=DECOMPOSED=0/1: color is index/24bit'
+print,'880/1=DECOMPOSED=0/1: color is index/24bit        884=37 colors'
         end
     else: begin & Message,' invalid 85x call',/cont
         kon=13 ; invalid, will cause print of Help
         goto,dokon
     end
   endcase
-  if inj ge 880 then return   ; no change to kink or !binc
+  if inj ge 880 and inj ne 884 then return   ; no change to kink or !binc
   if inj ge 854 then begin      ; fill out the common arrays
       i=n_elements(kink)>1      ; # of different colors
       if inj eq 857 then i=1    ; all colors are black

@@ -1,7 +1,7 @@
 C_Titl  daycom8.f   common for layer and time items in  KRC
       INTEGER*4 NWDAY
       PARAMETER (NWDAY = 5*MAXN1 + MAXN1P + (5+MAXN1)*MAXN3
-     &  + 3*MAXN2 + 2*MAXNH + MAXBOT/2) ! size of this common in real words
+     &  + 8*MAXN2 + 2*MAXNH + MAXBOT/2) ! size of this common in real words
 C_Desc
 C  ASOL &  ADGR are set in  TLATS, the rest are set in  TDAY
       REAL*8 XCEN(MAXN1)        ! Depth at layer centers [m]
@@ -17,14 +17,20 @@ C  ASOL &  ADGR are set in  TLATS, the rest are set in  TDAY
      &, DTMJ(MAXN3)     ! RMS daily temperature change
      &, FRO(MAXN3)      ! Daily frost amounts. [kg/m^2]                    
      &, ASOL(MAXN2)     ! Direct solar flux on sloped surface at each time of day
-     &, ADGR(MAXN2)     ! Atm. solar heating at each time of day 
+     &, ADGR(MAXN2)     ! Atm. solar heating at each time of day
+     &, ALBJ(MAXN2)          ! hemispherical albedo at each time of day 
+     &, SOLDIF(MAXN2)  ! Solar diffuse (with bounce) insolation each time  W/m^2
+     &, FINSOL(MAXN2)      ! eclipse insolation factor
+     &, PLANH(MAXN2)         ! planetary thermal load  W/m^2 
+     &, PLANV(MAXN2)         ! planetary visual (solar) load  W/m^2  
      &, TOUT(MAXN2)     ! Surface temperatures of solution at each time of day
      &, TSFH(MAXNH)     ! Hourly surface temperatures at solution
      &, TPFH(MAXNH)     ! Hourly planetary temperatures at solution
       INTEGER*4 N1K(MAXBOT)     ! Binary time division layers
 
-      COMMON /DAYCOM/ XCEN, SCONVG, BLAY, TMIN, TMAX, TTJ, TT1
-     &, TTS, TTB, TTA,DTMJ, FRO, ASOL, ADGR, TOUT, TSFH, TPFH, N1K
+      COMMON /DAYCOM/ XCEN,SCONVG, BLAY, TMIN,TMAX, TTJ, TT1
+     &, TTS,TTB,TTA,DTMJ,FRO, ASOL,ADGR,ALBJ,SOLDIF,FINSOL
+     &, PLANH,PLANV,TOUT, TSFH,TPFH, N1K
 
 C_Hist  84jun15  Hugh_H_Kieffer  97feb11  HHK add  ADGR  
 C   97mar03 HK correct  NWDAY       97sep08  HHK add  TPFH
@@ -37,5 +43,6 @@ C 2008nov13 HK Change names: X->XCEN  T->TTJ  TT->TT1  TLAY->BLAY
 C 2010jan12 HK Change to IMPLICIT NONE assumed in krccom
 C 2014feb25 HK Specify all word lengths as *4
 C 2013mar10 HK Make  REAL*8  version    Change name from daycom.inc
+C 2018jan21 HK Move  ALBJ,SOLDIF,FINSOL,PLANH,PLANV from  HATCOM  to DAYCOM
 C_End __________________________________________________________________________
 

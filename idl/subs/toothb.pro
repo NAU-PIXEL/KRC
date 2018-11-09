@@ -33,6 +33,7 @@ PRO toothb, kp,jj, vv=vv,fmt=fmt,ran=ran, tab=tab
 ; 2012nov14 HK Always use pseudo-color. Delete history: see  .2012mar19
 ; 2012dec31 HK Include character thickness for values
 ; 2017jun26 HK Increase maximum ncr by 1
+; 2017dec23 HK Fix color index bug.
 ;_End
 
 labr=['X-location of left end of bar, normalized','Y-location of base "' $
@@ -110,42 +111,43 @@ for i=0,ncr-1 do XYOUTS,x0+i*xs,y0,'|',color=qq[i],/normal $ ; plot the bar
 
 ; Plot values for the 50's teeth
 ;   for X, black is large number, for PS, black is 1
-if vv[10] ne vv[11] then begin  ; do values every 50
-    vcol=fix(vv[14])<255        ; index for label color
-    if !D.name eq 'X' then begin ; set black and white colors
-        black=1
-        white=255
-    endif else begin
-        black=255
-        white=1
-    endelse
+if vv[10] ne vv[11] then begin   ; do values every 50
+  vcol=fix(vv[14])<255           ; index for label color
+  if !D.name eq 'X' then begin   ; set black and white colors
+    black=1
+    white=255
+  endif else begin
+    black=255
+    white=1
+  endelse
 
 ; y0 is the normalized location of base of colorbar
-yc=!D.Y_CH_SIZE/float(!D.Y_SIZE) ; default Y charactersize, as fraction of window
+  yc=!D.Y_CH_SIZE/float(!D.Y_SIZE) ; default Y charsize, as fraction of window
 ;   height of colorbar between teeth is siz*yc
 ; vv[12]= fractional position within colorbar (between teeth) of bottom of value
-    yv=y0+vv[12]*siz*yc ; y location of value, normalised to window
-    if keyword_set(fmt) then form='('+fmt+')' else form='(g10.3)'
-    il=-50
-    for j=0,n50  do begin       ; values go on the 50's teeth, and high end
-        i=(50*j) < (ncr-1)
-        if i-il gt vv[16] then begin
-            alig=0.5            ; internal alignment
-            vci=vcol            ; attempt for contrast
-            if vci lt 0 then vci=i ; use color of tooth
-            if vv[12] lt 0.9 then begin ; place values within color bar
-                if j eq 0 then alig=0. else if j eq n50-1 then alig=1. 
-                if j eq 0 then vci=white else vci=black
-            endif
-            vnow=vv[10]+(vv[11]-vv[10])*(i/float(ncr-1)) ; value here
-            if vv[18] lt -0.1 then vnow=alog(vnow) else $
-              if vv[18] gt 0.1 then vnow=exp(vnow)
-            sv=strtrim(string(vnow,format=form),2) ; no blanks
-          XYOUTS,x0+i*xs,yv,sv,/normal,alignment=alig,color=qq[vci] $
-            ,charsize=vv[13],charth=abs(vv[15])
-        endif
-        il=i
-    endfor
+  yv=y0+vv[12]*siz*yc           ; y location of value, normalised to window
+  if keyword_set(fmt) then form='('+fmt+')' else form='(g10.3)'
+  il=-50
+  for j=0,n50  do begin         ; values go on the 50's teeth, and high end
+    i=(50*j) < (ncr-1)
+    if i-il gt vv[16] then begin
+      alig=0.5                          ; internal alignment
+      vci=vcol<(ncr-1)                      ; attempt for contrast
+      if vci lt 0 then vci=i            ; use color of tooth
+      clr=qq[vci]
+      if vv[12] lt 0.9 then begin       ; place values within color bar
+        if j eq 0 then alig=0. else if j eq n50-1 then alig=1. 
+        if j eq 0 then clr=white else clr=black
+      endif
+      vnow=vv[10]+(vv[11]-vv[10])*(i/float(ncr-1)) ; value here
+      if vv[18] lt -0.1 then vnow=alog(vnow) else $
+        if vv[18] gt 0.1 then vnow=exp(vnow)
+      sv=strtrim(string(vnow,format=form),2) ; no blanks
+      XYOUTS,x0+i*xs,yv,sv,/normal,alignment=alig,color=clr $
+             ,charsize=vv[13],charth=abs(vv[15])
+    endif
+    il=i
+  endfor
 endif
 
 if nparm ge 1 then WSET,winin   ; reset to initial window

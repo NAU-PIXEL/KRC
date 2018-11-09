@@ -1,7 +1,13 @@
-      SUBROUTINE dsplint(xa,ya,y2a,n,x,y)
+      SUBROUTINE dsplint(xa,ya,y2a,n,x,y) ! spline interpolation
+      INTEGER n     ! in.  Size of input arrays
+      REAL*8 xa(n)  ! in.  Independent values of tabulated points, in order
+      REAL*8 ya(n)  ! in.  Dependent values of tabulated points
+      REAL*8 y2a(n) ! in.  2nd derivative of interp. function at the tab. points
+      REAL*8 x      ! in.  Independent value for interpolation
+      REAL*8 y      ! out. function value interpolated at x
+
+C Requires prior call to  DSPLINE with corresponding values of xa, ya and y2n
 C 2013aug27 Hugh Kieffer  Make double precision version
-      INTEGER n
-      REAL*8 x,y,xa(n),y2a(n),ya(n)
       INTEGER k,khi,klo
       REAL*8 a,b,h
       klo=1

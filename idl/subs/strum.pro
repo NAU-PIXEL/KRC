@@ -17,6 +17,7 @@ function strum, ss,xx, join=join,quiet=quiet, rem=rem, nix=nix
 ; This methodology allows blanks within string elements.
 ; E.g., if xx is '|' then a joined string might be:
 ;    '||one|this is second string|three||'
+;_Calls  None beyond standard IDL
 ;_Hist  2001apr02 Hugh Kieffer
 ; 2001oct07 HK Add warning if separation character occurs within a string
 ; 2004aug17 HK Add error print and return
@@ -24,28 +25,29 @@ function strum, ss,xx, join=join,quiet=quiet, rem=rem, nix=nix
 ; 2007mar23 HK Add   quiet  option
 ; 2007apr03 HK Add    rem   option
 ; 2012nov12 HK Add option to return the joined string with no change
+; 2018aug20 HK No error msg if seperator missing. Change IDL routine calls to lower-case
 ;_End
 
 verb= not keyword_set(quiet)
 ierr=0 ; error count
-n=N_ELEMENTS(ss) & if n lt 1 then goto,err1
+n=n_elements(ss) & if n lt 1 then goto,err1
 if n_elements(xx) ne 1 then goto,err2
 if strlen(xx) ne 1 then goto,err2
 x2=xx+xx                         ; form end expression
 if not keyword_set(join) then join=0
-
+out='' ; in case no vector for this xx
 if join eq -2 then begin        ; extract joined string as is
-    I=STRPOS(ss,x2)             ; look for start
+    I=strpos(ss,x2)             ; look for start
     if i lt 0 then goto,err4    ; this strum not in the input string
-    j=STRPOS(ss,x2,i+2)         ; look for end
+    j=strpos(ss,x2,i+2)         ; look for end
     if j lt 0 then goto,err5 
-    out=STRMID(ss,i,j-i+2)      ; extract existing joined items
-endif else if keyword_set(rem)then begin ; look for prior STRUM to remove
-    I=STRPOS(ss,x2)              ; look for start
+    out=strmid(ss,i,j-i+2)      ; extract existing joined items
+endif else if keyword_set(rem) then begin ; look for prior STRUM to remove
+    I=strpos(ss,x2)              ; look for start
     if i lt 0 then return,ss    ; this strum not in the input string
-    j=STRPOS(ss,x2,i+2)         ; look for end
+    j=strpos(ss,x2,i+2)         ; look for end
     if j lt 0 then goto,err5
-    out=STRMID(ss,0,i)+ STRMID(ss,j+2) ; split the string
+    out=strmid(ss,0,i)+ strmid(ss,j+2) ; split the string
 endif else if join ne 0 then begin ; join strings
     nix=0                       ; count of strings that contain the separator 
     for i=0,n-1 do if strpos(ss[i],xx) ge 0 then nix=nix+1
@@ -54,12 +56,12 @@ endif else if join ne 0 then begin ; join strings
     out=out+x2                  ; add double character at end
     if nix gt 0 then goto,err3
 endif else begin                ; separated strings
-    I=STRPOS(ss,x2)             ; look for start
+    I=strpos(ss,x2)             ; look for start
     if i lt 0 then goto,err4
-    j=STRPOS(ss,x2,i+2)         ; look for end
+    j=strpos(ss,x2,i+2)         ; look for end
     if j lt 0 then goto,err5
-    out=STR_SEP(STRMID(ss,i+2,j-i-2),xx) ; split the string
-    k=STRPOS(ss,x2,j+2)
+    out=str_sep(strmid(ss,i+2,j-i-2),xx) ; split the string
+    k=strpos(ss,x2,j+2)
     if k ge 0 then goto,err6
 endelse
 
@@ -79,12 +81,12 @@ errs=['null','String not defined','Separator not a single character' $
 
 if verb or ierr eq 6 then begin 
     print,'STRUM: error: ',errs[ierr]
-    help,xx,ss,join,nix
+    help,ss,xx,join,ierr
     help,/trace
-    print, ' .con will return "ERROR"'
+    print, ' .con will return "ERROR" or null '
     stop
 endif
-if ierr lt 6 then out='ERROR'
+if ierr ne 4 then out='ERROR'
 goto,done
 
 end

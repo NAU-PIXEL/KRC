@@ -19,6 +19,7 @@ C_Hist  Hugh_Kieffer  2006sep09
 C 2011jul31 HK  Use  FINTERP rather than  RNDEX (which was failing) and RNTERP
 C 2012feb26 HK  Remove unused variables
 C 2016may12 HK Update include names
+C 2018oct16 Use IOD1 rather than IOD3
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
 
 C local variables
@@ -34,7 +35,7 @@ D      IF (IDB5.GT.3) WRITE(*,*)'SEASTAU',LSUB,kk,yyy(1),yyy(kk) ! <<<<< tempora
       OUT=-1.                   ! possible error flag
 
       IF (LSUB .LT. -90.)  THEN ! read the file
-         KK=READTXT360(FVTAU,IOD3,XXX,YYY)
+         KK=READTXT360(FVTAU,IOD1,XXX,YYY) ! open,read,close unit
          IF (IDB5.NE.0) THEN
             WRITE (*,*) 'SEASTAU FVTAU=', FVTAU
             WRITE (*,*) 'SEASTAU kk=', KK

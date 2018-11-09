@@ -1,12 +1,14 @@
- ======================== New case ========================
- --------- TYPE LOC  VALUE -------- Parameter changes
+
+
+ ============================= New case =============================
+ --------- TYPE LOC  VALUE ------- Parameter Changes
  Changed>>   8   5   0.000     ./out/mast
-           1 =Run. New T52 file name= ./out/master34.t52
-Version 34 default values.  19 latitudes with mean Mars zonal elevations            
-KRCv3.4.3    RUN-CASE  1- 1   2017 Mar  1 15:18:07  PAGE=  1
+           1 =Run. New T52 file name= ./out/master354.t52
+Version 34:354 default values.  19 latitudes with mean Mars zonal elevations        
+KRCv3.5.4    RUN-CASE  1- 1   2017 Oct  6 09:47:40  PAGE=  1
  Input file: master.inp                                                                      
  Print file: master.prt                                                                      
- Save file: ./out/master34.t52                                                              
+ Save file: ./out/master354.t52                                                             
      ALBEDO     EMISS   INERTIA     COND2     DENS2    PERIOD  SpecHeat   DENSITY
      0.2500    1.0000  200.0000    2.7700  928.0000    1.0275  647.0000 1600.0000
        CABR       AMW    SatPrA    PTOTAL     FANON      TATM     TDEEP   SpHeat2
@@ -28,7 +30,7 @@ KRCv3.4.3    RUN-CASE  1- 1   2017 Mar  1 15:18:07  PAGE=  1
       NRSET      NMHA      NRUN     JDISK     IDOWN    FlxP14    FlxP15     KPREF
           3        24         1        81         0        45        65         1
       K4OUT     JBARE     Notif    IDISK2
-         52      9999        50         0
+         52         0        50         0
      LP1    LP2    LP3    LP4    LP5    LP6 LPGLOB   LVFA   LVFT  LKofT
        F      T      F      F      F      F      F      F      F      F
    LPORB   LKEY    LSC  LZONE  LOCAL   LD16 LPTAVE  Prt78  Prt79  L_ONE
@@ -82,16 +84,18 @@ LZONE,LALCON,JJH, IK1:4=  F  T     7     1     0     0     0
  MMM=          48         336        6384      255360           0           0
  KOMMON,KASE=    10000000      261744
  RASE,MASE,MTOT=   38.205269              38     9946272
-     4.736 seconds at end of season  120 of  120
- ======================== New case ========================
- --------- TYPE LOC  VALUE -------- Parameter changes
+     4.676 seconds at end of season  120 of  120
+ Case  1  DTIME: total, user, system=    4.6773    4.6773    0.0000
+
+
+ ============================= New case =============================
+ --------- TYPE LOC  VALUE ------- Parameter Changes
  Changed>>   2   8   999.0            IC2      IC2   
- Case  1  DTIME: total, user, system=    4.7373    4.7373    0.0000
-Version 34 default values.  19 latitudes with mean Mars zonal elevations            
-KRCv3.4.3    RUN-CASE  1- 2   2017 Mar  1 15:18:07  PAGE=  2
+Version 34:354 default values.  19 latitudes with mean Mars zonal elevations        
+KRCv3.5.4    RUN-CASE  1- 2   2017 Oct  6 09:47:40  PAGE=  2
  Input file: master.inp                                                                      
  Print file: master.prt                                                                      
- Save file: ./out/master34.t52                                                              
+ Save file: ./out/master354.t52                                                             
      ALBEDO     EMISS   INERTIA     COND2     DENS2    PERIOD  SpecHeat   DENSITY
      0.2500    1.0000  200.0000    2.7700  928.0000    1.0275  647.0000 1600.0000
        CABR       AMW    SatPrA    PTOTAL     FANON      TATM     TDEEP   SpHeat2
@@ -113,7 +117,7 @@ KRCv3.4.3    RUN-CASE  1- 2   2017 Mar  1 15:18:07  PAGE=  2
       NRSET      NMHA      NRUN     JDISK     IDOWN    FlxP14    FlxP15     KPREF
           3        24         1        81         0        45        65         1
       K4OUT     JBARE     Notif    IDISK2
-         52      9999        50         0
+         52         0        50         0
      LP1    LP2    LP3    LP4    LP5    LP6 LPGLOB   LVFA   LVFT  LKofT
        F      T      F      F      F      F      F      F      F      F
    LPORB   LKEY    LSC  LZONE  LOCAL   LD16 LPTAVE  Prt78  Prt79  L_ONE
@@ -161,12 +165,12 @@ LZONE,LALCON,JJH, IK1:4=  F  T   999     1     0     0     0
    28    3.7857    0.1229   26.4640    0.8595 0.3864E-01  1600.00  647.00  1473.523   6.843
  Bottom                     28.3569    0.9210
  Lower layer of time doubling:   5  7 10 12 15 17 20 22 25 28
-     5.091 seconds at end of season  120 of  120
+     5.049 seconds at end of season  120 of  120
+ Case  2  DTIME: total, user, system=    5.0492    5.0482    0.0010
 
 
      END OF DATA ON INPUT UNIT
- Case  2  DTIME: total, user, system=    5.0912    5.0912    0.0000
  IDX= 4  JJJ=    5   48    7   19   41    2    0    5   25    0
  Wrote bin5 file type 52: iret=            0
-   File name=./out/master34.t52
-      END KRC   Total time [s]=   9.8285065    
+   File name=./out/master354.t52
+      END KRC   Total time [s]=      9.727

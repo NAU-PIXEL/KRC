@@ -18,6 +18,7 @@ function mean_std,xx,wei=wei,nan=nan,double=double,both=both, STD=std
 ;    cases. E.g., total exceeds valid numerical range 
 ; 2014nov01 HK Ensure use of double if input is double  
 ; 2015jun04 HK Add option for both return values in the function, Redo the logic
+; 2018jun14 HK FIx bug that did not compute std when /both set.
 ;_Desc
 ; Weight is squared for weighting in the variance sum
 ;_End             .comp  mean_std
@@ -47,7 +48,7 @@ endif else begin               ; N now 3 or more, full statistics
   endif else if unif then mean=total(xx,doub=db)/float(nin) else $
                 mean = total(wei*xx,doub=db)/total(wei,doub=db)
 
-  if ngood eq nin and arg_present(std) then begin ; do standard deviation
+  if ngood eq nin and (arg_present(std) or keyword_set(both) ) then begin ; do standard deviation
     if unif then var=total((xx-mean)^2,doub=db) /(nin-1.) else $ ; variance
     var=(total((wei*(xx-mean))^2,doub=db) / total(wei^2,doub=db)) $
              *(float(nin)/(nin-1.))

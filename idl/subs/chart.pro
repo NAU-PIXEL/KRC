@@ -1,37 +1,40 @@
 PRO chart, yyy, title=title,parti=parti,xtit=xtit,range=range,dlin=dlin,psy=psy $
-,clip=clip,fmt=fmt,evod=evod,xin=xin,kim=kim ,tloc=tloc, rangu=rangu $
-,csize=csize,cthick=cthick,cclr=cclr,oplot=oplot,clr=clr
+,clip=clip,fmt=fmt,evod=evod,xin=xin,marg=marg,lax=lax, kim=kim, tloc=tloc $
+,csize=csize,cthick=cthick,cclr=cclr,oplot=oplot,clr=clr, rangu=rangu
 ;_Titl  CHART  Strip-chart plot of several variables
 ; yyy	in.	array(N_data,M_parameters)
 ; titl	in_	string: Text title for plot
 ; parti	in_	strarr(M): Text title for each strip
 ; xtit	in_	Title for abcissa, Default='Count'
 ; range	in_	Plot range for each variable, flt[2,1 or m]
-; 		 if fewer than m pairs provided, uses last for rest
+; 		 If fewer than m pairs provided, uses last for rest
 ;		  so a single pair will be used for all.
+;                If supplied with oplot, shoule be identical to first call
 ; dlin	in_	Integer: Line style for strip separation. use -1 for solid
 ;			Default is none.
 ; psy   in_     Integer plot symbol, default is line unless evod is set.
 ; clip	in_	Only used if range present; If set, constrains plot to +N strips
 ; fmt	in_	Format for range printout, ignored if a single range used.
-;		  Default is '(2g12.5)'
+;		  Default is 'g12.5'  
 ; evod	in_	Intarr(6) Symbols or lines and colors for even, odd, both points
 ;		[0=even symbol/line, following the PSYMLINE convention,-9=none
 ;		[  1=even color as % of maximum
 ;		[2,3  same for odd points
 ;		[4,5  same for line of both points.
 ; xin	in_	array(N) of X-axis values. Default is count.
+; marg  in_     Fractional margin for x axis. Default=.005
+; lax   in_     Fraction X position of left end of strip labels, Default=
 ; kim   in_     intarr(M) Number of item  to plot for each paramter 
 ; tloc  in_     Flt or fltarr. Y proportional location of label for each strip. 
 ;                Default=0.4  May have 1 or M values.
-; rangu out_    Fltarr(2,M)  Range used for each strip. Use as range for oplot
 ; csize	in_	Charsize for each strip
 ; cthick in_	Charthick for each strip
 ; cclr  in_     Color for strip labels
 ; oplot	in_	Integer, If set, will over-plot set of lines with this line_style
 ; 		  auto-range will be that of new data, which will be displayed
-; 		  The following ignored: parti,xtit,dlin,xin,csize,cthick
+; 		  The following ignored: parti,xtit,dlin
 ; clr   in_     Integer, line Color [not the index of !binc ]
+; rangu out_    Fltarr(2,M)  Range used for each strip. Use as range for oplot
 ;_Desc
 ; allocates 1/m of Y-space for each parameter
 ;_Hist  1999apr28 Hugh Kieffer
@@ -56,7 +59,9 @@ PRO chart, yyy, title=title,parti=parti,xtit=xtit,range=range,dlin=dlin,psy=psy 
 ; 2015jun07 HK  Add keyword rangu
 ; 2015aug10 HK  Add cclr keyword
 ; 2016dec14 HK  Fix X position of text if oplot and csize
-; 2017mar29 HK  Incorporate common SETCOLOR_COM2,
+; 2017mar29 HK  Incorporate common SETCOLOR_COM2
+; 2017nov13 HK  Revise how range formatted and displayed
+; 2018mar21 HK  Add  marg  and  lax  keywords
 ;_End          .comp chart
 
 ssy=size(yyy) & nd=ssy[1]
@@ -70,6 +75,7 @@ c1 = not keyword_set(oplot) ; this is the first call, not an overplot
 if c1 then dine=0 else dine=oplot ; line style for the data, unless evod
 
 if not keyword_set(title) then title=''    ; top title
+if not keyword_set(marg) then marg=.005 ; x-axis plot fractional margin
 if not keyword_set(csize) then csize=1.    ; default charsize for xyouts
 if not keyword_set(cthick) then cthick=1.  ; default charthick  for xyouts
 if not keyword_set(cclr) then cclr=!P.color  ; default color for xyouts
@@ -81,7 +87,8 @@ if not keyword_set(clr) then begin
     if kok then clr=!P.color else clr=0 ; color or white
 endif
 if keyword_set(range) then nr=n_elements(range)/2 else nr=-1 ; # of ranges
-if keyword_set(fmt) then fmt='(2'+fmt+')' else fmt='(2g12.5)'; range format
+dof= keyword_set(fmt) ; format provided
+if dof then fmt='(2'+fmt+')' else fmt='(2g12.5)'; range format
 if n_elements(xin) eq nd then xax=xin else xax=findgen(nd)
 if keyword_set(clip) then klip=clip>1.0 else klip=0. ; limit to its strip
 
@@ -96,7 +103,7 @@ if keyword_set(parti) then begin ; individual titles
   blank=string(replicate(32B,maxlen-minlen+1))
 endif else begin                ; no individual titles
   ntt=-1 
-  if nr gt 1 then sran1='Range: '
+  if nr ge 1 then sran1='Range: '
 endelse
 if do2 then begin
   percol=0.01*!P.color            ; 1% of maximum color
@@ -114,16 +121,21 @@ if do2 then begin
   endif
 endif
 
-ytit='Each normalized onto [0,1]'
-if nr eq 1 then ytit='Each normalized to : '+ST0(range)
+if nr lt 1 then ytit='Each normalized onto [0,1]' $
+else if nr eq 1 then ytit='Each normalized to: '+ST0(range) $
+else ytit='Preset range for each strip'
+
 ;;;stop
-xa=xax[0] & xb=xax[nd-1] ; Left and Right end X values
+xa=min(xax,max=xb) & xp=marg*(xb-xa)
+xran=[xa-xp,xb+xp]                  ; plotting X range
+xa=xax[0] & xb=xax[nd-1]            ; Left and Right end X values
 if psy ne 0 then xa=min(xax,max=xb) ; if symbol, allow random order
-if c1 then PLOT,xax,yyy(*,0),xrange=[xa,xb],yrange=[0.,mp],/nodata $
+if c1 then PLOT,xax,yyy(*,0),xrange=xran,yrange=[0.,mp],/nodata $
 	,xstyle=1,ystyle=1,xtit=xtit,ytit=ytit,tit='Chart:  '+title
 
 if c1 then xp=0.03 else xp=1.-0.15*csize
-xloc=xa+xp*(xb-xa)	; a small % from left edge
+if keyword_set(lax) then xp=lax
+xloc=xran[0]+xp*(xran[1]-xran[0])	; labeling X fractional position
 rangu=fltarr(2,mp)
 for k=0,mp-1 do begin           ; each panel
   ky=float(k)                   ; need floating to insure flat arithmatic
@@ -155,13 +167,14 @@ for k=0,mp-1 do begin           ; each panel
       endif else if psy eq 0 then OPLOT,xp,y+ky,line=dine,color=clr $ ; data
       else OPLOT,xp,y+ky,psym=psy,color=clr
     endif
-    sran=string(ymin,ymax,format=fmt)
+  if dof then sran=string(ymin,ymax,format=fmt) else sran=ST0([ymin,ymax])
   endelse
   if k lt ntt then sout=parti[k]+strmid(blank,0,maxlen-len[k]+1)  $
-  else sout=sran1
+              else sout=sran1
   if nr ne 1 then sout=sout+sran
-  if c1 then XYOUTS,xloc,k+tloc[k],sout,charsize=csize,charthick=cthick,color=cclr
-  if not c1 then XYOUTS,xloc,k+tloc[k],sran,charsize=csize,charthick=cthick,color=cclr
+ if c1 then XYOUTS,xloc,k+tloc[k],sout,charsize=csize,charthick=cthick,color=cclr
+  if not c1 and nr lt 0 then $
+    XYOUTS,xloc,k+tloc[k],sran,charsize=csize,charthick=cthick,color=cclr
 endfor
 
 ;option for pstrip separators

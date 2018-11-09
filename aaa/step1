@@ -29,6 +29,7 @@ mkdir aaa	# scripts to build distribution set and install it at new site
 mkdir addon     #  make-up files missing in step 3
 mkdir big       # large files to go in separate tar
 mkdir doc	# documentation
+mkdir doc/prt   #   print files from runs using distribution input files 
 mkdir idl    	# idl programs and startup
 mkdir idl/extern  # routines to go into shared object library
 mkdir idl/krc	# IDL code specific to KRC

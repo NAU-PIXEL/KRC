@@ -4,7 +4,7 @@
 \usepackage{/home/hkieffer/gong/tex/newcom}  % Hughs conventions
 % \newcommand{\qj}{\\ \hspace*{-2.em}}      % outdent 1
 \title{History and location of KRC versions and runs}
-\author{Hugh H. Kieffer  \ \ File=-/krc/Doc/VeRunHist.tex 2016aug27 17oct04}
+\author{Hugh H. Kieffer  \ \ File=-/krc/Doc/VeRunHist.tex 2016aug27 ... 2017dec07}
 \begin{document} %==========================================================
 \maketitle
 \tableofcontents
@@ -15,7 +15,8 @@
 
 \section{Introduction}
 
-This document is the place to accumulate notes on specific versions, input files and related runs that test/compare different versions of KRC.  
+This document is the place to accumulate notes on specific versions, input files
+and related runs that test/compare different versions of KRC.
 
 The formal documentation of the evolution of KRC is in \nf{evolve.tex} .
 
@@ -43,6 +44,8 @@ build distribution
 \qi thus /mars/u/krios/krc/krcdist.tar and /mars/u/krios/krc/krc2/krcdist.tar are the same
 \qi and I remove all 101 files
 
+\subsection{Documentation on H3}
+\cinput{AAindex}
 
 \section{Files at  ASU}
 % then can: grep -in krc myTree
@@ -126,7 +129,8 @@ tmp/
 tmp/2.3.2/        Feb 26  2014 tmp/2.3.2/src/krc.f  2014jan27 KRCv2.3.2
 uploads/
 \end{verbatim}
-Checked equivalence of the krc.f source file when history dates and the version were the same by using  diff ; any difference is indicated. 
+Checked equivalence of the krc.f source file when history dates and the version
+were the same by using diff ; any difference is indicated.
 \vspace{-3.mm} 
 \begin{verbatim}
 builds/11_2012/src/krc.f  krc/src/krc.f     
@@ -244,14 +248,14 @@ CLIB=./cfiles/lhk_cisis.a   << error
 
 \subsection{Public area}
 
-\pagebreak
+% \pagebreak
 \section{Testing on H3}
 
 \vspace{-3.mm} 
 \begin{verbatim}
 Listed oldest run time first
       .inp   N1   N2 N4 seas cases    vary                 .t52
------------  --  --- --  --- --    -------------------  ----------------------    
+-----------  --  --- --  --- --    -------------------  ---------------------- 
 232c/VerTest 15  384  5  670 6       kofT,frost,NoAtm      V232test1
            " 20  384 19   40 1        LVFA,LVFT            V232test2 .t0 .tm1
 232c/VerTestb 15 384  5  670 6 CONVF=5  else=VerTest       V232test1b
@@ -297,104 +301,110 @@ V34j         28 1536  5 2y41 12 inertia Trojan ASteriod   V34j.t52
 
 \end{verbatim} 
 
-All testing of 34x prior to 2016aug23 is suspect, as memory overlays were not cleared up until then.
+All testing of 34x prior to 2016aug23 is suspect, as memory overlays were not
+cleared up until then.
+\section{Testing of eclipse: version 3.5.x}
+Largely in /home/hkieffer/krc/Eur
 
-\section{Recent history}
 \vspace{-3.mm} 
 \begin{verbatim}
-Partial index of some files in krc/Doc/ related to versions and testing
+      .inp   N1   N2 N4 seas cases    vary                 .t52
+-----------  --  --- --  --- --    -------------------  ----------------------
+ thin9.inp   
+ V35a.inp    28 1536  1   20  4   Europa Daily,rare,heat           V35b.t52
+ eur6.inp    28 1536  1   10  3   Europa Daily,rare               -Eur6.t52  
+ phob.inp    28 1536  1   10  3   Phobos Daily,rare               -phob.t52 
+ 351v3t.inp  20  384  5  120  6   T-dep, frost,pressure  351v3tb.t52 351v3tb.tm2
+ phoz.inp    28 1536  1   10  4   P total                         -phoz.t52
+ phoc.inp    28 1536  1   10  3   Phobos Daily,rare,finsol==1     -phoc.t52
+ eurA.inp    28 1536  1   20  6   Europa Daily,rare,heat          -EurA.t52
+ eurB.inp    22 1536  3   20  9   Europa Daily,rare,heat,slope    -EurC.t52
+ eurC.inp    22 1536  3   20  9   Europa Daily,rare,heat,slope    -EurC.t52
+ eurE.inp    22 1536  3   20  9   Europa Daily,rare,heat,slope     EurE.t52
+ eurD.inp    22 1536  3   20  9   Europa Daily,rare,heat,slope     EurD.t52
+\end{verbatim} 
 
-VeRunHistory.tex  History and location of KRC versions and runs.  H3 and ASU 
-
-NewRelease.tex    Steps to generating a new version of KRC
-
-VerCompare        Tabular results of comparing versions
-
-test.tex          Testing LaTeX options
-
-aq.tex            KRC runs to match results of Ashwin Vasavada thermal models
-
-See also home/hkieffer/krc/candi/AAreadme
-
+\appendix %=========================================================
+\section{List of inputs and runs}
+\vspace{-3.mm} 
+\begin{verbatim}
 
 2017 Oct 4 07:11:22    cd to /work/work2/KRC   ll */run/out/*.t52  Yields
 
--rwxr--r-- 1 hkieffer 27135872 Mar 21  2016 241/run/out/V241test1.t52*
--rwxr--r-- 1 hkieffer   524000 Mar 21  2016 241/run/out/V241test2.t52*
--rwxr--r-- 1 hkieffer 54271232 Mar 22  2016 331/run/out/V331test1.t52*
--rwxr--r-- 1 hkieffer  1047488 Mar 22  2016 331/run/out/V331test2.t52*
--rwxr--r-- 1 hkieffer 27135872 Mar 23  2016 232/run/out/V232test1b.t52*
--rwxr--r-- 1 hkieffer   524000 Mar 23  2016 232/run/out/V232test2b.t52*
--rwxr--r-- 1 hkieffer 54271232 May 23  2016 321/run/out/VerTest.t52*
--rwxr--r-- 1 hkieffer  1047488 May 23  2016 321/run/out/VerTest2.t52*
--rwxr--r-- 1 hkieffer  1047488 May 25  2016 321/run/out/candi.t52*
--rwxr--r-- 1 hkieffer 27135872 Jun 26  2016 232/run/out/V232test1.t52*
--rwxr--r-- 1 hkieffer   524000 Jun 26  2016 232/run/out/V232test2.t52*
--rw-rw-r-- 1 hkieffer 15969792 Jun 30  2016 331/run/out/331NoAtm.t52
--rwxr--r-- 1 hkieffer  3857792 Jul  1  2016 321/run/out/321NoAtmb.t52*
--rwxr--r-- 1 hkieffer  2204672 Sep  1  2016 232/run/out/232v3t.t52*
--rwxr--r-- 1 hkieffer  4408832 Sep  4  2016 321/run/out/321v3t.t52*
--rwxr--r-- 1 hkieffer 54271232 Sep  6  2016 342/run/out/V342Test.t52*
--rwxr--r-- 1 hkieffer  1047488 Sep  6  2016 342/run/out/V342Test2.t52*
--rwxr--r-- 1 hkieffer  1047488 Dec  6  2016 342/run/out/VerTest34rlf.t52*
--rwxr--r-- 1 hkieffer  1047488 Dec  6  2016 321/run/out/VerTest321rlf.t52*
--rwxr--r-- 1 hkieffer  3306752 Mar 30  2017 344/run/out/344v3tb.t52*
--rwxr--r-- 1 hkieffer   237056 Mar 31  2017 344/run/out/phoz.t52*
--rwxr--r-- 1 hkieffer   581120 Apr  7 16:35 352/run/out/EurD.t52*
--rwxr--r-- 1 hkieffer 54271232 Oct  4 05:46 354/run/out/V342Test.t52*
--rwxr--r-- 1 hkieffer  1047488 Oct  4 05:46 354/run/out/V342Test2.t52*
+ 27135872 Mar 21  2016 241/run/out/V241test1.t52*
+   524000 Mar 21  2016 241/run/out/V241test2.t52*
+ 54271232 Mar 22  2016 331/run/out/V331test1.t52*
+  1047488 Mar 22  2016 331/run/out/V331test2.t52*
+ 27135872 Mar 23  2016 232/run/out/V232test1b.t52*
+   524000 Mar 23  2016 232/run/out/V232test2b.t52*
+ 54271232 May 23  2016 321/run/out/VerTest.t52*
+  1047488 May 23  2016 321/run/out/VerTest2.t52*
+  1047488 May 25  2016 321/run/out/candi.t52*
+ 27135872 Jun 26  2016 232/run/out/V232test1.t52*
+   524000 Jun 26  2016 232/run/out/V232test2.t52*
+ 15969792 Jun 30  2016 331/run/out/331NoAtm.t52
+  3857792 Jul  1  2016 321/run/out/321NoAtmb.t52*
+  2204672 Sep  1  2016 232/run/out/232v3t.t52*
+  4408832 Sep  4  2016 321/run/out/321v3t.t52*
+ 54271232 Sep  6  2016 342/run/out/V342Test.t52*
+  1047488 Sep  6  2016 342/run/out/V342Test2.t52*
+  1047488 Dec  6  2016 342/run/out/VerTest34rlf.t52*
+  1047488 Dec  6  2016 321/run/out/VerTest321rlf.t52*
+  3306752 Mar 30  2017 344/run/out/344v3tb.t52*
+   237056 Mar 31  2017 344/run/out/phoz.t52*
+   581120 Apr  7 16:35 352/run/out/EurD.t52*
+ 54271232 Oct  4 05:46 354/run/out/V342Test.t52*
+  1047488 Oct  4 05:46 354/run/out/V342Test2.t52*
 
 suggest that files with size=1047488 are the most common standard
   ll */run/*t.inp  Yields
--rw-rw-r-- 1 hkieffer 3913 Sep  1  2016 232/run/232v3t.inp
--rw-rw-r-- 1 hkieffer 3129 Oct  3  2016 232/run/oneTilt.inp
--rw-rw-r-- 1 hkieffer 7326 Mar  2  2014 232/run/VerTest.inp
--rw-rw-r-- 1 hkieffer 7326 Mar 21  2016 241/run/VerTest.inp
--rw-rw-r-- 1 hkieffer 3887 Sep  4  2016 321/run/321v3t.inp
--rw-rw-r-- 1 hkieffer 7321 Jun 19  2014 321/run/VerTest.inp
--rw-rw-r-- 1 hkieffer 7324 Mar 20  2016 330/run/V330test.inp
--rw-rw-r-- 1 hkieffer 7388 Mar 22  2016 331/run/V331test.inp
--rw-rw-r-- 1 hkieffer 7877 Mar 24  2016 333/run/V331test.inp
--rw-rw-r-- 1 hkieffer 7514 Sep  5  2016 342/run/342Test.inp
--rw-rw-r-- 1 hkieffer 3942 Aug 30  2016 342/run/342v3t.inp
--rw-rw-r-- 1 hkieffer 7514 Sep  5  2016 344/run/342Test.inp
--rw-rw-r-- 1 hkieffer 3942 Aug 30  2016 344/run/342v3t.inp
--rw-rw-r-- 1 hkieffer 3942 Mar 30  2017 344/run/344v3t.inp
--rw-rw-r-- 1 hkieffer 7514 Sep  5  2016 352/run/342Test.inp
--rw-rw-r-- 1 hkieffer 3942 Mar 30  2017 352/run/351v3t.inp
--rw-rw-r-- 1 hkieffer 7514 Sep  5  2016 354/run/342Test.inp
--rw-rw-r-- 1 hkieffer 3942 Mar 30  2017 354/run/351v3t.inp
+ 3913 Sep  1  2016 232/run/232v3t.inp
+ 3129 Oct  3  2016 232/run/oneTilt.inp
+ 7326 Mar  2  2014 232/run/VerTest.inp
+ 7326 Mar 21  2016 241/run/VerTest.inp
+ 3887 Sep  4  2016 321/run/321v3t.inp
+ 7321 Jun 19  2014 321/run/VerTest.inp
+ 7324 Mar 20  2016 330/run/V330test.inp
+ 7388 Mar 22  2016 331/run/V331test.inp
+ 7877 Mar 24  2016 333/run/V331test.inp
+ 7514 Sep  5  2016 342/run/342Test.inp
+ 3942 Aug 30  2016 342/run/342v3t.inp
+ 7514 Sep  5  2016 344/run/342Test.inp
+ 3942 Aug 30  2016 344/run/342v3t.inp
+ 3942 Mar 30  2017 344/run/344v3t.inp
+ 7514 Sep  5  2016 352/run/342Test.inp
+ 3942 Mar 30  2017 352/run/351v3t.inp
+ 7514 Sep  5  2016 354/run/342Test.inp
+ 3942 Mar 30  2017 354/run/351v3t.inp
 
- 
 in krc/tes/  lt *est*inp    yields
--rw-rw-r-- 1 hkieffer 4191 Sep  2  2013 testVn.inp
--rw-rw-r-- 1 hkieffer 4234 Sep  2  2013 testV212.inp
--rw-rw-r-- 1 hkieffer 7306 Mar  2  2014 V222test.inp
--rw-rw-r-- 1 hkieffer 7321 Jun 19  2014 V24test.inp
--rw-rw-r-- 1 hkieffer 4589 Feb 25  2016 test33.inp
--rw-rw-r-- 1 hkieffer 5542 Feb 26  2016 test33E.inp
--rw-rw-r-- 1 hkieffer 7324 Mar 20  2016 V330test.inp
--rw-rw-r-- 1 hkieffer 8285 Mar 24  2016 zoneTest.inp
--rw-rw-r-- 1 hkieffer 7408 May 23  2016 test341a.inp
--rw-rw-r-- 1 hkieffer 4702 Jul  5  2016 test341.inp
--rw-rw-r-- 1 hkieffer 3884 Jul  6  2016 test342k.inp
--rw-rw-r-- 1 hkieffer 3884 Aug  1  2016 test343k.inp
--rw-rw-r-- 1 hkieffer 3905 Aug  1  2016 test342p.inp
--rw-rw-r-- 1 hkieffer 3905 Aug  2  2016 test342.inp
--rw-rw-r-- 1 hkieffer 7514 Sep  5  2016 342Test.inp
+ 4191 Sep  2  2013 testVn.inp
+ 4234 Sep  2  2013 testV212.inp
+ 7306 Mar  2  2014 V222test.inp
+ 7321 Jun 19  2014 V24test.inp
+ 4589 Feb 25  2016 test33.inp
+ 5542 Feb 26  2016 test33E.inp
+ 7324 Mar 20  2016 V330test.inp
+ 8285 Mar 24  2016 zoneTest.inp
+ 7408 May 23  2016 test341a.inp
+ 4702 Jul  5  2016 test341.inp
+ 3884 Jul  6  2016 test342k.inp
+ 3884 Aug  1  2016 test343k.inp
+ 3905 Aug  1  2016 test342p.inp
+ 3905 Aug  2  2016 test342.inp
+ 7514 Sep  5  2016 342Test.inp
 
 in krc/tes/  lt t.inp    yields
--rw-r--r-- 1 hkieffer 1611 Nov  6  2012 oneList.inp
--rw-rw-r-- 1 hkieffer 7306 Mar  2  2014 V222test.inp
--rw-rw-r-- 1 hkieffer 4383 May 30  2014 InSight.inp
--rw-rw-r-- 1 hkieffer 7321 Jun 19  2014 V24test.inp
--rw-rw-r-- 1 hkieffer 7324 Mar 20  2016 V330test.inp
--rw-rw-r-- 1 hkieffer 8285 Mar 24  2016 zoneTest.inp
--rw-rw-r-- 1 hkieffer 4039 Aug 23  2016 flat.inp
--rw-rw-r-- 1 hkieffer 3942 Aug 30  2016 342v3t.inp
--rw-rw-r-- 1 hkieffer 7514 Sep  5  2016 342Test.inp
--rw-rw-r-- 1 hkieffer 3241 Oct  3  2016 oneTilt.inp
+ 1611 Nov  6  2012 oneList.inp
+ 7306 Mar  2  2014 V222test.inp
+ 4383 May 30  2014 InSight.inp
+ 7321 Jun 19  2014 V24test.inp
+ 7324 Mar 20  2016 V330test.inp
+ 8285 Mar 24  2016 zoneTest.inp
+ 4039 Aug 23  2016 flat.inp
+ 3942 Aug 30  2016 342v3t.inp
+ 7514 Sep  5  2016 342Test.inp
+ 3241 Oct  3  2016 oneTilt.inp
 \end{verbatim}  
 
-\appendix %=========================================================
 \end{document} %===============================================================

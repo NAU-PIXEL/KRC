@@ -1,4 +1,4 @@
-function mean_std2, xin,one=one, wei=wei,snan=snan, STD=std,double=double
+function mean_std2, xin,one=one, wei=wei,snan=snan, STD=std,rng=rng,double=double
 ;_Titl  MEAN_STD2  Mean and standard deviation of 2-D array
 ; xin	in.	Array; statistics across 2nd element
 ; one	in_	   if set, do statistics along first dimension
@@ -8,6 +8,7 @@ function mean_std2, xin,one=one, wei=wei,snan=snan, STD=std,double=double
 ; snan  in_     Flag, if set, StdDev of 1 point will be NAN; default is -1.
 ; std	in or out_  Out=Standard deviation vector; =-1. if formal error
 ;	If ,/std on input, then the output function includes mean and StdDev
+; rng   out_   fldarr(n,2) Min and max across statst dimension
 ; func. out.	Vector of means; scalar <0 if formal error
 ; 	   If ,/std set on input, the fltarr[*,2] where  0]=mean & 1]=StdDev
 ;_Calls  MEAN_STD to do the statistics
@@ -20,8 +21,9 @@ function mean_std2, xin,one=one, wei=wei,snan=snan, STD=std,double=double
 ; 2001jan05  HHK   will treat NAN's as missing data by calls to MEAN_STD
 ; 2001feb05 HHK  Add option to output arr[*,2]
 ; 2011novo8 HK  Add  snan  keyword. 
-; 2014nov2 HK Add  double  keyword Ensure use of double if input is double 
-;_End
+; 2014nov02 HK Add  double  keyword Ensure use of double if input is double 
+; 2018jan12 HK Add rng keyword 
+;_End                     .comp mean_std2
 
 ssx=size(xin) & type=ssx[ssx[0]+1]			; get array size
 if ssx[0] ne 2 then message,'Requires 2-D array [see MEAN_STD3]' ; formal error
@@ -36,6 +38,7 @@ endif else begin
 endelse
 
 if db then mean=dblarr(k) else mean=fltarr(k); array to hold results
+if db then rng=dblarr(k,2) else rng=fltarr(k,2); array to hold range
 
 both=0B ; if true, then put both mean and std into output function
 if keyword_set(std) or arg_present(std) then begin ; must do Std Dev
@@ -59,11 +62,12 @@ if keyword_set (wei) then begin
     endelse
 endif
 
-for i=0L,k-1 do begin
+for i=0L,k-1 do begin ; each output index
     if kone then xx=xin[*,i] else xx=reform(xin[i,*]); vector to process
     if eachw then begin
         if kone then ww=wei[*,i] else ww=reform(wei[i,*])
-    endif
+      endif
+    rng[i,0]=min(xx,max=yb) & rng[i,1]=yb ; range for this set
     if lstd then begin
         mean[i]=MEAN_STD(xx,wei=ww,std=st, /nan,double=double) ; look for NAN's
         if unan and st lt 0. then st=!values.F_NAN

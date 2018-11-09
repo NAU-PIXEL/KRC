@@ -1,21 +1,21 @@
-function definekrc, what,paramm, labkf,labki,labkl,idmin,idmax, vrs=vrs $
+function definekrc, what,paramm, labkf,labki,labkl,idmin,idmax, vern=vern $
 ,mxn2=mxn2,nword=nword,pid=pid
 ;_Titl  DEFINEKRC  Define structures in IDL that correspond for Fortran commons
 ; what     in.  String to select which common. Valid are: KRC DAY LAT FIL
 ; paramm out.  lonarr of parameters from include file for krccom
 ; THE FOLLOWING 5 ARE DEFINED ONLY FOR what='krc'. Use all or none
-;  labkf  out. Strarr of description for krccom: real inputs
-;  labki  out. Strarr " " integer inputs
-;  labkl  out. Strarr " " logical values
-;  idmin  out. Intarr of minimum valid values for krccom.id
-;  idmax  out. Intarr of maximum valid values for krccom.id
-; vrs   in_    Integer. 2-digit KRC version i.e. 2.3.1 --> 23  Default=34
+;   labkf  out. Strarr of description for krccom: real inputs
+;   labki  out. Strarr " " integer inputs
+;   labkl  out. Strarr " " logical values
+;   idmin  out. Intarr of minimum valid values for krccom.id
+;   idmax  out. Intarr of maximum valid values for krccom.id
+; vern  in_    Integer. 3-digit KRC version i.e. 2.3.1 --> 231  Default=341
 ; mxn2  in_    Integer  Alternate MAXN2  (use should be rare) 
 ; nword out_   Integer  Number of 4-byte words in common
 ; pid   out_   Strarr   Titles to items on paramm
 ; func. out.   Structure for requested common
 ;_Calls  BYTEPAD
-;_Liens  Labels are mostly for version 33x; not influenced by vrs
+;_Liens  Labels are mostly for version 33x; not influenced by vern
 ;_Test
 ;
 ; krc1=DEFINEKRC('KRC',param,nword=nwkrc,pid=pid)
@@ -29,9 +29,33 @@ function definekrc, what,paramm, labkf,labki,labkl,idmin,idmax, vrs=vrs $
 ; 2016feb17 HK Update to version 3.3 names: IIB IC2
 ; 2016may25 HK Add the keyword 'vrs' to better accomodate version differences
 ; 2016sep02 HK Accomodate different position of ALAT and ELEV starting with V32
+; 2018oct29 HK Update LD18, several FD, change keyword vrs to vern
 ;_End     .comp  definekrc
 
-if not keyword_set(vrs) then vrs=34
+; History of KRCCOM
+; prior to 2010feb17 did not include CCKU,CCKL
+; thru v241=2014Apr27, was R*4, kd,id,ld,TITLE,DAYTIM,ALAT,ELEV
+;     REAL TITLE(20),DAYTIM(5) MAXN4=37 REAL ALAT(MAXN4)  REAL ELEV(MAXN4) 
+; v321  was R*4, kd,ALAT,ELEV,id,ld,TITLE,DAYTIM, 
+;       CHARACTER*84 KITLE, CHARACTER*20 DAYTIM
+; v356=2018jan29 was first to replace DDT with PHOG  
+; ver  __krccom___   Last sig *.f  ____krc_____   _Release_  Dates in -/src/
+; 102 May 10  2012   Dec  6  2012    = same
+; 103 May 10  2012   Jan 16  2013    = same
+; 232 Feb 25  2014   Mar  2  2014   ?? same       2014feb28 
+; 241 Apr 27  2014   Apr 28  2014  Mar 21 2016    2014apr28
+; 321 Jun 19  2014   Jun  7  2014   ?? same
+; 330 Feb 13  2016   Mar 19  2016   ?? same       2016mar07
+; 331 Feb 13  2016   Mar 21  2016  Mar 2  2016    2016mar22 
+; 333 Feb 13  2016   Mar 25  2016   ?? same
+; 341                                             2016may20
+; 342 Aug 12  2016   Sep  6  2016  Oct 26  2016   2016sep05 
+; 344 Oct 26  2016   Dec  7  2016                 2017mar08
+; 352 Apr  6  2017   Apr  7  2017  Apr  7  2017   2017apr06 
+; 354 Apr  6  2017   Oct  5  2017  Jan 30  2018   2017Oct05   
+; 356 Jan 29  2018   Jul  3  2018  Jul  3  2018   2018Jul03
+
+if not keyword_set(vern) then vern=341
 
 dodp= 0B                        ; REAL*4 version
 ; vvvvvvv Extract from krccom.f
@@ -49,11 +73,11 @@ numid =40                       ; size of "  "  integers
 numld =20                       ; Size of "  "  Logicals
 numtit=20                       ;   # 4-byte words in  TITLE
 numday=5                        ;   # 4-byte words in  DAY
-if vrs lt 20 then begin         ; versions were not defined before 21
-  maxn4 =19                     ; early versions had smaller maximum sizes
-  maxnh =24
-  maxbot=6
-endif else if vrs ge 31 then begin
+if vern lt 210 then begin         ; versions were not defined in code before 21
+;  maxn4 =19                     ; sometime before v102 had smaller maximum sizes
+;  maxnh =24  ; " "
+  maxbot=6                      ; no change, but leave to retain the logic 
+endif else if vern ge 310 then begin
   dodp= 1B                      ;  KRC Version 3 with REAL*8
   maxn1 =50
   maxn2 =384L*4*256
@@ -73,9 +97,9 @@ endif else begin
 endelse
 
 paramm=[maxn1,maxn2,maxn3,maxn4,maxn6,maxnh,maxbot $
-        ,numfd,numid,numld,numtit,numday,nwkrc]
+        ,numfd,numid,numld,numtit,numday,nwkrc,maxn4e]
 pid=['MAXN1','MAXN2','MAXN3','MAXN4','MAXN6','MAXNH','MAXBOT' $
-     ,'NUMFD','NUMID','NUMLD','NUMTIT','NUMDAY','NWKRC']
+     ,'NUMFD','NUMID','NUMLD','NUMTIT','NUMDAY','NWKRC','MAXN4E']
 
 if keyword_set(mxn2) then maxn2=mxn2 ; time steps
 kode=strupcase(what)
@@ -92,7 +116,7 @@ fd0=[ .25, 1.00, 250.0, 2.00, 1.00,1.0275, 630., 1600. $
 ,8948.4,  17.1745, 00.0, 1.465, .0, 1368., 3.727, 800. ]
 nfl=n_elements(fd0) ; number of Floats with labels here
 if dodp then begin 
-  if vrs lt 32 then out={ fd:dblarr(numfd) $ ; R*8: params
+  if vern lt 320 then out={ fd:dblarr(numfd) $ ; R*8: params
       ,id:lonarr(numid),ld:lonarr(numld)   $ ; I*4: Integers and Logicals 
       ,tit:bytarr(4*numtit),daytim:bytarr(4*numday) $ ; Character strings
       ,ALAT:dblarr(maxn4),ELEV:dblarr(maxn4) } $ ; R*8: latitudes(deg), elevations
@@ -166,6 +190,7 @@ labkf=[ $
 ,'SolCon  Solar constant 1367.9 W/m^2' $
 ,'Gravity Surface gravity.  MKS-units' $
 ,'AtmCp   Specific heat at constant pressure of the atmosphere' ]
+if vern ge 356 then labkf[37]='PhoFunc Solar reflectance photometric function' 
 if numfd gt 80 then labkf=[labkf $
 ,'ConUp0  Constant Coefficient in T-dep conductivity; Upper material'  $
 ,'ConUp1  Linear  "   in k=c0+c1x+c2x^2+c3x^3 where x=(T-220)*0.015' $
@@ -186,12 +211,12 @@ if numfd gt 88 then labkf=[labkf $
 ,'SphLo3  Cubic coeff. "']
 
 labkf=[labkf $
-,'HUGE = 3.3E38    nearly largest  REAL*4 value' $
-,'TINY = 2.0E-38   nearly smallest REAL*4 value' $
-,'EXPMIN = 86.80   neg exponent that would almost cause underflow' $
-,'FSPARE Spare' $
-,'FSPARE Spare' $
-,'RGAS = 8.3145    ideal gas constant  (MKS=J/mol/K)' $
+,'HUGE    Large REAL*8 constant with margin' $
+,'TINY    Small REAL*8 constant with margin ' $
+,'EXPMIN  Safe negative R*8 exponent ' $
+,'YRIDAY  Length of a year in days' $
+,'FLOST   Atm frost "lost" in the atm before v356+; then is spare' $
+,'RGAS    Ideal gas constant  (MKS=J/mol/K)' $
 ,'TATMIN  Atmosphere saturation temperature' $
 ,'PRES    Local surface pressure at current season' $
 ,'OPACITY Solar opacity for current elevation and season' $
@@ -243,10 +268,10 @@ labki=[ $
 ,'KOLD    Season index for reading starting conditions' $
 ,'KVALB   Flag: to use seasonal surface albedo ALB' $
 ,'KVTAU   Flag: 1:TAUD=SEASTAU(SUBS)  2:CLIMTAU opacities for dust and ice' $
-,'ID24    spare' $
-,'ID25    spare' $
-,'ID26    spare' $
-,'ID27    spare' $
+,'ID24    Flag: Direct Access file word type: 4=R*4 else=R*8' $
+,'ID25    NUMVER  Version number as an integer' $
+,'KFARAC  Sets reporting of TFAR8 reads' $
+,'NBKRC   Number of bytes in KRCCOM' $
 ,'NFD     Number of real items read in' $
 ,'NID     Number of integer items read in' $
 ,'NLD     Number of logical items read in' $
@@ -289,6 +314,7 @@ labkl=[ $
 ,'Prt79 Output to fort.79 [TLATS] insolation and atm.rad. arrays' $
 ,'LONE  (Computed) Set TRUE if KRC is in the "one-point" mode']
 ; help,krccom.fd,labkf,fd0,krccom.id,labki,id0,krccom.ld,labkl,ld0
+if vern ge 340 then labkl[17]='LD18  TCARD flag that at least 1 item changed'
 endif ;  N_PARAMS() ge 5
 end ; case 'KRC'
 

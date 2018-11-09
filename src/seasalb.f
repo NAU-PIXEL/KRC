@@ -19,6 +19,7 @@ C_Hist  Hugh_Kieffer  2006sep09
 C 2011jul31 HK  Use  FINTERP rather than  RNDEX (which was failing) and RNTERP
 C 2012feb26 HK Remove unused variables
 C 2016may12 HK Update include names
+C 2018oct16 Use IOD1 rather than IOD3
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
 
 C local variables
@@ -32,7 +33,7 @@ C local variables
       OUT=-1.                   ! possible error flag
 
       IF (LSUB .LT. -90.)  THEN ! read the file
-        KK=READTXT360(FVALB,IOD3,XXX,YYY)
+        KK=READTXT360(FVALB,IOD1,XXX,YYY) ! open,read,close unit
 D        WRITE (*,*) 'SEASALB FVALB=', FVALB
 D        WRITE (*,*) 'SEASALB kk=', KK
 D       DO I=1,KK312

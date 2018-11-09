@@ -1,4 +1,4 @@
-function isotime, form, tz=tz
+function isotime, form, tz=tz, sin=sin
 ;_Titl  ISOTIME  Current date-time now as a string or MJD to .0001
 ; form in_ Integer. Desired format. Default is 0
 ;           0:  yyyy-mm-ddThh:mm:ss ISO 8601 (lunar standard) format
@@ -15,6 +15,7 @@ function isotime, form, tz=tz
 ;           Or 'Z' for zero=UTC=Zulu (actually, any string)
 ;           If present, a timezone will be appended to the last word 
 ;           otherwise the computer native zone will be used with no notice.
+; sin in_  Long62 seconds since 1 January 1970 UTC. Used this instead of current
 ; func.	out. string or strarr:  Current date and time [and time-zone]
 ;
 ;_Usage  string=ISOTIME()   Or, e.g for PST, str=ISOTIME(form=3,tz=-8)
@@ -28,16 +29,23 @@ function isotime, form, tz=tz
 ;              and account for USA Daylight Savings Time = DST
 ; 2011nov18 HK Make  form  an optional argument, add forms 4,5,6
 ; 2015may12 HK Add two forms with no colons; add 10 to index. 
-; 2017jun21 HK Add fomr 14
+; 2017jun21 HK Add form 14
+; 2018aug14 HK Add keyword sin
 ;_End            .comp isotime
 
 cpuz=-8                         ; standard time zone this computer is on
 ;^^^^^^ firm code
 
-dd=SYSTIME(0)                   ; get the system date/time
-ss=STR_SEP(strcompress(dd),' ') ; weekday, mon, day-of-month, time, year 
+if keyword_set(sin) then begin ; use input sin rather than now
+  fjd=2440587.5d0+sin/86400.d0 ; full Julian Date
+  caldat,fjd,cmo,cd,cy,ch,cm,cs
+  dd='Sun '+MONTH(cmo,up=1)+' '+string(cd,form='(i2)')+' ' $
+     +string(ch,form='(i02)')+':'+string(cm,form='(i02)') $ 
+     +':'+string(round(cs),form='(i02)')+string(cy,form='(i5)')
+endif else dd=SYSTIME(0)                ; get the system date/time
+ss=STR_SEP(strcompress(dd),' ')         ; weekday, mon, day-of-month, time, year 
 mm=string(MONTH(ss[1]),format='(i2.2)') ; convert 3-character month to integer
-day=ss[2]                       ; day as 1- or 2-character string
+day=ss[2]                               ; day as 1- or 2-character string
 ;day=strmid(dd,8,2)              ; day as 2-character string 1 may be blank
 if strlen(day) lt 2 then day='0'+day ; day as 2-character no-blank string
 doz=keyword_set(tz)

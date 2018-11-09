@@ -1,21 +1,24 @@
-      SUBROUTINE TFINE8 (IQ, KTT,DENN,CTT,IKK,TRET, IRET)
+      SUBROUTINE TFINE8 (IQ, KTT,DENN,CTT,IKK, TRET,IRET)
 C_Titl  TFINE  KRC higher resolution layer computations
 C_Vars  
-      INCLUDE 'krcc8m.f'        ! has  IMPLICIT  NONE.  Need,j4,j5...  many
-      INCLUDE 'dayc8m.f'
-      INCLUDE 'hatc8m.f'        !need  PARC,CCC
+CD      IMPLICIT  NONE
+      INCLUDE 'krcc8m.f'        ! has  IMPLICIT  NONE.  Need,  J4,J5...  many
+      INCLUDE 'dayc8m.f'        ! need  FINSOL, TTJ, the initial temperature profile
+      INCLUDE 'hatc8m.f'        ! need  PARC,CCC
       INCLUDE 'unic8m.f'        ! need  IOD1
-      INCLUDE 'filc8m.f'        ! need  VERSIN
+      INCLUDE 'filc8m.f'        ! need  VERSIN,FRUN
 C      INCLUDE 'porbc8m.f'       ! need  SJA
 C_Args
-      INTEGER*4 IQ              ! in. 1=initialize    2=day computations
+      INTEGER*4 IQ        ! in. 1=initialize    2=day computations    3=write bin5
       REAL*8 KTT(MAXN1P)        ! in.  Thermal conductivity of each layer
-      REAL*8 CTT(MAXN1P)        ! in.  Specific heat of each layer
       REAL*8 DENN(MAXN1P)       ! in.  Density of each layer 
+      REAL*8 CTT(MAXN1P)        ! in.  Specific heat of each layer
+      INTEGER*4 IKK(4)          ! in.  layer indices for  kofT
       REAL*8 TRET(MAXN1P)       ! out.  Temperature profile on original layers
-      INTEGER*4 IRET !out.  Deepest normal layer treated
-!                    negative is an error
-!                         .  TFINE(2, -2=numerical blowup 
+      INTEGER*4 IRET            ! out.  Deepest normal layer treated
+!  Negative is an error
+!  TFINE(1,  -8=too many fine-times  
+!  TFINE(2,  -7=ECLIPSE error return   -2=numerical blowup 
 C   
 C_Desc Makes set of layers finer by a factor of F and time divisions finer by F^2
 C Interpolates initial depth profile to the new layers
@@ -25,6 +28,7 @@ C for the input set of layers.
 C Coded for only bare surface; no atmosphere or frosts
 C_ToDo
 C check self vrs fff heating
+C Because max  N2 can exceed  I*2 range, make all integers transferred  I*4
 C_Calls   EVMONO3D  E  RNDEX   TUN8
 C version 3.5 Does not allow daily eclipse and atmosphere at once
 C_Lien
@@ -32,13 +36,15 @@ C No "SAVE" statement here; assumes that all the values from IQ=1 are held IQ=2
 C_Hist 2017mar13 Hugh_Kieffer   Derive from tday8.f
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
 
-
 C for fine layers
-      INTEGER*4 MAXFL,MAXFLP,MAXFAC,MAXCCC
+      INTEGER*4 MAXCK,MAXFK,MAXFL,MAXFLP,MAXFAC,MAXCCC,MAXJ79
+      PARAMETER (MAXCK=4)       ! Number of coarse layers to store as fine
+      PARAMETER (MAXFK=20)      ! maximum number of items to store each fine-time
       PARAMETER (MAXFL=99)      ! maximum number of fine layers
       PARAMETER (MAXFLP=MAXFL+1) ! dimension layer temperature points
       PARAMETER (MAXFAC=49)      ! maximum time factor
-      PARAMETER (MAXCCC=5000000) ! maximum bin5 1.e6
+      PARAMETER (MAXJ79=3+3*MAXN4) ! maximum for  J4,J7P and  J9 storage
+      PARAMETER (MAXCCC=5000000) ! maximum storage for output file
 
       REAL*8 KTF(MAXFLP)        ! thermal conductivity of fine layers 
       REAL*8 CTF(MAXFLP)        ! specific heat of fine layers
@@ -53,52 +59,62 @@ C
       REAL*8 DIFFI(MAXFLP)
       REAL*8 KJ(MAXN2)        ! bottom layer for calculations at each time step
 
-      INTEGER*4 MM3,JJJ(10)       ! sizes to go to  BINF5
-      INTEGER*4 I,II,IH,J,J1,J7,J8,J9,JJ,JFI
-     &,K,KC,KFL,KFT,JLOW,KKF,KN,KM,N1F,N1FP,N2F
+      INTEGER*4 MM3,JJJ(10),J79(MAXJ79)       ! sizes to go to  BINF5
+      INTEGER*4 I,II,IH,J,J1,J9,JLOW
+     &,K,KC,KFL,KFT,KKF,KN,KM,N1F,N1FP,N2F,NECL
+      INTEGER*4 J7P        ! index of ctime interval containing eclipse start
+      INTEGER*4 J8         ! index of ctime interval containing eclipse end
+      INTEGER*4 JJ         ! global (all day) coarse time index
+      INTEGER*4 JFI        ! global (all eclipse) fine time index
+      INTEGER*4 JL         ! local fine time relative to last radiation update
+      INTEGER*4 JLS        ! local fine time at which to increment coarse radiation
+      INTEGER*4 JGU        ! global fine time when coarse radiation updated
+      INTEGER*4 NEEP       ! number of items to store each fine time step
 C
-      REAL*8 ABRAD,DELT
+C     it uses  DOWNIR for Planet thermal load and  
+      INTEGER*4 JBE(4),PARI(2)    ! time-step range indices and input arguments
+      INTEGER*4 N1Z(MAXBOT)     ! Binary time division layers
+      REAL*8 ABRAD,BF1,DELBOT,DELT
      &,DTIM,DTIMI,EMTIR,FAC3,FAC3S,FAC4,FAC45,FAC5,FAC6
      &,FAC6F,FAC7,FAC8
      &,PERSEC,POWER,SHEATF
      &,TSUR,TS3,TSUR4,FCJ
       REAL*8 QA,QB,QQ,RLAF           ! temporary use
-      LOGICAL LBASE ! maintain basal heat flow at eclipse start
-      LOGICAL LPH               ! consider planetary heat load
-      LOGICAL LFIN              ! True = within the range of FINSOL calculations
-C     it uses  DOWNIR for Planet thermal load and  
-      INTEGER*4 JBE(2),PARI(2)    ! time-step range indices and input arguments
-      INTEGER*4 N1Z(MAXBOT)     ! Binary time division layers
-      REAL*8 FALB0,FALBD,FSOL0,FSOLD,FFAR0,FFARD,FPLA0,FPLAD
+      REAL*8 FALB0,FALBD,FSOL0,FSOLD,FFAR0,FFARD,FPLA0,FPLAD ! time interpolation
      & ,FDIF0,FDIFD, FDIF,ZFAR,FPLA,FSOL ! time interpolation
       REAL*8 TIFAC(MAXFAC),YTF(MAXN1P),YTR(MAXFLP)
-      REAL*8 DELBOT,BF1,ZDZ(MAXFLP)
+      REAL*8 ZDZ(MAXFLP)
       REAL*8 FINSJ ! holds  FINSOL during eclipse and 1.0 during follow-on
-      CHARACTER*12 FTFINE   ! tfinenn.bin5
-C      CHARACTER*1 BUF1
       CHARACTER*2 BUFF
-      CHARACTER*120 BONG        ! buffer of long constructions
-      CHARACTER*200 HEADTX     ! will go into bin5 header
-      INTEGER*4 HEADLEN /200/  ! 60 used
+      CHARACTER*80 FUFF         ! ----tfinenn.bin5
+      CHARACTER*280 BONG        ! buffer of long constructions 20*13 +4
+      CHARACTER*1100 HEADTX     ! bin5 header 38*3*6=684 +12*13+4=160 +bong
 C variables for k(T)
       REAL*8 FBI(MAXFL),FCI(MAXFL) ! layer factors
       REAL*8 FBK,FBKL,FA1J,FA3J ! temporary factors
-      INTEGER*4 IK1,IK2,IK3,IK4,IKK(4)   ! layer indices for kofT
+      INTEGER*4 IK1,IK2,IK3,IK4   ! layer indices for  kofT
+C      LOGICAL LATM              ! there is an atmosphere
+      LOGICAL LATOK             ! there is room in  CCC to store current latitude 
+      LOGICAL LBASE             ! maintain basal heat flow at eclipse start
+      LOGICAL LPH               ! consider planetary heat load
+      LOGICAL LFIN              ! True = within the range of  FINSOL calculations
       LOGICAL LALCON            ! all layers  T-constant 
 
 C Variables for far flat: indicated by  LOPN3 true
       LOGICAL LSELF ! Not using far-field temperatures
 C      Logical LODD ! layer expansion factor is odd ( vrs even)
 C
-      IF (IDB5.GE.1) WRITE(IOSP,*) 'TFINE IQ,J4=',IQ,J4
-      IF (IQ.NE.1) GOTO 200
+      IF (IDB5.GE.1) WRITE(IOSP,*) 'TFINE IQ,J4,J5=',IQ,J4,J5
+      SELECT CASE (IQ)
+
+      CASE(1) !======================== initialize for all lats ==================
 C
-C  I  (IQ = 1 or 3)
-C Set up grid based upon nominal conductivity, then use T-dependant values
-C in the time loops. Assumption here is that conductivity could depend on
-C several variables, but that having all but T constant for a given case is 
+C  Must be called here once per case.
+C  Set up grid based upon nominal conductivity, then use  T-dependant values
+C in the time loops.  Assumption here is that conductivity could depend on
+C several variables, but that having all but  T constant for a given case is 
 C adequate.
-C The convergence safety factor should be chosen to be adequate to cover 
+C  The convergence safety factor should be chosen to be adequate to cover 
 C the conductivity variation.
 
       LPH =(PARW(1).GT. 0.)     ! doing planetary heat loads
@@ -106,7 +122,7 @@ C the conductivity variation.
       KFL=NINT(QA)              ! integral fine layer factor. 
       KFT=KFL*KFL               ! fine time factor
       IF (KFT .GT.MAXFAC) THEN
-        WRITE(IOERR,*)'TFINE:  TIME FACTOR EXCEEDED:=',KFT
+        WRITE(IOERR,*)'TFINE: Maximum time factor exceeded:=',KFT
         IRET=-7
         GOTO 9
       ENDIF
@@ -120,7 +136,7 @@ C for fine layers, xTT becomes xTF
       N1FP=N1F+1                ! including the base
       JLOW= (N1F-1)/KFL +1      ! Lowest  TDAY layer matched 
       IRET=JLOW
-      IF (IDB5.GE.1) PRINT *,'QB..',QB,RLAY,RLAF,BF1,N1F,JLOW
+      IF (IDB5.GE.1) WRITE(IOPM,*)'QB..',QB,RLAY,RLAF,BF1,N1F,JLOW
       PERSEC = PERIOD * 86400.  ! get solar period in seconds
       N2F=N2*KFT                ! number of fine timesteps per sol
       DTIM=PERSEC/DBLE(N2F)     ! size of one fine time step, sec
@@ -152,16 +168,17 @@ C      XCEF(2)=BLAF(2)/2.0 ! center of first physicel sub-layer
         XCEF(I)= XCEF(I-1)+ (BLAF(I)+BLAF(I-1))/2.D0 ! center depth
         SCONVF(I)=BLAF(I)**2/(2.D0*DTIM* DIFFI(I)) ! Safety factor
       ENDDO
-      WRITE(IOSP,31)'TFINE layers: Num,lowest center[m]',n1f,xcef(n1f)
+      WRITE(IOSP,31)'TFINE layers: Num,lowest center[m]',N1F,XCEF(N1F)
  31   FORMAT(A,I5,F10.4)
       LALCON=.NOT. LKOFT
       IF (LKOFT) THEN 
-        IK1=KFL*(IKK(1)-1)+1    ! FIRST OF ABOVE T-DEP MATERIAL
-        IK2=KFL*IKK(2)          ! NUM FINE LAYERS OF ABOVE TDEP MATERIAL
-        IK3=KFL*(IKK(3)-1)+1    ! FIRST OF BELOW MATERIAL
-        IK4=KFL*IKK(4)          ! NUM FINE LAYERS OF BELOW TDEP MATERIAL
-        WRITE(IOSP,32)'TFINE T-dep. layers:',IKK
+        WRITE(IOSP,32)'T-dep. layers in TDAY :',IKK
  32     FORMAT(A,4I5)
+        IK1=KFL*(IKK(1)-1)+1    ! first of above  T-dep material
+        IK2=KFL*IKK(2)          ! num fine layers of above tdep material
+        IK3=KFL*(IKK(3)-1)+1    ! first of below material
+        IK4=KFL*IKK(4)          ! num fine layers of below  T-dep material
+        WRITE(IOSP,32)'T-dep. layers in TFINE:',IK1,IK2,IK3,IK4
       ENDIF
 
 C----------------------------------
@@ -236,46 +253,38 @@ C set last layer for each time.  KJ(JJ)=K for  JJ time increment
         II=II+II                ! double the spacing
       ENDDO
 
-      JBE(1)=1                  ! need FINSOL
+      JBE(1)=0                  ! need only JBE 1:2 for maximum eclipse possible
       PARI(1)=N2
       PARI(2)=IOERR
       CALL ECLIPSE (PARC,PARI, JBE, FINSOL)
-      IF (FINSOL(1) .LT. 0.) THEN ! ERROR
-        WRITE(IOERR,*)' ECLIPSE returned error'
-        IRET=-7
+      WRITE(IOSP,243) -778,NCASE,J5,J4,J3,JBE(1),JBE(2),N1F
+ 243  FORMAT(9I7, L4)
+      I=(2*JBE(4)-JBE(3))*KFT ! expected size of  FINSOL 
+      IF (I.GT.MAXN2) THEN 
+        WRITE(IOERR,*)' Forecast size of ftime exceeds MAXN2'
+        IRET=-8
         GOTO 9
       ENDIF
-      J7=JBE(1)                 ! index of time step containing eclipse start
-      J8=JBE(2)                 ! index of time step containing eclipse end
-      I=MAX(J8-J7,1)            ! ensure at least 1 time step 
-      J9=J8+I                   ! extend after eclipse the length of eclipse
-      J9=MIN(J9,N2-1)           ! but must leave a step to midnight for  TDAY
-      J7=J7-1                   ! advance  TFINE start by 1 time-step
-      WRITE(IOSP,243) -777,NCASE,J5,J4,J3,JBE,J9,N1F
- 243  FORMAT(10I7)
 
 C BIN5 file: vvvvvvvvvvv setup  vvvvvvvvvvvvvvvvvvvvvvv
-      CALL FILLI (0,JJJ,10)       ! initiate bin5 control 
+      CALL FILLD (0.D0,CCC,MAXCCC) ! zero the entire storage array
+      CALL FILLL (0,J79,MAXJ79) ! zero the eclipse range
+      j79(1)=N2                 ! Save for convenience  N2
+      j79(2)=KFT                ! and fine-time factor 
+      CALL FILLL (0,JJJ,10)     ! initiate bin5 control 
+      NEEP=MIN(MAXCK*KFL,MAXFK-2) !  number of layers to store
       JJJ(1) = 3                ! # of dimensions
-      JJJ(2) = N1FP+1           ! FSOL+FINSOL+ TTF (but not base)
-      JJJ(3) = (J9+1-J7)*KFT    ! fine time steps thru eclipse and follow-on
-      JJJ(4) = N4               ! number of latitudes
+      JJJ(2) = 2+NEEP           ! depth:  FSOL+FINSOL+TTF(1:neep)
+C ctime steps= J9-J7P +1 = (J8+ J8-J7)-(J7+1) +1 = 2(J8-J7)
+      JJJ(3) = 2*(JBE(2)-JBE(1))*KFT ! max fine time steps thru eclipse+follow-on
+C      JJJ(4) = N4               ! number of latitudes with eclipse
       JJJ(8) = 5                ! set type as  REAL*8
-      JJJ(9) = HEADLEN          ! header length
       MM3=JJJ(2)*JJJ(3)         ! number of words for each latitude
-      IF (N4*MM3 .GT. MAXCCC) THEN
-        WRITE(IOSP,*) 'TFINE will exceed storage',n4*mm3,maxccc
-        WRITE(IOERR,*)'TFINE will exceed storage',n4*mm3,maxccc
-        IRET=-1
-      ENDIF
+      NECL=0                    ! number of eclipses stored so far
 
-C ^^^^^^^^^^^^^^ end bin5 stuff ^^^^^^^^^^^^^^
-      GOTO 9
-C===========================================================================
-C========================= day computations  (IQ = 2) ======================
-C===========================================================================
-C
- 200  IRET=JLOW
+      CASE(2) !========================= day computations  (IQ = 2) ===========
+C  Should be called here once for each latitude that has eclipse
+      IRET=JLOW
 C      LATM=PTOTAL.GT.1.D0       ! atmosphere present flag
       FAC3S = 1.D0-SALB         ! spherical absorption
       FAC4  = 1.D0+1.D0/RLAF
@@ -285,16 +294,45 @@ C      LATM=PTOTAL.GT.1.D0       ! atmosphere present flag
       FAC6F = SKYFAC*FEMIS      ! if frost
       FAC7  = KTF(2)/XCEF(2)    ! will be redone if not LALCON
 
-C interpolate input temperature profile onto the file layers
-      CALL MVD (TTJ,TRET,N1+1) ! copy  TDAY profile in case too few fine layers 
+      JBE(1)=1                  ! need FINSOL
+      PARI(1)=N2
+      PARI(2)=IOERR
+      CALL ECLIPSE (PARC,PARI, JBE, FINSOL)
+      IF (FINSOL(1) .LT. 0.) THEN ! ERROR
+        WRITE(IOERR,*)' ECLIPSE returned error'
+        IRET=-7
+        GOTO 9
+      ENDIF
+      J7P=JBE(3)+1              ! index of time step containing eclipse start
+      J8=JBE(4)                 ! index of time step containing eclipse end
+      J9=J8+ J8-JBE(3)          ! add followon the length of eclipse
+      I=(NECL+1)*MM3         ! last storage index possible for current latitude
+      LATOK = (I .LE. MAXCCC)   ! ensure enough remaining room
+      WRITE(IOSP,243) -777,NCASE,J5,J4,J3,JBE(3),JBE(4),J9,N1F,LATOK
+      IF (LATOK) THEN           ! store this eclipse latitude
+        NECL=NECL+1             ! 1-based index of this eclipse  within a case
+        I=3*NECL                ! used thus far, first 3 are global
+        J79(I+1)=J7P-1          ! save tfine-range for this latitude
+        J79(I+2)=J9             ! "
+        J79(I+3)=J4             ! latitude index
+      ENDIF
+C interpolate input temperature profile onto the fine layers
+      CALL MVD (TTJ,TRET,N1+1)  ! copy  TDAY profile in case too few fine layers 
       DELT=XCEN(1)              ! store virtual layer depth 
-      XCEN(1)=0.                ! depth of ttj(1)=tsur
-      CALL DSPLINE (XCEN,TTJ,N1, HUGE,HUGE,YTF) ! first 3 args from common
-      DO I=2,N1F                ! each fine layer
-        CALL DSPLINT (XCEN,TTJ,YTF,N1,XCEF(I),QA)
-        TTF(I)=QA               ! interpolated temperature 
-      ENDDO
-      TTF(1)=TTJ(1)             ! surface temperature stays the same
+      XCEN(1)=0.                ! depth of  TTJ(1)=TSUR
+      TSUR=TTJ(1)               ! extract Tsurf from transfer array
+      IF (LVFT) THEN            ! overload a logical flag
+        CALL DSPLINE (XCEN,TTJ,N1, HUGE,HUGE,YTF) ! first 3 args from common
+        DO I=2,N1F              ! each fine layer
+          CALL DSPLINT (XCEN,TTJ,YTF,N1,XCEF(I),QA)
+          TTF(I)=QA             ! interpolated temperature 
+        ENDDO
+      ELSE
+C 2018feb02 Found that spline interpolation could oscillate near the surface
+C so use conservative linear interpolation [for the top few intervals]
+C      I=3*KFL ! instead of  N1F
+        CALL ORLINT8 (N1,XCEN,TTJ,N1F,XCEF, TTF)
+      ENDIF
       XCEN(1)=DELT              ! restore virtual layer depth 
 
  22   FORMAT(99F8.3)
@@ -313,6 +351,7 @@ C interpolate input temperature profile onto the file layers
         WRITE(43,23)(FA1(I),I=1,N1F)
         WRITE(43,23)(FA3(I),I=1,N1F)
       ENDIF
+C      CALL MVD (XCEF,CCC(3),NEEP) ! store layer central depths
       DELBOT= (TTJ(JLOW+1)-TTJ(JLOW))* ! heat-flow at fine-layer base
      &     ((BLAF(N1FP)-BLAF(N1F))/(BLAY(JLOW+1)-BLAY(JLOW)))
       IF (IDB5.GE.3) WRITE(IOSP,'(a,2f12.4,g13.5)') 
@@ -327,40 +366,57 @@ C SKYFAC is computed in TLATS and arrives thru KRCCOM
         FAC45= 4.D0*FAC5        !F
       ENDIF                     !F
       LSELF=.NOT. LOPN3         !F self heating
-      TSUR=TTF(1)
-      LFIN=.FALSE.               ! no  FINSOL until in  ECLIPSE period
+      LFIN=.TRUE.               ! FINSOL begins in first ctime interval
       FAC8=EMTIR*EMIS
       LALCON = (IK2+IK4 .EQ. 0) ! all Tcon, not Tdep
       IF (IDB5.GE.2) WRITE(IOSP,119) LZONE,LALCON,j5,IK1,IK2,IK3,IK4
  119  FORMAT('LZONE,LALCON,J5, IK1:4=',2L3,5I6)
-
-      DO J1=1,KFT               ! time LINEAR INTERPOLATION FACTORS
-        TIFAC(J1)=DBLE(J1)/DBLE(KFT)
+      JLS=KFT/2 +1                 ! near middle of a coarse time interval
+      QA=0.5                    ! if  KFT is even
+      IF (MOD(KFT,2).EQ.1) QA=1. ! if  KFT is odd
+      DO JL=1,KFT               ! time linear interpolation factors
+        TIFAC(JL)=(DBLE(JL)-QA)/DBLE(KFT)
       ENDDO
+C initiate radiation for first ctime interval
+      JJ=J7P-1                  ! start of ctime one before eclipse start
+      JGU=JLS-KFT               ! global fine time when radiation updated, negative
+      FALB0=ALBJ(JJ)            ! hemispheric albedo.  base and 
+      FALBD=ALBJ(JJ+1)-FALB0    ! slope pairs for fine time interpolation 
+      FSOL0=ASOL(JJ)            !  Direct solar flux on sloped surface
+      FSOLD=ASOL(JJ+1)-FSOL0
+      FFAR0=FARAD(JJ)           ! far-field radiance
+      FFARD=FARAD(JJ+1)-FFAR0
+      FPLA0=EMIS*PLANH(JJ)+FAC3S*PLANV(JJ) ! combine  IR and visual load
+      FPLAD=EMIS*PLANH(JJ+1)+FAC3S*PLANV(JJ+1)-FPLA0
+      FDIF0=SOLDIF(JJ)          !  Solar diffuse (with bounce) insolation
+      FDIFD=SOLDIF(JJ+1)-FDIF0 
 
-      JFI=0                      ! fine time steps so far
-      DO 270 JJ=J7,J9           ! v+v+v+v+v+ orig. time loop +v+v+v+v+v+v+v+
-        FALB0=ALBJ(JJ)          ! hemispheric albedo.  base and 
-        FALBD=ALBJ(JJ+1)-FALB0  ! slope pairs for fine time interpolation 
-        FSOL0=ASOL(JJ)          !  Direct solar flux on sloped surface
-        FSOLD=ASOL(JJ+1)-FSOL0
-        FFAR0=FARAD(JJ)         ! far-field radiance
-        FFARD=FARAD(JJ+1)-FFAR0
-        FPLA0=EMIS*PLANH(JJ)+FAC3S*PLANV(JJ) ! combine  IR and visual load
-        FPLAD=EMIS*PLANH(JJ+1)+FAC3S*PLANV(JJ+1)-FPLA0
-        FDIF0=SOLDIF(JJ)        !  Solar diffuse (with bounce) insolation
-        FDIFD=SOLDIF(JJ+1)-FDIF0
+      JFI=0                     ! fine time steps (global) so far
+      DO 270 JJ=J7P,J9          ! v+v+v+v+v+ orig. time loop +v+v+v+v+v+v+v+
         FINSJ=1.                ! in case  FINSOL not used
-        IF (JJ.GT.J7) LFIN=.TRUE. !  FINSOL starts in  J7+1=JBE(1)
-        IF (JJ.GT.J8) LFIN=.FALSE.! and extends through  J8=JBE(2) 
+        IF (JJ.GT.J8) LFIN=.FALSE.!   FINSOL extends through  J8=JBE(4) 
         DO 250 J1=1,KFT         ! v.v.v.v.v.v.v fine time loop v.v.v.v.v.v.v.
-          JFI=JFI+1               ! output index
+          IF (J1.EQ.JLS) THEN   ! reset to next coarse radiation interval
+            JGU=JFI+1           ! global fine time when radiation updated
+            FALB0=ALBJ(JJ)      ! hemispheric albedo.  base and 
+            FALBD=ALBJ(JJ+1)-FALB0 ! slope pairs for fine time interpolation 
+            FSOL0=ASOL(JJ)      !  Direct solar flux on sloped surface
+            FSOLD=ASOL(JJ+1)-FSOL0
+            FFAR0=FARAD(JJ)     ! far-field radiance
+            FFARD=FARAD(JJ+1)-FFAR0
+            FPLA0=EMIS*PLANH(JJ)+FAC3S*PLANV(JJ) ! combine  IR and visual load
+            FPLAD=EMIS*PLANH(JJ+1)+FAC3S*PLANV(JJ+1)-FPLA0
+            FDIF0=SOLDIF(JJ)    !  Solar diffuse (with bounce) insolation
+            FDIFD=SOLDIF(JJ+1)-FDIF0 
+          ENDIF
+          JFI=JFI+1             ! output index = global fine time
 C linear interpolation in time for the radiation fields
-          FAC3  = 1.D0-(FALB0+TIFAC(J1)*FALBD) ! accomodate photometric functions
-          FDIF=FDIF0+TIFAC(J1)*FDIFD ! diffuse flux
-          ZFAR=FFAR0+TIFAC(J1)*FFARD ! far-field radiance.  FFAR is assigned
-          FPLA=FPLA0+TIFAC(J1)*FPLAD ! planetary heat load
-          FSOL=FSOL0+TIFAC(J1)*FSOLD ! collimated insolation onto slope surface
+          JL=JFI-JGU +1            ! ftime offset from radiation update, index
+          FAC3  = 1.D0-(FALB0+TIFAC(JL)*FALBD) ! accomodate photometric functions
+          FDIF=FDIF0+TIFAC(JL)*FDIFD ! diffuse flux
+          ZFAR=FFAR0+TIFAC(JL)*FFARD ! far-field radiance.  FFAR is assigned
+          FPLA=FPLA0+TIFAC(JL)*FPLAD ! planetary heat load
+          FSOL=FSOL0+TIFAC(JL)*FSOLD ! collimated insolation onto slope surface
 C Set the boundary conditions
           TTF(1)=TTF(2)-FAC4*(TTF(2)-TSUR) ! set virtual layer
           IF (LBASE) TTF(N1FP)=TTF(N1F)+DELBOT ! base heat-flow, constant
@@ -402,7 +458,7 @@ C
 C     -^-^-^-^-^-^-^-^-^-^-^-^-^-^-^- end of layer loops ^-^-^-^-^-^-^-^-^-^-^
 C  upper boundary conditions.
           II=0                  !db  Newton iteration count
-          IF (LFIN) FINSJ=FINSOL(JFI-KFT) !  ECLIPSE results with 1-ctime offset
+          IF (LFIN) FINSJ=FINSOL(JFI) !  ECLIPSE results
           ABRAD=FINSJ*(FAC3*FSOL+FAC3S*FDIF) ! surface absorbed radiation
           IF (LPH) ABRAD=ABRAD+FPLA ! planetary IR and VIS flux absorbed.
 
@@ -413,22 +469,25 @@ C  upper boundary conditions.
           IF (LOPN3) POWER=POWER+ZFAR ! fff only
           DELT = POWER / (FAC7+FAC45*TS3)
           TSUR=TSUR+DELT
-          IF (MOD(II,10).EQ.0)WRITE(IOPM,*)J5,J4,J3,JJ,II,TSUR,DELT !db
+          IF (MOD(II,10).EQ.0) WRITE(IOPM,*)J5,J4,J3,JJ,II,TSUR,DELT !db
           IF (TSUR.LE. 0. .OR. TSUR.GT.TBLOW) GOTO 340 ! instability test
           IF (ABS(DELT).GE.GGT) GOTO 230 ! fails convergence test
           TSUR4=TSUR**4
           TTF(1)=TSUR
 
-          IF (JJ.LT.(J7+3)  .OR. ABS(JJ-J8).LT.3) 
-     &         WRITE(44,244) JFI,FINSJ,TSUR,ABRAD,SHEATF,POWER,FAC7,KN 
+          IF (IDB5.GE.6 .AND. (JJ.LT.(J7P+3)  .OR. ABS(JJ-J8).LT.3))
+     &       WRITE(44,244) JFI,FINSJ,TSUR,ABRAD,SHEATF,POWER,FAC7,KN 
  244      FORMAT(I6,f7.4,F8.3,3f11.5,g12.5,i4)
 D          WRITE(44,244) JFI,FINSOL(JFI), (TTF(I),I=1,N1F)
 D 244      FORMAT(I6,F8.4,F8.3, 99F7.2)
 C BIN5 file: vvvvvvvvvvv store  vvvvvvvvvvvvvvvvvvvvvvv
-          KC=(J4-1)*MM3+(JFI-1)*JJJ(2) ! words already used
-          CCC(KC+1)= FSOL       ! direct insolation
-          CCC(KC+2)= FINSJ      ! insolation factor
-          CALL MVD (TTF,CCC(KC+3),N1F) ! move all layer temperatures to storage
+C  CCC is [2+depth, fine-time,latitude]
+          IF (LATOK) THEN       ! store this eclipse latitude
+            KC=(NECL-1)*MM3+(JFI-1)*JJJ(2) ! words already used
+            CCC(KC+1)= FSOL     ! direct insolation
+            CCC(KC+2)= FINSJ    ! insolation factor
+            CALL MVD (TTF,CCC(KC+3),NEEP) ! move layer temperatures to storage
+          ENDIF
 C     ^^^^^^^^^^^^^^ end bin5 stuff ^^^^^^^^^^^^^^
 
  250    CONTINUE                !^.^.^.^.^.^.^. end of fine time loop ^.^.^.^.^
@@ -438,58 +497,67 @@ C     ^^^^^^^^^^^^^^ end bin5 stuff ^^^^^^^^^^^^^^
 
 C interpolate fine temperature profile onto the  TDAY layers
 C  For  KFL odd, could copy a fine layer  T,  but still would need some kind 
-Cof interpolation code for  KFL even. Simpler to use splines for both.
+C of interpolation code for  KFL even. Simpler to use splines for both.
       DELT=XCEF(1)  ! store fine virtual layer depth 
       XCEF(1)=0.    ! depth of ttf(1)=tsur
-      CALL DSPLINE (XCEF,TTF,N1F, HUGE,HUGE,YTR) ! get the derivatives
-      DO I=2,JLOW                ! each fine layer
-        CALL DSPLINT (XCEF,TTF,YTR,N1F,XCEN(I),QA) ! spline interpolation
-        TRET(I)=QA               ! interpolated temperature 
-      ENDDO
-      TRET(1)=TSUR ! surface temperature stays the same
+      TTF(1)=TSUR
+      IF (LVFT) THEN  ! overload a logical flag
+        CALL DSPLINE (XCEF,TTF,N1F, HUGE,HUGE, YTR) ! get the derivatives
+        DO I=2,JLOW             ! each fine layer
+          CALL DSPLINT (XCEF,TTF,YTR,N1F,XCEN(I), QA) ! spline interpolation
+          TRET(I)=QA            ! interpolated temperature 
+        ENDDO
+      ELSE
+        CALL ORLINT8 (N1F,XCEF,TTF,JLOW,XCEN, TRET)
+      ENDIF
       XCEF(1)=DELT              ! restore fine virtual layer depth 
+      TRET(1)=TSUR              ! transfer surface temperature
       IF (IDB5.GE.4) THEN
         WRITE(47,22)(TTF(I),I=1,N1F) ! fine  T
         WRITE(47,22)(TRET(I),I=1,JLOW) ! coarse  T
       ENDIF
-C     BIN5 file: vvvvvvvvvvv close vvvvvvvvvvvvvvvvvvvvvvv
-      IF (J4.EQ.N4) THEN        ! last latitude
+
+      CASE(3) ! ================== BIN5 file write =============================
+      IF (NECL.GT.0) THEN
+        JJJ(4) = NECL           ! number of latitudes with eclipses
         I=NCASE/10              !| convert case number to string
         J=NCASE-10*I            !| assumes it ie 99 or less
-        WRITE(BUFF,'(2i1)')i,j
-        FTFINE='tfine'//buff//'.bin5'
-        N1Z(1)=N2
-        N1Z(2)=J7
-        N1Z(3)=J8
-        N1Z(4)=J9
-        CALL STRUMI(N1Z,4,'^',HEADTX,K) ! make one string
-C        buf1='^'
-C        BUFF='^^'
-C        WRITE(HEADTX,'(A,A,I6,A,I6,A,I6,A,I6,A)') 
-C     & '  N2,J7,J8,J9=',BUFF,N2,BUF1,J7,BUF1,J8,BUF1,J9,BUFF   ! 13+2+ 4*7+2=46
-        HEADTX=VERSIN//' TFINE output N2,J7:9='//HEADTX(1:K) ! 
-        CALL STRUMR8(PARC,10,'!',BONG,K) ! make one string
-        I=LEN_TRIM(HEADTX)        ! index of last non-blank character 
-        HEADTX=HEADTX(1:I)//'  PARC='//BONG(1:K) ! 
+        WRITE(BUFF,'(2I1)')I,J
+        I=LNBLNK(FRUN)
+        FUFF=FRUN(1:I)//'tfine'//BUFF//'.bin5' ! output file name
+        I=3*(1+NECL)                ! number defined for latitudes
+        CALL STRUMI(J79,I,'^',HEADTX,K) ! make one string
+        HEADTX=VERSIN//' TFINE output N2,J7P:9='//HEADTX(1:K) ! 
+        CALL STRUMR8(PARC,12,'!',BONG,K) ! make one string
+        I=LEN_TRIM(HEADTX)      ! index of last non-blank character 
+        HEADTX=HEADTX(1:I)//'  PARC='//BONG(1:K) !
+        CALL STRUMR8(XCEF,NEEP,'`',BONG,K) ! make one string
+        I=LEN_TRIM(HEADTX)      ! index of last non-blank character 
+        HEADTX=HEADTX(1:I)//'  depths='//BONG(1:K) !
+        I=LEN_TRIM(HEADTX)      ! index of last non-blank character  
+        JJJ(9)=I                ! length of header
         WRITE(IOSP,603)NCASE,JJJ
  603    FORMAT ('TFINE: Case=',I2,'  JJJ=',10I5)
         I=IDB3                  !  +1=report many values   +2 report progress 
-        CALL BINF5 ('W',FTFINE,HEADTX,JJJ,CCC,I) ! 
-        WRITE (IOSP,*)'TFINE wrote ',FTFINE,'  iret= ',I
+        CALL BINF5 ('W',FUFF,HEADTX,JJJ,CCC,I) ! 
+        WRITE (IOSP,*)'TFINE wrote ',FUFF,'  iret= ',I
+      ELSE
+        WRITE (IOSP,*)'TFINE: No latitudes had eclipses' 
       ENDIF
-C ^^^^^^^^^^^^^^ end bin5 stuff ^^^^^^^^^^^^^^
-      GOTO 9
+      CASE DEFAULT ! ==================
+        STOP ! should never call with other IQ 
+      END SELECT ! ==================
+C
+ 9    IF (IDB5.GE.1) WRITE(IOSP,*) 'TFINE exit'
+      RETURN
 C
  340  IRET=-2                  !  blow-up. force a stop; print current conditions
-      WRITe(IOSP,*)'TFINE blowup: jj,j3,j4,j5=',JJ,J3,J4,J5
+      WRITE(IOSP,*)'TFINE blowup: JJ,J3,J4,J5=',JJ,J3,J4,J5
       WRITE(IOSP,*)'LOPN3,Tsur=',LOPN3,TSUR
       WRITE(IOSP,*)'FARAD,SHEATF,POW,DT=',FARAD(JJ),SHEATF,POWER,DELT
       CALL TPRINT8 (7)           ! print message and  TTJ
       WRITE(IOSP,*) 'TFINE: DELT,TBLOW=',DELT,TBLOW
-C?      IF (J5.GE.JDISK) CALL TDISK8(2,I) ! write current season if valid
       CALL TPRINT8 (4)           ! print daily convergence
-C
- 9    IF (IDB5.GE.1) WRITE(IOSP,*) 'TFINE exit'
-      RETURN
-C     
+      GOTO 9
+
       END

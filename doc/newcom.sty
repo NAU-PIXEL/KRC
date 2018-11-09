@@ -10,7 +10,8 @@
 
 % Print size:  the following for normal margins lp q.ps
 %\textheight=10.0in \topmargin=-1.in % a little tight 
-\textheight=9.6in % \topmargin=-0.9in % 2016feb25
+%\textheight=9.6in % \topmargin=-0.9in % 2016feb25
+
 \textwidth=7.70in  \oddsidemargin=-0.7in \evensidemargin=-0.7in
 \parindent=0.em \parskip=1.ex %  no indent & paragraph spacing
 %       modes, spacing, size
@@ -93,7 +94,9 @@
 \newcommand{\kgm}[1]{kg/m$^{#1}$}  % kilogram / m2
 \newcommand{\qcite}[1]{#1=\cite{#1}}  % show my .bib name
 
-\newcommand{\qlabel}[1]{\label{#1}  \hspace{1cm} #1}    % show label in title
+%  USE AT MOST ONE OF THE NEXT TWO for section labels
+%\newcommand{\qlabel}[1]{\label{#1}} % for final
+%\newcommand{\qlabel}[1]{\label{#1}  \hspace{1cm} #1}    % show label in title
 
 %\newcommand{\bs} {\Large {\sigma} } %  symbol for Standard deviation
 \newcommand{\bs} {\mathcal{S} } %  symbol for Standard deviation

@@ -40,6 +40,8 @@ C 2014mar10 HK Make  REAL*8  version    may04, Increase some format precision
 C 2014jun02 HK Accomodate I15 being large as a flag for TUN8
 C 2015dec24 HK Add print of bottom depth to layer table
 C 2016feb-- HK Convert some names to V3.3  Bypass layer table here
+C 2018jan30 HK Replace DDT with PhotoF
+C 2018jul01 HK Update a few guide lines to v356
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
 C
       INTEGER*4 I,J,J3P1,K,IQ
@@ -61,13 +63,13 @@ C
      &, '    PERIOD  SpecHeat   DENSITY'/1X,8F10.4
      &/'       CABR       AMW    SatPrA    PTOTAL     FANON      TATM'
      &, '     TDEEP   SpHeat2'/1X,8F10.4
-     &/'       TAUD     DUSTA    TAURAT     TWILI  ARC2/PHT     [ARC3'
+     &/'       TAUD     DUSTA    TAURAT     TWILI   ARC2=G0 ARC3=safe'
      &, '     SLOPE    SLOAZI'/1X,3F10.4,3F10.2,2F10.1 
      &/'     TFROST    CFROST    AFROST     FEMIS       AF1       AF2'
      &, '    FROEXT    SatPrB'/1X,F10.4,F10.1,2F10.4,F10.5,3F10.4
-     &/'       RLAY      FLAY     CONVF     DEPTH     DRSET       DDT'
+     &/'       RLAY      FLAY     CONVF     DEPTH     DRSET PhotoFunc'
      &, '       GGT     DTMAX'/1X,8F10.4
-     &/'       DJUL    DELJUL SOLAR DEC       DAU       L_S    SOLCON'
+     &/'       DJUL    DELJUL  SOLARDEC       DAU     LsubS    SOLCON'
      7, '      GRAV    Atm_Cp'/1X,F10.3,2F10.4,F10.5,4F10.4
      8/'     ConUp0    ConUp1    ConUp2    ConUp3    ConLo0    ConLo1'
      &, '    ConLo2    ConLo3'/1X,8F10.4
@@ -78,7 +80,7 @@ C
  214  FORMAT ( '         N1        N2        N3        N4        N5'
      &, '       N24       IIB       IC2'/1X,8I10
      &/'      NRSET      NMHA      NRUN     JDISK     IDOWN    FlxP14'
-     &, '    FlxP15     KPREF'/1X,8I10
+     &, ' TUN/Flx15     KPREF'/1X,8I10
      &/'      K4OUT     JBARE     Notif    IDISK2',/1X,4I10)
 
       WRITE (IOSP,216) (LD(I),I=1,NLD)
@@ -86,7 +88,7 @@ C
      &,         '    LP6 LPGLOB   LVFA   LVFT  LKofT'/1X,10L7
      &/        '   LPORB   LKEY    LSC  LZONE  LOCAL'
      &,         '   LD16 LPTAVE  Prt78  Prt79  L_ONE'/1X,10L7)
-D         print *, 'TPRINT: N4,MAXN4=',n4,MAXN4
+D         WRITE(IOPM,*) 'TPRINT: N4,MAXN4=',n4,MAXN4
       WRITE (IOSP,230) 'Latitudes: ',(ALAT(I),I=1,N4)
       WRITE (IOSP,230) 'Elevations:',(ELEV(I),I=1,N4)
  230  FORMAT (/1X,A/(1X,10F7.2))
