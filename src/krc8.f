@@ -44,6 +44,7 @@ C 2018feb02 HK V 3.5.5 Separate Photometric function parameter from Henyey-Green
 C 2018jul03 HK V 3.5.6 Fixes to frost conditions. See 356notes.tex
 C 2081oct11 HK V 3.6.1 Fixed ancient BINF5  bug. Checks on fff with atm. Put 
 C version into KRCCOM, Make far-field file REAL*4, backward compat. with REAL*8
+C 2018nov13 HK v 3.6.2 Fix bug in 361 only; write of .t52 zeroed part of KRCCOM 
 C    
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
 
@@ -57,14 +58,14 @@ C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
       LOGICAL LQ            ! file exists, later as temporaary flag
       CHARACTER(LEN=12) CDATE,CTIME ! args for date_and_time
 C-      CHARACTER*1 BBUF          ! temporary use
-      CHARACTER*25 SEPER        ! print separation line
+      CHARACTER*25 SEPER  /' ----------------------- '/  ! case separation line
       REAL TOTIME               ! Total Elapsed Time 
       REAL*8 DUM8               ! dummy 
       REAL*8 DUMB  /772.d0/     ! dummy argument, should never change
       REAL*8 DUMC  /773.d0/     ! " " 
       REAL*8 ZERO /0.0D0/       ! zero  
 
-      VERSIN='KRCv3.6.1'        ! set version number   12 bytes in FILCOM
+      VERSIN='KRCv3.6.2'        ! set version number   12 bytes in FILCOM
       KREC=84+20  ! number of bytes in TITLE +DAYTIM. Values from def. in KRCCOM
       IF (MOD(KREC,8).NE.0 .OR. MOD(N4KRC,2).NE.0) THEN 
         WRITE(*,*)'BAD lengths',KREC,N4KRC
@@ -80,25 +81,25 @@ C     Zero out commons, which contain some of the constants below
       CALL FILLD (ZERO,FARTS,NWHAT)  !  HATCOM
       print *,'FILLD+',N4KRC,NWKRC,NWLAT,NWDAY,NWHAT
 
-      FDISK='no'                !| ensure files turned off
-      FDIRA='no'                !| by making their length
-      FFAR ='no'                 !| less than 4
-      FFATM='no'                 !|
+      FDISK='no'       !| ensure files turned off
+      FDIRA='no'       !| by making their length
+      FFAR ='no'       !| less than 4
+      FFATM='no'       !|
 C               set logical units. See   units.com   for description
-      IOD1 = 1                  ! explanation file & zone table (briefly open)
-      IOD2 = 2                  ! direct-access write ( and read)
-      IOIN = 3                  ! Input file: defined in units.inc
-      IOKEY= 5                  ! keyboard:   " "
-      IOPM = 6                  ! moniter:    " " May be redirected by IDB6>14
-      IOSP = 7                  ! print file: " "
-      IOERR = 9                 ! errors:     " "
-      IOD3 = 13                 ! direct-access far-field, read only
-      IODA = 14                 ! direct-access far-field, atm, read only
-      LOPN2 =.FALSE.            ! set to: no direct-access write open
-      LOPN3 =.FALSE.            ! set to: no far-field active
-      LFATM =.FALSE.            ! set to: no far-field atmosphere active
-      LOPN4 =.FALSE.            ! set to: no Type 52 active
-      LONE  =.FALSE.            ! set to: Not one-point mode
+      IOD1 = 1         ! explanation file & zone table (briefly open)
+      IOD2 = 2         ! direct-access write (and read)  FDIRA  : 
+      IOIN = 3         ! input file, defined in units.inc FINPUT : 
+      IOKEY= 5         ! keyboard:    " "
+      IOPM = 6         ! moniter:     " " May be redirected by IDB6>14
+      IOSP = 7         ! print file : " "    FOUT
+      IOERR = 9        ! error log:   " " May be redirected by IDB6>14 CELOG
+      IOD3 = 13        ! direct-access far-field, read only
+      IODA = 14        ! direct-access far-field, atm, read only
+      LOPN2 =.FALSE.   ! IOD2: FDIRA set to: no direct-access write open
+      LOPN3 =.FALSE.   ! IOD3: FFAR  set to: no far-field active
+      LFATM =.FALSE.   ! IODA: FFATM set to: no far-field atmosphere active
+      LOPN4 =.FALSE.   ! ----: FDISK set to: no Type 52 active
+      LONE  =.FALSE.   ! set to: Not one-point mode
 C                       set constants
         I=LEN_TRIM(VERSIN)      ! and make decimal interger
         WRITE(CBUF,*) VERSIN(1:I) ! write string into temporary buffer
@@ -119,10 +120,9 @@ C      EXPMIN = 86.80D0          ! neg exponent that would almost cause underflo
       HUGE = 1.D308             ! large  REAL*8 constant with margin
       TINY = 1.D-307            ! small  REAL*8 constant with margin
       EXPMIN = 700.d0           !  safe negative exponent yields ~1.d-304 
-      SEPER=' ========================' ! 25 characters long
       KREC=0                    ! ensure it has a storage location
       NRUN=0                    ! no output file yet
-      NCASE=1                   ! initiate case counter
+      NCASE=0                   ! initiate case counter
       WRITE(IOPM,*) 'This is KRC:  ',VERSIN,NUMVER
 C 2017sep30 replace error-file name to nearest min with name to nearest millisec
 C- Lines are to redirect error to monitor, but IDB4 not yet known!
@@ -181,7 +181,8 @@ D !D      write(*,*) 'TCARD:1 return=',IRC !<<< debug
       IRD=7  ! This will force print of parameters for the first case
 
 C VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV  BEGIN case  VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
- 140  LATM=(PTOTAL .GT. 1.)     ! case has an atmosphere, into KRCCOM
+ 140  NCASE=NCASE+1 ! increment case
+      LATM=(PTOTAL .GT. 1.)     ! case has an atmosphere, into KRCCOM
       PARC(12)=PERIOD           ! sol in days for an eclipsed body
       IF (IRC.EQ.4) THEN        ! Switch to "one-point" mode
         CLOSE(IOIN)             ! close the card input file
@@ -198,9 +199,8 @@ D !D        write(*,*)' k3' !<<< debug
         KONE=NCASE              ! case when onePoint started
         CALL TCARD8 (2,IRC)      ! read first one-point case
 D !D      write(IOSP,*) 'KRC TCARD:2 return=',IRC !<<< debug
-      ELSE
-        WRITE(IOPM,'(a,a,2I6,a)')SEPER,' RUN-CASE',NRUN,NCASE,SEPER
       ENDIF 
+
 D !D    write(IOSP,*)'KRC TDAY 1 return, LP2',IRD,LP2 !<<< debug
       I=1
       IF ((LP2 .AND. LD18) .OR. (IRD.NE.1)) THEN
@@ -227,12 +227,17 @@ C Above changes some items used in TPRINT8 (2) 2016feb NOPE ?
 
       IF (N5.GE.JDISK) THEN     ! there may be some file output 
 D !D        WRITE(IOPM,*)'L3',LOPN2,LOPN3,LOPN4   !?Dbug
-        I=LNBLNK(FDIRA)
-D !D        WRITE(IOPM,*)'FDIRA,I ',FDIRA(1:I),I !?Dbug
-        IF (.NOT.LOPN2 .AND. I.GE.4) CALL TDISK8 (1,0) ! open output disk file   
         I=LNBLNK(FDISK)
 D !D        WRITE(IOPM,*)'FDISK,I ',FDISK(1:I),I !?Dbug
-        IF (.NOT.LOPN4 .AND. I.GE.4) CALL TDISK8 (6,0) ! open output type 5x
+        IF (.NOT.LOPN4 .AND. I.GE.4) THEN
+          CALL TDISK8 (6,0)     ! open output type 5x
+          NRUN=NRUN+1           ! increment run count
+          NCASE=1               ! restart the case count, used by TDISK
+          IF (.NOT.LOPN4) WRITE(IOSP,*)'ERROR, Case too big  for KOMMON'
+        ENDIF
+        I=LNBLNK(FDIRA)
+D !D        WRITE(IOPM,*)'FDIRA,I ',FDIRA(1:I),I !?Dbug
+        IF (.NOT.LOPN2 .AND. I.GE.4) CALL TDISK8 (1,0) ! open output DirAcc file 
         IF (I15.GT.100) CALL TUN8 (I15,1) ! Write case header 
 D !D        WRITE(IOPM,*)'LOPN2,3,4= ',LOPN2,LOPN3,LOPN4   !?Dbug
       ENDIF
@@ -287,6 +292,7 @@ C    Success mandatory to prevent possible long run with wrong fff
 
 C======
 
+      WRITE(IOSP,'(a,a,2I6,a)')SEPER,' RUN-CASE',NRUN,NCASE,SEPER
       CALL TSEAS8 (IKON,IRL)       ! %%%%% execute season loop %%%%
 
 C======
@@ -304,6 +310,7 @@ D !D      write(*,*)'TSEAS return IKON,IRL,N5,krec=',IKON,IRL,N5,krec !<<< debug
         CALL TPRINT8(9)         ! print results at requested one-point
       ENDIF
       
+      IF (IRL.EQ.3) NCASE=NCASE-1 ! case stays the same when continue from memory
       IF (IRL.GT.4 .AND. N5.GT.0) THEN ! Case had a fatal error
         WRITE(IOPM,*)'Case had FATAL error=',IRL,' Will try next case'
         WRITE(IOSP,*)'Case had FATAL error=',IRL,' Will try next case'
@@ -317,7 +324,7 @@ D !D      write(*,*)'TSEAS return IKON,IRL,N5,krec=',IKON,IRL,N5,krec !<<< debug
       IF (LOPN2) CALL TDISK8 (4,KREC) ! close FDIRA, cannot hold multiple cases
       FDIRA='NO'                ! ensure it stays closed ( length < 3 )
 C
-170      IF (.NOT. LONE ) THEN ! 
+ 170  IF (.NOT. LONE) THEN     ! 
         CALL DTIME(TIMES,ELAPSED) ! elapsed seconds
  133    FORMAT(1X,'Case',i3,2x,a1,'TIME: total, user, system=',3f10.4)
         WRITE(   *,133)NCASE,'D', ELAPSED,TIMES ! always to monitor
@@ -325,21 +332,17 @@ C
         WRITE(IOSP,133)NCASE,'D', ELAPSED,TIMES ! to the print file
         TOTIME=TOTIME+ELAPSED   ! increment total time
       ENDIF
-
-      NCASE = NCASE+1           ! Look for next case
       CALL TCARD8 (2,IRC)       ! read set of parameter changes
 C
 D !D      WRITE(IOSP,*)'TCARD:2 IR=',IRC,krec  !<<< Debug
-      IF (IRL.EQ.3) NCASE=NCASE-1 ! case stays the same when continue from memory
       IF (IRC.LT.5) GOTO 140    ! 5 is END of data
-      NCASE=NCASE-1             ! Remove the empty 'end of data' case
 C AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA end case AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 C
  180  Write(IOSP,*)'KRC@180 IRL,IRC=',IRL,IRC
-      IF (LOPN2) CALL TDISK8 (4,KREC) ! all done: close disk files
+      IF (LOPN2) CALL TDISK8 (4,KREC) ! all done: close direct acess output file
       IF (LOPN3) CALL TFAR8 ( 4,DUM8,DUM8,VALS,DUM8M,DUMB,DUMC) ! far-field surf
       IF (LFATM) CALL TFAR8 (14,DUM8,DUM8,VALS,DUM8M,DUMB,DUMC) ! far-field atm
-      IF (LOPN4) CALL TDISK8 (7,KREC) ! type 5x
+      IF (LOPN4) CALL TDISK8 (7,KREC) ! write type 5x file
  134  FORMAT(6X,'END KRC   Total time [s]=',F11.3 )
       WRITE(IOPM,*)'DUMB,C=',DUMB,DUMC  !<< debug
       WRITE (   *,134)TOTIME

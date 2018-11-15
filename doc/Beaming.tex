@@ -26,10 +26,12 @@
 % josh  c=602-770-9724    ??> 208-331-7998
 % davidsson icarus submitted
 \begin{document} %==========================================================
-\maketitle
+\maketitle 
+\setlength{\baselineskip}{8.pt} 
 \tableofcontents
 \listoffigures
-%\listoftables
+\listoftables
+\setlength{\baselineskip}{12.pt} 
 \hrulefill .\hrulefill
 % \pagebreak
 
@@ -111,13 +113,13 @@ Geometry notation is in \S \$\ref{geom}
 \\ $s$ or $\theta$ slope  $0 \leq s \leq 90^\circ $ [from horizontal] of a facet. $s$ is sometimes $\tan \theta$
 \\ $T$ : surface kinetic temperature
 \\ $T_b$ : brightness temperature
-\\ TI : thermal inertia
+\\ TI or I: thermal inertia
 \\ $\epsilon_\lambda$ : surface spectral emissivity 
 \\ $\lambda$ :  wavelength or wavenumber
 \\ $\psi$ : relative azimuth, commonly between incident and emission planes around the regional zenith.
 \\ $\omega, \Omega$ : element of solid angle
 \\ $\overline{\theta}$ : theta-bar, the mean slope of roughness
-\\ \qfo : output file
+\\ \qfo{---} : output file
 % \\ $\bigcap$ : optional complexity
 
 Subscripts: (not followed strictly)
@@ -127,8 +129,8 @@ Subscripts: (not followed strictly)
 \\ k : index of azimuth, as in KRC cases or tilt facets
 \\ K : index of a KRC full tilt-set run (hundreds of slope/azimuth cases)
 \\ m : index of slope (dip), as in KRC cases or tilt facets 
-\\ l : within a set of wavelengths or wavenumbers
-\\ n : within a set of view directions 
+\\ l : index within a set of wavelengths or wavenumbers
+\\ n : index within a set of view directions 
 
 \section{Representation}
 
@@ -615,6 +617,192 @@ If at virtually infinite distance, can use oblique orthographic projection, whic
 \qi Treat Y as to the right and Z as up, so a viewer above the equator at noon would get a conventional hemisphere view.
 
 
+\section{Bennu and OSIRIS-Rex}  % ---------------------------------------------
+
+\qcite{Emery14}
+\qi bulk thermal inertia of 310 $\pm$ 70 \quti
+\qi use visible geometric albedo  0.046  $\pm$0.005
+\qii 23.2a: $p_v = ( D_o/ D_{eff})^2 10^{-0.4H_v}$  \ \ $D_o$ taken as 1329 km \ \ $H_v$ =20.51 $\pm$0.10
+\qii $ D_{eff}$ about 600 m; Table 5
+\qii yields $p_v=$ 0.0306723
+\qi The Bond albedo is calculated as $A_B = p_v q$ 
+\qii p 23.0b,  $q$ is the phase integral (0.367 ± 0.045),
+\qii yields $A_B =$  0.0112568
+\\ .
+\\ \qcite{Chesley14}
+\qi bulk density at 1260 $\pm$ 70 kg/m$^3$ and macroporosity 40 $\pm$ 10\%.
+
+Bennu year is 436.42 days.  Beam runs are 41 seasons spaced by 10.9106 days,
+5764.2720 to 6200.6960; 
+
+\vspace{2.mm} OSIRIS-Rex: Arrival is 2018 august, [aug03 is MJD 6789, handy],
+Survey begins 2018Oct, Return window opens 2021march, Earth landing is
+2023sept24. Thus, spacecraft is near Bennu for a little more than 2 of its
+years. MJD of the first three events is: 6787, 6848, 7730.
+\qi Equivalent dates:  5914.15, 5975.15 and 5984.31, respectively.
+\qi Solar declination: 33 N, 22 N, 18 N 
+\\ In the KRC runs, Extreme seasons are:
+\vspace{-3.mm} 
+\begin{verbatim}
+Ls=0:    index=39, djmm=6189.8, sdec= +0.65    runset 6190
+   N:    index=12, djmm=5895.2, sdec= 33.16    runset 5900
+Ls=180:  index=24, djmm=6026.1, sdec= -2.79 
+     S:  index=30, djmm=6091.6, sdec=-33.07    runset 6092
+\end{verbatim} 
+
+2016oct12, Looked through \qcite{} and used orbital and rotational parmeters to
+make an additional entry in NEO.tab; also found Bond Albedo = 0.0173 +/-.0027
+(1-sigma).
+
+Photometric function; ? See my writeup in V34UG.pdf, \S 5 and 13
+
+\subsubsection{Pole}
+
+In -/porb/small.tab, as the 6'th object: 
+\vspace{-3.mm} 
+\begin{verbatim}
+101955 Bennu 2455562.5   /6   from Hergenrother 2014
+e       0.2037451146135014      2.123081E-08    J2000 orbital values 
+a 	1.126391025571644       4.111300E-11	AU    source cited as 
+q 	0.8968943569669300      2.390158E-08 	AU    JPL IOM 343R-13-00
+i 	6.03493867976381        4.721372E-08	deg   Chesley et al 2014
+node 	2.06086819910204        6.531279E-08	deg    
+peri    66.22306886293201       9.685025E-08	deg
+M 	101.70394725713800      2.6E-06 	deg  P=436.648727924 days
+rot_per 4.297461   ± 0.002 h, retrog. Nolan et al 2013.  JPL has  4.288 h 
+PoleRA  86.64   Nolan 2013 : β = −88° (lat), λ = 45° and an uncertainty of 5°.  
+PoleDec -65.11    in ecliptic coordinates,  Convert using eclip2equat.pro 
+merid   0.         Obliq=176 +/- 2
+\end{verbatim}
+
+% after lon/lat switch correction, equatorial pole values agree with conversion using NED: NASA/IPAC EXTRAGALACTIC DATABASE, to $,.0001$ degree.
+
+\subsection{Retrograde rotation}  % ----------
+On Bennu, the Sun rises in the celestial west. PORB does everything in J2000 (equatorial).  All of the time-independent terms are in the geometry matrix computed by the PORB system, see \nf{hporb.pdf} . 
+KRC is indifferent to this, treating ``North'' as the direction of the spin axis.
+
+Summary of KRC geometry:
+
+The right-hand spin-axis direction is: 
+\qi ZBAA ! 10 Body pole: declination, radian in J2000 eq.
+\qi ZBAB ! 11 " ": Right Ascension, radian in J2000 eq.
+\qi WDOT ! 12 Siderial rotation rate, degrees/day
+
+Position along the orbit is based on:
+\qi OPERIOD ! 14 Period of the orbit (days)
+\qi TJP ! 15 J2000 Date of perihelion
+
+The BFRM(9) ! 22 Rotation matrix from orbital to seasonal:
+\qi F is the Focal=orbital-plane system.
+\qii Z axis of the F system is the right-hand normal to the orbital plane
+\qii X axis is from the central body to the orbit periapsis
+\qi B is Body=seasonal system
+\qii Z axis of the B system is the right-hand spin axis of the body e.g., planet
+\qii X axis is the body’s Vernal equinox: 
+
+TSEAS calls PORBIT with the date to get:
+\qi SUBS, season longitude (not used)
+\qi SDEC, sub-solar latitude, degree
+\qi DAU, distance from Sun in Astronomic Units. 
+
+TLATS works in the ``Day'' coordinate system: 
+\qii Z axis toward planet north pole
+\qii  X axis in equitorial plane toward midnight 
+\qi DIP is the slope angle, radian
+\qi SAZ is the azimuth of the dip (down-slope), measured East-ward from North, radian
+\\ In this system, several vectors are fixed:
+\qi MXX is the vector to the Sun at midnight, so the Y element is always 0.
+\qi FXX is the vector to the regional zenith at noon,  Y element is always 0.
+\qi TXX is the vector toward the tilted surface normal at noon.
+
+At each time step, the vector to the Sun HXX is computed by a single rotation of
+MXX around Z by -J*RANG where J is the time step and RANG is $2 \pi / N_2$ where
+$N_2$ is the number of time-steps in a day. The cosine of the incidence angle
+onto the flat and tilted surfaces are just dot products; HXX $\bullet$ FXX and 
+ HXX $\bullet$ TXX respectively. 
+
+An example of the azimuth dependence of Tsurf is shown in Fig. 
+\ref{azex}
+\begin{figure}[!ht] \igq{azex}
+\caption[Example of azimuth set]{Surface kinetic temperatures at all azimuths (legend) for the L set for slope 30\qd~ at the equator for MJD=6200.7, $L_s$=189 
+\label{azex}  azex.png  }
+\end{figure} 
+% how made: Read  file: /work1/krc/beam/BenL30L00.t52  tes=reform(ttt[*,0,9,40,*])
+% jj=string(20*indgen(18), form='(i3)')
+%  CLOT,tes,jj, tsiz=2., titl=['hour index','Surface temperature','L30 , lat 9, seas 40'],locc=[.1,.93,-.03,.03]
+
+
+\section{OSIRIS-Rex geometry}
+Phil via Chris Haberle provided  ``image table from JAsteroid.`` file for 
+ days of OTES approach observations; these had entries every 2 seconds so were huge and fantastically redundant. The simple linux command  
+\\  grep '00:00.' OTES_WOY45_Approach_DOY309.txt $>$ OTES309hour.txt reduced the tables to one entry per hour
+% \\ grep '?0:00.'  OTES_WOY45_Approach_DOY309.txt $>$ OTES309tm.txt
+\\  grep '00:01.' for DOY307, which had odd seconds
+\qi then: \ \  cat OTES307hour.txt  OTES309hour.txt OTES313hour.txt $>$ ApGeom.tab
+\qii and edit in the column headers with no internal white-space.
+
+\section{Production sequence overview} %__________________________________
+Overall concept is to generates KRC models at many slopes and azimuths,
+progressing toward models in which slopes view a far field of similar
+steepness. Convert these individual models to radiance, then combine them to
+make surfaces of specific roughness (slope distribution) as seen from specific
+view directions or viewing traverses. A combination of FORTRAN and IDL routines is used.
+
+A motivation for this scheme is to do the tedious computations, generation of the KRC models, once, and then be able to combine them relatively quickly to make up any surface model desired.
+
+A sub-directory is generated for each set of physical parameters; typically will contain many hundred files. 
+% Sample file names below may have spaces to emphasize parts of the names.
+
+
+\begin{description}  % labeled items   
+\item [A: Define the slope set, pick physical parameters] .\\
+\begin{enumerate}    % numbered items  
+\item Generate the basic KRC input parameter file.  \qfo{-/krc/beam/BEntop}
+\item Generate KRC input files for increasingly complex runs
+ \qfo{-/krc/beam/ED2.inp, ED3.inp, ED4.inp}
+\end{enumerate}
+ 
+\item [B: Generate 'slope sets'] \hspace{1.mm}
+\\ A sequence of large KRC runs. Cases to be used for later far-field files must output direct-acess type -n files [-1, extension .tm1]. An IDL routine can read specific files from each run to maintain a list of physical properties.
+\begin{enumerate}    % numbered items 
+ \item Run flat  \qfo{/work1/krc/beam/BEnD/BEnDflat.t52}; \qfo{/work1/krc/beam/BEnD/Dflat.tm1}
+ \item Run set of azimuths for median slope; each azimuth \qfo{E30E00a00.tm1}
+\qiii single \qfo{BEnE30E00.t52} 
+ \item Run all slope and all azimuths facing the median slopes: each azimuth \qfo{E02e30a04.tm1}
+\qiii For each slope \qfo{BEnE02E00.t52}
+ \item Run all slope and all azimuths facing equivalent slopes
+\qiii For each slope \qfo{BEnE02Eeq.t52}
+\item Maintain a guide to runs: BEAMLIST @41
+\end{enumerate}
+
+\item [C: Convert to radiance and do roughness integrations] 
+All done in IDL program \np{beaming.pro}=BEAMING
+\begin{enumerate}    % numbered items 
+\item   Compact to a single surface temperature file.
+\qi  @257  \qfo{/work2/beam/BenAssA00.savAz} BEAMING @111 123
+\item Extract surface temperatures for a specific date.
+\qi @28, \qfo{BenA5906Aeqflat.bin5} and  \nf{BenA5906Aeqslop.bin5}  [hour,latitude,1,case=azimuth,file=slope]
+\item Convert to radiance.
+\qi  @43 \qfo{BenJ5906w1w.bin5} [wave,azimuth,slope,hour,lat] 
+
+
+\item Integration] Loops over roughness and model.
+\qi BEAMING:  REQ  6, 46 or 439, 483, 62
+\qi One surface point \qfo{BenABJKL5906H25L9w1.sav}  [wave,view,Ho,La,rough,run-set] 
+\qi or global  \qfo{BenABJKL5906Gw1.sav} 
+\qi 
+\end{enumerate}
+
+
+
+\item [D: Analysis and display]
+\end{description}
+
+
+
+
+
+
 \section{Implimentation using KRC}
 Use Bandfield approach; precompute data sets of tilts as cases in
 normal KRC runs; save as type 52. Azimuth at 20\qd~ intervals; slope at 2\qd~
@@ -628,7 +816,7 @@ Use equal-area zones from pole-to-poles, with one centered on the equator, so
 there is an odd number total; $N=2j+1$.  Normalized area of a zone is: $\sin
 \theta_2 - \sin \theta_1$ where $\theta$ is the zone boundary latitude. Thus
 $\delta \equiv \Delta \sin \theta = 2/N $.  Compute the model at the
-area-weighted center of the zones; $sin \theta= \delta/2+i \delta \ ; i=0:n-1$ .
+area-weighted center of the zones; $\sin \theta= \delta/2+i \delta \ ; i=0:n-1$ .
 
  For example:
 \begin{verbatim}
@@ -765,7 +953,7 @@ Shadowing at large incidence angles must attenuate the shallow slopes.
  the run and to the far-field set that may have been used. 
 
 Ensure that the last character(s) before the extension specifies the file type,
- unlsee the extension does that, e.g., '.t52' .
+ unless the extension does that, e.g., '.t52' .
 
 \subsection{pre 2018 scheme}
 Did not propagate the farField part of names
@@ -794,6 +982,7 @@ parf: File names
 \subsection{2018 design}
 General scheme is in Table \ref{fame}
 \begin{table} \caption[File naming]{File naming}  \label{fame}
+\hrulefill 
 \begin{tabbing} 
 WW \= WWWWWW \= WWWW \= WWWW \=WWWW \= WWWWWWWW \=   \kill 
 i \> what \> symbol \> parf \> pars \>example \> discussion \\
@@ -854,16 +1043,15 @@ E.g., new run series I=50, keihm. Create dir beam/BenB/
 
 \subsection{Common KRC run sequence \label{krcseq}}
  Sequence of KRC runs
-\\ 1: Flat, \qfo beam/BEnZ/Zflat.tm1 \ \qfo beam/BEnZ00_00.t52 
+\\ 1: Flat, \qfo{beam/BEnZ/Zflat.tm1} \ \qfo{beam/BEnZ00_00.t52} 
 \qi  Normally runs as first part of step 2
-\\ 2: Slope=30 with flat farIn: \qfo beam/BEnZ30Z00.t52  
-\qi  and for each azi \qfo beam/BEnZ/Z30Z00a02.tm1
+\\ 2: Slope=30 with flat farIn: \qfo{beam/BEnZ30Z00.t52}
+\qi  and for each azi \qfo{beam/BEnZ/Z30Z00a02.tm1}
 \\ 3: Set of slopes with farIn of slope=30. at opposite azimuth
-\qi   \qfo beam/BEnZssZ00.t52 \ \ ss $\equiv$ slope
-\qi If planning step 4: \qfo beam/BEnZ/Z02z30a02.tm1 etc for each azimuth
+\qi   \qfo{beam/BEnZssZ00.t52} \ \ ss $\equiv$ slope
+\qi If planning step 4: \qfo{beam/BEnZ/Z02z30a02.tm1} etc for each azimuth
 \\ 4: Set of slopes with farIn of same slope at opposite azimuth (from Step3)
-\qi   \qfo beam/BEnZ02Zeq.t52
-
+\qi   \qfo{beam/BEnZ02Zeq.t52}
 
 number represents parf[n]
 
@@ -955,7 +1143,6 @@ Convert to single surface temperature file, e.g.
 
 KRC type -n files do not contain the sub-solar latitude for all seasons. 
 This is an estimate based on a quadratic fit of the noon down-going insolation versus latitude.
-
 @11, modify parts of file names: 0, 1, 2
 \qi @110, 123 which does:
 \vspace{-3.mm} 
@@ -1248,7 +1435,7 @@ Last geometry fix  2018 Sep 23 08:00:00 , any prior are suspect.
 For globe. 2 rough * 5 models = 10 loops takes 1.1 minutes
 Sved items are shown in Table \ref{rsave}
 
-\begin{table} \caption[Roungness integration output]{File saved after integration ovr facets for roughness. Shown here for global runs; single targets are missing the Hour and Lat dimensions }  \label{rsave}
+\begin{table} \caption[Roughness integration output]{File saved after integration ovr facets for roughness. Shown here for global runs; single targets are missing the Hour and Lat dimensions }  \label{rsave}
 \begin{tabbing} 
 WWWW \= WWWW \=WWWWWWWW \=   \kill 
      \>     \> typical \>  \\
@@ -1292,9 +1479,8 @@ Output radiance array (W,V,B,H,L,M) or (W,H,L,M,V,B)  and weight array without W
 \qi For global target H=nhour(48) and L=nlat(19)
 \qii Then can do summation for an unresolved object
 
-B 
 \begin{verbatim}
-uild R((W,a,s,H,L,M)
+Build R((W,a,s,H,L,M)
 Find index of minimum R at longest wave (a,s,H,L,M]
 Precompute slope proportions for each roughness
 Calc index of max significant slope for each roughness
@@ -1313,7 +1499,7 @@ Loop on roughness B
 Store SumR(W,H,L,M,B,V) and store $/mu$(H,L,B?,V)
 \end{verbatim} 
 
-Sum $/mu$ R for each view to get spectrum of unresolved body
+Sum $\mu$ R for each view to get spectrum of unresolved body
 
 \subsection{Analysis}
 
@@ -1371,120 +1557,15 @@ finding the maximum. Typical result is shown in Figure \ref{beam251}
 \end{figure} 
 % how made: beaming @251
 
-\section{Bennu and OSIRIS-Rex}  % ---------------------------------------------
-
-\qcite{Emery14}
-\qi bulk thermal inertia of 310 $\pm$ 70 \quti
-\qi use visible geometric albedo  0.046  $\pm$0.005
-\qii 23.2a: $p_v = ( D_o/ D_{eff})^2 10^{-0.4H_v}$  \ \ $D_o$ taken as 1329 km \ \ $H_v$ =20.51 $\pm$0.10
-\qii $ D_{eff}$ about 600 m; Table 5
-\qii yields $p_v=$ 0.0306723
-\qi The Bond albedo is calculated as $A_B = p_v q$ 
-\qii p 23.0b,  $q$ is the phase integral (0.367 ± 0.045),
-\qii yields $A_B =$  0.0112568
-\\ .
-\\ \qcite{Chesley14}
-\qi bulk density at 1260 $\pm$ 70 kg/m$^3$ and macroporosity 40 $\pm$ 10\%.
-
-Bennu year is 436.42 days.  Beam runs are 41 seasons spaced by 10.9106 days,
-5764.2720 to 6200.6960; 
-
-\vspace{2.mm} OSIRIS-Rex: Arrival is 2018 august, [aug03 is MJD 6789, handy],
-Survey begins 2018Oct, Return window opens 2021march, Earth landing is
-2023sept24. Thus, spacecraft is near Bennu for a little more than 2 of its
-years. MJD of the first three events is: 6787, 6848, 7730.
-\qi Equivalent dates:  5914.15, 5975.15 and 5984.31, respectively.
-\qi Solar declination: 33 N, 22 N, 18 N 
-\\ In the KRC runs, Extreme seasons are:
-\vspace{-3.mm} 
-\begin{verbatim}
-Ls=0:    index=39, djmm=6189.8, sdec= +0.65    runset 6190
-   N:    index=12, djmm=5895.2, sdec= 33.16    runset 5900
-Ls=180:  index=24, djmm=6026.1, sdec= -2.79 
-     S:  index=30, djmm=6091.6, sdec=-33.07    runset 6092
-\end{verbatim} 
-
-2016oct12, Looked through \qcite{} and used orbital and rotational parmeters to
-make an additional entry in NEO.tab; also found Bond Albedo = 0.0173 +/-.0027
-(1-sigma).
-
-\subsubsection{Pole}
-
-In -/porb/small.tab, as the 6'th object: 
-\vspace{-3.mm} 
-\begin{verbatim}
-101955 Bennu 2455562.5   /6   from Hergenrother 2014
-e       0.2037451146135014      2.123081E-08    J2000 orbital values 
-a 	1.126391025571644       4.111300E-11	AU    source cited as 
-q 	0.8968943569669300      2.390158E-08 	AU    JPL IOM 343R-13-00
-i 	6.03493867976381        4.721372E-08	deg   Chesley et al 2014
-node 	2.06086819910204        6.531279E-08	deg    
-peri    66.22306886293201       9.685025E-08	deg
-M 	101.70394725713800      2.6E-06 	deg  P=436.648727924 days
-rot_per 4.297461   ± 0.002 h, retrog. Nolan et al 2013.  JPL has  4.288 h 
-PoleRA  86.64   Nolan 2013 : β = −88° (lat), λ = 45° and an uncertainty of 5°.  
-PoleDec -65.11    in ecliptic coordinates,  Convert using eclip2equat.pro 
-merid   0.         Obliq=176 +/- 2
-\end{verbatim}
-
-% after lon/lat switch correction, equatorial pole values agree with conversion using NED: NASA/IPAC EXTRAGALACTIC DATABASE, to $,.0001$ degree.
-
-\subsection{Retrograde rotation}  % ----------
-On Bennu, the Sun rises in the celestial west. PORB does everything in J2000 (equatorial).  All of the time-independent terms are in the geometry matrix computed by the PORB system, see \nf{hporb.pdf} . 
-KRC is indifferent to this, treating ``North'' as the direction of the spin axis.
-
-Summary of KRC geometry:
-
-The right-hand spin-axis direction is: 
-\qi ZBAA ! 10 Body pole: declination, radian in J2000 eq.
-\qi ZBAB ! 11 " ": Right Ascension, radian in J2000 eq.
-\qi WDOT ! 12 Siderial rotation rate, degrees/day
-
-Position along the orbit is based on:
-\qi OPERIOD ! 14 Period of the orbit (days)
-\qi TJP ! 15 J2000 Date of perihelion
-
-The BFRM(9) ! 22 Rotation matrix from orbital to seasonal:
-\qi F is the Focal=orbital-plane system.
-\qii Z axis of the F system is the right-hand normal to the orbital plane
-\qii X axis is from the central body to the orbit periapsis
-\qi B is Body=seasonal system
-\qii Z axis of the B system is the right-hand spin axis of the body e.g., planet
-\qii X axis is the body’s Vernal equinox: 
-
-TSEAS calls PORBIT with the date to get:
-\qi SUBS, season longitude (not used)
-\qi SDEC, sub-solar latitude, degree
-\qi DAU, distance from Sun in Astronomic Units. 
-
-TLATS works in the ``Day'' coordinate system: 
-\qii Z axis toward planet north pole
-\qii  X axis in equitorial plane toward midnight 
-\qi DIP is the slope angle, radian
-\qi SAZ is the azimuth of the dip (down-slope), measured East-ward from North, radian
-\\ In this system, several vectors are fixed:
-\qi MXX is the vector to the Sun at midnight, so the Y element is always 0.
-\qi FXX is the vector to the regional zenith at noon,  Y element is always 0.
-\qi TXX is the vector toward the tilted surface normal at noon.
-
-At each time step, the vector to the Sun HXX is computed by a single rotation of
-MXX around Z by -J*RANG where J is the time step and RANG is $2 \pi / N_2$ where
-$N_2$ is the number of time-steps in a day. The cosine of the incidence angle
-onto the flat and tilted surfaces are just dot products; HXX $\bullet$ FXX and 
- HXX $\bullet$ TXX respectively. 
-
-An example of the azimuth dependence of Tsurf is shown in Fig. 
-\ref{azex}
-\begin{figure}[!ht] \igq{azex}
-\caption[Example of azimuth set]{Surface kinetic temperatures at all azimuths (legend) for the L set for slope 30\qd~ at the equator for MJD=6200.7, $L_s$=189 
-\label{azex}  azex.png  }
-\end{figure} 
-% how made: Read  file: /work1/krc/beam/BenL30L00.t52  tes=reform(ttt[*,0,9,40,*])
-% jj=string(20*indgen(18), form='(i3)')
-%  CLOT,tes,jj, tsiz=2., titl=['hour index','Surface temperature','L30 , lat 9, seas 40'],locc=[.1,.93,-.03,.03]
-
 \subsection{Production Runs}  % ----------
-KRC input files are generated with assisteance of the IDL routine  krcindgen.pro
+Two different geometry matrices have been used differing primarily in obliquity; values can be see by Linux command in -/krc/beam/,   grep -n 0.179 *.in , which displays the 4th line of the matric; next to last column is item 19, the obliquity. 
+\qi listed as 3.056127 has obl = 5 deg: .inp files: Benew  krcB  E*
+\qi listed as 0. has obl = 33 deg, all others
+
+.inp files with L (true) obliquity: Benew  krcB  E*
+\qi the others are H=high 
+
+KRC input files are generated using the IDL routine  krcindgen.pro
 
 Must first construct a beaming master input file such as \nf{Bentop}, which must
 have a trailing blank line. Then for each production run, modify the change
@@ -1525,29 +1606,58 @@ for all azimuths
  \end{description}
 
 \begin{table} [!h]
-\caption{KRC tilt-set runs. All have: EMISS=1., RLAY=1.15, FLAY=.12, N1=37.; for which the bottom is at  D=121.7 or 1.5048m }
+\caption[KRC tilt-set runs]{KRC tilt-set runs. All have: EMISS=1., RLAY=1.15, FLAY=.12, N1=37.; for which the bottom is at  D=121.7 or 1.5048m . WhenRun is DAYTIM from the file; Obl=Obliquity: H=artifically high  L=True Low. }
 \label{runt}
 \begin{center}
-\begin{tabular}{| c  r  r  c c | c | r | } \hline \hline
-Label & Albedo & Inertia & Photom. & Obl. & Other conditions & run time\\
-       &       &        & Function &  &  & seconds\\  \hline
-A & .10 & 100 & Kheim & H & yup & I=50 2373 \\ 
-A & .10 & 100 & Kheim & L & yup &  1994 \\ 
-B & .03 &  50 & Lambert & H & yup  & 2386 \\   % 1
-B & .03 &  50 & Lambert & L & yup  & 1903 \\   
-C & .03 & 400 & Kheim & L & yup & 2062 \\  % 2018sep27 06:00
-J & .03 &  50 & Kheim & H & yup & 2480 \\ 
-K & .03 & 100 & Kheim & H & yup & 2474 \\ 
-I & .03 & 200 & Kheim & H & &  2490 \\ 
-D & .03 & 100 & Kheim & H & I=600 below D=.3 & \\
-D & .03 & 100 & Kheim & L & I=1600 below 5 mm & 1721 \\
-P & .03 & 100 & Kheim & H & far-field is slope=30 at azimuth+180 & 2458 \\ 
+\begin{tabular}{| l l   r  r  r r | r r | c | } \hline \hline
+WhenRun & Label & Albedo & Inertia & PhoFun. & Obl. & n.tmm1 & n.t52 & Other conditions  \\  \hline
+
+
+2018 Nov  9 16:26 & BEn361K & 0.03 &   200. & 0.25 &  5.3 &   13 &   0 & \\
+2018 Sep 28 06:39 &    BEnA & 0.10 &   100. & 0.25 &  5.3 &  559 &  61 & EA.prt \\
+2018 Sep 26 11:19 &    BEnB & 0.03 &    50. & 0.00 &  5.2 &  559 &   1 & EB \\
+2018 Sep 27 05:32 &    BEnC & 0.03 &   400. & 0.25 &  6.4 &  559 &   1 & EC \\
+2018 Sep 29 06:21 &    BEnD & 0.03 &    50. & 0.25 &  5.0 &  559 &  61 & I=1600 below 5 mm \\
+2018 Nov 11 16:50 & BEnD361 & 0.03 &    50. & 0.25 &  5.2 &   13 &   0 & \\
+2016 Oct 26 10:51 &   BeamP & 0.03 &   100. & 0.00 & 36.5 &   19 &  31 & \\
+2018 Sep 10 05:59 &    BenA & 0.10 &   100. & 0.25 & 36.5 &  559 &   1 & \\
+2018 Sep  4 16:46 &    BenB & 0.03 &    50. & 0.00 & 34.9 &  559 &   1 & \\
+2018 Sep 12 13:02 &    BenJ & 0.03 &    50. & 0.25 & 34.9 &  559 &   1 & \\
+2018 Sep  9 21:18 &    BenK & 0.03 &   100. & 0.25 & 36.5 &  559 &   1 & \\
  \hline
 \end{tabular} \end{center}
 \end{table}
+
+In Table \ref{runt}, the Beam* directories are all from 2016 Oct and version 343
+
+\begin{table} [!h]
+\caption[Type 52 sizes]{Type 52 sizes. \  Dim: number of dimensions; \ hr: of hours;  \ tp: number of types, always 7, first is Tsurf; \ lat: of latitudes; \ seas: of seasons; \ case: of cases; \ word: word type; \ /run: number of files per run-set}
+\begin{center}
+\begin{tabular}{| r l c |  l r c r | l | } \hline \hline
+%\begin{tabbing} 
+%WWWWWWW   \= WWWWW  \= WWW \= WWWWWWWWW    \= WWW \= WWW   \= WW   \= WWWWWWW \kill 
+size     & Typical Name & Dim & hr lat sea & case & word & /run & comment \\ \hline
+ 2145536 & BeamA00 & 5   & 48 19 42    & 1  & dbl &  1  & flat \\
+27885824 & BEn361K & 5   & 48 19 42    & 13 & dbl &  1  & 12 test cases \\
+38610944 & BeamA02 & 5   & 48 19 42    & 18 & dbl &  30 & 18 azimuths \\ \hline
+ & .bin5 &  & D1 D2 D3 & Dlast & null& \\ \hline
+1313792 & BeamA6092slop &  4 & 48 19 18 & 20 & flt & & hour,latitude,azimuth,slope \\
+1970432 & BeamK5900slop &  4 & 48 19 18 & 30 & flt & &  hour,latitude,azimuth slope \\
+3940352 & BenA5906Aeqslop & 5 & 48 19 1 18 & 30 & dbl & & hour,latitude,null,azimuth,slope \\
+18321280 & BenK5906w1w  &  5 &  9 18 31 48 & 19 & flt & & wave,azimuth,1+slope,hour,lat \\
+22392448 & BeamK5900w1w &  5 & 11 18 31 48 & 19 & flt & & wave,azimuth,1+slope,hour,lat \\ \hline
+\end{tabular} \end{center} \end{table}
+-- w1w.bin5 before 2018NOv11 have misleading comment in file, array is actually [wave,azimuth,slope,hour,lat].
+
+2018 Nov 12 16:52:03 move all .t52 except flat into lower dir directory
+ 
+left-over notes on runs
 \vspace{-3.mm} 
 \begin{verbatim}
-
+I & .03 & 200 & 0.25 & H & &  2490 \\ 
+D & .03 & 100 & 0.25 & H & I=600 below D=.3 & \\
+D & .03 & 100 & 0.25 & L & I=1600 below 5 mm & 1721 \\
+P & .03 & 100 & 0.25 & H & far-field is slope=30 at azimuth+180 & 2458 \\ 
 2018 Sep  4 16:46:00  A=.03  I= 50.  PhoF=0.  BenB2.prt
 2018 Sep  5 23:37:18  A=.03  I= 50.  PhoF=0.  B3.prt
 2018 Sep  5 23:53:09  A=.03  I= 50.  PhoF=0.  B3b.prt
@@ -1559,7 +1669,65 @@ P & .03 & 100 & Kheim & H & far-field is slope=30 at azimuth+180 & 2458 \\
 2018 Sep  9 21:18:08  A=.03  I=100   PF=0.25  K2.prt far=30=K3
 2018 Sep  9 21:18:08  A=.03  I= 50   PF=0.25  J2.prt far=30=J3
                       A=.03  I=100   PF=0.25  A2.prt A3 A4
-\end{verbatim}
+
+Directories, all have 559 .tm1 unless otherwise indicated
+\qi flat, 18 of -30-00a--, 30*18 of -ssc30a--.tm1
+
+|-- BenA
+|-- BEnA
+|-- BenB
+|-- BEnB
+|-- BEnC
+|-- BEnD
+|-- BenI  0
+|-- BenJ
+|-- BEnJ  0
+|-- BenK
+|-- BEnK  0
+|-- BenP   22 .tm1
+`-- daz    270 .t52  9 runs, each  with 30 slope files containing 18 azimuths
+  all file are 38.610944 MB.  5  48 7 19 42 18  dbl   KRCv3.5.6
+   each run has a  --00.t52, 
+   some also have  --eq.t52
+
+ll  */*30*30*30.tm1
+
+-rw-rw-r-- 1 hkieffer 1193472 Sep 12 17:34 BenA/A30a30a30.tm1
+-rw-rw-r-- 1 hkieffer 1193472 Sep 28 07:11 BEnA/A30a30a30.tm1
+-rw-rw-r-- 1 hkieffer 1193472 Sep  6 12:40 BenB/B30b30a30.tm1
+-rw-rw-r-- 1 hkieffer 1193472 Sep 26 11:52 BEnB/B30b30a30.tm1
+-rw-rw-r-- 1 hkieffer 1193472 Sep 27 05:51 BEnC/C30c30a30.tm1
+-rw-rw-r-- 1 hkieffer 1193472 Sep 29 06:37 BEnD/D30d30a30.tm1
+-rw-rw-r-- 1 hkieffer 1193472 Sep 12 13:29 BenJ/J30j30a30.tm1
+-rw-rw-r-- 1 hkieffer 1193472 Sep  9 21:46 BenK/K30k30a30.tm1
+
+\end{verbatim}   
+\subsection{.t52 size}
+
+\begin{verbatim}
+
+[hkieffer@hulk3 beam]$ lt 00_00.t52
+-rwxr--r-- 1 hkieffer  2145536 Sep  9 17:53 BenL00_00.t52*
+-rwxr--r-- 1 hkieffer  2145536 Sep  9 21:18 BenK00_00.t52*
+-rwxr--r-- 1 hkieffer  4290560 Sep 10 05:59 BenA00_00.t52*
+-rwxr--r-- 1 hkieffer  4290560 Sep 12 13:02 BenJ00_00.t52*
+-rwxr--r-- 1 hkieffer  2145536 Sep 12 22:42 BEnA00_00.t52*
+bhead BenLflat.t52
+ 5 48 7 19 42 1 5 268128 512  <<SIZE  2018 Sep  9 14:48:36  >>  KRCv3.5.6
+ bhead BenA00_00.t52
+ 5 48 7 19 42 2 5 536256 512  <<SIZE  2018 Sep 10 05:59:56  >>  KRCv3.5.6
+[hkieffer@hulk3 beam]$ bhead BenJ00_00.t52
+ 5 48 7 19 42 1 5 268128 512  <<SIZE  2018 Sep 12 13:02:42  >>  KRCv3.5.6
+
+read with READKREC52:
+Will Read  file: /work1/krc/beam/BenJ00_00.t52 Size=  5 48 7 19 42 1 5 268128
+
+Will Read  file: /work1/krc/beam/BenA00_00.t52 Size=  5 48 7 19 42 2 5 536256
+  but % READKRCCOM: Unexpected IDX
+\end{verbatim}  
+
+ A2.inp had a blank line after: ---- Last line before inpgen file,followed by blank line
+
  Start with basic model representative of asteroids using a nominal orbit and
  spin axis (e.g., Bennu). Offset individually various model parameters to
  generate partial derivatives.
@@ -1586,12 +1754,24 @@ reducing the size by a factor of 14. It also prompts to move the .t52 files to a
 ``dormant'' directory, which could later be deleted.  
 \qi @11: check 1, 2=Z 3=Z00 or Zeq
 
+
+stereograph,vqsxxu,'v'+stid,/oplot  Shows V17 close to Sun
+
+\section{Compare 361 to Set/Oct beaming runs}
+D361.inp has same properties as 2018 Sep 29 BEnD run. 
+\\ Use krc35.pro to compare Sep 'flat' and 'slop' .bin5 files  with D361-.t52
+\qi set parf 11:13 to the convergence test file: /work1/krc/ beam/ BEnD361 [.t52]
+\qi @252 to return to kv3 to get the file
+\qi 
+
+
+
 \section{Mysteries}
 \subsection{midday glitch in rough radiance}
 BEAMCK @ 71:  midday low is in all rough, model and view
 \qi @73  bad hour index is 23 for lat index 0:9   lat 15:16 are negative!
 
-FOund that BEAMING @64 was using shortest wavelength to assess coldest time, which  do poorly for cool targets. 
+Found that BEAMING @64 was using shortest wavelength to assess coldest time, which  do poorly for cool targets. 
 
 
 New test: @12 13=31, 9=1 ??,  @13 1=q,    @16 9=30 
@@ -1608,32 +1788,6 @@ store fsun,
  see midday glitch, average is near zero!, should be bunch near 1.
 
 stereograph,hqsxxu,'HQS'  
-stereograph,vqsxxu,'v'+stid,/oplot  Shows V17 close to Sun
-\subsection{.t52 size}
-
-\begin{verbatim}
-
-[hkieffer@hulk3 beam]$ lt 00_00.t52
--rwxr--r-- 1 hkieffer  2145536 Sep  9 17:53 BenL00_00.t52*
--rwxr--r-- 1 hkieffer  2145536 Sep  9 21:18 BenK00_00.t52*
--rwxr--r-- 1 hkieffer  4290560 Sep 10 05:59 BenA00_00.t52*
--rwxr--r-- 1 hkieffer  4290560 Sep 12 13:02 BenJ00_00.t52*
--rwxr--r-- 1 hkieffer  2145536 Sep 12 22:42 BEnA00_00.t52*
-bhead BenLflat.t52
- 5 48 7 19 42 1 5 268128 512  <<SIZE  2018 Sep  9 14:48:36  >>  KRCv3.5.6
- bhead BenA00_00.t52
- 5 48 7 19 42 2 5 536256 512  <<SIZE  2018 Sep 10 05:59:56  >>  KRCv3.5.6
-[hkieffer@hulk3 beam]$ bhead BenJ00_00.t52
- 5 48 7 19 42 1 5 268128 512  <<SIZE  2018 Sep 12 13:02:42  >>  KRCv3.5.6
-
-read with READKREC52:
-Will Read  file: /work1/krc/beam/BenJ00_00.t52 Size=  5 48 7 19 42 1 5 268128
-
-Will Read  file: /work1/krc/beam/BenA00_00.t52 Size=  5 48 7 19 42 2 5 536256
-  but % READKRCCOM: Unexpected IDX
-\end{verbatim}  
- A2.inp had a blank line after: ---- Last line before inpgen file,followed by blank line
-
 \subsection{Step 3 and 4 KRC run times}
 Run 30\% faster Sept 16 and later, perhaps due to low obliquity
 \begin{verbatim}
@@ -1645,18 +1799,6 @@ Run 30\% faster Sept 16 and later, perhaps due to low obliquity
  441998 Sep 16 06:02 EA3.prt  1925.268
  442052 Sep 26 12:09 EB3.prt  1902.696
 \end{verbatim}  
-
-\section{OSIRIS-Rex geometry}
-Phil via Chris Haberle provided  ``image table from JAsteroid.`` file for 
- days of OTES approach observations; these had entries every 2 seconds so were huge and fantastically redundant. The simple linux command  
-\\  grep '00:00.' OTES_WOY45_Approach_DOY309.txt > OTES309hour.txt reduced the tables to one entry per hour
-% \\ grep '?0:00.'  OTES_WOY45_Approach_DOY309.txt > OTES309tm.txt
-\qi  '00:01.' for DOY307, which had odd seconds
-\qi then: \ \  cat OTES307hour.txt  OTES309hour.txt OTES313hour.txt > ApGeom.tab
-\qii and edit in the column heareds with no internal white-space.
-
-
-
 
 % \pagebreak
 \bibliography{heat,moon,mars}   %>>>> bibliography data

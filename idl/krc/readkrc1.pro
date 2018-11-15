@@ -1,5 +1,5 @@
 function readkrc1, file,fcom,icom,lcom, lsubs,ttou, vern=vern,ktype=ktype $
-   ,maxs=maxs,verb=verb, dates=dates ,ddd=ddd,lab=lab,desc=desc
+   ,maxs=maxs,verb=verb, dates=dates, rtime=rtime, ddd=ddd,lab=lab,desc=desc
 ;_Titl   READKRC1  Read KRC direct access files
 ; file	in.	String. file path name
 ; fcom	out	KRCCOM floating values, first season See KRCCOMLAB.pro
@@ -9,7 +9,8 @@ function readkrc1, file,fcom,icom,lcom, lsubs,ttou, vern=vern,ktype=ktype $
 ; ttou	out	fldarr(hour, lat, 1 to 3, season]) Temperatures defined 
 ;                 0]= Surface kinetic
 ;                 1]= Planetary bolometric   2]= Atmosphere kinetic 
-; vern   in_     Integer: 3-digit KRC version that wrote the file. Default=340
+; vern both_     Integer: 3-digit KRC version that wrote the file. 
+;        in_  Default=342
 ;                 Logic here changes at: 
 ;       200: by 2012nov22 had  MAXN5 =161
 ;       311: 2014mar16  V3.1.1 double-precision version. Order in KRCCOM changed
@@ -18,6 +19,7 @@ function readkrc1, file,fcom,icom,lcom, lsubs,ttou, vern=vern,ktype=ktype $
 ;              prior: logical record contained a season of 1:3 T-sets
 ;              341+:   1:3 logical records per season
 ;        361+ Version number in the file. Option for R*4 seasonal records
+;       out_ will be reset only if value in file is 361:400
 ; ktype	in_	Integer: KRC disk file kode  K4OUT. Default is 0
 ;     -1,2,3: TSF[,TSP,[TA]]  With the first record being KRCCOM+filler
 ;      0: KRCCOM+LATCOM
@@ -26,6 +28,7 @@ function readkrc1, file,fcom,icom,lcom, lsubs,ttou, vern=vern,ktype=ktype $
 ;                if negative , will return only that 1-based season
 ; verb	in_	If set, will be verbose
 ; dates out_    Fltarr(seasons) DJUL at each season; Type -n computed here 
+; rtime out_  String  Runtime from DAYTIM in KRCCOM
 ;----- Next 3 are defined only for ktype =0
 ; ddd	out_	fltarr[ lats, seasons, 6 items]   Items are:
 ;  	            0] DTM4   = rms temperature change on last day
@@ -55,6 +58,7 @@ function readkrc1, file,fcom,icom,lcom, lsubs,ttou, vern=vern,ktype=ktype $
 ; 2016may24 HK Add keyword VRS to accomodate KRC version 341 and several older
 ;   For type -n, use the logic from TFAR8.f to detect -1,-2 or -3
 ; 2018oct26 HK Handle both R*8 and R*4 seasonal records, use 3-digit vers number
+; 2019nov11 HK Add keyword rtime, update vern if it is in file
 ;_End                .comp readkrc1   
 
 ; help,file,fcom,icom,lcom,lsubs,ttou,vern,ktype,maxs,verb,dates,ddd,lab,desc
@@ -119,6 +123,7 @@ readu,lun1,krc1                 ;### READ KRCCOM structure
 fcom=krc1.fd                    ; return KRCCOM from file
 icom=krc1.id                    ;  "
 lcom=krc1.ld                    ;  "
+rtime=string(krc1.daytim)       ; " run date/time
 
 nhour=icom[5] & lasth=nhour-1   ; N24
 nlat =icom[3] & lastlat=nlat-1  ; N4
@@ -128,7 +133,10 @@ fout=reform([krc1.alat[0:lastlat],krc1.elev[0:lastlat]],nlat,2) ; lat and elevat
 ftype=icom[17-1] ; K4OUT in the file; expect 0 or negative
 kver=vern        ; default is to use input version, or the firm-code default)
 k =icom[24]      ; ID25 is version number for 361+
-if k ge 361 and k lt 400 then kver=k ; Use the version in the file
+if k ge 361 and k lt 400 then begin
+  kver=k                        ; Use the version in the file
+  vern=k                        ; reset the keyword
+endif
 if kver lt 340 and ftype eq -1 then ftype = -2 ; override old .tm1 type
 if ftype ne ktype then begin
  message,'Type in file not as requested',/con
@@ -158,7 +166,7 @@ n5=icom[5-1] & jdisk=icom[12-1] ; number and first output season
 djul=krc1.fd[41-1] & deljul=krc1.fd[42-1] ; first and delta date
 nsx=n5-jdisk+1 ; number of seasons expected based on KRCCOM
 nread=(maxs<nsx)<nread ; number of seasons to read
-Print,'nread,nsea,nsx,maxs,fsea=',nread,nsea,nsx,maxs,fsea
+if vrb then Print,'nread,nsea,nsx,maxs,fsea=',nread,nsea,nsx,maxs,fsea
 if nsx ne nread then message,'NumSeas disagree',/con
 if !dbug ge 2 then stop
 ; dates and lsubs will be overwritten below for Type 0

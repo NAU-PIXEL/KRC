@@ -542,6 +542,45 @@ StDev=
  10   285.5    80.9   152.3   172.9
 \end{verbatim} 
  
+\section{2018 Nov 13 16:29:52  extra case in .t52}
+ writing .t52 seems to be resetting krccom itesms to zero
+
+last case is extra and empty.
+
+krc8.f NCASE starts at 1
+\\ incremented after seasons, just before: CALL TCARD8 (2,IRC)       ! read set of parameter changes
+\\  decrement by 1 IF (IRL.EQ.3), rare continuing from prior run
+\\ decrement by 1 if no more cases
+
+WHen no more cases, 
+\qi IF (LOPN2) CALL TDISK8 (4,KREC) ! all done: close direct acess output file
+\qi IF (LOPN4) CALL TDISK8 (7,KREC) ! type 5x
+\qi  there: JJJ(IDX+2) = NCASE
+\qii WRITE(IOSP,603)IDX,JJJ
+\qii IDX= 4  JJJ=    5   48    7   19   42    0    0    5   25    0
+ \\ ERROR JJJ(6) prints as zero, but should be positive !
+
+But , both KRC and TCARD can call TDISK (7 to write file, and TDISK resets NCASE=0!! fatal error
+
+NCASE modified only by KRC
+Decide; reset it if open new t52?  or let increase thur all of run?
+  which could be hundreds!
+
+
+NRUN starts at 0 in KRC
+increments in TCARD when change specifies T52 file , also updates FDISK
+
+
+3.6.2:
+\\ Runs are 1-based, linked to type 5x files.
+\\ Cases are 1-based, linked to case in any Type 5x file
+\\ File open,  TDISK (1 and 6, must occur before seasons 
+\\ File close, TDISK (4 must occur after seasons , (7 must occur after TCARD changes
+\\ TCARD change must occur after Seasons (except one-Point)
+\\ Thus
+\\  Runs start at zero, increment when 5x files are opened
+\\  Cases start at 0, increment at very top of season loop. Reset to 1 just before Type 5x file opened. 
+
 \end{document} %#############################################################
 % ===================== stuff beyond here ignored =============================
 

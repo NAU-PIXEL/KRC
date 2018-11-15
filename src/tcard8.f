@@ -217,9 +217,8 @@ C follow after the type on the same line, with no interveening index or text
       GO TO 160
 
  220  IF (IREAD.LT.1 .OR. (IREAD.NE. 24 .AND. IREAD.GT.NIDR )) GOTO 295 
-C CAUTION  special code for ID24,  resetting DirectAccess word type
+C Above: special code to allow resetting ID24: DirectAccess word type
       ID(IREAD)=IDNINT(XREAD)    !  IG=2: change  INTEGER parm
-C     IF (IREAD.EQ.12) NCASE=0 ! JDISK: 2009mar reason lost
       WRITE (IOSP,167)IG,IREAD,XREAD,TITI(IREAD),TEXT(1:ILEN)
       GO TO 160
 
@@ -256,8 +255,7 @@ C  IG=8  Read file name
       ELSEIF (IREAD.EQ.5) THEN  ! new bin5 output file name,
         IF (LOPN4) CALL TDISK8 (7,0)    ! close current bin5
         FDISK = TEXT            !         move new file name into common
-        NRUN=NRUN+1             !         increment run count
-        WRITE (IOSP,*)NRUN,'=Run. New T52 file name= ',TEXT(1:ILEN)
+        WRITE (IOSP,*)'New T52 file name= ',TEXT(1:ILEN)
       ELSEIF (IREAD.EQ.21) THEN ! direct-access file to write
         IF (LOPN2) CALL TDISK8 (4,0)    ! close prior direct-access file
         FDIRA=TEXT              !         move file name into common=

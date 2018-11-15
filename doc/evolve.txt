@@ -2,7 +2,7 @@ evolve.txt Notes on evolution of KRC code, after the first 17 years.  Newest on
 top.  Does not include all minor changes.
 ............................................................................
 
-2018oct25 v 3.6.1 Allow far-field-file (fff) system to handle simultaneous
+2018nov04 v 3.6.1 Allow far-field-file (fff) system to handle simultaneous
 separate input files for surface and atmosphere, with tests for fff matching
 current case and making fff date look-up more robust and applicable to any
 "year". New routines TFAREAD (in tfar8.f) and WRAPER. Insert version number as
@@ -14,7 +14,7 @@ returns R*8 values.  New utility routines MV4D and MV8R for converting between
 single and double precision arrays added into fillmv.f .  Update fundamental
 physical constants in krc8.f (tiny changes). Debug option to output all text,
 warnings and errors to the print file in chronological order. Many other debug
-statements converted to "D-line" so thay are ommitted in standard
+statements converted to "D-lines" so thay are ommitted in standard
 compilation. Small changes in printout formats related to cases and change
 lines.
 

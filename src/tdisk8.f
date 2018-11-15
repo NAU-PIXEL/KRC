@@ -300,7 +300,7 @@ C Reading onto common could be catastrophic in KRC model;  BEWARE
             READ(IOD2,REC=I) TPF ! Tplan is least dangerous of proper size arrays
           ENDIF
         ENDIF
-        WRITE(IOSP,310)FDIRA(1:LNBLNK(FDISK)),KREC
+        WRITE(IOSP,310)FDIRA(1:LNBLNK(FDIRA)),KREC
  310    FORMAT('TDISK:  READ FILE= ',A,' RECORD=',I3)
         IERR=IOS
         JREC=I
@@ -384,7 +384,7 @@ C
         I=LNBLNK(FDISK)         ! last non-blank character in file name
         WRITE (IOSP,*)'  File name=',FDISK(1:I)
         LOPN4=.FALSE.
-        NCASE=0                 ! ensure next file indexing start at 1 
+        FDISK='no'              ! no file specified
       ELSE 
         WRITE(IOERR,*)'TDISK:7, Asked to close but LOPN4 false',JREC
       ENDIF

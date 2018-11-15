@@ -298,3 +298,51 @@ tlats8.f:730:        WRITE(76,761)SUBS,DLAT,ALB,SKRC,TAUD,PRES
 tlats8.f:740:          WRITE(76,762)QH,TSFH(I),ADGR(J),QS,TPFH(I)
 tun8.f:33:        WRITE(77,700) 4,NCOL,N24,N4,I,4, NRUN,NCASE ! dimensions:
 \end{verbatim}   
+
+\subsection{Convergence}
+
+One approach to rough surfaces is to have slopes have as a far field the same slope but of opposite azimuth, basically a symmetric valley. KRC can approximate this by a sequence of runs, as is done for the Beaming study.
+
+\begin{description}    % numbered items 
+ \item [0] Run a no-slope with the desired properties.
+ \item [1] Run a slope case, using the flat case as the fff
+ \item [2] Run a slope case with opposite azimuth, with the above case as fff
+ \item [3] Run a slope case with original azimuth, with the above case as fff
+\end{description}
+
+The last two steps can be repeated to improve model fidelity.  
+
+A test was run with 6 slope runs for a north (and south) facing 30\qd~ slope,
+and for a azimuth 100\qd~ (nearly east, part of the 20\qd~ azimuth spacing set)
+and 280\qd. The object was Bennu with I=200, A=0.03 and Khein reflectance
+(PHOG=.25). Case 1 sees a flat far-field, 2 sees far field surface with temperatures from case that saw a flat, 3 has a fff with temperatures of case 2, etc.
+
+The results for the equator on the last season are shown in Figs \ref{K361a}
+and \ref{K361b}; corresponding results for latitude 25N are showm in
+Figs \ref{K361c} and \ref{K361d}. For N/S facing slopes, viewing a flat surface versus a 6'th generation opposing slope is within about 1 deg, whereas E/W slopes need at least 1 generation of opposing slope to be within 1 K. 
+ 
+\begin{figure}[!ht] \igq{K361a}
+\caption[Valley temperatures]{Diurnal surface temperatures for opposing 30\qd~ slopes dipping N/S and 100/280\qd; for Bennu with I=200, A=0.03 and Khein reflectance
+(PHOG=.25). Letter in legend indicate the direction of dip. Number in legend is
+the sequence;
+\label{K361a}  K361a.png  }
+\end{figure} 
+% how made: krc35 /work1/krc/beam/BEn361K.t52 116 222 4
+
+\begin{figure}[!ht] \igq{K361b}
+\caption[Valley convergence]{Difference in surface temperature of early opposing-slope cases from the last (7th) in the sequence. Solid lines are the the first pair of cases, color coded as indicated in the legend. Dashed lines are the second pair of cases, with the same color scheme.
+\label{K361b}  K361b.png }
+\end{figure} 
+% how made: 
+
+\begin{figure}[!ht] \igq{K361c}
+\caption[Valley temperatures 25N]{Diurnal surface temperatures for opposing slopes at 25N. See caption of Fig.  \ref{K361a}
+\label{K361c}  K361c.png  }
+\end{figure} 
+% how made: 
+
+\begin{figure}[!ht] \igq{K361d}
+\caption[Valley convergence 25N]{COnvergencee of surface temperatures for opposing slopes at 25N.. See caption of Fig.  \ref{K361b}
+\label{K361d}  K361d.png  }
+\end{figure} 
+% how made: 
