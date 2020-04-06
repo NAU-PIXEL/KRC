@@ -2,6 +2,18 @@ evolve.txt Notes on evolution of KRC code, after the first 17 years.  Newest on
 top.  Does not include all minor changes.
 ............................................................................
 
+2019dec10 v3.6.4 Fix bug in PORB ephemr.f, used to generate ephemer print
+tables; does not affect KRC calculations.  Convert dates used in spcrev.f for
+Viking revs to J2000. Updates orbital elements for Ceres in small.tab. Update
+PORB USers Guide (PUG)
+
+2019mar23 v3.6.3 Changes to TFAR and WRAPER to allow getting the proper season
+when reading type -n files from versions before 3.6.1, which did not yet have the
+orbital period stored in the KRCCOM; assumes recorded seasons are one more than
+make a year. Minor updates to helplist.
+
+2018nov14 v 3.6.2  Fix bug in 3.6.1 where first type 52 file overwrote common. 
+ 
 2018nov04 v 3.6.1 Allow far-field-file (fff) system to handle simultaneous
 separate input files for surface and atmosphere, with tests for fff matching
 current case and making fff date look-up more robust and applicable to any

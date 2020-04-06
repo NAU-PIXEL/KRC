@@ -44,8 +44,9 @@ C 2018feb02 HK V 3.5.5 Separate Photometric function parameter from Henyey-Green
 C 2018jul03 HK V 3.5.6 Fixes to frost conditions. See 356notes.tex
 C 2081oct11 HK V 3.6.1 Fixed ancient BINF5  bug. Checks on fff with atm. Put 
 C version into KRCCOM, Make far-field file REAL*4, backward compat. with REAL*8
-C 2018nov13 HK v 3.6.2 Fix bug in 361 only; write of .t52 zeroed part of KRCCOM 
-C    
+C 2018nov13 HK v 3.6.2 Fix bug in 361 only; write of .t52 zeroed part of KRCCOM
+C 2019mar20 HK Remove moot code to send all print to IOSP, this is done in TCARD
+C 2020apr02 HK Update VERSIN to 3.6.4, Changes are mostly in the PORB system
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
 
       REAL ELAPSED,TIMES(2)     ! declare the types of DTIME()
@@ -59,13 +60,13 @@ C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
       CHARACTER(LEN=12) CDATE,CTIME ! args for date_and_time
 C-      CHARACTER*1 BBUF          ! temporary use
       CHARACTER*25 SEPER  /' ----------------------- '/  ! case separation line
-      REAL TOTIME               ! Total Elapsed Time 
-      REAL*8 DUM8               ! dummy 
+      REAL TOTIME               ! Total Elapsed Time
+      REAL*8 DUM8               ! dummy
       REAL*8 DUMB  /772.d0/     ! dummy argument, should never change
       REAL*8 DUMC  /773.d0/     ! " " 
       REAL*8 ZERO /0.0D0/       ! zero  
 
-      VERSIN='KRCv3.6.2'        ! set version number   12 bytes in FILCOM
+      VERSIN='KRCv3.6.4'        ! set version number   12 bytes in FILCOM
       KREC=84+20  ! number of bytes in TITLE +DAYTIM. Values from def. in KRCCOM
       IF (MOD(KREC,8).NE.0 .OR. MOD(N4KRC,2).NE.0) THEN 
         WRITE(*,*)'BAD lengths',KREC,N4KRC
@@ -166,12 +167,6 @@ C                       open input and print files
       OPEN (UNIT=IOSP,FILE=FOUT,err=82)
 C                       read and check a complete set of input parameters
 D !D      write(iosp,*) 'before TCARD LP2=',LP2 !<<< debug
-      IF (IDB6.EQ.99) THEN
-       WRITE (IOPM,*) 'Switching IOPM and IOERR output to IOSP'
-        IOPM=IOSP
-        IOERR=IOSP
-      ENDIF
-
       CALL TCARD8 (1,IRC)
 D !D      write(iosp,*) 'after TCARD IR,LP2=',IRC, LP2 !<<< debug
 D !D      write(*,*) 'TCARD:1 return=',IRC !<<< debug

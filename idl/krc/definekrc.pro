@@ -119,17 +119,17 @@ if dodp then begin
   if vern lt 320 then out={ fd:dblarr(numfd) $ ; R*8: params
       ,id:lonarr(numid),ld:lonarr(numld)   $ ; I*4: Integers and Logicals 
       ,tit:bytarr(4*numtit),daytim:bytarr(4*numday) $ ; Character strings
-      ,ALAT:dblarr(maxn4),ELEV:dblarr(maxn4) } $ ; R*8: latitudes(deg), elevations
+      ,alat:dblarr(maxn4),elev:dblarr(maxn4) } $ ; R*8: latitudes(deg), elevations
   else out={ fd:dblarr(numfd) $                ; R*8: params
-      ,ALAT:dblarr(maxn4),ELEV:dblarr(maxn4) $ ; R*8: latitudes, elevations
+      ,alat:dblarr(maxn4),elev:dblarr(maxn4) $ ; R*8: latitudes, elevations
       ,id:lonarr(numid),ld:lonarr(numld)  $    ; I*4: Integers and Logicals 
       ,tit:bytarr(4*numtit),daytim:bytarr(4*numday) } ; Character strings
     out.fd=[double(fd0),replicate(0.d0,numfd-nfl)] ; fill to end with  zeros
 endif else begin ; R*4 before version 31
    out={ fd:fltarr(numfd),id:lonarr(numid),ld:lonarr(numld) $
          ,tit:bytarr(4*numtit),daytim:bytarr(4*numday) $
-         ,ALAT:fltarr(maxn4)  $ ; latitude in degrees.
-         ,ELEV:fltarr(maxn4)  } ; elevation in km.
+         ,alat:fltarr(maxn4)  $ ; latitude in degrees.
+         ,elev:fltarr(maxn4)  } ; elevation in km.
    out.fd=[fd0,replicate(0.,numfd-nfl)] ; append the place for computed values
 endelse
 nword=n4krc
@@ -315,85 +315,85 @@ labkl=[ $
 ,'LONE  (Computed) Set TRUE if KRC is in the "one-point" mode']
 ; help,krccom.fd,labkf,fd0,krccom.id,labki,id0,krccom.ld,labkl,ld0
 if vern ge 340 then labkl[17]='LD18  TCARD flag that at least 1 item changed'
-endif ;  N_PARAMS() ge 5
+endif ;  n_params() ge 5
 end ; case 'KRC'
 
 'LAT': if dodp then begin
-out ={DTM4:dblarr(maxn4)   $ ; rms temperature change on last day
- ,TST4:dblarr(maxn4)       $ ; predicted equilibrium temperature of ground
- ,TTS4:dblarr(maxn4)     $ ; predicted mean surface temperature for each latitude
- ,TTB4:dblarr(maxn4)       $ ; predicted mean bottom temperature
- ,FROST4:dblarr(maxn4)     $ ; predicted frost amount gram/cm^2.
- ,AFRO4:dblarr(maxn4)      $ ; frost albedo.
- ,TTA4:dblarr(maxn4)       $ ; final atmosphere temperature
- ,TTX4:dblarr(maxn4)       $ ; spare
- ,TMN4:dblarr(maxn1,maxn4) $ ; predicted convergence surface temperature
- ,TIN:dblarr(maxn1,maxn4)  $ ; minimum hourly layer temperature
- ,TAX:dblarr(maxn1,maxn4)  $ ; maximum hourly layer temperature
- ,TSF:dblarr(maxnh,maxn4)  $ ; final hourly surface temperature
- ,TPF:dblarr(maxnh,maxn4)  $ ; final hourly planetary temperature 
- ,NDJ4:lonarr(maxn4) }       ; # days to compute solution for each latitude
+out ={dtm4:dblarr(maxn4)   $ ; rms temperature change on last day
+ ,tst4:dblarr(maxn4)       $ ; predicted equilibrium temperature of ground
+ ,tts4:dblarr(maxn4)     $ ; predicted mean surface temperature for each latitude
+ ,ttb4:dblarr(maxn4)       $ ; predicted mean bottom temperature
+ ,frost4:dblarr(maxn4)     $ ; predicted frost amount gram/cm^2.
+ ,afro4:dblarr(maxn4)      $ ; frost albedo.
+ ,tta4:dblarr(maxn4)       $ ; final atmosphere temperature
+ ,ttx4:dblarr(maxn4)       $ ; spare
+ ,tmn4:dblarr(maxn1,maxn4) $ ; predicted convergence surface temperature
+ ,tin:dblarr(maxn1,maxn4)  $ ; minimum hourly layer temperature
+ ,tax:dblarr(maxn1,maxn4)  $ ; maximum hourly layer temperature
+ ,tsf:dblarr(maxnh,maxn4)  $ ; final hourly surface temperature
+ ,tpf:dblarr(maxnh,maxn4)  $ ; final hourly planetary temperature 
+ ,ndj4:lonarr(maxn4) }       ; # days to compute solution for each latitude
 nwlat=(8L+ 3L*maxn1 + 2L*maxnh) *maxn4 +maxn4E/2 ; number of 8-byte words
 nword=2*nwlat
 endif else begin
-out ={ NDJ4:lonarr(maxn4)  $ ; # days to compute solution for each latitude
- ,DTM4:fltarr(maxn4)       $ ; rms temperature change on last day
- ,TST4:fltarr(maxn4)       $ ; predicted equilibrium temperature of ground
- ,TTS4:fltarr(maxn4)     $ ; predicted mean surface temperature for each latitude
- ,TTB4:fltarr(maxn4)       $ ; predicted mean bottom temperature
- ,FROST4:fltarr(maxn4)     $ ; predicted frost amount gram/cm^2.
- ,AFRO4:fltarr(maxn4)      $ ; frost albedo.
- ,TTA4:fltarr(maxn4)       $ ; final atmosphere temperature
- ,TTX4:fltarr(maxn4)       $ ; spare
- ,TMN4:fltarr(maxn1,maxn4) $ ; predicted convergence surface temperature
- ,TIN:fltarr(maxn1,maxn4)  $ ; minimum hourly layer temperature
- ,TAX:fltarr(maxn1,maxn4)  $ ; maximum hourly layer temperature
- ,TSF:fltarr(maxnh,maxn4)  $ ; final hourly surface temperature
- ,TPF:fltarr(maxnh,maxn4) } ; final hourly planetary temperature
+out ={ ndj4:lonarr(maxn4)  $ ; # days to compute solution for each latitude
+ ,dtm4:fltarr(maxn4)       $ ; rms temperature change on last day
+ ,tst4:fltarr(maxn4)       $ ; predicted equilibrium temperature of ground
+ ,tts4:fltarr(maxn4)     $ ; predicted mean surface temperature for each latitude
+ ,ttb4:fltarr(maxn4)       $ ; predicted mean bottom temperature
+ ,frost4:fltarr(maxn4)     $ ; predicted frost amount gram/cm^2.
+ ,afro4:fltarr(maxn4)      $ ; frost albedo.
+ ,tta4:fltarr(maxn4)       $ ; final atmosphere temperature
+ ,ttx4:fltarr(maxn4)       $ ; spare
+ ,tmn4:fltarr(maxn1,maxn4) $ ; predicted convergence surface temperature
+ ,tin:fltarr(maxn1,maxn4)  $ ; minimum hourly layer temperature
+ ,tax:fltarr(maxn1,maxn4)  $ ; maximum hourly layer temperature
+ ,tsf:fltarr(maxnh,maxn4)  $ ; final hourly surface temperature
+ ,tpf:fltarr(maxnh,maxn4) } ; final hourly planetary temperature
 nword=(9L+ 3L*maxn1 + 2L*maxnh) *maxn4
 
 endelse ; case LAT
 
 'DAY': if dodp then begin
- out={XCEN:dblarr(maxn1)  $ ; Depth at layer centers [m]
- ,SCONVG:dblarr(maxn1)   $ ; Classical convergence factor for each layer
- ,BLAY:dblarr(maxn1)     $ ; Layer thicknesses [m]
- ,TMIN:dblarr(maxn1)     $ ; Minimum layer temperatures of day
- ,TMAX:dblarr(maxn1)     $ ; Maximum layer temperatures of day
- ,TTJ:dblarr(maxn1P)     $ ; Layer temperatures (T(1) is surface temperature)    
- ,TT1:dblarr(maxn1,maxn3) $ ; Temperatures at start of day for each layer and day
- ,TTS:dblarr(maxn3)      $ ; Mean daily surface temperatures                     
- ,TTB:dblarr(maxn3)      $ ; Mean daily bottom temperatures                      
- ,TTA:dblarr(maxn3)      $ ; End-of-Day Atmospheric temperatures
- ,DTMJ:dblarr(maxn3)     $ ; RMS daily temperature                               
- ,FRO:dblarr(maxn3)      $ ; Daily frost amounts. [kg/m^2]                    
- ,ASOL:dblarr(maxn2)     $ ; Insolation at each time of day                      
- ,ADGR:dblarr(maxn2)     $ ; Atm. solar heating at each time of day 
- ,TOUT:dblarr(maxn2)     $ ; Surface temperatures of solution at each time of day
- ,TSFH:dblarr(maxnh)     $ ; Hourly surface temperatures at solution
- ,TPFH:dblarr(maxnh)     $ ; Hourly planetary temperatures at solution
- ,N1K:lonarr(maxbot)     } ; Binary time division layers
+ out={xcen:dblarr(maxn1)  $ ; depth at layer centers [m]
+ ,sconvg:dblarr(maxn1)   $ ; classical convergence factor for each layer
+ ,blay:dblarr(maxn1)     $ ; layer thicknesses [m]
+ ,tmin:dblarr(maxn1)     $ ; minimum layer temperatures of day
+ ,tmax:dblarr(maxn1)     $ ; maximum layer temperatures of day
+ ,ttj:dblarr(maxn1p)     $ ; layer temperatures (t(1) is surface temperature)    
+ ,tt1:dblarr(maxn1,maxn3) $ ; temperatures at start of day for each layer and day
+ ,tts:dblarr(maxn3)      $ ; mean daily surface temperatures                     
+ ,ttb:dblarr(maxn3)      $ ; mean daily bottom temperatures                      
+ ,tta:dblarr(maxn3)      $ ; end-of-day atmospheric temperatures
+ ,dtmj:dblarr(maxn3)     $ ; RMS daily temperature                               
+ ,Fro:dblarr(maxn3)      $ ; daily frost amounts. [kg/m^2]                    
+ ,asol:dblarr(maxn2)     $ ; insolation at each time of day                      
+ ,adgr:dblarr(maxn2)     $ ; atm. solar heating at each time of day 
+ ,tout:dblarr(maxn2)     $ ; surface temperatures of solution at each time of day
+ ,tsfh:dblarr(maxnh)     $ ; hourly surface temperatures at solution
+ ,tpfh:dblarr(maxnh)     $ ; hourly planetary temperatures at solution
+ ,n1k:lonarr(maxbot)     } ; Binary time division layers
 nwday= 5L*maxn1 + maxn1P + (5L+maxn1)*maxn3 + 3*maxn2 + 2*maxnh + maxbot/2
 nword=2*nwday
 endif else begin
- out={XCEN:fltarr(maxn1)  $ ; Depth at layer centers [m]
- ,SCONVG:fltarr(maxn1)   $ ; Classical convergence factor for each layer
- ,BLAY:fltarr(maxn1)     $ ; Layer thicknesses [m]
- ,TMIN:fltarr(maxn1)     $ ; Minimum layer temperatures of day
- ,TMAX:fltarr(maxn1)     $ ; Maximum layer temperatures of day
- ,TTJ:fltarr(maxn1P)     $ ; Layer temperatures (T(1) is surface temperature)    
- ,TT1:fltarr(maxn1,maxn3) $ ; Temperatures at start of day for each layer and day
- ,TTS:fltarr(maxn3)      $ ; Mean daily surface temperatures                     
- ,TTB:fltarr(maxn3)      $ ; Mean daily bottom temperatures                      
- ,TTA:fltarr(maxn3)      $ ; End-of-Day Atmospheric temperatures
- ,DTMJ:fltarr(maxn3)     $ ; RMS daily temperature                               
- ,FRO:fltarr(maxn3)      $ ; Daily frost amounts. [kg/m^2]                    
- ,ASOL:fltarr(maxn2)     $ ; Insolation at each time of day                      
- ,ADGR:fltarr(maxn2)     $ ; Atm. solar heating at each time of day 
- ,TOUT:fltarr(maxn2)     $ ; Surface temperatures of solution at each time of day
- ,TSFH:fltarr(maxnh)     $ ; Hourly surface temperatures at solution
- ,TPFH:fltarr(maxnh)     $ ; Hourly planetary temperatures at solution
- ,N1K:lonarr(maxbot)     } ; Binary time division layers
+ out={xcen:fltarr(maxn1)  $ ; depth at layer centers [m]
+ ,sconvg:fltarr(maxn1)   $ ; classical convergence factor for each layer
+ ,blay:fltarr(maxn1)     $ ; layer thicknesses [m]
+ ,tmin:fltarr(maxn1)     $ ; minimum layer temperatures of day
+ ,tmax:fltarr(maxn1)     $ ; maximum layer temperatures of day
+ ,ttj:fltarr(maxn1p)     $ ; layer temperatures (t(1) is surface temperature)    
+ ,tt1:fltarr(maxn1,maxn3) $ ; temperatures at start of day for each layer and day
+ ,tts:fltarr(maxn3)      $ ; mean daily surface temperatures                     
+ ,ttb:fltarr(maxn3)      $ ; mean daily bottom temperatures                      
+ ,tta:fltarr(maxn3)      $ ; end-of-day atmospheric temperatures
+ ,dtmj:fltarr(maxn3)     $ ; RMS daily temperature                               
+ ,fro:fltarr(maxn3)      $ ; daily frost amounts. [kg/m^2]                    
+ ,asol:fltarr(maxn2)     $ ; insolation at each time of day                      
+ ,adgr:fltarr(maxn2)     $ ; atm. solar heating at each time of day 
+ ,tout:fltarr(maxn2)     $ ; surface temperatures of solution at each time of day
+ ,tsfh:fltarr(maxnh)     $ ; hourly surface temperatures at solution
+ ,tpfh:fltarr(maxnh)     $ ; hourly planetary temperatures at solution
+ ,n1k:lonarr(maxbot)     } ; binary time division layers
 nword= 5L*maxn1 + maxn1P  + (5L+maxn1)*maxn3 + 3*maxn2 + 2*maxnh + maxbot
 endelse ; case DAY
 
@@ -401,8 +401,8 @@ endelse ; case DAY
 blan80=BYTEPAD('dum',80)
 blan20=BYTEPAD('dum',20)
 blan12=BYTEPAD('dum',12)
-out={FINPUT:blan80,FOUT:blan80,FDISK:blan80,FVALB:blan80,VTAU:blan80 $
-     ,TITONE:blan20,VERSIN:blan12 }
+out={finput:blan80,fout:blan80,fdisk:blan80,fvalb:blan80,vtau:blan80 $
+     ,titone:blan20,versin:blan12 }
 nword=(5*numch+20+12)/4 ; number of 4-byte words
 end
 

@@ -17,13 +17,14 @@
 # 2017sep30 HK Include  nowhite.f  to clean-up errorlog filename
 # 2018feb01 HK include orlint.f
 # 2018oct14 HK Include wraper.f
+# 2019dec04 HK Change from wraper.f to  wraper8.f
 ####################################################
 
 SHELL=/bin/csh
 
 FC=gfortran
 
-# Use 2nd version below to allow debuggerand enable most IDBG actions
+# Use 2nd version below to allow debugger and enable most IDBG actions
 FFLAGS= -fno-automatic -fno-second-underscore -fd-lines-as-comments -Wall
 #FFLAGS= -fno-automatic -fno-second-underscore  -g -fbounds-check   # -Wall   #  -O
 
@@ -61,7 +62,7 @@ OBJ8 = krc8.o tseas8.o tlats8.o tday8.o tcard8.o tprint8.o tdisk8.o tun8.o \
  climtau.o binf5.o bigend.o rotmdp8.o vadddp8.o cocodp8.o readzone.o \
  catime.o white1.o ksubs8.o tfar8.o cubuterp8.o sigma8.o fillmv.o nowhite.o \
  eclipse.o tfine8.o dspline.o dsplint.o evmono3d.o strumi.o strumr8.o gaspt8.o \
- orlint8.o wraper.o
+ orlint8.o wraper8.o
 
 # PORB double precision
 OBJP3 = porbmn.o porbio.o ephemr.o ymd2j2.o porbig.o porbit.o porbel.o \
@@ -75,7 +76,7 @@ OBJT = testrou.o alsubs.o averag.o aveyear.o bigend.o binf5.o \
  fillmv.o getpi4.o getpr8.o hratlsq.o kratlsq.o m2eul.o qtlats.o \
  randomn.o ratval.o rotmdp8.o sigma.o sigma8.o spline.o splint.o \
  strumi.o strumr8.o tdif3.o tfar8.o epred8.o \
- vadddp8.o white1.o gaspt8.o nowhite.o orlint8.o wraper.o
+ vadddp8.o white1.o gaspt8.o nowhite.o orlint8.o wraper8.o
 
 OBBB = krt8.o fillmv.o 
 
@@ -200,7 +201,7 @@ tridag8.o: tridah8.f   # uses prior partial solution
 vlpres.o: vlpres.f
 vadddp8.o: vadddp8.f  # Contains:  VADD  VCROSS  VDOT  VEQUAL  VMAG  VNEG 
  #                       VNORM  VPRF  VPRINT  VSCALE  VSHOW  VSUB  VUNIT
-wraper.o: wraper.f 
+wraper8.o: wraper8.f 
 ymd2j2.o: ymd2j2.f
 
 #----------------------- added after remove use of all but C library

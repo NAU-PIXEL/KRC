@@ -2,15 +2,18 @@ function strum, ss,xx, join=join,quiet=quiet, rem=rem, nix=nix
 ;_Titl  STRUM  Separate or concatonate strings into one using separator.
 ; ss	in.	String with items to be unjoined or Strings to be joined.
 ; xx	in. 	Single character used as separator.
-; join	in_ 	If set, joins strings; else, separates them.
-;               If == -2 then, extracts existing joined string from ss
+; join	in_ 	If set or +, joins strings; else, separates them.
+;               If == -2 then, isolates existing joined string from ss
+;                  <= -3 will try to also include 'xxx=' before the STRUM
 ; quiet	in_	If set, no message if separation character not found.
-; rem	in_	If set, will try to remove a STRUM entry from sss
+; rem	in_	If set, will remove a STRUM entry from ss
+;                 If join <== -3 then will try to also remove 'xxx=' before the STRUM
 ; nix	out.	Integer count of number of strings that contained an xx
 ;		Used only if join is set. 
-; func.	out.	Strings that have been unjoined or joined.
-; 		If rem was set, string cleaned of that STRUM
-;		If error, returns 'ERROR'
+; func.	out. Strings that have been unjoined or joined.
+;            If rem was set, returns string cleaned of that STRUM
+;            If  join  is negative and rem not set, returns the extracted joined string
+;            If error, returns 'ERROR'
 ;_Desc
 ; Double separation character is used at both ends of cat-string. 
 ; The separation character should NOT occur within any string element.
@@ -25,7 +28,10 @@ function strum, ss,xx, join=join,quiet=quiet, rem=rem, nix=nix
 ; 2007mar23 HK Add   quiet  option
 ; 2007apr03 HK Add    rem   option
 ; 2012nov12 HK Add option to return the joined string with no change
-; 2018aug20 HK No error msg if seperator missing. Change IDL routine calls to lower-case
+; 2018aug20 HK No error msg if seperator missing. Change IDL routine calls to
+; lower-case
+; 2019nov17 HK Option to also remove the keyword identifying the strum string
+; 2020feb10 HK Clarify the join and rem keywords, simplify the code
 ;_End
 
 verb= not keyword_set(quiet)
@@ -35,19 +41,19 @@ if n_elements(xx) ne 1 then goto,err2
 if strlen(xx) ne 1 then goto,err2
 x2=xx+xx                         ; form end expression
 if not keyword_set(join) then join=0
+if not keyword_set(rem)  then rem=0
 out='' ; in case no vector for this xx
-if join eq -2 then begin        ; extract joined string as is
-    I=strpos(ss,x2)             ; look for start
+if join le -2 or rem then begin ; isolate joined string as is
+    i=strpos(ss,x2)             ; look for start
     if i lt 0 then goto,err4    ; this strum not in the input string
     j=strpos(ss,x2,i+2)         ; look for end
     if j lt 0 then goto,err5 
-    out=strmid(ss,i,j-i+2)      ; extract existing joined items
-endif else if keyword_set(rem) then begin ; look for prior STRUM to remove
-    I=strpos(ss,x2)              ; look for start
-    if i lt 0 then return,ss    ; this strum not in the input string
-    j=strpos(ss,x2,i+2)         ; look for end
-    if j lt 0 then goto,err5
-    out=strmid(ss,0,i)+ strmid(ss,j+2) ; split the string
+    if join lt -2 then begin           ; look for leading word
+      i3=strpos(ss,'=',i,/reverse_search)  ; find = before strum
+      i=strpos(ss,' ',i3,/reverse_search) ; find blank before the =
+    endif
+    if rem then out=strmid(ss,0,i)+strmid(ss,j+2) $ ; before and after the strum
+           else out=strmid(ss,i,j-i+2)      ; extract existing joined items
 endif else if join ne 0 then begin ; join strings
     nix=0                       ; count of strings that contain the separator 
     for i=0,n-1 do if strpos(ss[i],xx) ge 0 then nix=nix+1

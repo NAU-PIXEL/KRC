@@ -318,8 +318,10 @@ and 280\qd. The object was Bennu with I=200, A=0.03 and Khein reflectance
 (PHOG=.25). Case 1 sees a flat far-field, 2 sees far field surface with temperatures from case that saw a flat, 3 has a fff with temperatures of case 2, etc.
 
 The results for the equator on the last season are shown in Figs \ref{K361a}
-and \ref{K361b}; corresponding results for latitude 25N are showm in
+and \ref{K361b}; corresponding results for latitude 25N are shown in
 Figs \ref{K361c} and \ref{K361d}. For N/S facing slopes, viewing a flat surface versus a 6'th generation opposing slope is within about 1 deg, whereas E/W slopes need at least 1 generation of opposing slope to be within 1 K. 
+
+
  
 \begin{figure}[!ht] \igq{K361a}
 \caption[Valley temperatures]{Diurnal surface temperatures for opposing 30\qd~ slopes dipping N/S and 100/280\qd; for Bennu with I=200, A=0.03 and Khein reflectance
@@ -346,3 +348,20 @@ the sequence;
 \label{K361d}  K361d.png  }
 \end{figure} 
 % how made: 
+
+\subsubsection{keystrokes} %..............................
+\vspace{-3.mm} 
+\begin{verbatim}
+.rnew kv3
+@535     calls krc35
+@2:  jlat? > 9   near equator
+@116      May do @11 to change 11:15, 
+          then @252 will return to kv3 and get new file   
+@222 reply u,  -2 2, 
+@861 =14 colors      @4  make Fig a   == @88 @802 mv idl.pg
+@860 =10 colors      @41 make Fig b 
+@2:  jlat? > 13   near 25N
+@861 @4   make Fig c .   @86  @41 make fig d
+
+
+\end{verbatim}  

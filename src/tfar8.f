@@ -10,7 +10,7 @@ C     INCLUDE 'hatc8m.f'
       INCLUDE 'filc8m.f' ! has FFAR, FFATM
       INTEGER NFELP
       PARAMETER (NFELP = 10+MAXN4) ! size of real info storage
-C     _Args
+C_Args
       INTEGER*4 KODIN            ! in. control current KRCCOM 
 C 0:4 is for Tsurf, using IOD3, LOPN3, FFAR
 C        1 = Open file .  FFATE: +1=check KRCCOM  +2=stat file
@@ -51,6 +51,7 @@ C_Hist 2016may11 Hugh Kieffer Adopt from tdisk8.f
 C 2016may21 HK Enable reading files with 1,2, or 3 kinds of temperature
 C 2018oct12 HK Version 361.  Files may be REAL*4
 C 2018nov05 HK Prepend D to lines activated by IDBx
+C 2019mar20 HK Add estimate for days/year for versions before 361
 C_Pause
 C Make arrays that match COMKRC(NWKRC)   Definitions MUST MATCH KRCCOM exactly
       REAL*8 FF3FD(NUMFD)        ! Real parameters
@@ -132,19 +133,25 @@ C     recl may be bytes or longwords, depending upon  OS and compiler options.
         IF (XF .NE. 0.D0) WRITE(IOERR,*)'TFAR: NRECL excess=',XF
         MEMI(1)=FF3ID(6)        ! Number of hours defined
         MEMI(2)=FF3ID(4)        ! number of latitudes defined
-        MEMI(4)= -FF3ID(17)     ! negative of K4OUT in the file = Number of T sets
+        MEMI(4)= -FF3ID(17) ! negative of K4OUT in the file = Number of T sets
         MEMI(3)=(MREC-1)/MEMI(4) ! Number of seasons in file
-        XF=FF3FD(68)/FF3FD(42)  ! seasons/year in file
+        XG=FF3FD(68)            ! days/year FD(68). Was spare=0 until v361
+        XH=FF3FD(42)            ! deljul
+        IF (XG.LT.XH) THEN  ! probably before v361
+          XG=(MEMI(3)-1)*XH     ! Assume recorded a year with 1 season wrap
+          WRITE(IOSP,*)'WARNING, days/year uncertain. Set to', XG
+        ENDIF
+        XF=XG/XH                ! seasons/year in file
         MEMI(5)=NINT(XF)        ! " as integer
         MEMI(6)= MREC           ! number of records in file
         MEMI(7)= FF3ID(25)      ! NUMVER:   prior to 3.6.1 files were REAL*8
         MEMI(8)= FF3ID(24)      ! Bytes per word, defined for v361 at later
         IF (ABS(XF-MEMI(5)).GT. 1.D-2 ) ! FIRM-CODE tolerance
      &         WRITE(IOERR,*)'TFAR: non-I seasons=',XF
-        FFELP(2)=FF3FD(87)-(MEMI(3)-1)*FF3FD(42) ! DJUL of first season in file
-        FFELP(3)=FF3FD(42)      ! DELJUL between seasons
+        FFELP(2)=FF3FD(87)-(MEMI(3)-1)*XH ! DJUL of first season in file
+        FFELP(3)=XH      ! FF3FD(42)  DELJUL between seasons
         FFELP(4)=FF3FD(87)      ! DJUL of last season in file
-        FFELP(5)=FF3FD(68)      ! length of a orbital year in days
+        FFELP(5)=XG     ! FF3FD(68) ?. Length of a orbital year in days
         FFELP(7)=FF3FD(2)       ! surface emissivity
         FFELP(8)=FF3FD(23)      ! slope
         CALL MVD (FF3LA,FFELP(11),MEMI(2)) ! transfer latitudes
@@ -157,7 +164,7 @@ C     recl may be bytes or longwords, depending upon  OS and compiler options.
         IF (MOD(KACT,2).EQ.1) THEN !  compare parameters
           WRITE(IOSP,*)'TFAR: KRCCOM Comparison:'
           DO I=1,NUMFD
-            XF=ABS(FD(I))       ! steps to get nomrmalized difference
+            XF=ABS(FD(I))       ! steps to get normalized difference
             XG=ABS(FF3FD(I))
             XH=MAX(XF,XG)
             IF (XH .NE.0.) THEN   
@@ -223,6 +230,13 @@ C        , J1,FX,    J2,IRET)
             IOP=IOPM            ! transfer print unit
             KR1=2+(JS1-1)*II  ! record number of Tsurf for season JS
             KR2=2+(JS2-1)*II  ! = krccom+ n*(seasons to disk already)+1
+            IF (KR1.LT.1) THEN 
+              WRITE (IOERR,'(A,6F10.3)') 'TFAR8 fault',FFATE
+     &             ,(FFELP(I),I=1,5)
+              WRITE (IOERR,'(A,F10.4,I6,F10.4,2I6)') 'TFAR8  wrap' 
+     &             ,FFOLE,JS1,FFRAC,JS2,IR1
+              WRITE (IOERR,'(A,8I6)') 'TFAR8  MEMI',(MEMI(I),I=1,8)
+              ENDIF
             CALL TFAREAD (IFUN,KR1,FFRAC,KR2,NUMH4,LISS,IOP, FFTS,IR1)
 C                        (IOD3,KR1,FFRAC,KR2,NUMH4,LISS,IOP, AAA,IRET)
             IF (II.GE.2) THEN ! next record is Tplan
@@ -295,16 +309,18 @@ C==============================================================================
 C_Titl  TFAREAD  Read/interpolate records of open R*4 or R*8 direct-access file
       IMPLICIT NONE
 C_Vars
-      INTEGER*4 IODF            ! logical unit number of file 
-      INTEGER*4 KR1             ! First record to read
-      REAL*8 FFRAC              ! fraction of 2nd record;  <=0 Ignores  KR2
-      INTEGER*4 KR2             ! Second record to read
-      INTEGER*4 NUMH4           ! Size of record in words
-      LOGICAL*4 LISS            ! file expected to be single precision
-      INTEGER*4 IOP             ! logical unit for error message
-      REAL*8 AAA(NUMH4)         ! Array to match file record
-      INTEGER*4 IRET            ! Return code , 0 = OK +1=IOSTAT error on  KR1
-                                ! +2=IOSTAT error on KR2,  +10 READ error
+      INTEGER*4 IODF            ! in. logical unit number of file 
+      INTEGER*4 KR1             ! in. First record to read
+      REAL*8 FFRAC              ! in. fraction of 2nd record;  <=0 Ignores  KR2
+      INTEGER*4 KR2             ! in. Second record to read
+      INTEGER*4 NUMH4           ! in. Size of record in words
+      LOGICAL*4 LISS            ! in. file expected to be single precision
+      INTEGER*4 IOP             ! in. logical unit for error message
+      REAL*8 AAA(NUMH4)         ! out. Array to match file record
+      INTEGER*4 IRET            ! out. Return code, 0 = OK
+                                !      +1=IOSTAT error on  KR1
+                                !      +2=IOSTAT error on KR2,  
+                                !     +10 READ error
 C_End 789012345678901234567890123456789012345678901234567890123456789012_4567890
       INTEGER*4 I,II,IOST
       REAL*4 FFR4(NUMH4)        ! array to match file record
@@ -339,7 +355,8 @@ C         -=hit end of file    +=error during read, depends upon computer
       ENDIF
       RETURN
 
- 81   WRITE(IOP,*)'TFAREAD: I/O ERROR',IODF,LISS,II,IOST,IRET
+ 81   WRITE(IOP,*)'TFAREAD: I/O ERROR',IODF,KR1,FFRAC,KR2,NUMH4
+      WRITE(IOP,*)'  " in TFAR8: LISS',LISS,II,IOST,IRET
       IRET=IRET+10
       RETURN
       END

@@ -25,7 +25,7 @@
 \newcommand{\qd}{$^\circ$}        % degree symbol
 
 \title{KRC planetary surface temperatures: Helplist}
-\author{Hugh H. Kieffer  \ \ File=-/krc/Doc/helplist.tex Version 3.6.1 2018nov08}
+\author{Hugh H. Kieffer \ \ File=-/krc/Doc/helplist.tex Version 3.6.3 2019mar25}
 %_History
 % 2016feb08  HK Update spare parameters
 % 2016nov21  HK 3.4.3
@@ -36,8 +36,6 @@
 \tableofcontents
 %\listoffigures
  \listoftables
-
-
 % \pagebreak
 
 \section{Introduction} %------------------------------------------------
@@ -48,15 +46,15 @@ is assumed that the user is familiar with the KRC journal article: H.H. Kieffer,
 Thermal model for analysis of Mars infrared mapping, J. Geophys. Res.: Planets,
 v.118, 451-570 (2013) [Ref. 1]
 
-The evolution of KRC code is contained in:  evolve.txt 
+The evolution of KRC code is contained in:  \nf{evolve.txt}
 
-A crude diagram of the call architecture is in:  flow.txt
+A crude diagram of the call architecture is in:  \nf{flow.txt}
 
-Capabilites new in version 3.4.x are decribed in: V34UG.tex (or .dvi or .pdf versions)
+Capabilites new in version 3.4.x are decribed in: \nf{V34UG.tex} (or .dvi or .pdf versions)
 
-Eclipse capabilites (V3.5) are described in: eclipse.tex  (``)
+Eclipse capabilites (V3.5) are described in: \nf{eclipse.tex}  (``)
 
-[[ Development for thermal beaming of asteroids is described in: Beaming.tex (``) ]] not released
+[[ Development for thermal beaming of asteroids is described in: \nf{Beaming.tex} (``) ]] not released
 
 \subsection{Notation use here}
 The following fonts styles have been partially implemented: 
@@ -153,11 +151,13 @@ martian years, with the last output to disk. Parameter values are listed below
 their titles, which are in many cases identical to the code name, and last
 character of the title is above the last location in the field. Thus, integer
 values MUST be aligned. Titles with a leading "[" indicate that the value is not
-used. The recommended procedure is to copy master.inp and edit only the values
-you wish to change. The number of lines of Latitudes and Elevations must match
-the value of N4, e.g., 2 lines for N4=11:20, entries beyond the N4 position may
-be left blank or contain the end of the line. The 7 lines following Elevations
-are a geometry matrix, default is for Mars orientation and orbit in 2010. This matrix should not be edited; but can be replaced by the matirx for other objects by the results of running PORBMN .
+  used. The recommended procedure is to copy master.inp and edit only the values
+  you wish to change. The number of lines of Latitudes and Elevations must match
+  the value of N4, e.g., 2 lines for N4=11:20, entries beyond the N4 position
+  may be left blank or contain the end of the line. The 7 lines following
+  Elevations are a geometry matrix, default is for Mars orientation and orbit in
+  2010. This matrix should not be edited; but can be replaced by the matirx for
+  other objects by the results of running PORBMN .
 
 The parameter title lines are skipped, so that you could put comments there
 carefully.
@@ -236,10 +236,11 @@ Type 1	Real parameters  (8F10.2) ================================
 36  DEPTH   Total model depth (scaled) (overrides FLAY if not 0.)
 37  DRSET   Perturbation factor in jump convergence. If = 0., then
               all layers reset to same average as surface layer. Else,
-             does quadratic curve between surface and bottom averages
-38  PHOG     Photometric function control
-             0=Lambert  <-1=Lommel-Seeliger  +=Kheim-Vasavada
-             else (-1< x <0) Minnaert with exponent -x (is positive)
+              does quadratic curve between surface and bottom averages
+38  PHOG     Reflectance photometric function control
+               0=Lambert  <-1=Lommel-Seeliger  +=Kheim-Vasavada
+               else (-1< x <0) Minnaert with exponent -x (is positive)
+               See V34UG.pdf, Sections 5 and 13
 39  GGT     Surface boundary condition iteration test on temperature
 40  DTMAX   Convergence test: RMS layer T changes in a day
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -362,11 +363,12 @@ Type 2 Integer Parameters (8I10) ====================================
 20  IDISK2  Last season to disk for which TDISK prints notice
              Note: Special routines MKRC,KRCA and TYEARP use TDISK differently
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-Computed Integer values
+Computed Integer values   But note 24 may be input
 21  KOLD    Season index for reading starting conditions
 22  KVALB   Flag: to use seasonal surface albedo ALB
 23  KVTAU   Flag: 1:TAUD=SEASTAU(SUBS)  2:CLIMTAU opacities for dust and ice
 24  ID24    Flag: Direct Access file word type: 4=R*4 else=R*8
+     this single item in 21:40 can be set by a change line: 2 24 x 'ID24' /
 25  NUMVER  Version number as an integer
 26  KFARAC  Sets reporting of TFAR8 reads
 27  NBKRC   Number of bytes in KRCCOM,   not used anywhere
@@ -459,7 +461,7 @@ what you intended.
    5   New Elevation Card(s) Follow                        any
    6   New Orbital Parm Cards Follow (LPORB Must be True)  any
    7   Text becomes new Title                              any
-   8   Text becomes new  output or input file name
+   8   Text becomes new output or input file name. Value ignored if not mentioned
          if index=3, name of far-field temperature file to read
                        value 0/1 sets report of each read off/on
          if index=4, name of far-field temperature file to read for held Tatm.
@@ -538,6 +540,8 @@ If you run into errors that are not related to blunders in the input file,
 please contact your source for KRC.
 
 \subsection{``Case had fatal error''} %-----------------------
+Message to both the print and error files, the value printed is explained in Table \ref{ercode.tab} 
+
 \begin{table} 
 \caption[Return codes]{Return codes, as seen at KRC main, after return from TSEAS, and maybe from lower routine:}
 \label{ercode.tab}
@@ -570,7 +574,7 @@ TFAR \> \> Error when arg3 (R*8) returns negative: use magnitude +40 \\
    \> 1  \>   request for file information, but none open \\
    \> 2  \>   invalid number of temperature types (records per season) \\
    \> 3  \>   an I/O error occured in TFAREAD \\ 
-TDISK \> \> In TDISK, will STOP. Error opening Direct Access file \\
+TDISK \> \> In TDISK, will STOP. Error opening Direct Access file. See also \S \ref{edisk} \\
 \end{tabbing} 
 \rule[.25in]{7.in}{.01in}
 \vspace{-.1in}
@@ -596,6 +600,55 @@ values are sent to the print file. TDISK is called to output the current season
 and to close the file. TPRINT is called to print out the full input set and the
 latest daily convergence. The return code is set to 2.
 
+\subsection{TDISK error explanations \label{edisk} } %--------------------
+Below are extracts from the FORTRAN code. Material between single quotes is printed; items following on the same line are variables whose value will be printed. 
+\qi 'P' goes to print file. \ \ 'E' goes to error log.
+\qi 'DA'  is direct-access \ \  @ indicates action taken
+\\ 
+\\ P: 'TDISK Error:  KODE,KREC,JREC=',KODE,KREC,JREC
+\\ E:  ' TDISK:1, ERROR OPENING FILE. IOSTAT=',IOS
+\\ E:   '  IOD2=',IOD2,'  status=',CSTAT,'  recl=',NRECL
+\\ E:   '  file=  ',FDIRA
+\qii  Trying to open DA file, but failed: reading a file that does not exist or writting a file that already exists.
+\qii @ KRC stops
+\\ 
+\\ E: 'TDISK: K4OUT invalid, will use -3:',K4OUT
+\qi Trying to open a DA file, but the value of K4OUT in the input file invalid.
+\qii  @ Locally sets type to .tm1 and proceeds
+\\ 
+\\ E: 'TDISK: Record smaller than KRCCOM. R*8 words:',NWTOT,NWKRC
+\qi Some change to the source code krcc8m.f has generated a file record length smaller than KRCCOM. 
+\qii Fatal, @ will stop
+\\ 
+\\ P:  'Bad size change, CLOSE file. See Error File'
+\\ P: 'Closed direct access file. Type=',ITOP
+\\ E: 'TDISK: Invalid Change of N24, NLAT, or \#to Disk for K4OUT=52'
+\\ E: 'TDISKe:',N24,MM1, N4,JJJ(4),J,JJJ(5)
+\qi Change to any of these would change the size of a Type 52 array, not allowed.
+\qii @  Closes the file, file will be unreliable
+\\ 
+\\ E:  ' TDISK:2, WRITE, BUT NO FILE OPEN'
+\qi   Trying to write a seasonal record, but file is not open
+\qii @ Will continue calculations
+\\ 
+\\ E: 'TDISK:3, READ, BUT NO FILE OPEN'
+\qi Trying to read a DA record, but the file-open earlier failed 
+\qii @ Will continue calculations, results unreliable  
+\\ 
+\\ E: 'TDISK:4, no file was open'
+\qi Asked to close a file that was not open.   No action.
+\\ 
+\\ E: 'TDISK:5,wrong conditions: LOPN2,ITOP',LOPN2,ITOP
+\qi  Trying to write KRCCOM to a DA file, and either the file was not open or the open file was the wrong type. No other action.
+\\   
+\\ E: 'TDISK:7, Asked to close but LOPN4 false',JREC
+\qi Some routine wants to write a Type 52 file, but contents are not defined.
+\qi Should never occur; programming error. @ KRC continues
+\\ 
+\\ E: 'TDISK:5, Called with invalid KODE=',kode
+\qi Should never occur; programming error. @ KRC continues
+
+
 \section{DISK BINARY FILES \label{dbf} } %_______________________
 
 The routine TDISK is used to read or write seasonal/global direct-access binary
@@ -605,6 +658,12 @@ direct-access files type 0 or positive, each file record consists of KRCCOM plus
 LATCOM or KRCCOM.  plus DAYCOM. Type -n have one record the contines KRCCOM
 followed by n records of temperature for each season. Writing of type 52 and
 direct-access files are independent of each other and may be simultaneous.
+
+Binary files are REAL*8, with the single exception that type -n may be written
+as REAL*4 (to save space for really large runs) by setting ID24 to 4 (see \S
+\ref{pc}; R*4 files can be read with the TFAR and TFAREAD routines, which will
+auto-detect the precision; no other use of binary R*4 files with KRC versions
+3.1.1 or later has been tested!
 
 \subsection{Items which control file I/O } %------------
 \vspace{-3.mm} 
@@ -903,11 +962,19 @@ over a radius similar at least as great as the atmospheric scale height, is
 close to level. The far-field surface viewed by a slope is typically flat or
 tilted toward the current slope, i.e., of opposite azimuth.
 
-Reminder: KRC direct-access -n files have records that are a fixed size, based on
-the maximum sizes of N24 and N4, and have one record for each temperature stored
-, Ts [Tp, [Ta]] (based on the value of K4OUT) for each season. HOw many of theseThe original run input parameters are stored in the first record.
+Reminder: KRC direct-access -n files have records that are a fixed size, based
+on the maximum sizes of N24 and N4, and have one record for each temperature
+stored , Ts [Tp, [Ta]] (based on the value of K4OUT) for each season.  The
+original KRC run input parameters are stored in the first record.
 
-However, only the emissivity is extracted from the first record. The atmosphere paramters of an fff should match the current run.
+However, only the emissivity is extracted from the first record. The atmosphere
+paramters of an fff should match the current run.
+
+FFF's can be written as REAL*8 (the default) or REAL*4, depending on the values
+of ID24. When read, the precision is auto-detected and a REAL*4 fff is converted
+to REAL*8 in the TFAREAD routine
+
+
 
 Type -n direct-access files are written by a change line:
 \vspace{-4.mm} 
