@@ -17,6 +17,7 @@
 # 2018feb22 HK Version 3.5.5
 # 2018jul03 HK Version 3.5.6 
 # 2018nov05 HK Version 3.6.1
+# 2020apr13 HK v 3.6.5
 #====================================
 
 FAM='/home/hkieffer/krc'    # family to be distributed
@@ -100,6 +101,7 @@ ln -s /home/hkieffer/krc/Doc/DV3/V34UG.tex .   # Guide to v3.4 in LaTeX
 ln -s /home/hkieffer/krc/Doc/DV3/v34p.tex .    # into V34UG: photometric function
 ln -s /home/hkieffer/krc/Doc/DV3/fard.tex .    #  " Far-field Detailed design
 ln -s /home/hkieffer/krc/Doc/DV3/farg.tex .    #  " Far-field for sloped surfaces
+ln -s /home/hkieffer/krc/Doc/ppt/F.pdf FarField.pdf
 ln -s /home/hkieffer/krc/Doc/DV3/V34UG.pdf .   # Guide to v3.4
 ln -s /home/hkieffer/krc/Doc/DV3/slopes.tex . # monolog on slopes
 ln -s /home/hkieffer/krc/Doc/DV3/slopes.pdf .
@@ -129,7 +131,7 @@ ln -s /home/hkieffer/krc/tes/mastes.inp .    # 37 latitudes and mean elevations
 ln -s /home/hkieffer/krc/tes/Mone.inp .	     # krc input for one-point
 ln -s /home/hkieffer/krc/tes/oneA.one .      # one-point input table 
 ln -s /home/hkieffer/krc/tes/355Test.inp .   # acceptance test
-ln -s /home/hkieffer/krc/tes/363Test.inp .   # acceptance test
+ln -s /home/hkieffer/krc/tes/365Test.inp .   # acceptance test
 ln -s /home/hkieffer/krc/beam/Bennu.inp .     # OSIRIS-REx target body
 ln -s /home/hkieffer/krc/beam/B3.inp .  # Grid of slopes
 
@@ -416,12 +418,12 @@ rm -f $RTOP/idl/krc/*
 cd    $RTOP/idl/krc  # IDL code directly related to KRC
 ln -s /home/hkieffer/idl/krc/definekrc.pro .  # none
 ln -s /home/hkieffer/idl/krc/getvers.pro .    # none
-ln -s /home/hkieffer/idl/krc/makekrcval.pro . # definekrc delast0
 ln -s /home/hkieffer/idl/krc/krchange.pro .   # readkrccom  makekrcval
 ln -s /home/hkieffer/idl/krc/krccomlab.pro .  # none
 ln -s /home/hkieffer/idl/krc/krclayer.pro .   # none
-#ln -s /home/hkieffer/idl/krc/kv3.pro .        # many
+ln -s /home/hkieffer/idl/krc/kv3.pro .        # many, huge test program
 #ln -s /home/hkieffer/idl/krc/krc35.pro .     
+ln -s /home/hkieffer/idl/krc/makekrcval.pro . # definekrc delast0
 ln -s /home/hkieffer/idl/krc/printsimple.pro . # readkrc52
 ln -s /home/hkieffer/idl/krc/readkrc52.pro .  # bin5  readkrccom
 #ln -s /home/hkieffer/idl/krc/readkrc53.pro .  # bin5 definekrc  krchange

@@ -2,6 +2,11 @@ evolve.txt Notes on evolution of KRC code, after the first 17 years.  Newest on
 top.  Does not include all minor changes.
 ............................................................................
 
+2020Apr13 v3.6.5 Fix failure if zone table was the first case. Fix bug in
+maximum number of days to predict forward. Small edits in TFAR and WRAPPER to
+remove error message when date was in the seasonal wrap. Make D lines
+compileable, add debug printout to WRAPER. Fix all minor compiler warnings.
+
 2019dec10 v3.6.4 Fix bug in PORB ephemr.f, used to generate ephemer print
 tables; does not affect KRC calculations.  Convert dates used in spcrev.f for
 Viking revs to J2000. Updates orbital elements for Ceres in small.tab. Update
@@ -26,9 +31,8 @@ returns R*8 values.  New utility routines MV4D and MV8R for converting between
 single and double precision arrays added into fillmv.f .  Update fundamental
 physical constants in krc8.f (tiny changes). Debug option to output all text,
 warnings and errors to the print file in chronological order. Many other debug
-statements converted to "D-lines" so thay are ommitted in standard
-compilation. Small changes in printout formats related to cases and change
-lines.
+statements converted to "D-lines" so thay are omitted in standard compilation. 
+Small changes in printout formats related to cases and change lines.
 
 2018oct10 Presentation at ASU THEMIS team meeting on version 3.5.6 [and .7]
 

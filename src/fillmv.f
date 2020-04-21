@@ -150,7 +150,7 @@ C_ARGS
 C_PAUSE
       INTEGER*4 I
       DO I=1,N
-        RB(I)=RA(I)
+        RB(I)=SNGL(RA(I))
       ENDDO      
       RETURN
       END

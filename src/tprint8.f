@@ -222,15 +222,15 @@ C
 C Model should have been run for the precise season and latitude of request.
 C Need to interpolate temperatures to the "hour" requested.
  900  Q2=HOURO*DFLOAT(N2)/24.     ! real index of requested time in time steps
-      I=Q2                      ! INTEGER index of prior point
+      I=INT(Q2)                 ! INTEGER index of prior point
       J=I+1                     ! index of next point
       IF (I.LT.1) I=N2          ! wrap around midnight
       IF (J.GT.N2)J=1           ! wrap around midnight
       TOUTO=TOUT(I)+(Q2-DFLOAT(INT(Q2)))*(TOUT(J)-TOUT(I)) ! linear interp
 C planetary temperature available only on the hour, so interpolate Tp-Ts
 C  and add this to Ts at the exact requested time
-      Q2=HOURO*DFLOAT(N24)/24.    ! real index of requested time in "hours"
-      I=Q2                      ! INTEGER index of prior point
+      Q2=HOURO*DFLOAT(N24)/24.  ! real index of requested time in "hours"
+      I=INT(Q2)                 ! INTEGER index of prior point
       J=I+1                     ! index of next point
       IF (I.LT.1) I=N24
       IF (J.GT.N24)J=1

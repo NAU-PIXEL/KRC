@@ -26,7 +26,6 @@ Because the type of file (-1,-2 or -3) is stored in the file (as K4OUT in
 KRCCOM), the current value of K4OUT is ignored. Thus, it is possible to save a
 different type of direct-access by setting K4OUT as desired for output.
 
-
 To revert to ``self-heating'', include an input line with full path name less than 4 characters; e.g. 'off'
 \vspace{-3.mm}
 \begin{verbatim}
@@ -140,8 +139,6 @@ input flag for Atm : ignore, if there, required.
 
 See \S on logical units in Helplist
 
-
-
 \subsubsection{Implimentation}
 
 In all conditions, the number of hours (N24) and latitudes(N4) in the fff must match the current KRC run.
@@ -161,9 +158,9 @@ LOPN3 logical flag is the indicator of whether a Far-Field-file is being used.
 
 
  The Tsurf and Tatm files MUST have same N24 in order to share the interpolation route CUBUTERP8
-\pagebreak
 
-Essential logical flags: all start as false.
+\subsection{Essential logical flags} 
+All start as false.
 \\ LATM: There is an atmosphere $\equiv \ P>1$; 
 \\ LOPN3: Using far-field-file (fff). Specified by 8 3, \nf{FFAR} for far Tsurf
 \\ LFAME: Using the fff  \nf{FFAR} for far Tatm

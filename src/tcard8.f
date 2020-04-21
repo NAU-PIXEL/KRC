@@ -261,8 +261,8 @@ C  IG=8  Read file name
         FDIRA=TEXT              !         move file name into common=
       ELSEIF (IREAD.EQ.22) THEN ! Seasonal Albedo file name
         FVALB=TEXT              !        move file name into common
-        I=SEASALB(-999.)        !        read data file
-        IF (I.GT.1) THEN        !        success
+        QF=SEASALB(-999.)       !        read data file
+        IF (QF .GT. 1.) THEN    !        success
           KVALB=1               !          Success: set variable albedo flag
         ELSE                    !        Failure, should quit
           KVALB=0               !          set flag off
@@ -271,8 +271,8 @@ C  IG=8  Read file name
         ENDIF
       ELSEIF (IREAD.EQ.23) THEN ! seasonal opacity
         FVTAU=TEXT              !         move file name into common
-        I=SEASTAU(-999.)        !         read data file
-        IF (I.GT.1) THEN        !         success
+        QF=SEASTAU(-999.)       !         read data file
+        IF (QF .GT. 1.) THEN    !         success
           KVTAU=1               !            set variable opacity flag
         ELSE                    !         Failure, should quit
           KVTAU=0               !            set flag off
@@ -282,7 +282,7 @@ C  IG=8  Read file name
       ELSEIF (IREAD.EQ.24) THEN ! seasonal climate
         FVTAU=TEXT              !         move file name into common
         QF=CLIMTAU(-999.,0.,Q4) !         read data file  QF is BINF5 return
-        IF (QF.EQ.0) then       !         Success:
+        IF (QF .EQ. 0) then     !         Success:
           KVTAU=2               !           set variable Climate flag
         ELSE                    !         Failure, should quit
           KVTAU=0               !           set flag off
@@ -292,7 +292,7 @@ C  IG=8  Read file name
       ELSEIF (IREAD.EQ.25) THEN ! zone table name
         FZONE=TEXT              !   move file name into common
         LZONE=.TRUE.            !   assume have a new zone table
-        IF (ILEN.LT.4) LZONE=.FALSE. !   unless the name is too short
+        IF (ILEN .LT. 4) LZONE=.FALSE. !   unless the name is too short
         WRITE(IOPM,*) 'LZONE,I=',LZONE, ILEN 
       ELSE 
         WRITE (IOERR,*)'Tcard 8: invalid file type= ',IREAD,' ',TEXT

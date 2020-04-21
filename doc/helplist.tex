@@ -23,9 +23,10 @@
 \newcommand{\nj}{\textsf}  % name of input parameter in text
 \newcommand{\njf}{\mathsf} % name of input parameter in equation
 \newcommand{\qd}{$^\circ$}        % degree symbol
+\newcommand{\qb}{\\ $ \bullet \ $}        % bullet subsection
 
 \title{KRC planetary surface temperatures: Helplist}
-\author{Hugh H. Kieffer \ \ File=-/krc/Doc/helplist.tex Version 3.6.3 2019mar25}
+\author{Hugh H. Kieffer \ \ File=-/krc/Doc/helplist.tex Version 3.6.5 2020apr13}
 %_History
 % 2016feb08  HK Update spare parameters
 % 2016nov21  HK 3.4.3
@@ -837,21 +838,27 @@ Reconstructed  2017oct01
 \vspace{-3.mm}
 \begin{verbatim}
 ----.prt  General results. Things in output are controlled by LP1:6 & LPGLOB
+                          and most of the six IDBG values
 
 eLog---.---   Error Log, named for time as yyyymmddThhmmss.fff
 
-fort.75  tlats8.f:  Debug geometry details
+fort.43, 44 and 47. tfine8.f , Usually only if eclipse case. see eclipse.tex 
 
-fort.76   tlats.f: mimic Mike Mellon ASCII files
+fort 71  tlats8.f:  Debug: surface conditions
+
+fort.72  tlats8.f:  Debug: temperatures and frost prediction
+
+fort.75  tlats8.f:  Debug: geometry details
+
+fort.76  tlats8.f: mimic Mike Mellon ASCII files
 
 fort.77    tun8.f:  Special items, firmcoded
-fort.43. 44  and 47. tfin8.f , Usually only if eclipse case. see eclipse.tex 
 
 \end{verbatim}
 \section{Use of logical units} %____
 
 \begin{table} 
-\caption[Logical units]{Guide to logical units used. }
+\caption[Logical units]{Guide to logical units used.'D' means only if D-lines are compiled }
 \label{lunit.tab}
 \begin{center} \begin{tabular}{ | l r l l | } \hline
 name  & number &  routine[s] &  purpose \\ \hline
@@ -868,16 +875,16 @@ ifun & \^{ } &  tfar & iod2 or ioda  \\
 ? &  ? & BINF5 &  primio system, brief \\
 - & 43 & tfine & \\
 - & 44 & tfine & \\
-D & 44 & tlats & \\
 - & 46 & tday  & \\
 - & 47 & tday  & \\
 - & 47 & tfine & \\
+D & 71 & tlats & \\
 D & 72 & tlats & \\
 D & 73 & tday  & \\
-- & 75 & tlats & \\
+D & 75 & tlats & \\
 - & 76 & tlats & \\
 - & 77 & TUN8  & special user firm-code output \\
-  & 88 & tlats & \\  \hline
+D & 88 & tlats & \\  \hline
 \end{tabular} \end{center} \end{table}
 
 \section{Optional input files} %_______________________
@@ -886,10 +893,10 @@ D & 73 & tday  & \\
 Name is defined by a change card: 8 25 x 'fileName' / . May have up to 20 lines
 of comments before a ``C_END'' line. Then each row define a zone and must
 contain 4 columns:
-\qi Col 1: thickness, m
-\qi Col 2: density, kg/m$^3$ \hspace{2.0 cm} But: =-1=use DENS, -2=use DENS2
-\qi Col 3: Conductivity, SI Units. \ $\lceil$   If negative then col 4 is a pointer
-\qi Col 4: Specific heat, SI Units. \  $\lfloor$  1=upper material, 2=lower material
+\qi Col 1: ZDZ; thickness, m
+\qi Col 2: ZDEN; density, kg/m$^3$ \hspace{2.0 cm} But: =-1=use DENS, -2=use DENS2
+\qi Col 3: ZCOND; Conductivity, SI Units. \ $\lceil$   If negative then col 4 is a pointer: 1=upper material, 2=lower material
+\qi Col 4: ZSPH; Specific heat, SI Units. \ \  $\lfloor$ as in real input 3:16,  +2 for at T-dependent at Tglobal
 \\ Must be at least 3 zones; otherwise could use two layers within input parameters. 
 \\ The thickness of the last zone is ignored; KRC will fill out to N1 geometric layers.
 \\ Must not be any trailing blank lines
@@ -1295,8 +1302,6 @@ about 2017    grep -in lq tlats33.f
 end lat loop
 \end{verbatim}
 
-\section{Use of logical units} %____
- get from farg.tex
 \section{Accessing KRC output in IDL} %______________________
 
 IDL routines do not access files directly unless specifically listed.
@@ -1569,7 +1574,7 @@ and the surface set to frost temperature.
 % 48  AtmCp   Specific heat at constant pressure of the atmosphere [J/kg/K]
 % 72  PRES    Local surface pressure at current season. compute in TLATS
 
-\subsection{Seasonal prediction} %-----------
+\subsection{Seasonal prediction \ \  Update 2020apr11} %-----------
 
 Several quantities are stored in TDAY at midnight;
  with index J3P1: TT1,TTS, TTB, and if Atm., TTA,FRO. These are effectively at the start of day J3+1. Index 1 is set initially as the global equilibrium T.; after season 1, these are set set to the prediction from the prior season.
@@ -1584,6 +1589,29 @@ Up to version 355:
 
 Version 356: The full daily time series for a season is passed to EPRED, along with the index of the last valid value.  If 3 or more points valid, does asymptotic predict limited by the latest slope, there is no minimum FP.
 Else, if 2 points valid, does linear predication; else, uses the last valid value.
+
+Outline of code: 
+\qb For each latitude, if the first season, TTJ is set linear with depth between TSUR and TBOT; which in turn depend upon how IIB is set; otherwise start with forecast for the last midnight of the prior season.
+\qb TDAY runs until convergence, saving the profile each midnight.
+\qb For each layer, the temperatures at midnight are forecast to the end of the season.
+
+Annotated code extracts:
+\vspace{-3.mm} 
+\begin{verbatim}
+ daycom:: TTJ(MAXN1P)       ! Layer temperatures (TTJ(1) is surface temperature)
+          TT1(MAXN1,MAXN3)  ! Temperatures at start of day for each layer and day
+ latcom:: TMN4(MAXN1,MAXN4) ! predicted convergence midnight temperature
+
+Line in TLATS [2020 Apr 11 17:39:42]
+    before TDAY
+642. (J5.LE.1): CALL MVD(TTJ,TT1,N1) ! temperature profile, start of first day
+660.   else:    CALL MVD(TMN4(1,J4),TT1,N1PIB) ! copy forecast midnight values 
+667. CALL TDAY
+715. I=1,N1  
+    CALL MV21D (TT1(I,1),MAXN1,WORK,J3P1) ! transfer all defined values for layer I
+    TMN4(I,J4)= EPRED8(WORK,FP,J3P1, TFNOW,TBLOW) ! forecast to end of season
+\end{verbatim}  
+
 
 \section{Non-standard FORTRAN}
 All thought to be removed in Version 3+

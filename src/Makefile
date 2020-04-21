@@ -26,7 +26,7 @@ FC=gfortran
 
 # Use 2nd version below to allow debugger and enable most IDBG actions
 FFLAGS= -fno-automatic -fno-second-underscore -fd-lines-as-comments -Wall
-#FFLAGS= -fno-automatic -fno-second-underscore  -g -fbounds-check   # -Wall   #  -O
+#FFLAGS= -fno-automatic -fno-second-underscore -fd-lines-as-code  -fbounds-check # -Wall   #  -O
 
 # next line for fortrancallgraph-master
 #FFLAGS= -fno-automatic -fno-second-underscore -fd-lines-as-comments -Wall -S -g -O0
@@ -60,9 +60,10 @@ OBJ8 = krc8.o tseas8.o tlats8.o tday8.o tcard8.o tprint8.o tdisk8.o tun8.o \
  epred8.o tint8.o albvar8.o vlpres.o porb08.o porbit.o orbit8.o eccanom8.o \
  alsubs.o deding28.o seasalb.o seastau.o readtxt360.o finterp.o evmono38.o \
  climtau.o binf5.o bigend.o rotmdp8.o vadddp8.o cocodp8.o readzone.o \
- catime.o white1.o ksubs8.o tfar8.o cubuterp8.o sigma8.o fillmv.o nowhite.o \
+ catime.o white1.o ksubs8.o tfar8.o cubuterp8.o sigma8.o fillmv.o \
  eclipse.o tfine8.o dspline.o dsplint.o evmono3d.o strumi.o strumr8.o gaspt8.o \
  orlint8.o wraper8.o
+# replace  nowhite  with code in krc
 
 # PORB double precision
 OBJP3 = porbmn.o porbio.o ephemr.o ymd2j2.o porbig.o porbit.o porbel.o \
@@ -158,6 +159,7 @@ porbio.o:   porbio.f           porbc8m.f
 porbit.o:   porbit.f           porbc8m.f  # this is DP   porbit4 is SP
 prtpcom.o: prtpcom.f           porbc8m.f
 testrou.o: testrou.f krcc8m.f                   unic8m.f filc8m.f    # test main program
+wraper8.o: wraper8.f                            unic8m.f  # only if D lines
 glot.o: glot.f glotcom.f
 readkrcm1.o: readkrcm1.f glotcom.f 
 #------------------  do not have includes
@@ -201,7 +203,6 @@ tridag8.o: tridah8.f   # uses prior partial solution
 vlpres.o: vlpres.f
 vadddp8.o: vadddp8.f  # Contains:  VADD  VCROSS  VDOT  VEQUAL  VMAG  VNEG 
  #                       VNORM  VPRF  VPRINT  VSCALE  VSHOW  VSUB  VUNIT
-wraper8.o: wraper8.f 
 ymd2j2.o: ymd2j2.f
 
 #----------------------- added after remove use of all but C library

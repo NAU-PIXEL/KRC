@@ -90,7 +90,7 @@ C
           IF (IRL .GT. 5) IRET=10+IRL ! cannot continue this case
           GOTO 9             ! either 1-point or end-of-data
         ENDIF
-D     write (*,*)'TSEAS: ',J5,N5,LOPN2,IDOWN,IRL !<< ,KVALB,alb
+D     write (IOSP,*)'TSEAS: ',J5,N5,LOPN2,IDOWN,IRL !<< ,KVALB,alb
         CALL TDAY8 (1,IRL)        ! re-initialize day computations
         IF (IRL.NE.1) THEN
           WRITE (IOERR,*) 'TSEAS: TDAY(1 error=',IRL 
@@ -110,7 +110,7 @@ D     write (*,*)'TSEAS: ',J5,N5,LOPN2,IDOWN,IRL !<< ,KVALB,alb
         SJA=DAU                 ! TLATS uses SJA for annual average
       ENDIF
 C
-      SUBS4=SUBS                ! get R*4 version
+      SUBS4=SNGL(SUBS)                ! get R*4 version
       IF (KVALB .GT. 0) THEN
         ALB4=SEASALB(SUBS4)     ! variable soil albedo
         ALB=ALB4                ! move into R*8
@@ -148,7 +148,7 @@ D    &    ,FARTS(I1,I2,2)
       ENDIF                     ! LOPN3 .AND. SLOPE .GT. 0
 C^^^^^^^^^^^^^^^^^^^^^^^^ end: Get date in fff^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-D      write (*,*)'TSEAS: ',J5,N5,LOPN2,IDOWN,SUBS ! ,KVALB,alb
+D      write (IOSP,*)'TSEAS: ',J5,N5,LOPN2,IDOWN,SUBS ! ,KVALB,alb
 C======
 
       CALL TLATS8 (IQ,IRL)       ! execute latitude loop

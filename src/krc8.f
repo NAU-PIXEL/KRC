@@ -9,9 +9,9 @@ C_Vars
       INCLUDE 'filc8m.f'
 C_Calls  CATIME  TCARD8  TDAY8  TDISK8  TPRINT8  TSEAS8 
 C_Hist  85oct01  Hugh_H_Kieffer  Initial version circa 1969 at UCLA
-C 87nov22  HHK  send errors to screen, force parameter print if error.
+C 87nov22  HHK  Send errors to screen, force parameter print if error.
 C 93mar03  ECisneros Convert include filename to lowercase. Replace assign 
-C   statement with an open statement, changed iokey variable from -4 to 5
+C   statement with an open statement, changed IOKEY variable from -4 to 5
 C 93mar04  EC Removed excess code at end of program; add check for IEEE 
 C   exceptions. previous version was running but giving IEEE exception.
 C 97jan30  HHK Correct zero initialize
@@ -33,9 +33,9 @@ C 2015dec24 HK If TDAY(1) error will go to next case rather than quitting
 C 2016feb12 HK Version 3.3.0; change in some commons, and some renamed
 C 2016mar22 HK Version 3.3.1; minor glitch fixes. Add parameter print control
 C 2016may14 HK Version 3.4.1: Allow multiple data files open. Far-flat field. 
-C               replace R2R using 2*N with D2D
+C               Replace R2R using 2*N with D2D
 C 2016aug12 HK Reset extreme numeric constants to Real*8 values. Use FILLMV set
-C              Allow redirect of monitor output. Improve return codes
+C               Allow redirect of monitor output. Improve return codes
 C 2016aug26 HK Automatically generate extensions for input and print files.
 C 2016oct03 HK Correct sense of azimuth in tlats. Move onePoint heading print.
 C 2017mar20 HK V 3.5.1 Incorporate eclipses and planetary heating
@@ -43,32 +43,34 @@ C 2017sep30 HK V 3.5.4 Error log name to the millisec to avoid failure on cluste
 C 2018feb02 HK V 3.5.5 Separate Photometric function parameter from Henyey-Green.
 C 2018jul03 HK V 3.5.6 Fixes to frost conditions. See 356notes.tex
 C 2081oct11 HK V 3.6.1 Fixed ancient BINF5  bug. Checks on fff with atm. Put 
-C version into KRCCOM, Make far-field file REAL*4, backward compat. with REAL*8
+C  version into KRCCOM, Make far-field file REAL*4, backward compat. with REAL*8
 C 2018nov13 HK v 3.6.2 Fix bug in 361 only; write of .t52 zeroed part of KRCCOM
 C 2019mar20 HK Remove moot code to send all print to IOSP, this is done in TCARD
-C 2020apr02 HK Update VERSIN to 3.6.4, Changes are mostly in the PORB system
+C 2020apr02 HK v 3.6.4 Changes are mostly cleanup in the PORB system
+C 2020apr12 HK v 3.6.5 Lots of little cleanup trying to debug initial zone file
 C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
 
       REAL ELAPSED,TIMES(2)     ! declare the types of DTIME()
       INTEGER I,IQ, IKON,IRC,IRD,IRL,KONE,KREC
+      INTEGER J,K,N             ! for the NOWHITE algorithm
       INTEGER IOST              ! returned by OPEN
-      CHARACTER*80 C80,CBUF     ! temporary use
-      CHARACTER*24 CELOG        ! error log file, takes 23 characters
+      CHARACTER*80 CBUF     ! temporary use
+      CHARACTER(LEN=40) CELOG        ! error log file, takes 23 characters
       INTEGER*4 IZERO/0/        ! zero 
       INTEGER*4 VALS(8)           ! dummy arg for date_and_time or TFAR info
       LOGICAL LQ            ! file exists, later as temporaary flag
       CHARACTER(LEN=12) CDATE,CTIME ! args for date_and_time
-C-      CHARACTER*1 BBUF          ! temporary use
+C      CHARACTER*1 BBUF          ! temporary use
       CHARACTER*25 SEPER  /' ----------------------- '/  ! case separation line
       REAL TOTIME               ! Total Elapsed Time
       REAL*8 DUM8               ! dummy
       REAL*8 DUMB  /772.d0/     ! dummy argument, should never change
       REAL*8 DUMC  /773.d0/     ! " " 
-      REAL*8 ZERO /0.0D0/       ! zero  
+      REAL*8 ZERO /0.0D0/       ! double precision zero  
 
-      VERSIN='KRCv3.6.4'        ! set version number   12 bytes in FILCOM
+      VERSIN='KRCv3.6.5'        ! set version number   12 bytes in FILCOM
       KREC=84+20  ! number of bytes in TITLE +DAYTIM. Values from def. in KRCCOM
-      IF (MOD(KREC,8).NE.0 .OR. MOD(N4KRC,2).NE.0) THEN 
+      IF (MOD(KREC,8).NE.0 .OR. MOD(N4KRC,2).NE.0) THEN !possible alignment issue
         WRITE(*,*)'BAD lengths',KREC,N4KRC
         STOP
       ENDIF
@@ -102,13 +104,13 @@ C               set logical units. See   units.com   for description
       LOPN4 =.FALSE.   ! ----: FDISK set to: no Type 52 active
       LONE  =.FALSE.   ! set to: Not one-point mode
 C                       set constants
-        I=LEN_TRIM(VERSIN)      ! and make decimal interger
-        WRITE(CBUF,*) VERSIN(1:I) ! write string into temporary buffer
+      I=LEN_TRIM(VERSIN)        ! and make decimal interger
+      WRITE(CBUF,*) VERSIN(1:I) ! write string into temporary buffer
 C        write(iopm,*)'>',cbuf,'<'
 C        write(iopm,*)'>'//cbuf//'<'
-        READ (CBUF,'(5x,I1,1x,I1,1x,I1)'),I,IQ,KONE ! read as 3 digits
+      READ (CBUF,'(5x,I1,1x,I1,1x,I1)'),I,IQ,KONE ! read as 3 digits
 C        write(iopm,*)I,IQ,KONE
-        NUMVER=100*I+10*IQ+KONE ! Version number as integer, into common
+      NUMVER=100*I+10*IQ+KONE   ! Version number as integer, into common
 C        write(iopm,*)'numver',numver
       PIVAL = 3.14159265D0      ! pi
       RADC = 180.D0/PIVAL       ! degrees/radian
@@ -120,7 +122,7 @@ C      TINY = 2.0D-38            ! smallest  REAL*4 constant  F90 TINY
 C      EXPMIN = 86.80D0          ! neg exponent that would almost cause underflow
       HUGE = 1.D308             ! large  REAL*8 constant with margin
       TINY = 1.D-307            ! small  REAL*8 constant with margin
-      EXPMIN = 700.d0           !  safe negative exponent yields ~1.d-304 
+      EXPMIN = 700.d0           ! safe negative exponent yields ~1.d-304 
       KREC=0                    ! ensure it has a storage location
       NRUN=0                    ! no output file yet
       NCASE=0                   ! initiate case counter
@@ -137,21 +139,38 @@ C      BBUF=CBUF(1:1)
 C     IF (BBUF.EQ.' ') CBUF(1:1)='0' ! avoid a blank in the name for days 1:9
       LQ=.TRUE. ! Following delay loop in case many runs on cluster
       IQ=-1
+C Following section in case of many simultaneous runs on a cluster
       DO WHILE (LQ .EQV. .TRUE.) ! delay loop to ensure unique file name
-        CALL DATE_AND_TIME(CDATE,CTIME,C80,VALS) !  3rd arg  is not needed
-        IQ=IQ+1 ! how may loops of delay needed
-        C80='eLog'//CDATE//'T'//CTIME ! full file name, current directory
-        CALL NOWHITE(C80, I,CELOG) ! retain only printable characters
-        INQUIRE (FILE=CELOG(1:I),EXIST=LQ) ! does such a file already exist?
+        CALL DATE_AND_TIME(CDATE,CTIME,CBUF,VALS) !  3rd arg  is not needed
+        IQ=IQ+1 ! how many loops of delay used
+        I=LEN_TRIM(CDATE)
+        J=LEN_TRIM(CTIME)
+        CELOG='eLog'//CDATE(1:I)//'T'//CTIME(1:J) ! error file name
+        N=LEN_TRIM(CELOG)
+C        print *,'initial',celog
+C        DO I=1,N  ! Replace any non alpha-numeric with zero
+C          BBUF=CELOG(I:I)         ! single character
+C          J = ICHAR (BBUF)
+C          IF (J.LT.48 .OR. J.GT.122 .OR. (J.GT.90 .AND. J.LT.97) ) 
+C     &         CELOG(I:I)='0'
+C        ENDDO   
+C        print *,'IQ,CELOG',IQ,CELOG
+        INQUIRE (FILE=CELOG(1:N),EXIST=LQ) ! does such a file already exist?
       ENDDO
+
+C test of calling NOWHITE. 2020apr12 compile with -fbounds-check causes failure
+C        print *, 'N,celog=',N,celog
+C        CALL NOWHITE(C80, I,CELOG) ! retain only printable characters
+C        print *, 'I,celog=',I,celog
+C end of test
+
       WRITE(IOPM,*)'DAYTIM = ',DAYTIM,IQ,'=IQ   errorfile = ',CELOG 
-      OPEN (UNIT=IOERR,FILE=CELOG(1:I),STATUS='NEW',err=85) ! quit if open fails
-C-       END IF
+      OPEN (UNIT=IOERR,FILE=CELOG(1:N),STATUS='NEW',err=85) ! quit if open fails
 C                       open input and print files 
       WRITE (IOPM,*)' .inp and .prt will be added to your input names'
       WRITE (IOPM,*)' Defaults:  input = krc , output = input' 
 
- 50   CBUF = 'krc'        ! default input file name
+ 50   CBUF = 'krc'              ! default input file name
       ID24=8                    ! reset DA word size to R*8
       WRITE (IOPM,*)'?* Input file name or / for default =',CBUF(1:3)
       READ (IOKEY,*,ERR=50,end=9) CBUF
@@ -163,13 +182,13 @@ C                       open input and print files
       READ (IOKEY,*,ERR=50,end=9) CBUF
       IQ = LNBLNK(CBUF)
       FRUN=CBUF(1:IQ)           ! save as the run name 
-      FOUT=CBUF(1:IQ)//'.prt'  ! add extension 
+      FOUT=CBUF(1:IQ)//'.prt'   ! add extension 
       OPEN (UNIT=IOSP,FILE=FOUT,err=82)
 C                       read and check a complete set of input parameters
-D !D      write(iosp,*) 'before TCARD LP2=',LP2 !<<< debug
+D     write(iosp,*) 'before TCARD LP2=',LP2 !<<< debug
       CALL TCARD8 (1,IRC)
-D !D      write(iosp,*) 'after TCARD IR,LP2=',IRC, LP2 !<<< debug
-D !D      write(*,*) 'TCARD:1 return=',IRC !<<< debug
+D     write(iosp,*) 'after TCARD IR,LP2=',IRC, LP2 !<<< debug
+D     write(*,*) 'TCARD:1 return=',IRC !<<< debug
       IF (IRC.GT.4) GO TO 180 ! end-of-data or error
       CALL DTIME(TIMES,ELAPSED) ! Start clock, GNU recommended form 
       TOTIME=0.
@@ -181,22 +200,22 @@ C VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV  BEGIN case  VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
       PARC(12)=PERIOD           ! sol in days for an eclipsed body
       IF (IRC.EQ.4) THEN        ! Switch to "one-point" mode
         CLOSE(IOIN)             ! close the card input file
-D !D         write(*,*)'FINPUT=',finput !<<< debug
+D       write(*,*)'FINPUT=',finput !<<< debug
         OPEN (UNIT=IOIN,FILE=FINPUT,STATUS='OLD',iostat=iost,err=81)
-D !D         write(*,*)' IOSTAT=',iost !<<< debug
+D       write(*,*)' IOSTAT=',iost !<<< debug
         READ (IOIN,'(A80)',ERR=83,END=84) CBUF ! read Users title
-D !D         write(*,*)' k2' !<<< debug
+D       write(*,*)' k2' !<<< debug
         WRITE(IOSP,*)'---- Start of one-point mode ----'
         WRITE(IOSP,*)CBUF       ! write users title
         READ (IOIN,'(A80)',ERR=83,END=84) CBUF ! skip the col header line
-D !D        write(*,*)' k3' !<<< debug
+D       write(*,*)' k3' !<<< debug
         LONE=.TRUE.
         KONE=NCASE              ! case when onePoint started
-        CALL TCARD8 (2,IRC)      ! read first one-point case
-D !D      write(IOSP,*) 'KRC TCARD:2 return=',IRC !<<< debug
+        CALL TCARD8 (2,IRC)     ! read first one-point case
+D       write(IOSP,*) 'KRC TCARD:2 return=',IRC !<<< debug
       ENDIF 
 
-D !D    write(IOSP,*)'KRC TDAY 1 return, LP2',IRD,LP2 !<<< debug
+D     write(IOSP,*)'KRC TDAY 1 return, LP2',IRD,LP2 !<<< debug
       I=1
       IF ((LP2 .AND. LD18) .OR. (IRD.NE.1)) THEN
         CALL TPRINT8 (2)        ! print input parameters
@@ -218,12 +237,12 @@ C Above changes some items used in TPRINT8 (2) 2016feb NOPE ?
         GOTO 170                ! write error messages, then try next case
       ENDIF
       IKON = IRC                ! transfer "continuing" flag from  TCARD to  TSEAS
-      IF (LONE) IKON=1            ! set TSEAS to start fresh
+      IF (LONE) IKON=1          ! set TSEAS to start fresh
 
       IF (N5.GE.JDISK) THEN     ! there may be some file output 
-D !D        WRITE(IOPM,*)'L3',LOPN2,LOPN3,LOPN4   !?Dbug
+D       WRITE(IOPM,*)'L3',LOPN2,LOPN3,LOPN4   !?Dbug
         I=LNBLNK(FDISK)
-D !D        WRITE(IOPM,*)'FDISK,I ',FDISK(1:I),I !?Dbug
+D       WRITE(IOPM,*)'FDISK,I ',FDISK(1:I),I !?Dbug
         IF (.NOT.LOPN4 .AND. I.GE.4) THEN
           CALL TDISK8 (6,0)     ! open output type 5x
           NRUN=NRUN+1           ! increment run count
@@ -231,17 +250,17 @@ D !D        WRITE(IOPM,*)'FDISK,I ',FDISK(1:I),I !?Dbug
           IF (.NOT.LOPN4) WRITE(IOSP,*)'ERROR, Case too big  for KOMMON'
         ENDIF
         I=LNBLNK(FDIRA)
-D !D        WRITE(IOPM,*)'FDIRA,I ',FDIRA(1:I),I !?Dbug
+D       WRITE(IOPM,*)'FDIRA,I ',FDIRA(1:I),I !?Dbug
         IF (.NOT.LOPN2 .AND. I.GE.4) CALL TDISK8 (1,0) ! open output DirAcc file 
         IF (I15.GT.100) CALL TUN8 (I15,1) ! Write case header 
-D !D        WRITE(IOPM,*)'LOPN2,3,4= ',LOPN2,LOPN3,LOPN4   !?Dbug
+D       WRITE(IOPM,*)'LOPN2,3,4= ',LOPN2,LOPN3,LOPN4   !?Dbug
       ENDIF
-D !D     write(*,*) 'cond=',cond !<<< debug
-D !D     write(*,*)'KRC LP4=',LP4 !<<< debug
+D     write(*,*) 'cond=',cond !<<< debug
+D     write(*,*)'KRC LP4=',LP4 !<<< debug
 C     CALL CATIME (DAYTIM)      ! reset the time at start of each model
 
 C - - - OPEN fff input surf [and atm]
-      DUM8=MODULO (IDB6,4)                    ! Set amount of reporting 
+      DUM8=MODULO (IDB6,4)      ! Set amount of reporting 
       LQ=(IDB6 .NE. 0)          ! local flag for fff debug print
       IF (LQ) WRITE(IOPM,*) 'KRC:4L',LATM,LFATM,MINT,LFAME,LOPN3  !<<<< debug
       I= LNBLNK(FFAR)           ! length of far-field surface name
@@ -297,7 +316,7 @@ C      If failure >5, then +10, terminate case
 C If TDAY  had failure >1, then IRL will be +20, terminate case 
 C If TLATS had failure >1, then IRL will be 31:39, terminate case
 C For details, see code or Helplist section 'Error Returns' 
-D !D      write(*,*)'TSEAS return IKON,IRL,N5,krec=',IKON,IRL,N5,krec !<<< debug
+D      write(*,*)'TSEAS return IKON,IRL,N5,krec=',IKON,IRL,N5,krec !<<< debug
 
       IF (LONE) THEN
         IF (NCASE.EQ.KONE) WRITE(IOSP,'(A,A)')'C_END  Ls   Lat  Hour '
@@ -309,7 +328,7 @@ D !D      write(*,*)'TSEAS return IKON,IRL,N5,krec=',IKON,IRL,N5,krec !<<< debug
       IF (IRL.GT.4 .AND. N5.GT.0) THEN ! Case had a fatal error
         WRITE(IOPM,*)'Case had FATAL error=',IRL,' Will try next case'
         WRITE(IOSP,*)'Case had FATAL error=',IRL,' Will try next case'
-        IF (LD18) THEN  ! print the input conditions
+        IF (LD18) THEN          ! print the input conditions
           CALL TPRINT8 (2)      ! print input parameters
           CALL TDAY8 (3,IRD)    ! print layer table 
           LD18=.FALSE.          ! clear the "something changed" flag
@@ -319,7 +338,7 @@ D !D      write(*,*)'TSEAS return IKON,IRL,N5,krec=',IKON,IRL,N5,krec !<<< debug
       IF (LOPN2) CALL TDISK8 (4,KREC) ! close FDIRA, cannot hold multiple cases
       FDIRA='NO'                ! ensure it stays closed ( length < 3 )
 C
- 170  IF (.NOT. LONE) THEN     ! 
+ 170  IF (.NOT. LONE) THEN      ! 
         CALL DTIME(TIMES,ELAPSED) ! elapsed seconds
  133    FORMAT(1X,'Case',i3,2x,a1,'TIME: total, user, system=',3f10.4)
         WRITE(   *,133)NCASE,'D', ELAPSED,TIMES ! always to monitor
@@ -329,7 +348,7 @@ C
       ENDIF
       CALL TCARD8 (2,IRC)       ! read set of parameter changes
 C
-D !D      WRITE(IOSP,*)'TCARD:2 IR=',IRC,krec  !<<< Debug
+D     WRITE(IOSP,*)'TCARD:2 IR=',IRC,krec  !<<< Debug
       IF (IRC.LT.5) GOTO 140    ! 5 is END of data
 C AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA end case AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 C
@@ -339,7 +358,7 @@ C
       IF (LFATM) CALL TFAR8 (14,DUM8,DUM8,VALS,DUM8M,DUMB,DUMC) ! far-field atm
       IF (LOPN4) CALL TDISK8 (7,KREC) ! write type 5x file
  134  FORMAT(6X,'END KRC   Total time [s]=',F11.3 )
-      WRITE(IOPM,*)'DUMB,C=',DUMB,DUMC  !<< debug
+      WRITE(IOPM,*)'DUMB,C=',DUMB,DUMC !<< debug
       WRITE (   *,134)TOTIME
  9    WRITE (IOSP,134)TOTIME
       WRITE (*,*)'Elog= ',CELOG

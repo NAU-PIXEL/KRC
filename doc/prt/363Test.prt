@@ -11,7 +11,7 @@
  Changed>>   2  17  -3.000        K4OUT  K4OUT
  Changed>>   8  21   0.000               ./out/363flat.tm3
 V363 test cases   5 lat, 40 seas with 2 yr spinup  First cases Compat with 321      
-KRCv3.6.3    RUN-CASE  0- 1   2019 Dec  4 16:36:14  PAGE=  1
+KRCv3.6.4    RUN-CASE  0- 1   2020 Apr  6 11:33:37  PAGE=  1
  Input file: 363Test.inp                                                                     
  Print file: 363Test.prt                                                                     
  Save file: ./out/363Test.t52                                                               
@@ -48,7 +48,7 @@ KRCv3.6.3    RUN-CASE  0- 1   2019 Dec  4 16:36:14  PAGE=  1
  Elevations:
     1.22   1.17   0.17  -1.99  -4.08
 LZONE,LALCON,JJH, IK1:4=  F  T     7     1     0     0     0
- Time-doubling fraction:  0.23725329    
+ Time-doubling fraction:  0.237253293    
  1.035E+06=Dens*Cp   3.733E-08=Diffu.      0.0325=Scale      200.00=Inertia
  Beginning at layer   7  At      0.0522 m.
  1.588E+06=Dens*Cp   1.745E-06=Diffu.      0.2220=Scale     2097.20=Inertia
@@ -79,104 +79,5 @@ LZONE,LALCON,JJH, IK1:4=  F  T     7     1     0     0     0
  IDX= 4  JJJ=    5   48    7    5   41    0    0    5   25    0
  MMM=          48         336        1680       67200           0           0
  KOMMON,KASE=    10000000       68880
- RASE,MASE,MTOT=   145.18002             145     9987600
-TDISK:  Opened NEW direct access file = ./out/363flat.tm3
- Type=  -3 Record length in Real & NRECL=    3552   28416  NOW=2019 Dec  4 16:36:14
- -----------------------  RUN-CASE     1     1 ----------------------- 
-     0.280 seconds at end of season  120 of  120
- Closed direct access file. Type=          -3         121
- Case  1  DTIME: total, user, system=    0.2810    0.2780    0.0030
-
-
- ============================= New case  1 =============================
- --------- TYPE LOC  VALUE ----- ITEM  Comments
- Changed>>   3   2   0.000        LP2    LP2
- Changed>>   3  10   1.000        LKofT  LkofT
- -----------------------  RUN-CASE     1     2 ----------------------- 
-     0.602 seconds at end of season  120 of  120
- Case  2  DTIME: total, user, system=    0.6019    0.6019    0.0000
-
-
- ============================= New case  2 =============================
- --------- TYPE LOC  VALUE ----- ITEM  Comments
- Changed>>   3  10   0.000        LKofT  LkofT
- Changed>>   3   8   1.000        LVFA   LVFA
- Changed>>   3   9   1.000        LVFT   LVFT
- -----------------------  RUN-CASE     1     3 ----------------------- 
-     0.274 seconds at end of season  120 of  120
- Case  3  DTIME: total, user, system=    0.2740    0.2740    0.0000
-
-
- ============================= New case  3 =============================
- --------- TYPE LOC  VALUE ----- ITEM  Comments
- Changed>>   1  12  0.5000      PTOTAL   PTOTAL
- -----------------------  RUN-CASE     1     4 ----------------------- 
-     0.185 seconds at end of season  120 of  120
- Case  4  DTIME: total, user, system=    0.1860    0.1860    0.0000
-
-
- ============================= New case  4 =============================
- --------- TYPE LOC  VALUE ----- ITEM  Comments
- Changed>>   1  38  0.1500      PhotF    PhotoF
- -----------------------  RUN-CASE     1     5 ----------------------- 
-     0.194 seconds at end of season  120 of  120
- Case  5  DTIME: total, user, system=    0.1940    0.1940    0.0000
-
-
- ============================= New case  5 =============================
- --------- TYPE LOC  VALUE ----- ITEM  Comments
- Changed>>   3  10   1.000        LKofT  LkofT
- -----------------------  RUN-CASE     1     6 ----------------------- 
-     0.533 seconds at end of season  120 of  120
- Case  6  DTIME: total, user, system=    0.5329    0.5329    0.0000
-
-
- ============================= New case  6 =============================
- --------- TYPE LOC  VALUE ----- ITEM  Comments
- TCARD: 8-Cond.   0.38640E-01   0.0000       0.0000       0.0000    
-                   2.7700       0.0000       0.0000       0.0000    
- TCARD: 8-SpHt.    647.00       0.0000       0.0000       0.0000    
-                   1711.0       0.0000       0.0000       0.0000    
- -----------------------  RUN-CASE     1     7 ----------------------- 
-     0.529 seconds at end of season  120 of  120
- Case  7  DTIME: total, user, system=    0.5289    0.5289    0.0000
-
-
- ============================= New case  7 =============================
- --------- TYPE LOC  VALUE ----- ITEM  Comments
- TCARD: 8-Cond.   0.38640E-01 -0.21450E-02  0.23470E-02 -0.75000E-03
-                   2.7667      -1.2990      0.62922     -0.52729    
- TCARD: 8-SpHt.    646.63       246.67      -49.822       7.9520    
-                   1710.6       721.87       57.449       24.375    
- Changed>>   3  10   0.000        LKofT  LkofT
- Changed>>   1  12   546.0      PTOTAL   PTOTAL
- Changed>>   1  23   33.00      SLOPE    SLOPE
- Changed>>   1  24   45.00      SLOAZI   AZIMUTH
- -----------------------  RUN-CASE     1     8 ----------------------- 
-     0.277 seconds at end of season  120 of  120
- Case  8  DTIME: total, user, system=    0.2770    0.2770    0.0000
-
-
- ============================= New case  8 =============================
- --------- TYPE LOC  VALUE ----- ITEM  Comments
- Changed>>   8   3   0.000               ./out/363flat.tm3
-
-TFAR: Opened direct access file = ./out/363flat.tm3
- NWTOT & NRECL used=   3552  28416  Now=2019 Dec  4 16:36:14
- -----------------------  RUN-CASE     1     9 ----------------------- 
-     0.278 seconds at end of season  120 of  120
- Case  9  DTIME: total, user, system=    0.2780    0.2780    0.0000
-
-
- ============================= New case  9 =============================
- --------- TYPE LOC  VALUE ----- ITEM  Comments
-
-
-     END OF DATA ON INPUT UNIT
- KRC@180 IRL,IRC=           1           5
- Closed DA file. Name, Unit, -Type=./out/363flat.tm3          13           3
- IDX= 4  JJJ=    5   48    7    5   41    9    0    5   25    0
- Wrote bin5 file type 52: iret=            0
-   File name=./out/363Test.t52
-      END KRC   Total time [s]=      3.154
- Elog= eLog20191204T163614.614 
+ RASE,MASE,MTOT=   145.180023             145     9987600
+ TDISK Error:  KODE,KREC,JREC=           1           0           0

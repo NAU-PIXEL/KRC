@@ -223,7 +223,8 @@ C        , J1,FX,    J2,IRET)
               XG= FFELP(5)/FFELP(3)
               WRITE(IOERR,*)'TFAR: Year/DELJUL not integral',XG
             ENDIF
-            IF (IR1 .GE. 2) WRITE(IOERR,*)'TFAR: Season outside fff'
+            IF (IR1 .GE. 2) WRITE(IOERR,*)
+     &         'TFAR: Season outside fff; date=',IR1,FFATE
             IR1=0             ! set return codes clear in case not used
             IR2=0
             IR3=0

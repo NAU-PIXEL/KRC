@@ -1,6 +1,6 @@
-0 0 1 / KOLD: season to start with;  KEEP: continue saving data in same disk file
- 0 0 0 0 0 0  / IDB1 to IDB6
-V361 consistency tests   5 lat,  slow Run: 41 seas with 2 yr spinup
+ 0 0 1 / KOLD: season to start with; KEEP: continue saving data in same disk file
+ 99 0 0 0 0 0 / six debug flags
+V365 test cases   5 lat, 40 seas with 2 yr spinup  First cases Compat with 321
     ALBEDO     EMISS   INERTIA     COND2     DENS2    PERIOD SPEC_HEAT   DENSITY
        .25      0.95     200.0      2.77     928.0    1.0275      647.     1600.
       CABR       AMW    SatPrA    PTOTAL     FANON      TATM     TDEEP   SpHeat2
@@ -10,7 +10,7 @@ V361 consistency tests   5 lat,  slow Run: 41 seas with 2 yr spinup
     TFROST    CFROST    AFROST     FEMIS       AF1       AF2    FROEXT    SatPrB
      146.0   589944.       .65      0.95      0.54    0.0009       50.   3182.48
       RLAY      FLAY     CONVF     DEPTH     DRSET      PHOG       GGT     DTMAX
-    1.1500      .100       3.0       0.0       0.0       0.0       0.1       0.1
+    1.2000     .1800    2.0000       0.0       0.0       0.0       0.1       0.1
       DJUL    DELJUL  SOLARDEC       DAU     LsubS    SOLCON      GRAV     AtmCp
    151.293 17.174822      00.0     1.465        .0     1368.     3.727     735.9
     ConUp0    ConUp1    ConUp2    ConUp3    ConLo0    ConLo1    ConLo2    ConLo3
@@ -18,11 +18,11 @@ V361 consistency tests   5 lat,  slow Run: 41 seas with 2 yr spinup
     SphUp0    SphUp1    SphUp2    SphUp3    SphLo0    SphLo1    SphLo2    SphLo3
   646.6275  246.6678  -49.8216    7.9520  1710.648  721.8740  57.44873  24.37532
         N1        N2        N3        N4        N5       N24        IB        IC
-        28      1536        15         5       121        48         0         7
+        20       384        15         5       120        48         0         7
      NRSET      NMHA      NRUN     JDISK     IDOWN    FlxP14    FlxP15     KPREF
          3        24         0        81         0        45        65         1
      K4OUT     JBARE     Notif    IDISK2                                     end
-        -3         0        40         0                                       0
+        -2         0        20         0                                       0
     LP1    LP2    LP3    LP4    LP5    LP6 LPGLOB   LVFA   LVFT  LkofT
       F      T      F      F      F      F      F      F      F      F
   LPORB   LKEY    LSC  LZONE  LOCAL  Prt76 LPTAVE  Prt78  Prt79  L_ONE
@@ -38,38 +38,36 @@ Latitudes: in 10F7.2  _____7 _____7 _____7 _____7 _____7 _____7 _____7
    24.62296       0.000000      -1.240317       0.000000       0.000000    
    0.000000      0.3244965      0.8559126      0.4026359     -0.9458869    
   0.2936298      0.1381285       0.000000     -0.4256703      0.9048783 
-2 8 999 'IC2'   / homogenous: ignore the 2nd material
-8  5 0 './out/t361b.t52'   / type 52 file name for Run
-8 21 0 './out/t361bflat.tm3'   / output fff
+1 34  .2160 'FLAY' / match first physical layer of older versions
+1 35 3 'CONVF' / attempt to match V2 run
+8 5 0 './out/365Test.t52' / Type 52 file to write
+3 2 1 'LP2' / turn on printing parameters and layer table
+2 17 -3 'K4OUT' / file type
+8 21 0 './out/365flat.tm3' / Direct-access file to write one case
 0/ 
-3  2 0 'LP2' / turn off print of parameters 
-1 23 0.1 'SLOPE' / 
-2 24 4 'ID24' / DA out file R*4    
-8 21 0 './out/t361btiny.tm3'   / output fff
+3 2 0 'LP2' / turn on printing parameters and layer table 
+3 10 1 'LkofT' / T-dependent properties 
 0/  
-2 24 8 'ID24' / DA out file R*8    
-8 3 0 './out/t361bflat.tm3' / fff input for Tsur and Tatm
+3 10 0 'LkofT' / reset
+3 8 1 'LVFA' / use variable frost albedo 
+3 9 1 'LVFT' / use variable frost temperature 
 0/ 
-1 23 30. 'SLOPE' /   
-8 21 0 './out/t361bHi.tm1'   / output fff
-0/  ------------------------------------------------------
-8 3 0 'off' / fff input for Tsur and Tatm
-1 12 0.1 'PTOTAL' / no atm
-1 23 0. 'SLOPE' / flat   
-2 17 -1 'K4OUT' / output type .tm1  
-8 21 0 './out/t361bp0flat.tm1' / DA output of type K4out
+1 12 .5 'PTOTAL' / no atm
 0/
-1 23 0.1 'SLOPE' / 
-2 24 4 'ID24' / DA out file R*4    
-8 21 0 './out/t361bp0tiny.tm1'   / output fff 
+1 38 0.15 'PhotoF' / set to Kheim-like 
+0/ 
+3 10 1 'LkofT' / T-dependent properties
+0/  
+12 0.038640 0.0  0.0 0.0  2.77 0.0 0.0 0.0    /  constant Conductivity
+13 647.0 0.0 0.0 0.0  1711.  0.0 0.0 0.0      / constant Specific heat
+0/ 
+12 0.038640 -0.002145  0.002347 -0.000750  2.766722 -1.298966  0.629224 -0.527291/ reset Cond
+13 646.6275  246.6678  -49.8216    7.9520  1710.648  721.8740  57.44873  24.37532 / reset SpecHeat
+3 10 0 'LkofT' / reset
+1 12 546. 'PTOTAL' / reset to Mars
+1 23 33. 'SLOPE'    / dune slip face
+1 24 45. 'AZIMUTH'  / facing north-east  self-heating
 0/
-2 24 8 'ID24' / DA out file R*8    
-8 3 0 './out/t361bp0flat.tm1' / fff input for Tsur and Tatm R*8   
-8 21 0 './out/t361bp0Lo8.tm1'   / output fff
-0/ 
-1 23 30. 'SLOPE' /  
-8 21 0 './out/t361bp0Hi.tm1'   / output fff
-0/ 
-8 3 0 './out/t361bp0tiny.tm1' / fff input for Tsur and Tatm R*4
-0/ 
+8 3 0 './out/365flat.tm3'   / Far-field input
+0/
 0/  ======================= end of run
