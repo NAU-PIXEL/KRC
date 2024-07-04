@@ -35,8 +35,6 @@ FFLAGS= -fno-automatic -fno-second-underscore -fd-lines-as-comments -fallow-argu
 LD=gfortran
 #------------- Libraries -------------------------
 # Pointers to top of libraries to use. 
-# available only non H3
-HHKLIB=/home/hkieffer/linux/lib64
 #<>D  Only for distribution
 KRCLIB=./src/
 
@@ -44,12 +42,10 @@ KRCLIB=./src/
  SYSLIBS = -L -lgfortran -lc -lm 
 
 # LDFLAGS= -fdump-tree-slim  # used, but does nothing 2014mar11
-LDFLAGS= -g -fbounds-check  # prepare for debugger. Used only by krcdb
+LDBFLAGS= -g -fbounds-check  # prepare for debugger. Used only by krcdb
 
 # Library directories that always are searched
-#LIBDIRS=-L$(HHKLIB)                     #<>H
-LIBDIRS_DEV=-L$(KRCLIB) -L$(HHKLIB)   #<>D
-LIBDIRS_PROD=-L$(KRCLIB)              #<>D
+LIBDIRS=-L$(KRCLIB)              #<>D
 
 #  Special Kieffer library groups
 #HLIB=-lhk_fmath -lhk_fgeom -lhk_futil -lhk_fchar  ##2-lhk_fNumRec # -lhk_rad
@@ -75,33 +71,8 @@ OBJP3 = $(KRCLIB)/porbmn.o $(KRCLIB)/porbio.o $(KRCLIB)/ephemr.o $(KRCLIB)/ymd2j
  $(KRCLIB)/orbit8.o $(KRCLIB)/spcrev.o $(KRCLIB)/caldate.o $(KRCLIB)/caldat.o $(KRCLIB)/julday.o $(KRCLIB)/b2b.o $(KRCLIB)/upcase.o $(KRCLIB)/eccanom8.o \
  $(KRCLIB)/catime.o $(KRCLIB)/prtpcom.o $(KRCLIB)/rotmdp8.o $(KRCLIB)/cocodp8.o $(KRCLIB)/vadddp8.o
 
-# testing
-OBJT = $(KRCLIB)/testrou.o $(KRCLIB)/alsubs.o $(KRCLIB)/averag.o $(KRCLIB)/aveyear.o $(KRCLIB)/bigend.o $(KRCLIB)/binf5.o \
- $(KRCLIB)/catime.o $(KRCLIB)/climtau.o $(KRCLIB)/cubuterp8.o $(KRCLIB)/datime.o $(KRCLIB)/dpythag.o $(KRCLIB)/dspline.o $(KRCLIB)/dsplint.o \
- $(KRCLIB)/dsvbksb.o $(KRCLIB)/dsvdcmp.o $(KRCLIB)/eclipse.o $(KRCLIB)/evmono38.o $(KRCLIB)/evmono3d.o $(KRCLIB)/evrf4.o \
- $(KRCLIB)/fillmv.o $(KRCLIB)/getpi4.o $(KRCLIB)/getpr8.o $(KRCLIB)/hratlsq.o $(KRCLIB)/kratlsq.o $(KRCLIB)/m2eul.o $(KRCLIB)/qtlats.o \
- $(KRCLIB)/randomn.o $(KRCLIB)/ratval.o $(KRCLIB)/rotmdp8.o $(KRCLIB)/sigma.o $(KRCLIB)/sigma8.o $(KRCLIB)/spline.o $(KRCLIB)/splint.o \
- $(KRCLIB)/strumi.o $(KRCLIB)/strumr8.o $(KRCLIB)/tdif3.o $(KRCLIB)/tfar8.o $(KRCLIB)/epred8.o \
- $(KRCLIB)/vadddp8.o $(KRCLIB)/white1.o $(KRCLIB)/gaspt8.o $(KRCLIB)/nowhite.o $(KRCLIB)/orlint8.o $(KRCLIB)/wraper8.o
-
-OBBB = $(KRCLIB)/krt8.o $(KRCLIB)/fillmv.o 
-
-
-# global maps
-OBJECTG = $(KRCLIB)/glot.o $(KRCLIB)/binf5.o  $(KRCLIB)/st2real6.o $(KRCLIB)/readkrcm1.o $(KRCLIB)/averag.o \
- $(KRCLIB)/catime.o $(KRCLIB)/white0.o $(KRCLIB)/fillmv.o $(KRCLIB)/minvr4.o $(KRCLIB)/bigend.o $(KRCLIB)/white1.o
-
-# $(KRCLIB)/r2r.o $(KRCLIB)/d2d.o $(KRCLIB)/d2md.o 
-
-OBJT1 = $(KRCLIB)/test8.o $(KRCLIB)/deding2.o $(KRCLIB)/deding28.o
-
-.PHONY : call cclean clean cleanall
 
 # normal link
-krt: $(OBBB) $(CLIB)
-	$(FC) $(LIBDIRS_PROD) -o $@ $(OBBB) \
-	$(CLIB) $(SYSLIBS)
-
 krc: $(OBJ8) $(CLIB)
 	$(FC) $(LIBDIRS_PROD) -o $@ $(OBJ8) \
 	$(CLIB) $(SYSLIBS)
@@ -110,31 +81,15 @@ porbmn: $(OBJP3)
 	$(FC)  $(LIBDIRS_PROD) -o $@ $(OBJP3) \
 	$(SYSLIBS)
 
-glot: $(OBJECTG) $(CLIB)
-	$(FC) $(LIBDIRS_PROD) -o $@ $(OBJECTG) \
-	$(CLIB) $(SYSLIBS)
-
 # testing and development
 
 krcdb: $(OBJ8) $(CLIB)  # -  with debug
-	$(FC) $(LDFLAGS) $(LIBDIRS_PROD) -o $@ $(OBJ8) \
+	$(FC) $(LDBFLAGS) $(LIBDIRS) -o $@ $(OBJ8) \
 	$(CLIB) $(SYSLIBS)
 
-tporbmn: $(OBJP3)
-	$(FC) $(LDFLAGS) $(LIBDIRS_DEV) -o $@ $(OBJP3) \
+porbmndb: $(OBJP3)
+	$(FC) $(LDBFLAGS) $(LIBDIRS) -o $@ $(OBJP3) \
 	$(SYSLIBS)
-
-testr: $(OBJT) $(CLIB)  # - 
-	$(FC) $(LIBDIRS_DEV) -o $@ $(OBJT) \
-	$(CLIB) $(SYSLIBS)
-
-testd: $(OBJT) $(CLIB)  # with debug
-	$(FC) $(LDFLAGS) $(LIBDIRS_DEV) -o $@ $(OBJT) \
-	$(CLIB) $(SYSLIBS)
-
-test1: $(OBJT1) $(CLIB)  # -
-	$(FC) $(LDFLAGS) $(LIBDIRS_DEV) -o $@ $(OBJT1) \
-	$(CLIB) $(SYSLIBS)
 
 # make routines for program dependencies 
 #
@@ -251,17 +206,6 @@ $(KRCLIB)/spline.o: $(KRCLIB)/spline.f # -
 $(KRCLIB)/splint.o: $(KRCLIB)/splint.f # -
 $(KRCLIB)/test8.o: $(KRCLIB)/test8.f
 
-#
-# Make clean
-#
-clean:
-	- $(RM) $(KRCLIB)/*.o 
-cleanbin: 
-	- $(RM) krc
-	- $(RM) porb
-
-cleanall: cclean clean cleanbin
-
 ### C library make section
 
 # Set up some shell-level specific variables
@@ -300,3 +244,91 @@ $(CLIB): $(COBJS)
 #  Clean up 
 cclean: 
 	- $(RM) $(COBJS) $(CLIB)
+
+
+### IDL module make section
+# Makefile for IDL externals for KRC users
+#_Hist 2014feb28 HK Derive from Hugh's idl/externals/Makefile
+# Tried  -m32 on IDLCFLAGS IDLFFLAGS and LDFAGS; this caused errors
+# 2014may05 -lg2c >> -lgfortran
+#########################################################################
+
+# Set up some shell-level specific variables
+SHELL=/bin/csh 
+
+#  These are the GNU C compiler flags.
+IDLCC= gcc -pipe  
+IDLCFLAGS= -fPIC -Wall
+#  These are the FORTRAN compiler flags
+IDLFFLAGS= -fno-automatic -fno-second-underscore -fargument-alias -fd-lines-as-comments -fallow-argument-mismatch -fPIC 
+
+#  Special load flags, utilized in all builds, whether FORTRAN or C
+LD=gcc
+IDLLDFLAGS= -shared -fPIC # -Wall -Wl
+# whole archive only needed if refer to .a libs
+
+# Special library MACROS for .a libraries  There are none built here
+# AR=ar   # archinve.. moves .o into .a    No harm 
+# ARFLAGS=-rvs
+# RANLIB=/bin/echo  # nedded for .a lib
+
+#------------- Libraries and paths-------------------------
+# Include files paths
+INCLUDES=-I.   # in this directory
+
+# L are Library directores that always are searched in
+# l are libraries to include  -lc==libc.a  etc. 
+LIBDIRS=-L.  # -L/home/hkieffer/linux/lib  #<<< last is for NumRec
+#SYSLIBS = -lg2c -lc -lm   commented 2014may05
+SYSLIBS = -lgfortran -lc -lm  
+
+#------------------- target dependencies -------------------
+IDLOBJDIR = idl/objects
+IDLSRCDIR = idl/extern
+
+EXCW = exfuncw.c exfunctionw.c exroutinew.c
+
+# Find C and Fortran sources and make object targets
+IDLSRCW = $(shell find $(IDLSRCDIR) -type f -name "*.c")
+IDLSRCW_FILTER = $(filter-out $(addprefix $(IDLSRCDIR)/,$(EXCW)), $(IDLSRCW))
+IDLOBJSW = $(IDLSRCW_FILTER:.c=.o)
+
+IDLSRCF = $(shell find $(IDLSRCDIR) -type f -name "*.f")
+IDLOBJSF = $(IDLSRCF:.f=.o)
+
+IDLOBJSALL= $(IDLOBJSF) $(IDLOBJSW) # concatonate objects
+
+# Pattern rules to match files in source directory with object targets
+# Not needed for KRC C files 
+$(IDLOBJSW): %.o: %.c
+	$(IDLCC) $(IDLCFLAGS) $(INCLUDES) -c $< -o $@
+
+$(IDLOBJSF): %.o: %.f
+	$(FC) $(IDLFFLAGS) $(INCLUDES) -c $< -o $@
+
+%.o : $(IDLSRCDIR)/%.c 
+	$(IDLCC) $(IDLCFLAGS) $(INCLUDES) -c $<
+%.o : $(IDLSRCDIR)/%.f
+	$(FC) $(IDLFFLAGS) $(INCLUDES) -c $<
+#------------- Actions -----------------------------
+
+# machines running in 64-bit mode, IDL must be in same mode
+ftnwrap64.so:	$(IDLOBJSALL)    
+	$(LD) $(IDLLDFLAGS)   -o $(IDLSRCDIR)/$@ $(IDLOBJSALL) $(LIBDIRS) \
+	$(SYSLIBS)
+#	 -lhk_fNumRec $(SYSLIBS)
+
+.PHONY : call cclean clean cleanall cleanidl
+#
+# Make clean
+#
+clean:
+	- $(RM) $(KRCLIB)/*.o 
+cleanbin: 
+	- $(RM) krc
+	- $(RM) porb
+
+cleanidl:
+	-unalias rm; cd idl/extern; rm -f *.o ftnwrap64.so
+
+cleanall: cclean clean cleanbin cleanidl
