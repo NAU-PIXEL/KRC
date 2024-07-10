@@ -182,7 +182,7 @@ Spherical: using \qr{Ahs}
 
 \qb = 4 \pi  A_M   \left[ \frac{1}{\nu+1} \right]  [\frac{1}{\nu+1}] = A_M \frac{ 4 \pi }{(\nu+1)^2} \qe
 
-\begin{figure}[!ht] \igq{minnHemi}
+\begin{figure}[!ht] \igq{img/minnHemi}
 \caption [Minnaert $A_S$]{Spherical albedo for Minnaert reflectance.
 \label{minnHemi}  minnHemi.png }
 \end{figure} 
@@ -224,7 +224,7 @@ Numerical integration yields $A$ 0.20483 . Using Wolfram integral solver for eac
 \qb \left.  - \underbrace{\frac{1}{36} [ -3(-1-1) +(0-1)-6(\ln \sqrt{2} -0) +(0-1(15-9 \ln2)) -3(0- \ln 2)-9(0 - \ln2) }_3 \right)  \qe
    Yields 0.320093 A, some blunder in part 3  above.
 
-\begin{figure}[!ht] \igq{LomSee}
+\begin{figure}[!ht] \igq{img/LomSee}
 \caption[Lommel-Seeliger $A_H$ ]{Hemispherical albedo for Lommel-Seeliger reflectance, and the integrand for $A_S$ 
 \label{LomSee} LomSee.png }
 \end{figure} 
@@ -262,7 +262,7 @@ and $ [_0^{\pi/2} = \frac{80640-20160 \pi^2+1680 \pi^4-56 \pi^6+\pi^8}{1024} \si
 % 1.5682916  + 0.059435709
  See Figure \ref{KeihmAh} 
  
-\begin{figure}[!ht] \igq{KeihmAh}
+\begin{figure}[!ht] \igq{img/KeihmAh}
 \caption[Lunar-like albedo]{Lunar-like hemispherical albedo.
 \label{KeihmAh} KeihmAh.png }
 \end{figure} 
@@ -343,20 +343,20 @@ become negative for reasonable values of ALB, see Figure \ref{hem55a}. The only
 practical way to prevent such a creation of energy for all photometric models is
 to invoke a lower limit of 0 on adsorbed insolation; TLATS restricts $0 \le A_H \le 1$ .
 
-\begin{figure}[!ht] \igq{hem55n}
+\begin{figure}[!ht] \igq{img/hem55n}
 \caption[Normalized Hemispherical Albedo]{Hemispherical albedo as a function of incidence 
 angle for several photometric models; see legend. Each curve normalized to the 
 value at normal incidence. % Values above unity are non-physical
 \label{hem55n} hem55n.png }
 \end{figure} 
 % how made: q.pro @ 46 48 55
-\begin{figure}[!ht] \igq{hem55c}
+\begin{figure}[!ht] \igq{img/hem55c}
 \caption[Hemispherical Albedo]{Same as Fig. \ref{hem55n} but with abscissa being $\cos i$. 
 \label{hem55c} hem55c.png }
 \end{figure} 
 % how made: q.pro @ 46 48 55
 
-\begin{figure}[!ht] \igq{hem55a}
+\begin{figure}[!ht] \igq{img/hem55a}
 \caption[Absorbed power]{Absorbed power for ALB=.2 as a function of incidence
  angle for several photometric models; see legend. 
 Values are $\cos i \ (1.-0.2 A_H(i)/A_H(0)$ .
@@ -403,7 +403,7 @@ Access to photometric models; in version 3.4.2 only when no atmosphere.
 \qii   $0<x<1.$ is Lunar-like, with x being the coefficent of $i^3$
 
 Hemispheric albedos for the implimented photometric functions are shown Figure \ref{kv651}  
-\begin{figure}[!ht] \igq{kv651}
+\begin{figure}[!ht] \igq{img/kv651}
 \caption[Test of Photometric functions]{Hemispheric albedo computed in KRC
   versus cosine of the incidence angle, solid lines, at every time step. Dashed
   lines (largely invisible) are values at every degree computed in IDL
@@ -414,7 +414,7 @@ Hemispheric albedos for the implimented photometric functions are shown Figure \
 
  The effect on surface temperature, relative to a Lambertian surface, is shown in 
 Figure \ref{kv572}  
-\begin{figure}[!ht] \igq{kv572}
+\begin{figure}[!ht] \igq{img/kv572}
 \caption[Effect of Photometric functions]{Effect of various photometric
   functions; low thermal inertia, I=50, and at 60\qd S for Mars orbit but no
   atmosphere. Ordinate is Tsur relative to the values for a Lambertian
@@ -425,7 +425,7 @@ Figure \ref{kv572}
 
 The effect at all hours, latitudes, seasons and cases is shown in
 Figure \ref{quilt}  
-\begin{figure}[!ht] \igq{quilt}
+\begin{figure}[!ht] \igq{img/quilt}
 \caption[Effect of Photometric functions]{Effect of various photometric functions;
  low thermal inertia, I=50,  and at the equator for Mars orbit but no atmosphere. 
 QUILT3 image of delta temperature from a Lambertian model.  Displayed value

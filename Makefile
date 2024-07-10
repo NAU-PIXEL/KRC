@@ -332,3 +332,24 @@ cleanidl:
 	-unalias rm; cd idl/extern; rm -f *.o ftnwrap64.so
 
 cleanall: cclean clean cleanbin cleanidl
+
+
+### Documentation build section
+
+DOCSRC = doc/
+
+DOCOUT = $(CURDIR)/doc_output/
+
+DOCBUILD = $(CURDIR)/doc_build/
+
+UGDIR = $(DOCSRC)/user_guide/
+
+.PHONY: docs
+
+docs: V34UG.pdf
+
+V34UG.pdf: $(UGDIR)/V34UG.tex $(UGDIR)/farg.tex $(UGDIR)/fard.tex $(UGDIR)/v34p.tex
+	cd $(UGDIR); \
+	latexmk -pdf -pdflatex="pdflatex -interaction=nonstopmode" \
+	-outdir=$(DOCOUT) -auxdir=$(DOCBUILD) \
+	V34UG.tex 

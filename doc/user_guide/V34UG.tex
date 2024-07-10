@@ -2,7 +2,7 @@
 \documentclass{article} 
 \usepackage{underscore} % accepts  _ in text mode
 \usepackage{ifpdf} % detects if processing is by pdflatex
-\usepackage{/home/hkieffer/xtex/newcom}  % Hughs conventions
+\usepackage{../newcom}  % Hughs conventions
 % \newcommand{\qj}{\\ \hspace*{-2.em}}      % outdent 1
 
 \textheight=10.00in \topmargin=-1.1in % bot need 0.1 more        %OK
@@ -13,7 +13,7 @@
 %\newcommand{\ql}[1]{\label{eq:#1} \end{equation} } % for final
 
 \title{Guide to KRC version 3.4, and background }
-\author{Hugh H. Kieffer  \ \ File=-/krc/Doc/DV3/V34UG.tex  2017feb23,Oct18}
+\author{Hugh H. Kieffer  \ \ File=/krc/Doc/user\_guide/V34UG.tex  2017feb23,Oct18}
 \begin{document} %==========================================================
 \maketitle
 \tableofcontents
@@ -230,7 +230,7 @@ angle.  See \S \ref{Ah} for details.
 
 Curves for various hemispherical albedos are shown in Figure 
 \ref{hem46n}  
-\begin{figure}[!ht] \igq{hem46n}
+\begin{figure}[!ht] \igq{img/hem46n}
 \caption[Various hemispherical albedos]{Dependence of hemispherical albedo on
   incidence angles for various models, indicated in legend. All have been
   normalized to unity at normal incidence.
@@ -610,7 +610,7 @@ which I have recalculated [IDL routine qkrcsimp.pro] and show in Fig
 \ref{CJFig11}; the under- and over-braces indicate grouped terms in my numerical
 solution.
 
-\begin{figure}[!ht] \igq{CJFig11}
+\begin{figure}[!ht] \igq{img/CJFig11}
 \caption[Thermal diffusion from one boundary]{Temperature distribution over time
   for a slab with a jump in one boundary.Ordinant is fraction of the temperature
   rise to final state; abscissa is fraction of the way into the slab. Curve
@@ -712,7 +712,7 @@ below:
 \qi 13: zone table: zoneX (similar to 2 materials)
 \qi 14: zone table: zoneY (exercise most table options)
 
-\begin{figure}[!ht] \igq{kv782M33A}
+\begin{figure}[!ht] \igq{img/kv782M33A}
 \caption[Test run A]{Diurnal surface temperature in Version 3.3 test run A at
   the last season (Ls=0) at latitude 0 relative to the first case. Difference in
   cases described in the text.
@@ -740,7 +740,7 @@ Mars, but chosen to make the effects of heat-flow easier to see in plots.
 The effect of heat flow is shown in Figure \ref{kv7847}. The effect of
 20mW/m$^2$ is 1K at about index 36, KRC layer 38, depth 2.7m .
 
-\begin{figure}[!ht] \igq{kv7847}
+\begin{figure}[!ht] \igq{img/kv7847}
 \caption[InSight with heat-flow]{Temperature versus depth for a model similar to
   the higher conductivity model of \qcite{Grott07}, but at latitude 30S which
   has larger seasonal variation than the planned InSight landing area.  Abscissa
@@ -763,7 +763,7 @@ nill-Pressure case to ensure that it is Lambertian, as the atmosphere cases are
 forced to be Lambertian in the TLATS code.
 
 Results are shown in Figure \ref{622c} 
-\begin{figure}[!ht] \igq{622c}
+\begin{figure}[!ht] \igq{img/622c}
 \caption [Effect of an atmosphere]{Surface temperatures as a function of
     atmospheric pressure; Mars seasonal variation of the equator at 13 hours
     after a t2-year spin-up. Solid lines are V342, long dash are V321. White is
@@ -797,14 +797,14 @@ A run of 5 latitudes with 20 layers for 40 seasons after a two-year spin-up but
 CONVF=3 for both versions, yielding lower layer of time doubling  4    5    7    9   11   13   15   20 for both versions, had smaller differences: Figure \ref{kv57}
 
  
-\begin{figure}[!ht] \igq{342soly-321}
+\begin{figure}[!ht] \igq{img/342soly-321}
 \caption[V342-V321 for each sol]{Difference of surface temperature for V342-V321 for each sol for five latitudes as shown in the legend. See text.
 \label{342soly-321} 342soly-321.png }
 \end{figure} 
 % how made: kv3: @114 2 321 342, @115, @123, @56 t 0, @561, @57
 
  
-\begin{figure}[!ht] \igq{342vt2-321}
+\begin{figure}[!ht] \igq{img/342vt2-321}
 \caption[V342-V321 for 19 latitudes]{Difference of surface temperature for V342-V321 for 19 latitudes for a runs with 20 layers for 40 seasons after a two-year spin-up. 
 \label{342vt2-321}  342vt2-321.png }
 \end{figure} 
@@ -831,20 +831,20 @@ Differences in Tsurf are shown in Figures \ref{kv57}, \ref{kv571} and
 \ref{kv571b}. The difference for T-dep cases results from small changes in the
 layer thicknesses as discussed in the Alert in \S \ref{need}.
 
-\begin{figure}[!ht] \igq{kv57}
+\begin{figure}[!ht] \igq{img/kv57}
 \caption[V342-V321]{V342-V321 for 8 cases. Abscissa is hours * season *
   case. Ordinant is Tsurf of 342 - 321.  Five cases have differences less than
   about 0.1 K, apart from winter frost edges. Those with T-dep properties have differences are up to 1.5 K, apart from frost edge.
 \label{kv57}  kv51.png }
 \end{figure} 
 
-\begin{figure}[!ht] \igq{kv571}
+\begin{figure}[!ht] \igq{img/kv571}
 \caption[V342-V321, attenuated]{Same as Fig. \ref{kv57}. Cases with large excursions are shown attenuated by factors listed in the figure.
 \label{kv571}  kv571.png }
 \end{figure} 
 % how made:  kv3 114, 4 321 342, 115, 123, 13 10=0, 56 t 0, 561, 57, 571
  
-\begin{figure}[!ht] \igq{kv571b}
+\begin{figure}[!ht] \igq{img/kv571b}
 \caption[V232-V321]{V232-V321 for 6 cases. See caption for Fig.  \ref{kv571}
   Abscissa is hours * season * case. Ordinate is Tsurf of 232 - 321.  Four
   cases with no atmosphere have differences less than about 0.1 K, those cases
@@ -984,7 +984,7 @@ CLOT,reform(ttt[*,0,2,3,*]),caset,locc=1  DIurnal T, equator, one season, all ca
 
 %\clearpage
 
-\bibliography{heat,moon,mars}   %>>>> bibliography data
+\bibliography{../heat,../moon,../mars}   %>>>> bibliography data
 \bibliographystyle{plain}   % alpha  abbrev 
 
 \appendix %=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -1128,12 +1128,12 @@ Figure \ref{Birk3}
 His Table III lists ``solar albedo'' at six discrete incidence angles from
 earlier work; these are shown in Figure \ref{Birk2} and Figure \ref{Birk3}
 
-\begin{figure}[!ht] \igq{Birk2}
+\begin{figure}[!ht] \igq{img/Birk2}
 \caption[Lunar albedo]{Solar albedo for specific incidence angle, from Birkebak table III. Lines omitted across missing data.
 \label{Birk2} Birk2.png  }
 \end{figure} 
 % how made: hemialb @21
-\begin{figure}[!ht] \igq{Birk3}
+\begin{figure}[!ht] \igq{img/Birk3}
 \caption[Lunar albedo, normalized]{Solar albedo for specific incidence angle,
   Data same as Figure \ref{Birk2}, but normalized to values at $i$=30\qd. Apollo
   12 with density 1600 seems wayward.
@@ -1159,7 +1159,7 @@ Results for each type of photometric function in KRC v3.4.x are shown in Figures
 \ref{kv402v} and \ref{kv402}. Some normalization is missing for
 Lommel-Seeliger. The Vasavada relation appears unrealistic.
  
-\begin{figure}[!ht] \igq{kv402v}
+\begin{figure}[!ht] \igq{img/kv402v}
 \caption[DownVis for photometric functions]{Downward solar flux at the surface
   for different photometric functions, no atmosphere. First case (in legend,
   from the top) is Lambertian (2nd is same, testing no atm), third is
@@ -1169,7 +1169,7 @@ Lommel-Seeliger. The Vasavada relation appears unrealistic.
 \end{figure} 
 % how made: run test342k, kv3 @111 402
  
-\begin{figure}[!ht] \igq{kv402}
+\begin{figure}[!ht] \igq{img/kv402}
 \caption[Tsurf for photometric functions]{Surface temperature for a lunar
   material (I=50, no atmosphere, Mars orbit and length of day) for different
   photometric functions. Different curves as identified in Fig. \ref{kv402v}.
@@ -1224,7 +1224,7 @@ is in Figure \ref{kv782bDm30}.
 \end{verbatim}
 \vspace{-3.0mm}
 \hrulefill \end{table}  
-\begin{figure}[!ht] \igq{kv782Dm30}
+\begin{figure}[!ht] \igq{img/kv782Dm30}
 \caption[Tuning for accuracy]{Results for I=300 on Mars with 40 seasons after a
   2-year spin-up. Run mtimeD; 17 cases, most with 1536 times per sol, referenced
   to 12288 times per sol with CONVG=3. Legend columns are: 0-based case index,
@@ -1233,7 +1233,7 @@ is in Figure \ref{kv782bDm30}.
 \end{figure} 
 % how made: kv3.pro, 138, 123
 
-\begin{figure}[!ht] \igq{kv782bDm30}
+\begin{figure}[!ht] \igq{img/kv782bDm30}
 \caption[Accuracy versus time]{Efficiency results for similar homogeneous cases;
   abscissa is log of execution time for the case (all latitudes and seasons),
   ordinate is the Mean Absolute Residual (MAR) of surface temperature for 30\qd
