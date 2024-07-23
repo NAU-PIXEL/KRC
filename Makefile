@@ -331,7 +331,10 @@ cleanbin:
 cleanidl:
 	-unalias rm; cd idl/extern; rm -f *.o ftnwrap64.so
 
-cleanall: cclean clean cleanbin cleanidl
+cleandocs:
+	-unalias rm; cd doc_build; rm -f *; cd ../doc_output; rm -f *.pdf
+
+cleanall: cclean clean cleanbin cleanidl cleandocs
 
 
 ### Documentation build section
@@ -344,12 +347,41 @@ DOCBUILD = $(CURDIR)/doc_build/
 
 UGDIR = $(DOCSRC)/user_guide/
 
+TEXMKFLAGS = -pdf -pdflatex="pdflatex -interaction=nonstopmode"
+TEXMKDEST = -outdir=$(DOCOUT) -auxdir=$(DOCBUILD) -emulate-aux-dir
+export BIBINPUTS = $(CURDIR)/doc
+
 .PHONY: docs
 
-docs: V34UG.pdf
+docs: doc_output/V34UG.pdf doc_output/slopes.pdf doc_output/eclipse.pdf doc_output/helplist.pdf doc_output/hporb.pdf doc_output/PUG.pdf
 
-V34UG.pdf: $(UGDIR)/V34UG.tex $(UGDIR)/farg.tex $(UGDIR)/fard.tex $(UGDIR)/v34p.tex
+doc_output/V34UG.pdf: $(UGDIR)/V34UG.tex $(UGDIR)/farg.tex $(UGDIR)/fard.tex $(UGDIR)/v34p.tex
 	cd $(UGDIR); \
-	latexmk -pdf -pdflatex="pdflatex -interaction=nonstopmode" \
-	-outdir=$(DOCOUT) -auxdir=$(DOCBUILD) \
+	latexmk $(TEXMKFLAGS) $(TEXMKDEST) \
 	V34UG.tex 
+
+doc_output/slopes.pdf: $(DOCSRC)/slopes/slopes.tex
+	cd $(DOCSRC)/slopes; \
+	latexmk $(TEXMKFLAGS) $(TEXMKDEST) \
+	slopes.tex
+
+doc_output/eclipse.pdf: $(DOCSRC)/eclipse/eclipse.tex
+	cd $(DOCSRC)/eclipse; \
+	latexmk $(TEXMKFLAGS) $(TEXMKDEST) \
+	eclipse.tex
+
+doc_output/helplist.pdf: $(DOCSRC)/helplist/helplist.tex
+	cd $(DOCSRC)/helplist; \
+	latexmk $(TEXMKFLAGS) $(TEXMKDEST) \
+	helplist.tex
+
+doc_output/hporb.pdf: $(DOCSRC)/hporb/hporb.tex
+	cd $(DOCSRC)/hporb; \
+	latexmk $(TEXMKFLAGS) $(TEXMKDEST) \
+	hporb.tex
+
+doc_output/PUG.pdf: $(DOCSRC)/PUG/PUG.tex
+	cd $(DOCSRC)/PUG; \
+	latexmk $(TEXMKFLAGS) $(TEXMKDEST) \
+	PUG.tex
+
