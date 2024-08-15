@@ -26,7 +26,7 @@ RM=/bin/rm -f
 FC=gfortran
 
 # Use 2nd version below to allow debugger and enable most IDBG actions
-FFLAGS= -fno-automatic -fno-second-underscore -fd-lines-as-comments -fallow-argument-mismatch -Wall
+FFLAGS= -fno-automatic -fno-second-underscore -fd-lines-as-comments -fallow-argument-mismatch -Wall -fprofile-arcs -ftest-coverage -pg -O0 -lgcov --coverage -g
 #FFLAGS= -fno-automatic -fno-second-underscore -fd-lines-as-code  -fbounds-check # -Wall   #  -O
 
 # next line for fortrancallgraph-master
@@ -42,7 +42,7 @@ KRCLIB=./src/
  SYSLIBS = -L -lgfortran -lc -lm 
 
 # LDFLAGS= -fdump-tree-slim  # used, but does nothing 2014mar11
-LDBFLAGS= -g -fbounds-check  # prepare for debugger. Used only by krcdb
+LDBFLAGS= -g -fbounds-check -fprofile-arcs -ftest-coverage -pg -O0 -lgcov --coverage # prepare for debugger. Used only by krcdb
 
 # Library directories that always are searched
 LIBDIRS=-L$(KRCLIB)              #<>D
