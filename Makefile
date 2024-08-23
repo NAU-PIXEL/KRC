@@ -26,7 +26,7 @@ RM=/bin/rm -f
 FC=gfortran
 
 # Use 2nd version below to allow debugger and enable most IDBG actions
-FFLAGS= -fno-automatic -fno-second-underscore -fd-lines-as-comments -fallow-argument-mismatch -Wall
+FFLAGS= -fno-automatic -fno-second-underscore -fd-lines-as-comments -fallow-argument-mismatch -Wall -cpp
 #FFLAGS= -fno-automatic -fno-second-underscore -fd-lines-as-code  -fbounds-check # -Wall   #  -O
 
 # next line for fortrancallgraph-master
@@ -128,7 +128,7 @@ $(KRCLIB)/alsubs.o: $(KRCLIB)/alsubs.f
 $(KRCLIB)/averag.o: $(KRCLIB)/averag.f  # test for function should be defined and called
 $(KRCLIB)/aveyear.o: $(KRCLIB)/aveyear.f
 $(KRCLIB)/bigend.o: $(KRCLIB)/bigend.f
-$(KRCLIB)/binf5.o: $(KRCLIB)/binf5.F  # uses  B2B  BIGEND  CATIME WHITE1  PIO_system
+$(KRCLIB)/binf5.o: $(KRCLIB)/binf5.f  # uses  B2B  BIGEND  CATIME WHITE1  PIO_system
 $(KRCLIB)/cocodp8.o: $(KRCLIB)/cocodp8.f  # Contains: COCOCM  COCOMC  COCOSC  COCOCS  
 #                       COCOSM  COCEMC  COCECM 
 $(KRCLIB)/cubuterp8.o: $(KRCLIB)/cubuterp8.f
