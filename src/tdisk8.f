@@ -100,7 +100,7 @@ C ie MM1 =JJJ[2], MM2=MM1*JJJ[3] etc   OR MM4 used as saved other values
 C Direct write will zero-fill unused part of record
 C Make arrays that overlay each of the major   Commons
       REAL*8 COMKRC(NWKRC),COMLAT(NWLAT),COMDAY(NWDAY)
-      EQUIVALENCE (COMKRC,ALB),(COMLAT,DTM4),(COMDAY,XCEN) ! first word of each
+      ! EQUIVALENCE (COMKRC,ALB),(COMLAT,DTM4),(COMDAY,XCEN) ! first word of each
       REAL*4 RASE
       INTEGER*4 JREC            ! direct-access record after latest write
       INTEGER*4 PREC            ! the 1-based direct-access physical record

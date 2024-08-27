@@ -19,6 +19,10 @@
 # 2018oct14 HK Include $(KRCLIB)/wraper.f
 # 2019dec04 HK Change from $(KRCLIB)/wraper.f to  $(KRCLIB)/wraper8.f
 ####################################################
+.SUFFIXES:
+COMPILE.f = $(FC) $(FFLAGS) -c 
+COMPILE.c = $(CC)  -c 
+
 
 SHELL=/bin/csh
 RM=/bin/rm -f
@@ -26,7 +30,9 @@ RM=/bin/rm -f
 FC=gfortran
 
 # Use 2nd version below to allow debugger and enable most IDBG actions
-FFLAGS= -fno-automatic -fno-second-underscore -fd-lines-as-comments -fallow-argument-mismatch -Wall -fprofile-arcs -ftest-coverage -pg -O0 -lgcov --coverage -g
+FFLAGS= -fno-automatic -fno-second-underscore -fd-lines-as-comments -fallow-argument-mismatch -Wall -cpp -ffixed-line-length-none
+
+FDBFLAGS = -fprofile-arcs -ftest-coverage -pg -O0 -lgcov --coverage -g 
 #FFLAGS= -fno-automatic -fno-second-underscore -fd-lines-as-code  -fbounds-check # -Wall   #  -O
 
 # next line for fortrancallgraph-master
@@ -47,13 +53,53 @@ LDBFLAGS= -g -fbounds-check -fprofile-arcs -ftest-coverage -pg -O0 -lgcov --cove
 # Library directories that always are searched
 LIBDIRS=-L$(KRCLIB)              #<>D
 
+# FMODSRC := 
+FMODDIR := $(KRCLIB)/module/fortran
+FMODSOURCES := $(wildcard $(FMODDIR)/*.f)
+FMODOBJS := $(subst .f,.o,$(FMODSOURCES))
+
+CMOD_CC=gcc -pipe -O0  -Wall -fPIC -g
+
+CMODDIR := $(KRCLIB)/module/c
+CMODSOURCES := $(wildcard $(CMODDIR)/*.c)
+CMODHEADERS := $(wildcard $(CMODDIR)/*.h)
+CMODOBJS := $(subst .c,.o,$(CMODSOURCES))
+
+$(CMODOBJS): $(CMODDIR)/%.o: $(CMODDIR)/%.c $(CMODHEADERS)
+	$(CMOD_CC) -g -c $< -o $@
+
+cleanmods:
+	$(RM) $(FMODOBJS) $(CMODOBJS)
+
+# ifneq ($(FMODDIR),)
+# 	$(shell test -d $(FMODDIR) || mkdir $(FMODDIR))
+# 	MODOUT=-J$(FMODDIR)
+# 	FFLAGS+= $(MODOUT)
+# endif
+
+%.mod: %.f
+	$(COMPILE.f) -c $< $(FFLAGS)
+
+%.o: %.f
+	$(COMPILE.f) $(FFLAGS) -c $< -o $@
 #  Special Kieffer library groups
 #HLIB=-lhk_fmath -lhk_fgeom -lhk_futil -lhk_fchar  ##2-lhk_fNumRec # -lhk_rad
 
-# CLIB=/home/hkieffer/linux/lib/libhk_cisis.a    #<>H
-CSRC_DIR=$(KRCLIB)/cfiles/
-# -lhk_crest    #<>D
-CLIB=$(CSRC_DIR)/libhk_cisis.a
+
+.PHONY : call cclean clean cleanall cleanidl cleanmods
+#
+# Make clean
+#
+clean:
+	- $(RM) $(KRCLIB)/*.o 
+cleanbin: 
+	- $(RM) krc
+	- $(RM) porb
+
+cleanidl:
+	-unalias rm; cd idl/extern; rm -f *.o ftnwrap64.so
+
+cleanall: cclean clean cleanbin cleanidl cleanmods
 
 #------------- system dependencies -------------
 
@@ -73,9 +119,9 @@ OBJP3 = $(KRCLIB)/porbmn.o $(KRCLIB)/porbio.o $(KRCLIB)/ephemr.o $(KRCLIB)/ymd2j
 
 
 # normal link
-krc: $(OBJ8) $(CLIB)
+krc: $(OBJ8) call
 	$(FC) $(LIBDIRS_PROD) -o $@ $(OBJ8) \
-	$(CLIB) $(SYSLIBS)
+	$(CISISLIB) $(SYSLIBS) $(CMODOBJS)
 
 porbmn: $(OBJP3)
 	$(FC)  $(LIBDIRS_PROD) -o $@ $(OBJP3) \
@@ -83,21 +129,21 @@ porbmn: $(OBJP3)
 
 # testing and development
 
-krcdb: $(OBJ8) $(CLIB)  # -  with debug
+krcdb: $(OBJ8) call  # -  with debug
 	$(FC) $(LDBFLAGS) $(LIBDIRS) -o $@ $(OBJ8) \
-	$(CLIB) $(SYSLIBS)
+	$(CISISLIB) $(SYSLIBS) $(CMODOBJS) $(FDBFLAGS)
 
 porbmndb: $(OBJP3)
 	$(FC) $(LDBFLAGS) $(LIBDIRS) -o $@ $(OBJP3) \
-	$(SYSLIBS)
+	$(SYSLIBS) $(FDBFLAGS)
 
 # make routines for program dependencies 
 #
 $(KRCLIB)/krt8.o:       $(KRCLIB)/krt8.f $(KRCLIB)/krcc8m.f $(KRCLIB)/latc8m.f $(KRCLIB)/dayc8m.f $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f $(KRCLIB)/hatc8m.f
 $(KRCLIB)/krc8.o:       $(KRCLIB)/krc8.f $(KRCLIB)/krcc8m.f $(KRCLIB)/latc8m.f $(KRCLIB)/dayc8m.f $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f $(KRCLIB)/hatc8m.f
 $(KRCLIB)/tseas8.o:   $(KRCLIB)/tseas8.f $(KRCLIB)/krcc8m.f $(KRCLIB)/latc8m.f          $(KRCLIB)/unic8m.f          $(KRCLIB)/hatc8m.f $(KRCLIB)/porbc8m.f
-$(KRCLIB)/tlats8.o:   $(KRCLIB)/tlats8.f $(KRCLIB)/krcc8m.f $(KRCLIB)/latc8m.f $(KRCLIB)/dayc8m.f $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f $(KRCLIB)/hatc8m.f $(KRCLIB)/porbc8m.f
-$(KRCLIB)/tday8.o:     $(KRCLIB)/tday8.f $(KRCLIB)/krcc8m.f          $(KRCLIB)/dayc8m.f $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f $(KRCLIB)/hatc8m.f $(KRCLIB)/porbc8m.f
+$(KRCLIB)/tlats8.o:   $(KRCLIB)/tlats8.f $(KRCLIB)/krcc8m.f $(KRCLIB)/latc8m.f $(KRCLIB)/dayc8m.f $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f $(KRCLIB)/hatc8m.f $(KRCLIB)/porbc8m.f $(CMODOBJS) $(FMODOBJS)
+$(KRCLIB)/tday8.o:     $(KRCLIB)/tday8.f $(KRCLIB)/krcc8m.f          $(KRCLIB)/dayc8m.f $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f $(KRCLIB)/hatc8m.f $(KRCLIB)/porbc8m.f $(FMODDIR)/array_structs.mod
 $(KRCLIB)/tfine8.o:   $(KRCLIB)/tfine8.f $(KRCLIB)/krcc8m.f          $(KRCLIB)/dayc8m.f $(KRCLIB)/unic8m.f          $(KRCLIB)/hatc8m.f
 $(KRCLIB)/tcard8.o:   $(KRCLIB)/tcard8.f $(KRCLIB)/krcc8m.f $(KRCLIB)/latc8m.f $(KRCLIB)/dayc8m.f $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f $(KRCLIB)/hatc8m.f
 $(KRCLIB)/tprint8.o: $(KRCLIB)/tprint8.f $(KRCLIB)/krcc8m.f $(KRCLIB)/latc8m.f $(KRCLIB)/dayc8m.f $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f 
@@ -128,7 +174,7 @@ $(KRCLIB)/alsubs.o: $(KRCLIB)/alsubs.f
 $(KRCLIB)/averag.o: $(KRCLIB)/averag.f  # test for function should be defined and called
 $(KRCLIB)/aveyear.o: $(KRCLIB)/aveyear.f
 $(KRCLIB)/bigend.o: $(KRCLIB)/bigend.f
-$(KRCLIB)/binf5.o: $(KRCLIB)/binf5.F  # uses  B2B  BIGEND  CATIME WHITE1  PIO_system
+$(KRCLIB)/binf5.o: $(KRCLIB)/binf5.f  # uses  B2B  BIGEND  CATIME WHITE1  PIO_system
 $(KRCLIB)/cocodp8.o: $(KRCLIB)/cocodp8.f  # Contains: COCOCM  COCOMC  COCOSC  COCOCS  
 #                       COCOSM  COCEMC  COCECM 
 $(KRCLIB)/cubuterp8.o: $(KRCLIB)/cubuterp8.f
@@ -206,8 +252,7 @@ $(KRCLIB)/spline.o: $(KRCLIB)/spline.f # -
 $(KRCLIB)/splint.o: $(KRCLIB)/splint.f # -
 $(KRCLIB)/test8.o: $(KRCLIB)/test8.f
 
-### C library make section
-
+### C Isis library make section
 # Set up some shell-level specific variables
 C_DBG=-g -C
 
@@ -223,7 +268,7 @@ CC=gcc -pipe -O2  -Wall -fPIC -Dunix -D$(HOST_ARCH) -D$(HOST_MACH) -D$(HHKOS)
 
 #  Special load flags.  These flags are utilized in all builds, whether
 #  they are FORTRAN or C
-C_LDFLAGS=-shared
+CISIS_LDFLAGS=-shared
 
 # Special library MACROS
 # handles archives
@@ -232,18 +277,26 @@ AR=ar
 ARFLAGS=-rvs
 
 #  Set up source dependancies
-CSRCS = $(wildcard $(CSRC_DIR)*.c)
-COBJS = $(addsuffix .o, $(basename $(CSRCS)))
+CISISSRC_DIR=$(KRCLIB)/cfiles/
+CISISLIB=$(CISISSRC_DIR)/libhk_cisis.a
+CISISSRCS = $(wildcard $(CISISSRC_DIR)*.c)
+CISISOBJS = $(addsuffix .o, $(basename $(CISISSRCS)))
 
 #  Define all required targets
-call: $(CLIB)
+call: $(CISISLIB)
 
-$(CLIB): $(COBJS)
-	$(AR) $(ARFLAGS) $(CLIB) $(COBJS)
+# $(CMODOBJS): $(CMODDIR)/%.o: $(CMODDIR)/%.c $(CMODHEADERS)
+#   $(CMOD_CC) -g -c $< -o $@
+
+$(CISISOBJS): $(CISISSRC_DIR)%.o: $(CISISSRC_DIR)/%.c
+	$(COMPILE.c) $(CISIS_LDFLAGS) -c $< -o $@
+
+$(CISISLIB): $(CISISOBJS)
+	$(AR) $(ARFLAGS) $(CISISLIB) $(CISISOBJS)
 
 #  Clean up 
 cclean: 
-	- $(RM) $(COBJS) $(CLIB)
+	- $(RM) $(CISISOBJS) $(CISISLIB)
 
 
 ### IDL module make section
@@ -317,22 +370,6 @@ ftnwrap64.so:	$(IDLOBJSALL)
 	$(LD) $(IDLLDFLAGS)   -o $(IDLSRCDIR)/$@ $(IDLOBJSALL) $(LIBDIRS) \
 	$(SYSLIBS)
 #	 -lhk_fNumRec $(SYSLIBS)
-
-.PHONY : call cclean clean cleanall cleanidl
-#
-# Make clean
-#
-clean:
-	- $(RM) $(KRCLIB)/*.o 
-cleanbin: 
-	- $(RM) krc
-	- $(RM) porb
-
-cleanidl:
-	-unalias rm; cd idl/extern; rm -f *.o ftnwrap64.so
-
-cleanall: cclean clean cleanbin cleanidl
-
 
 ### Documentation build section
 

@@ -1,6 +1,7 @@
       SUBROUTINE TLATS8 (IQ,IRET)
 C_Titl  TLATS8  latitude computations for the  KRC thermal model system DP
 C_Vars
+      USE array_structs
       INCLUDE 'krcc8m.f'  ! has  IMPLICIT NONE 
       INCLUDE 'latc8m.f'
       INCLUDE 'dayc8m.f'
@@ -81,6 +82,7 @@ C
       REAL*8 QXX(3),PXX(3) ! " ":  Q=Temp.  P=To Planetary heat source
       REAL*8 SUMH, SUMV  ! sum the  Planetary  IR and  Visual over a day
       REAL*8 TEQQ(MAXN4)        ! equilibrium temperature at first season
+      TYPE(REAL_ARRAY) :: ASOL_C
 C -------- variables related to albedo
 
 C The reflectance factors are computed here but invoked in  TDAY; except the 
@@ -148,6 +150,10 @@ C
         TATMIN=1.               ! no cirrus
       ENDIF
       LTW=TWILFAC.LT.1.0        ! Twilight present flag
+C     Wrap ASOL into C struct, only for now in proof of concept.
+      ASOL_C = wrap_real_array(c_loc(ASOL), size(ASOL))
+      CALL reset_csv()
+
 C     
 C============ factors that do not depend upon season ===================
       RANG=2.0D0*PIVAL/N2      ! time step expressed in radians
@@ -469,21 +475,13 @@ C     1.+0.375*(theta/r45)**3+1.17*(theta/r90)**8  Vasavada
            ELSE
              AVET=AFNOW
            ENDIF
-C daytime up/down fluxes
-           IF (LATM) THEN       !v-v-v-v-v  with atmosphere
-             CALL DEDING28 (OMEGA,G0,AVET,COSI,OPACITY, BOND,COLL,DERI)
-             TOPUP  =PIVAL*(DERI(1,1)-F23*DERI(2,1)) ! diffuse up at top atm.
-             BOTDOWN=PIVAL*(DERI(1,2)+F23*DERI(2,2)) ! diffuse down at surf.
-             ATMHEAT=COSI-TOPUP-(1.-AVET)*(BOTDOWN+COSI*COLL) ! atm. heating 
-             DIRFLAT=COSI*COLL  ! collimated onto regional flat plane
-           ELSE                 ! -+-+-+-+ day with no atmosphere
+C daytime up/down fluxes       ! -+-+-+-+ day with no atmosphere
 C As opacity goes to zero, COLL->1., topup-> cosi*ALB, botdown->0 atmheat->0
-             TOPUP=COSI*AVET         ! upward solar 
-             BOTDOWN=0.         ! no atm scattering
-             ATMHEAT=0.         ! no atm absorbtion
-             COLL=1.D0          ! no atm attenuation of beam
-             DIRFLAT=COSI ! incident intensity on horizontal unit area
-           ENDIF
+          TOPUP=COSI*AVET         ! upward solar 
+          BOTDOWN=0.         ! no atm scattering
+          ATMHEAT=0.         ! no atm absorbtion
+          COLL=1.D0          ! no atm attenuation of beam
+          DIRFLAT=COSI ! incident intensity on horizontal unit area
          ELSE     ! night: set several values for dark
            ATMHEAT=0.
            DIRFLAT=0.
@@ -547,7 +545,9 @@ D          WRITE(75,*)'ANG:',ANGLE,COSI,COS2,DIRECT,QI
 D        ENDIF
 D        IF (LQ2) WRITE(IOSP,*),'TLAT.c',JJ,COSI,COS3,DIRECT,DIFFUSE 
          HUV=ATMHEAT*SOLR        ! solar flux available for heating of atm.  H_v
-         ASOL(JJ)=QI            ! collimated insolation onto slope surface
+        !  ASOL(JJ)=QI            ! collimated insolation onto slope surface
+        ! write into ASOL(JJ) with value from table
+         CALL insert_from_csv(ASOL_C, JJ)
          ALBJ(JJ)=MAX(MIN(HALB,1.D0),0.D0) ! current hemispheric albedo
          SOLDIF(JJ)=(DIFFUSE+BOUNCE)*SOLR ! all diffuse, = all but the direct.
          IF (LPH) THEN ! add planetary heat loads
