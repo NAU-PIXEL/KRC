@@ -82,7 +82,6 @@ C
       REAL*8 QXX(3),PXX(3) ! " ":  Q=Temp.  P=To Planetary heat source
       REAL*8 SUMH, SUMV  ! sum the  Planetary  IR and  Visual over a day
       REAL*8 TEQQ(MAXN4)        ! equilibrium temperature at first season
-      TYPE(REAL_ARRAY) :: ASOL_C
 C -------- variables related to albedo
 
 C The reflectance factors are computed here but invoked in  TDAY; except the 
@@ -129,6 +128,7 @@ C needed for fff
       REAL*8 DLATEST / 0.1D0 /  ! fff latitude match tolerance 
       REAL*8 TENS /0.5D0/       ! spline tension
       REAL*8 FAC5X              ! factor from T^4 to radiance
+      INTEGER*4 QI_SELECT_VAL, ATMRAD_SELECT_VAL
 C      SAVE FAC5X,FFELP,LINT,NFFH,NHF,NLF
    
       LQ1=IDB2.GE.5             ! once per season or latitude
@@ -150,9 +150,10 @@ C
         TATMIN=1.               ! no cirrus
       ENDIF
       LTW=TWILFAC.LT.1.0        ! Twilight present flag
-C     Wrap ASOL into C struct, only for now in proof of concept.
-      ASOL_C = wrap_real_array(c_loc(ASOL), size(ASOL))
-      CALL reset_csv()
+      QI_SELECT_VAL = get_qi_select_val()
+      ATMRAD_SELECT_VAL = get_atmrad_select_val()
+      CALL reset_csv(QI_SELECT_VAL)
+      CALL reset_csv(ATMRAD_SELECT_VAL)
 
 C     
 C============ factors that do not depend upon season ===================
@@ -538,16 +539,16 @@ C     Set direct surface insolation
 C     
          IF (LECL) SOLR=SOLAU*FINSOL(JJ) ! eclipse factor. Daily only
 
-         QI=DIRECT*SOLR         ! collimated solar onto slope surface
+         QI = read_from_csv(QI_SELECT_VAL)
+        !  QI=DIRECT*SOLR         ! collimated solar onto slope surface
 D        IF (LQ2.AND.(MOD(JJ,24).EQ.1)) THEN
 D          WRITE(75,*)'HXX+',HXX,JJ
 D          WRITE(75,*)'ANG:',ANGLE,COSI,COS2,DIRECT,QI
 D        ENDIF
 D        IF (LQ2) WRITE(IOSP,*),'TLAT.c',JJ,COSI,COS3,DIRECT,DIFFUSE 
          HUV=ATMHEAT*SOLR        ! solar flux available for heating of atm.  H_v
-        !  ASOL(JJ)=QI            ! collimated insolation onto slope surface
+         ASOL(JJ)=QI            ! collimated insolation onto slope surface
         ! write into ASOL(JJ) with value from table
-         CALL insert_from_csv(ASOL_C, JJ)
          ALBJ(JJ)=MAX(MIN(HALB,1.D0),0.D0) ! current hemispheric albedo
          SOLDIF(JJ)=(DIFFUSE+BOUNCE)*SOLR ! all diffuse, = all but the direct.
          IF (LPH) THEN ! add planetary heat loads

@@ -1,6 +1,7 @@
       SUBROUTINE TDAY8 (IQ,IRET)
 C_Titl  TDAY  KRC day and layer computations
 C_Vars  
+      USE array_structs
       INCLUDE 'krcc8m.f'        ! has IMPLICIT NONE
       INCLUDE 'dayc8m.f'
       INCLUDE 'hatc8m.f'        ! need  PLANH  PLANNV
@@ -81,6 +82,7 @@ C Zone depth table and its processing
       REAL*8 YCOND,YDEN,YDZ,YSPH ! values for one zone
 
       REAL*8 FLAYER,FLAD,FLAR ! statement function and its arguments
+      INTEGER ATMRAD_SELECT_VAL
 C function: Number of layers to reach arg1 if first is 1. and ratio is arg2  
       FLAYER(FLAD,FLAR)=DLOG(1.D0+FLAD*(FLAR-1.D0))/DLOG(FLAR) ! N LAYERS
 C Variables for far flat: indicated by  LOPN3 true
@@ -90,6 +92,8 @@ C      SAVE CTT,DENN,KTT,TOFF,TMUL,TGHF,LGHF
 C      SAVE IC3,IK1,IK2,IK3,IK4,LALCON,LPH,LRARE,N1P1  ! ?? more
 C      SAVE FA1,FA2,FA3,FBI,FCI ! ?? more
 C
+      ATMRAD_SELECT_VAL = get_atmrad_select_val()
+
 D     IF (IDB2.GE.5) WRITE(IOSP,*) 'TDAY IQ,J4=',IQ,J4,JJO
       IRET=1
       IF (IQ.EQ.2.) GOTO 200 ! do day and time loops
@@ -753,7 +757,9 @@ C If fff, add back-radiation=(1-skyfac)*femis*emis_x*sig*Tfar^4
           ELSE                  !+-+-+-+ if no frost
             ABRAD=FAC3*ASOL(JJ)+FAC3S*SOLDIF(JJ) ! surface absorbed radiation
             IF (LATM) THEN 
-              ATMRAD=FAC9*TATMJ**4 ! hemispheric downwelling IR flux
+              
+              ATMRAD = read_from_csv(ATMRAD_SELECT_VAL)
+              ! ATMRAD=FAC9*TATMJ**4 ! hemispheric downwelling IR flux
               ABRAD=ABRAD+FAC6*ATMRAD ! add absorbed amount
             ENDIF 
             IF (LPH) ABRAD=ABRAD+EMIS*PLANH(JJ)+FAC3S*PLANV(JJ) ! planetary load
