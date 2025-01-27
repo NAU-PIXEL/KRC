@@ -1,0 +1,17 @@
+FORMAT
+VERSION
+n_ls
+L_s0 L_s1 ... L_sn
+n_LT
+LT0 LT1... LTn
+Flux0 Flux1... Fluxn
+m_LT
+LT0 LT1... LTm
+Flux0 Flux1... Fluxm
+.
+.
+.
+.
+i_LT
+LT0 LT1... LTi
+Flux0 Flux1... Fluxi
