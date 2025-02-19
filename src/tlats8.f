@@ -476,7 +476,14 @@ C     1.+0.375*(theta/r45)**3+1.17*(theta/r90)**8  Vasavada
            ELSE
              AVET=AFNOW
            ENDIF
-C daytime up/down fluxes       ! -+-+-+-+ day with no atmosphere
+C daytime up/down fluxes       
+           IF (LATM) THEN       !v-v-v-v-v  with atmosphere
+             CALL DEDING28 (OMEGA,G0,AVET,COSI,OPACITY, BOND,COLL,DERI)
+             TOPUP  =PIVAL*(DERI(1,1)-F23*DERI(2,1)) ! diffuse up at top atm.
+             BOTDOWN=PIVAL*(DERI(1,2)+F23*DERI(2,2)) ! diffuse down at surf.
+             ATMHEAT=COSI-TOPUP-(1.-AVET)*(BOTDOWN+COSI*COLL) ! atm. heating 
+             DIRFLAT=COSI*COLL  ! collimated onto regional flat plane
+           ELSE                ! -+-+-+-+ day with no atmosphere
 C As opacity goes to zero, COLL->1., topup-> cosi*ALB, botdown->0 atmheat->0
           TOPUP=COSI*AVET         ! upward solar 
           BOTDOWN=0.         ! no atm scattering
