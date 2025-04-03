@@ -11,9 +11,9 @@ typedef enum JD_TABLE_FORMAT {
 } JD_TABLE_FORMAT;
 
 typedef enum FLUX_TYPE {
-  JD_FLUX_UNKNOWN = 200,
-  JD_FLUX_VIS,
-  JD_FLUX_IR
+  FLUX_UNKNOWN = 200,
+  FLUX_VIS,
+  FLUX_IR
 } FLUX_TYPE;
 
 typedef struct lt_fluxes

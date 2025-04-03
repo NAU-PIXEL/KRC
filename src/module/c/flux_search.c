@@ -16,13 +16,13 @@ double get_jd_lt_flux(lt_fluxes *flux_table, int search_jd, double search_lt,
   }
 
   switch (flux_type) {
-  case JD_FLUX_VIS:
+  case FLUX_VIS:
     result_flux = interpolate(flux_table->lt[table_index - 1], flux_table->lt[table_index],
                               flux_table->vis[table_index - 1], flux_table->vis[table_index], 
                               search_lt);
     break;
 
-  case JD_FLUX_IR:
+  case FLUX_IR:
     result_flux = interpolate(flux_table->lt[table_index - 1], flux_table->lt[table_index],
                               flux_table->ir[table_index - 1], flux_table->ir[table_index], 
                               search_lt);
@@ -48,13 +48,3 @@ int search_for_time(double search_jd_lt, lt_fluxes *flux_table) {
   return -1;
 }
 
-double interpolate(double t1, double t2, double val1, double val2,
-                   double t_target) {
-  // this shouldn't ever happen, but saves us from a potential divide by zero if
-  // it does.
-  if (t1 == t2) {
-    return val1;
-  }
-  double slope = (val2 - val1) / (t2 - t1);
-  return val1 + slope * (t_target - t1);
-}
