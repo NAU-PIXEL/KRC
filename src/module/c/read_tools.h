@@ -16,6 +16,4 @@ bool read_double_row(FILE *fp, double *row, int n);
 
 JD_TABLE_FORMAT read_table_format(FILE *fp);
 
-jd_table *read_jd_table(FILE *fp);
-
 #endif

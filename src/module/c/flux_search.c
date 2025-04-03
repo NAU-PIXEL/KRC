@@ -1,50 +1,60 @@
-# include "flux_search.h"
+#include "flux_search.h"
 
-// searches for a sepcific JD in a table,
-// then interpolates 
-double get_jd_lt_flux(flux_table *flux_table, double search_jd, double search_lt) {
-  int ls_index = 0;
+double get_jd_lt_flux(lt_fluxes *flux_table, int search_jd, double search_lt,
+                     FLUX_TYPE flux_type) {
+  // thinking about making this static to save between calls,
+  // since the indexes should only increase this saves a linear search
+  int table_index = 0;
   double result_flux;
+  // jd is integer component, lt is float from 0 to 1
+  double search_jd_lt = search_jd + search_lt;
 
-  lt_fluxes * lt_fluxes;
+  table_index = search_for_time(search_jd_lt, flux_table);
 
-  ls_index = search_for_jd(search_jd, flux_table->jd_table);
-
-  if (ls_index == -1) {
+  if (table_index == -1) {
     return -1;
   }
 
-  lt_fluxes = flux_table->lt_tables[ls_index];
+  switch (flux_type) {
+  case JD_FLUX_VIS:
+    result_flux = interpolate(flux_table->lt[table_index - 1], flux_table->lt[table_index],
+                              flux_table->vis[table_index - 1], flux_table->vis[table_index], 
+                              search_lt);
+    break;
 
-  int lt_index = search_for_lt(search_lt, lt_fluxes);
+  case JD_FLUX_IR:
+    result_flux = interpolate(flux_table->lt[table_index - 1], flux_table->lt[table_index],
+                              flux_table->ir[table_index - 1], flux_table->ir[table_index], 
+                              search_lt);
+    break;
 
-  result_flux = interpolate(
-    lt_fluxes->flux[lt_index], lt_fluxes->flux[lt_index + 1],
-    lt_fluxes->lt[lt_index], lt_fluxes->lt[lt_index + 1],
-    search_lt);
-
+  default:
+    result_flux = -1;
+    break;
+  }
   return result_flux;
 }
 
-int search_for_jd(double search_jd, jd_table *jd) {
-  for (int i = 0; i < jd->n_jd; i++) {
-    if (search_jd == jd->jd[i]) {
+int search_for_time(double search_jd_lt, lt_fluxes *flux_table) {
+  for (int i = 0; i < flux_table->n_lt; i++) {
+    // lt must start with 0
+    // because the search lt will be 0.xxx > 0, says no that's greater than 0
+    // returns 1, then does linear interpolation between i - 1 and i, i.e. 0 and
+    // 1
+    if (search_jd_lt <= flux_table->lt[i]) {
       return i;
     }
   }
   return -1;
 }
 
-int search_for_lt(double search_lt, lt_fluxes *lt_fluxes) {
-  for (int i = 0; i < lt_fluxes->n_lt; i++) {
-    if (search_lt == lt_fluxes->lt[i]) {
-      return i;
-    }
+double interpolate(double t1, double t2, double val1, double val2,
+                   double t_target) {
+  // this shouldn't ever happen, but saves us from a potential divide by zero if
+  // it does.
+  if (t1 == t2) {
+    return val1;
   }
-  return -1;
-}
-
-
-double interpolate(double x1, double x2, double y1, double y2, double x_target) {
-  // TODO 
+  double slope = (val2 - val1) / (t2 - t1);
+  return val1 + slope * (t_target - t1);
 }

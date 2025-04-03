@@ -76,47 +76,4 @@ JD_TABLE_FORMAT read_table_format(FILE *fp) {
   return format;
 }
 
-jd_table *read_jd_table(FILE *fp) {
-  jd_table *table = malloc(sizeof(jd_table));
-  table->n_jd = read_int(fp, '\n');
-  table->jd = malloc(sizeof(double) * table->n_jd);
-
-  read_double_row(fp, table->jd, table->n_jd);
-  return table;
-}
-
-lt_fluxes *read_rect_fluxes(FILE *fp, int n_lt_tables) {
-  lt_fluxes *building_lt_tables = malloc(sizeof(lt_fluxes) * n_lt_tables);
-  int n_lt = read_int(fp, '\n');
-  double *lt = malloc(sizeof(double) * n_lt);
-
-  read_double_row(fp, lt, n_lt);
-
-  for (int i = 0; i < n_lt_tables; i++) {
-    building_lt_tables[i].lt = lt;
-    building_lt_tables[i].n_lt = n_lt;
-
-    building_lt_tables[i].flux = malloc(sizeof(double) * n_lt);
-    read_double_row(fp, building_lt_tables[i].flux, n_lt);
-  }
-  return building_lt_tables;
-}
-
-lt_fluxes *read_jagged_fluxes(FILE *fp, int n_lt_tables) {
-  lt_fluxes *building_lt_tables = malloc(sizeof(lt_fluxes) * n_lt_tables);
-  for (int i = 0; i < n_lt_tables; i++) {
-    int n_lt = read_int(fp, '\n');
-    double *lt = malloc(sizeof(double) * n_lt);
-
-    read_double_row(fp, lt, n_lt);
-
-    building_lt_tables[i].lt = lt;
-    building_lt_tables[i].n_lt = n_lt;
-
-    building_lt_tables[i].flux = malloc(sizeof(double) * n_lt);
-    read_double_row(fp, building_lt_tables[i].flux, n_lt);
-  }
-  return building_lt_tables;
-}
-
 bool verify_table(flux_table *table) { return true; }

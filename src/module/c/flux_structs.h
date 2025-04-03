@@ -10,18 +10,19 @@ typedef enum JD_TABLE_FORMAT {
   JD_TABLE_JAGGED
 } JD_TABLE_FORMAT;
 
+typedef enum FLUX_TYPE {
+  JD_FLUX_UNKNOWN = 200,
+  JD_FLUX_VIS,
+  JD_FLUX_IR
+} FLUX_TYPE;
+
 typedef struct lt_fluxes
 {
   int n_lt;
   double *lt;
-  double *flux;
+  double *vis;
+  double *ir;
 } lt_fluxes;
-
-typedef struct jd_table
-{
-  int n_jd;
-  double *jd;
-} jd_table;
 
 typedef struct flux_table
 {
@@ -30,8 +31,7 @@ typedef struct flux_table
   // we expect to implement this as a union on the table pointer
   // when this is implemented, and then switching based on VERSION
   int VERSION;
-  jd_table *jd_table;
-  lt_fluxes **lt_tables; 
+  lt_fluxes *lt_table; 
 } flux_table;
 
 const static char * const JD_TABLE_FORMAT_STRINGS[] = {

@@ -3,11 +3,8 @@
 // overall process flow:
 /*
 1. Open file
-2. Read header for number of L_s steps
+2. Read header for version and number of rows
 3. Init read loop, i = 0 to i = n_L_s
-  a. Read header row, L_s, n_lt, allocate struct
-  b. read LT row
-  c. read flux row
 4. Error checking.
   a.
 
@@ -20,8 +17,10 @@
 Unit tests:
 
 */
-jd_table *build_table(char *filename)
+flux_table * build_table(char *filename)
 {
+  bool success;
+
   flux_table *result = NULL;
   flux_table *building_flux_table = malloc(sizeof(flux_table));
 
@@ -32,28 +31,19 @@ jd_table *build_table(char *filename)
   if (file == NULL)
   {
     result = NULL;
+    free(building_flux_table);
     return result;
   }
 
-  format = read_table_format(file);
+  // with change in format we expect all tables to possibly have variable step spacing
+  format = JD_TABLE_JAGGED;
+  building_flux_table->format = format;
 
-  if (format == JD_TABLE_UNKNOWN)
-  {
-    fprintf(stderr, "Error: Unknown table format.\n");
-    exit(1);
-  }
-  
+  building_flux_table->VERSION = 1;
+
   // rectangular tables have the same number of LT steps per day, and these steps are all aligned to the same time steps. The local time steps may be arbitrarily spaced.
   // Note that this is accomplished by using the standard data structure, which supports jagged arrays, but sets them to all be the same length, and points to the same LT steps in each day.
-  jd_table *building_jd_table = read_jd_table(file);
-  building_flux_table->jd_table = building_jd_table;
-  if (format == JD_TABLE_RECTANGULAR) {
-    building_flux_table->lt_tables = read_rect_fluxes(file, building_jd_table->n_jd);
-  }
-
-  if (format == JD_TABLE_JAGGED) {
-    building_flux_table->lt_tables = read_jagged_fluxes(file, building_jd_table->n_jd);
-  }
+  success = read_table(file, building_flux_table);
 
   // assert(verify_table(building_flux_table));
 
@@ -63,19 +53,43 @@ jd_table *build_table(char *filename)
   return result;
 }
 
-bool read_jd_header(FILE *fp, jd_table *table)
-{
+bool read_table(FILE *fp, flux_table *table) {
+  bool success;
+  // read number of rows (header)
+  // init the arrays for the rows
+  // read the rows
+  lt_fluxes *building_table = malloc(sizeof(lt_fluxes));
 
-  table->n_jd = read_int(fp, '\n');
+  success = read_lt_header(fp, building_table);
 
-  table->jd = malloc(sizeof(double) * table->n_jd);
+  if (!success) {
+    free(building_table);
+    return false;
+  }
+  
+  // what are cases if n_lt doesn't match the number of rows
+  // more rows in file: won't error, just won't read them. that should be an error. do an extra read and check for EOF
+  for (int i = 0; i < building_table->n_lt; i++) {
+    // the most likely error from this is a FEOF, haven't thought about how to handle that yet
+    success &= read_lt_row(fp, building_table, i);
+  }
 
-  // for (int i = 0; i < table->n_jd; i++)
-  // {
-  //   *table->jd[i] = read_double(fp, ',');
-  // }
+  // make sure we've fully consumed the file
+  if (fgetc(fp) != EOF) {
+    success = false;
+  }
 
-  return read_delimiter(fp, '\n');
+
+  if (!success) {
+    free(building_table->lt);
+    free(building_table->vis);
+    free(building_table->ir);
+    free(building_table);
+    return false;
+  }
+
+  table->lt_table = building_table;
+  return true;
 }
 
 bool read_lt_header(FILE *fp, lt_fluxes *table)
@@ -83,19 +97,22 @@ bool read_lt_header(FILE *fp, lt_fluxes *table)
   table->n_lt = read_int(fp, '\n');
 
   table->lt = malloc(sizeof(double) * table->n_lt);
+  table->vis = malloc(sizeof(double) * table->n_lt);
+  table->ir = malloc(sizeof(double) * table->n_lt);
 
   return true;
-  // return read_delimiter(fp, '\n');
 }
 
 
-bool read_lt(FILE *fp, lt_fluxes *table)
+bool read_lt_row(FILE *fp, lt_fluxes *table, int index)
 {
-  return read_double_row(fp, table->lt, table->n_lt);
-}
-
-
-bool read_flux(FILE *fp, lt_fluxes *table)
-{
-  return read_double_row(fp, table->flux, table->n_lt);
+  int result;
+  // lt rows are `jd.lt vis ir` with spaces to separate. 
+  // since we want to scan the newline we require the file to be newline terminated
+  result = fscanf(fp, "%lf %lf %lf\n", &table->lt[index], &table->vis[index], &table->ir[index]);
+   
+  if (result == EOF) {
+    return false;
+  }
+  return true;
 }

@@ -8,6 +8,9 @@
 #include "read_tools.h"
 #include "flux_tools.h"
 
-jd_table *build_table(char *filename);
+flux_table *build_table(char *filename);
+bool read_table(FILE *fp, flux_table *table);
+bool read_lt_header(FILE *fp, lt_fluxes *table);
+bool read_lt_row(FILE *fp, lt_fluxes *table, int index);
 
 #endif
