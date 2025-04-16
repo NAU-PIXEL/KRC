@@ -128,7 +128,6 @@ C needed for fff
       REAL*8 DLATEST / 0.1D0 /  ! fff latitude match tolerance 
       REAL*8 TENS /0.5D0/       ! spline tension
       REAL*8 FAC5X              ! factor from T^4 to radiance
-      INTEGER*4 QI_SELECT_VAL, ATMRAD_SELECT_VAL
 C      SAVE FAC5X,FFELP,LINT,NFFH,NHF,NLF
    
       LQ1=IDB2.GE.5             ! once per season or latitude
@@ -150,10 +149,6 @@ C
         TATMIN=1.               ! no cirrus
       ENDIF
       LTW=TWILFAC.LT.1.0        ! Twilight present flag
-      QI_SELECT_VAL = get_qi_select_val()
-      ATMRAD_SELECT_VAL = get_atmrad_select_val()
-      CALL reset_csv(QI_SELECT_VAL)
-      CALL reset_csv(ATMRAD_SELECT_VAL)
 
 C     
 C============ factors that do not depend upon season ===================
@@ -539,8 +534,12 @@ C     Set direct surface insolation
 C     
          IF (LECL) SOLR=SOLAU*FINSOL(JJ) ! eclipse factor. Daily only
 
-         QI = read_from_csv(QI_SELECT_VAL)
-        !  QI=DIRECT*SOLR         ! collimated solar onto slope surface
+        IF (LFLUX) THEN ! new vis and ir flux tables
+         QI = f_get_jd_lt_vis(J5 - 1, (real(JJ, 8)  - 1)/N2)
+        ELSE 
+          QI=DIRECT*SOLR         ! collimated solar onto slope surface
+        ENDIF
+        
 D        IF (LQ2.AND.(MOD(JJ,24).EQ.1)) THEN
 D          WRITE(75,*)'HXX+',HXX,JJ
 D          WRITE(75,*)'ANG:',ANGLE,COSI,COS2,DIRECT,QI
@@ -550,7 +549,11 @@ D        IF (LQ2) WRITE(IOSP,*),'TLAT.c',JJ,COSI,COS3,DIRECT,DIFFUSE
          ASOL(JJ)=QI            ! collimated insolation onto slope surface
         ! write into ASOL(JJ) with value from table
          ALBJ(JJ)=MAX(MIN(HALB,1.D0),0.D0) ! current hemispheric albedo
-         SOLDIF(JJ)=(DIFFUSE+BOUNCE)*SOLR ! all diffuse, = all but the direct.
+         IF (LFLUX) THEN ! LFLUX table total solar flux, including bounce and diffuse
+           SOLDIF(JJ) = 0
+         ELSE
+          SOLDIF(JJ)=(DIFFUSE+BOUNCE)*SOLR ! all diffuse, = all but the direct.
+         ENDIF
          IF (LPH) THEN ! add planetary heat loads
            QA=ANGLE+PIVAL ! add 1/2 rev to convert from Hour to orbital phase
            PLANH(JJ)=COSP*(PARW(1)+PARW(2)*COS(QA-PARW(3)/RADC)) ! thermal

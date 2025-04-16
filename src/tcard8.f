@@ -81,6 +81,8 @@ C      INTEGER*4 MEMI(9)         ! tfar arg4
       INTEGER*4 KOUNT           ! number of changes cards read for this call
 
       INTEGER*4 I,IG,IIIN,ILEN,IREAD,JERR,KEEP,NEW,KDB
+
+      LOGICAL SUCCESS
       
       DATA TITF /'ALBEDO','EMISS','INERTIA','COND2','DENS2','PERIOD'     !6
      & ,'SPECHEAT','DENSITY','CABR','AMW','ABRPHA','PTOTAL','FANON'      !7
@@ -294,6 +296,13 @@ C  IG=8  Read file name
         LZONE=.TRUE.            !   assume have a new zone table
         IF (ILEN .LT. 4) LZONE=.FALSE. !   unless the name is too short
         WRITE(IOPM,*) 'LZONE,I=',LZONE, ILEN 
+      ELSEIF (IREAD.EQ.26) THEN ! new vis and ir flux tables
+        FFLUX=TEXT              !   move file name into common
+        LFLUX=.TRUE.            !   using new flux table
+        FFLUX(ILEN+1:80)=CHAR(0)
+        SUCCESS = f_flux_init(FFLUX)
+        WRITE(IOPM,*) 'LFLUX=',LFLUX
+
       ELSE 
         WRITE (IOERR,*)'Tcard 8: invalid file type= ',IREAD,' ',TEXT
       ENDIF

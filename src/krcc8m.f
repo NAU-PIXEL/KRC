@@ -39,7 +39,7 @@ C      PARAMETER (MAXN5 =2161)    ! dimension of saved seasons
 
       LOGICAL*4 LP1,LP2,LP3,LP4,LP5,  LP6,LPGLOB,LVFA,LVFT,LKOFT        !  1:10
      &,LPORB,LKEY,LSC,LZONE,LOCAL,   LD16,LD17,LD18,LD19,LONE ! 11:20
-     &,LATM,LSPARE
+     &,LATM,LSPARE, LFLUX
 
       REAL*8 CCKU(4),CCKL(4),CCPU(4),CCPL(4) ! coef of K & Cp, Upper/Lower layers
 C      INTEGER*1  KITLE(84),DAYTIM(20) ! Sum= 104 bytes MUST be multiple of 8
@@ -85,7 +85,7 @@ Cset             ----card---
 Cset   ---day1- lat ----day1-    main -day2- lats  seas
      B,LP1,LP2,LP3,LP4,LP5,    LP6,LPGLOB,LVFA,LVFT,LKOFT               !  1:10
      C,LPORB,LKEY,LSC,LZONE,LOCAL,   LD16,LD17,LD18,LD19,LONE           ! 11:20
-     D, KITLE,DAYTIM,LATM,LSPARE  ! 
+     D, KITLE,DAYTIM,LATM,LSPARE, LFLUX  ! 
 Cset   tcard tprint tcard tcard 
 C
       EQUIVALENCE (FD(1),ALB), (ID(1),N1), (LD(1),LP1) ! alignment

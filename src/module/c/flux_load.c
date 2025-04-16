@@ -50,6 +50,10 @@ flux_table * build_table(char *filename)
   // assert(monotonic(building_jd_table->jd, building_jd_table->n_jd));
 
   result = building_flux_table;
+  if (!success) {
+    free(building_flux_table);
+    result = NULL;
+  }
   return result;
 }
 
@@ -79,6 +83,11 @@ bool read_table(FILE *fp, flux_table *table) {
     success = false;
   }
 
+  // make last timestamp the next integer after the last timestamp
+  building_table->lt[building_table->n_lt] = (int)building_table->lt[building_table->n_lt - 1] + 1;
+  // duplicate the first row at the end
+  building_table->vis[building_table->n_lt] = building_table->vis[0];
+  building_table->ir[building_table->n_lt] = building_table->ir[0];
 
   if (!success) {
     free(building_table->lt);
@@ -95,10 +104,12 @@ bool read_table(FILE *fp, flux_table *table) {
 bool read_lt_header(FILE *fp, lt_fluxes *table)
 {
   table->n_lt = read_int(fp, '\n');
-
-  table->lt = malloc(sizeof(double) * table->n_lt);
-  table->vis = malloc(sizeof(double) * table->n_lt);
-  table->ir = malloc(sizeof(double) * table->n_lt);
+  
+  // +1 for final table row that is repeat of first
+  // this makes wrapping easier
+  table->lt = malloc(sizeof(double) * table->n_lt + 1);
+  table->vis = malloc(sizeof(double) * table->n_lt + 1);
+  table->ir = malloc(sizeof(double) * table->n_lt + 1);
 
   return true;
 }

@@ -92,7 +92,6 @@ C      SAVE CTT,DENN,KTT,TOFF,TMUL,TGHF,LGHF
 C      SAVE IC3,IK1,IK2,IK3,IK4,LALCON,LPH,LRARE,N1P1  ! ?? more
 C      SAVE FA1,FA2,FA3,FBI,FCI ! ?? more
 C
-      ATMRAD_SELECT_VAL = get_atmrad_select_val()
 
 D     IF (IDB2.GE.5) WRITE(IOSP,*) 'TDAY IQ,J4=',IQ,J4,JJO
       IRET=1
@@ -733,7 +732,12 @@ C     -^-^-^-^-^-^-^-^-^-^-^-^-^-^-^- end of layer loops ^-^-^-^-^-^-^-^-^-^-^
 C 3 possible upper boundary conditions. 1) Atm with frost 2) Just Atm 3) No atm.
           II=0 !db newton iteration count
           IF (LFROST) THEN      !+-+-+-+ surface temperature is frost-buffered
-            ATMRAD= FAC9*TATMJ**4 ! hemispheric downwelling  IR flux
+            
+            IF (LFLUX) THEN ! new vis and ir flux tables
+              ATMRAD = f_get_jd_lt_ir(J5 - 1, (real(JJ, 8) - 1)/N2)
+            ELSE
+              ATMRAD= FAC9*TATMJ**4 ! hemispheric downwelling IR flux
+            ENDIF
             Q4 = AFNOW + (ALB-AFNOW)*DEXP(-EFROST/FROEX) ! albedo for frost layer
             
 D           IF (IDB4.EQ.4 .AND. MOD(JJ,NZ).EQ.0 )  ! N48 per day
@@ -757,9 +761,12 @@ C If fff, add back-radiation=(1-skyfac)*femis*emis_x*sig*Tfar^4
           ELSE                  !+-+-+-+ if no frost
             ABRAD=FAC3*ASOL(JJ)+FAC3S*SOLDIF(JJ) ! surface absorbed radiation
             IF (LATM) THEN 
-              
-              ATMRAD = read_from_csv(ATMRAD_SELECT_VAL)
-              ! ATMRAD=FAC9*TATMJ**4 ! hemispheric downwelling IR flux
+              IF (LFLUX) THEN ! new vis and ir flux tables
+                ATMRAD = f_get_jd_lt_ir(J5 - 1, (real(JJ, 8) - 1)/N2)
+              ELSE
+                ATMRAD=FAC9*TATMJ**4 ! hemispheric downwelling IR flux
+              ENDIF
+
               ABRAD=ABRAD+FAC6*ATMRAD ! add absorbed amount
             ENDIF 
             IF (LPH) ABRAD=ABRAD+EMIS*PLANH(JJ)+FAC3S*PLANV(JJ) ! planetary load

@@ -119,7 +119,7 @@ OBJP3 = $(KRCLIB)/porbmn.o $(KRCLIB)/porbio.o $(KRCLIB)/ephemr.o $(KRCLIB)/ymd2j
 
 
 # normal link
-krc: $(OBJ8) call
+krc: $(OBJ8) call $(CMODOBJS)
 	$(FC) $(LIBDIRS_PROD) -o $@ $(OBJ8) \
 	$(CISISLIB) $(SYSLIBS) $(CMODOBJS)
 
@@ -129,7 +129,7 @@ porbmn: $(OBJP3)
 
 # testing and development
 
-krcdb: $(OBJ8) call  # -  with debug
+krcdb: $(OBJ8) call $(CMODOBJS)  # -  with debug
 	$(FC) $(LDBFLAGS) $(LIBDIRS) -o $@ $(OBJ8) \
 	$(CISISLIB) $(SYSLIBS) $(CMODOBJS) $(FDBFLAGS)
 
