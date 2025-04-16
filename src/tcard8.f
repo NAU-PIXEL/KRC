@@ -1,6 +1,7 @@
       SUBROUTINE TCARD8 (IQ,IRET)
 C_Titl  TCARD8  Data input routine for  KRC system
 C_Vars
+      USE array_structs
       INCLUDE 'krcc8m.f'      ! has IMPLICIT NONE
       INCLUDE 'latc8m.f'
       INCLUDE 'dayc8m.f'
