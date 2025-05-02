@@ -470,20 +470,28 @@ C     1.+0.375*(theta/r45)**3+1.17*(theta/r90)**8  Vasavada
              AVET=MAX(MIN(ALB*PUH,1.D0),0.D0) ! ensure  1-A cannot be negative
            ELSE
              AVET=AFNOW
-           ENDIF
-C daytime up/down fluxes       ! -+-+-+-+ day with no atmosphere
+            ENDIF
+C daytime up/down fluxes
+            IF (LATM) THEN       !v-v-v-v-v  with atmosphere
+              CALL DEDING28 (OMEGA,G0,AVET,COSI,OPACITY, BOND,COLL,DERI)
+              TOPUP  =PIVAL*(DERI(1,1)-F23*DERI(2,1)) ! diffuse up at top atm.
+              BOTDOWN=PIVAL*(DERI(1,2)+F23*DERI(2,2)) ! diffuse down at surf.
+              ATMHEAT=COSI-TOPUP-(1.-AVET)*(BOTDOWN+COSI*COLL) ! atm. heating 
+              DIRFLAT=COSI*COLL  ! collimated onto regional flat plane
+            ELSE                 ! -+-+-+-+ day with no atmosphere
 C As opacity goes to zero, COLL->1., topup-> cosi*ALB, botdown->0 atmheat->0
-          TOPUP=COSI*AVET         ! upward solar 
-          BOTDOWN=0.         ! no atm scattering
-          ATMHEAT=0.         ! no atm absorbtion
-          COLL=1.D0          ! no atm attenuation of beam
-          DIRFLAT=COSI ! incident intensity on horizontal unit area
-         ELSE     ! night: set several values for dark
-           ATMHEAT=0.
-           DIRFLAT=0.
-           TOPUP=0.
-           COLL=0.      
-         ENDIF
+              TOPUP=COSI*AVET         ! upward solar 
+              BOTDOWN=0.         ! no atm scattering
+              ATMHEAT=0.         ! no atm absorbtion
+              COLL=1.D0          ! no atm attenuation of beam
+              DIRFLAT=COSI ! incident intensity on horizontal unit area
+            ENDIF
+          ELSE     ! night: set several values for dark
+            ATMHEAT=0.
+            DIRFLAT=0.
+            TOPUP=0.
+            COLL=0.      
+          ENDIF
 C  ASOL = coll. flux onto (sloped) surface 
 C  DSOL = diffuse flux onto ?? surface
 C Get diffuse insolation, including twilight and first-order surface reflection 
