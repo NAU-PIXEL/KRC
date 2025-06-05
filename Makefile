@@ -71,6 +71,10 @@ OBJP3 = $(KRCLIB)/porbmn.o $(KRCLIB)/porbio.o $(KRCLIB)/ephemr.o $(KRCLIB)/ymd2j
  $(KRCLIB)/orbit8.o $(KRCLIB)/spcrev.o $(KRCLIB)/caldate.o $(KRCLIB)/caldat.o $(KRCLIB)/julday.o $(KRCLIB)/b2b.o $(KRCLIB)/upcase.o $(KRCLIB)/eccanom8.o \
  $(KRCLIB)/catime.o $(KRCLIB)/prtpcom.o $(KRCLIB)/rotmdp8.o $(KRCLIB)/cocodp8.o $(KRCLIB)/vadddp8.o
 
+ctest: $(CMODOBJS)
+	$(CMOD_CC) $(CMODOBJS) -o main
+
+fmods: $(CMODOBJS) $(FMODOBJS)
 
 # normal link
 krc: $(OBJ8) $(CLIB)

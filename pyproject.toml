@@ -1,0 +1,29 @@
+[project]
+name = "krc-git"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "astropy>=7.1.0",
+    "h5py>=3.13.0",
+    "netcdf4>=1.7.2",
+    "numpy>=2.2.4",
+    "poethepoet>=0.34.0",
+    "ptpython>=3.0.30",
+    "pytest>=8.3.5",
+    "pytest-arraydiff>=0.6.1",
+    "tables>=3.10.2",
+]
+
+[tool.marimo.runtime]
+watcher_on_save = "autorun"
+output_max_bytes = 100_000_000
+
+[tool.poe.tasks]
+generate_arraydiff = "py.test --arraydiff-generate-path=hdf_test/arraydiff_reference --arraydiff-default-format=fits"
+generate_arraydiff_force = "py.test --arraydiff-generate-path=hdf_test/arraydiff_reference --arraydiff-default-format=fits overwrite=True"
+test_arraydiff = "py.test --arraydiff --arraydiff-default-format=fits --arraydiff-reference-path=hdf_test/arraydiff_reference"
+
+[tool.uv.sources]
+pytest-arraydiff = { git = "https://github.com/csaluski/pytest-arraydiff", rev = "derived_class_arrays" }
