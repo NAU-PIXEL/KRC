@@ -44,7 +44,7 @@ C
       INTEGER*4 IC3 ! First layer of properties different than surface
       INTEGER*4 JSW ! index trigger for switch to/from TFINE
 C
-      REAL*8 ABRAD,AH,AP,ATMRAD,CPOG,DDZ,DELT,DFROST,DIFY,DSCAL
+      REAL*8 ABRAD,AH,AP,ATMRAD,CPOG,DDZ,DELT,DIFY,DSCAL
      &,DTAFAC,DTIM,DTIMI,DTM,EMTIR,FAC3,FAC3S,FAC4,FAC45,FAC5,FAC6
      &,FAC6F,FAC7,FAC8,FAC82,FAC9,FEFAC,FEMIT,FROEX,HEATA,HEATFM
      &,PERSEC,POWER,SHEATF,SNOW,TATM4,TBOTM,TGHF,TRSET
@@ -729,27 +729,7 @@ C     -^-^-^-^-^-^-^-^-^-^-^-^-^-^-^- end of layer loops ^-^-^-^-^-^-^-^-^-^-^
 C 3 possible upper boundary conditions. 1) Atm with frost 2) Just Atm 3) No atm.
           II=0 !db newton iteration count
           IF (LFROST) THEN      !+-+-+-+ surface temperature is frost-buffered
-            ATMRAD= FAC9*TATMJ**4 ! hemispheric downwelling  IR flux
-            Q4 = AFNOW + (ALB-AFNOW)*DEXP(-EFROST/FROEX) ! albedo for frost layer
-            
-D           IF (IDB4.EQ.4 .AND. MOD(JJ,NZ).EQ.0 )  ! N48 per day
-D    &        WRITE(73,741)J5,J4,JJJ,JJ,EFROST,Q4,TFNOW  ! 2018jun22
-D 741       FORMAT(i4,i3,i3,i6,G13.5,F8.5,F11.6) ! 2018jun22
-            SHEATF= FAC7*(TTJ(2)-TSUR) ! upward heatflow into the surface
-C   unbalanced flux into surface
-C FEMIT=FAC6F*SIGSB*TFNOW**4 is [[skyfac]]*Femis*sig*Tf^4
-            POWER= (1.D0-Q4)*ASOL(JJ) +(1.D0-Q4)*SOLDIF(JJ)
-     &               + FAC6F*ATMRAD + SHEATF - FEMIT
-            IF (LPH) POWER=POWER+EMIS*PLANH(JJ)+(1.D0-Q4)*PLANV(JJ) ! planetary
-C If fff, add back-radiation=(1-skyfac)*femis*emis_x*sig*Tfar^4
-            IF (LOPN3) POWER=POWER+ FEFAC*FARAD(JJ)
-            DFROST = -POWER/CFROST ! rate of frost formation or sublimation
-            EFROST=EFROST + DFROST*DTIM ! amount on ground; kg*m**-2
-            IF (EFROST.LE.0.) THEN ! reset to bare ground
-              LFROST = .FALSE.
-              EFROST = 0.
-              FAC8=EMTIR*EMIS
-            ENDIF
+            call update_surface_frost(ATMRAD, FAC9, FROEX, SHEATF, FAC7, TSUR, POWER, JJ, FAC6F, FEMIT, LPH, FEFAC, DTIM, LFROST, FAC8, EMTIR, LOPN3, FARAD, TTJ, ASOL, SOLDIF, PLANH, PLANV)
           ELSE                  !+-+-+-+ if no frost
             ABRAD=FAC3*ASOL(JJ)+FAC3S*SOLDIF(JJ) ! surface absorbed radiation
             IF (LATM) THEN 
