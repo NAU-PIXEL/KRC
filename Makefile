@@ -26,7 +26,7 @@ RM=/bin/rm -f
 FC=gfortran
 
 # Use 2nd version below to allow debugger and enable most IDBG actions
-FFLAGS= -fno-automatic -fno-second-underscore -fd-lines-as-comments -fallow-argument-mismatch -Wall -cpp
+FFLAGS= -fno-automatic -fno-second-underscore -fd-lines-as-comments -fallow-argument-mismatch -Wall -cpp -ffixed-line-length-none
 #FFLAGS= -fno-automatic -fno-second-underscore -fd-lines-as-code  -fbounds-check # -Wall   #  -O
 
 # next line for fortrancallgraph-master
@@ -47,6 +47,20 @@ LDBFLAGS= -g -fbounds-check  # prepare for debugger. Used only by krcdb
 # Library directories that always are searched
 LIBDIRS=-L$(KRCLIB)              #<>D
 
+# FMODSRC := 
+FMODDIR := $(KRCLIB)/module/fortran/
+FMODSOURCES := $(shell find $(FMODDIR) -name "*.f")
+FMODOBJS := $(subst .f,.o,$(FMODSOURCES))
+FMODMODS := $(subst .f,.mod,$(FMODSOURCES))
+
+cleanmods:
+	$(RM) $(FMODOBJS) $(CMODOBJS) $(FMODMODS)
+
+%.mod: %.f
+	$(COMPILE.f) -c $< $(FFLAGS) -o $@
+
+%.o: %.f
+	$(COMPILE.f) $(FFLAGS) -c $< -o $@
 #  Special Kieffer library groups
 #HLIB=-lhk_fmath -lhk_fgeom -lhk_futil -lhk_fchar  ##2-lhk_fNumRec # -lhk_rad
 
@@ -74,12 +88,14 @@ OBJP3 = $(KRCLIB)/porbmn.o $(KRCLIB)/porbio.o $(KRCLIB)/ephemr.o $(KRCLIB)/ymd2j
 ctest: $(CMODOBJS)
 	$(CMOD_CC) $(CMODOBJS) -o main
 
-fmods: $(CMODOBJS) $(FMODOBJS)
+fmodobjs: $(CMODOBJS) $(FMODOBJS) fmods
+
+fmods: $(FMODMODS)
 
 # normal link
-krc: $(OBJ8) $(CLIB)
+krc: fmodobjs $(OBJ8) $(CLIB)
 	$(FC) $(LIBDIRS_PROD) -o $@ $(OBJ8) \
-	$(CLIB) $(SYSLIBS)
+	$(CLIB) $(SYSLIBS) $(FMODOBJS)
 
 porbmn: $(OBJP3)
 	$(FC)  $(LIBDIRS_PROD) -o $@ $(OBJP3) \
@@ -338,7 +354,7 @@ cleanidl:
 cleandocs:
 	-unalias rm; cd doc_build; rm -f *; cd ../doc_output; rm -f *.pdf
 
-cleanall: cclean clean cleanbin cleanidl cleandocs
+cleanall: cclean clean cleanbin cleanidl cleandocs cleanmods
 
 
 ### Documentation build section

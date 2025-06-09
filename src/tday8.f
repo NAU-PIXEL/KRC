@@ -59,6 +59,7 @@ C
       LOGICAL LPH               ! consider planetary heat load
       LOGICAL LRARE             ! Look for eclipse on last day
       LOGICAL LECL              ! Have eclipse on last day
+      LOGICAL LBLOWUP           ! numerical blowup
 C version 3.5 Does not allow daily eclipse and atmosphere at once
 C     it uses  DOWNIR for Planet thermal load and  
       INTEGER*4 JBE(4),PARI(2)  ! ECLIPSE range indices and params.
@@ -729,32 +730,17 @@ C     -^-^-^-^-^-^-^-^-^-^-^-^-^-^-^- end of layer loops ^-^-^-^-^-^-^-^-^-^-^
 C 3 possible upper boundary conditions. 1) Atm with frost 2) Just Atm 3) No atm.
           II=0 !db newton iteration count
           IF (LFROST) THEN      !+-+-+-+ surface temperature is frost-buffered
-            call update_surface_frost(ATMRAD, FAC9, FROEX, SHEATF, FAC7, TSUR, POWER, JJ, FAC6F, FEMIT, LPH, FEFAC, DTIM, LFROST, FAC8, EMTIR, LOPN3, FARAD, TTJ, ASOL, SOLDIF, PLANH, PLANV)
+            call update_surface_frost(ATMRAD, FAC9, FROEX, SHEATF, FAC7, TSUR, 
+            & POWER, JJ, FAC6F, FEMIT, LPH, FEFAC, DTIM, LFROST, FAC8, EMTIR, 
+            & LOPN3, FARAD, TTJ, ASOL, SOLDIF, PLANH, PLANV, TATMJ, AFNOW, ALB, 
+            & EFROST, EMIS, CFROST)
           ELSE                  !+-+-+-+ if no frost
-            ABRAD=FAC3*ASOL(JJ)+FAC3S*SOLDIF(JJ) ! surface absorbed radiation
-            IF (LATM) THEN 
-              ATMRAD=FAC9*TATMJ**4 ! hemispheric downwelling IR flux
-              ABRAD=ABRAD+FAC6*ATMRAD ! add absorbed amount
-            ENDIF 
-            IF (LPH) ABRAD=ABRAD+EMIS*PLANH(JJ)+FAC3S*PLANV(JJ) ! planetary load
-
- 230        TS3=TSUR**3         ! bare ground
-            II=II+1
-            SHEATF= FAC7*(TTJ(2)-TSUR) ! upward heat flow to surface
-            POWER = ABRAD + SHEATF - FAC5*TSUR*TS3 ! unbalanced flux
-            IF (LOPN3) POWER=POWER+FARAD(JJ) ! fff only
-            DELT = POWER / (FAC7+FAC45*TS3)
-            TSUR=TSUR+DELT
-            IF (MOD(II,10).EQ.0)WRITE(IOPM,*)J5,J4,JJJ,JJ,II,TSUR,DELT !db
-            IF (TSUR.LE. 0. .OR. TSUR.GT.TBLOW) GOTO 340 ! instability test
-            IF (ABS(DELT).GE.GGT) GOTO 230 ! fails convergence test
-
-            IF (TSUR.LT.TFNOW) THEN ! Frost will form.  Never unless atm.
-              LFROST = .TRUE.   ! turn frost flag on
-              TSUR = TFNOW      ! set to local frost temperature
-              FEMIT = FEMIS*SIGSB*TFNOW**4
-              FAC8=EMTIR*FEMIS
-            ENDIF             
+            call update_surface_nofrost(ATMRAD, FAC9, SHEATF, FAC7, TSUR, 
+            & POWER, JJ, FEMIT, LPH, LFROST, FAC8, EMTIR, LOPN3, FARAD, TTJ, 
+            & ASOL, SOLDIF, PLANH, PLANV, TATMJ, AFNOW, ALB, EMIS, FAC3, 
+            & FAC3S, LATM, FAC6, II, FAC5, FAC45, TBLOW, GGT, TFNOW, FEMIS, 
+            & SIGSB, LBLOWUP)
+            IF (LBLOWUP) GOTO 340 ! instability test
           ENDIF                 !+-+-+-+ end no frost
 C
           TSURM=TSURM+TSUR      ! sum over the day
