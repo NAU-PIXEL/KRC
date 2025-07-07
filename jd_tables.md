@@ -17,6 +17,8 @@ The header of the table is currently just the number of rows in the table, but t
 
 It is recommended that the table end with a newline character.
 
+See an example of the [table](./example/example_table.txt) and [input file](./example/krc_tab.inp).
+
 Special considerations
 ======================
 
