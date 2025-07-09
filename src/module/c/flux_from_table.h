@@ -15,7 +15,7 @@ void reset_csv(enum table_select table);
 double get_val(FILE *fp);
 FILE *open_atmrad(int *status);
 FILE *open_qi(int *status);
-double read_csv();
+double read_csv(enum table_select table);
 
 enum table_select get_qi_select_val();
 enum table_select get_atmrad_select_val();

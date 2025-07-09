@@ -12,7 +12,7 @@ double get_val(FILE *fp) {
     buffer_loc++;
   } while (current_char != '\t' && !feof(fp));
 
-  buffer[buffer_loc] = NULL;
+  buffer[buffer_loc] = 0x0;
 
   return atof(buffer);
 }

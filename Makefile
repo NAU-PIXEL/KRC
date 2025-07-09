@@ -58,7 +58,7 @@ FMODDIR := $(KRCLIB)/module/fortran
 FMODSOURCES := $(wildcard $(FMODDIR)/*.f)
 FMODOBJS := $(subst .f,.o,$(FMODSOURCES))
 
-CMOD_CC=gcc -pipe -O0  -Wall -fPIC -g
+CMOD_CC=gcc -pipe -O0  -Wall -fPIC -g -std=gnu17
 
 CMODDIR := $(KRCLIB)/module/c
 CMODSOURCES := $(wildcard $(CMODDIR)/*.c)
