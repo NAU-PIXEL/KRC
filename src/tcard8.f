@@ -171,9 +171,9 @@ C  READ a set of parameter change cards  (IQ = 2)
       ILEN = LNBLNK(RBUF)
       WRITE(IOPM,*)' RBUF= ',RBUF(1:ILEN)
       READ (RBUF,*,ERR=437,END=439) IG
-      IF (IG.LT.1) GOTO 370     ! no more changes
+      IF (IG.LT.1) GOTO 400     ! no more changes
       IF (IG.NE.11) LD18=.TRUE.  ! something other than onePoint will change
-      IF (IG.LT.11) THEN        ! read a single parameter
+      IF ((IG.LT.11).OR.(IG.GT.16)) THEN        ! read a single parameter
         READ (RBUF,*,ERR=438,END=439) IG,IREAD,XREAD,TEXT
         ILEN = LNBLNK(TEXT)
         IF (IG.GT.3) WRITE (IOSP,167) IG,IREAD,XREAD,' ',TEXT(1:ILEN)
@@ -181,8 +181,8 @@ C  READ a set of parameter change cards  (IQ = 2)
       ENDIF
 C             1   2   3   4   5   6   7   8   9   10  11  12  13
       GO TO (210,220,230,240,250,260,270,280,290,300,310,320,330 
-     & ,340,350,360), IG
-C        14  15  16
+     & ,340,350,360,370,380), IG
+C        14  15  16 17 18
 C IG=Type     Meaning                                     Valid Index
 C
 C    0   End of Current Changes                              any
@@ -211,6 +211,8 @@ C   13   Set of 2*4 coefficents for T-dep. specific heat. List-directed IO
 C   14   Set of 10 values for eclipse
 C   15   Set of 7 values for flux load from primary body (planet)
 C   16   Latitude and name for high-time-resolution surface temperature file 
+C   17   Flag and Parameter to allow solar penetration within the ground
+C   18   Flag and Parameter to allow emissivity-temperature dependance
 C For 12 to 15, the required number of white-space-separated coefficients must 
 C follow after the type on the same line, with no interveening index or text 
 
@@ -322,7 +324,7 @@ C  IG=8  Read file name
  300  FINPUT=TEXT(1:ILEN)       ! 10. name of one-point input file
       IRET=4                    ! flag for switch to new input file
 C       write(*,*)'TCARD setting IRET=4'
-      GOTO 370
+      GOTO 400
 
  310  XREAD=123.456D0            ! one-point model
       WHAT='1-Point'
@@ -363,10 +365,52 @@ C                  ls   lat hour Elev  Alb Iner Opac Slop Azim
       I=LEN_TRIM(FTOUT)
       WRITE(IOSP,*) 'TCARD:16 ',WHAT,NLAD,' ',FTOUT(1:I)
       GO TO 160
+370   IF(IREAD.EQ.1) THEN  ! Allow or not solar radiation within the ground
+        WHAT='SOLRAD-GROUND_BOOLEAN'
+        RADGND = XREAD.GT.0
+        WRITE(IOSP,*) 'TCARD:17 ',WHAT,XREAD
+      ELSEIF(IREAD.EQ.2) THEN
+        WHAT='SOLRAD-GROUND_EFOLD'
+        EFOLD_RADGND = XREAD
+        WRITE(IOSP,*) 'TCARD:17 ',WHAT,XREAD
+      ELSE
+        WRITE (IOERR,*)'Tcard 17: invalid file type= ',IREAD,' ',TEXT
+      ENDIF
+      GO TO 160
+
+380   IF(IREAD.EQ.1) THEN  ! Allow Emissivity-temperature dependancy
+        WHAT='EmisT'
+        EmisT = XREAD.GT.0
+        WRITE(IOSP,*) 'TCARD:17 ',WHAT,XREAD
+      ELSEIF(IREAD.EQ.2) THEN
+        WHAT='Emis0'
+        Emis0 = XREAD ! mostly for debuging ? check that it is read correctly
+        CCEMIS(1) = Emis0 
+        WRITE(IOSP,*) 'TCARD:17 ',WHAT,XREAD
+      ELSEIF(IREAD.EQ.3) THEN
+        WHAT='Emis1'
+        Emis1 = XREAD 
+        CCEMIS(2) = Emis1 
+        WRITE(IOSP,*) 'TCARD:17 ',WHAT,XREAD
+      ELSEIF(IREAD.EQ.4) THEN
+        WHAT='Emis2'
+        Emis2 = XREAD
+        CCEMIS(3) = Emis2
+        WRITE(IOSP,*) 'TCARD:17 ',WHAT,XREAD
+      ELSEIF(IREAD.EQ.5) THEN
+        WHAT='Emis0'
+        Emis3 = XREAD
+        CCEMIS(4) = Emis3
+        WRITE(IOSP,*) 'TCARD:17 ',WHAT,XREAD
+      ELSE
+        WRITE (IOERR,*)'Tcard 17: invalid file type= ',IREAD,' ',TEXT
+      ENDIF
+      GO TO 160
+
 C
 C quit if there was no interactive input
 C
- 370  IF (IQ.EQ.2 .AND. KOUNT.EQ.1) GOTO 430  ! no changes this time
+ 400  IF (IQ.EQ.2 .AND. KOUNT.EQ.1) GOTO 430  ! no changes this time
 C
 C  NORMAL return -  Check input parameters.  Bound array dimensions
 C

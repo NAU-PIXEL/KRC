@@ -82,7 +82,7 @@ C     it uses  DOWNIR for Planet thermal load and
      &,TSUR,TS3,TSUR4,FCJ
       REAL*8 QA,QB,QQ,RLAF           ! temporary use
       REAL*8 FALB0,FALBD,FSOL0,FSOLD,FFAR0,FFARD,FPLA0,FPLAD ! time interpolation
-     & ,FDIF0,FDIFD, FDIF,ZFAR,FPLA,FSOL ! time interpolation
+     & ,FDIF0,FDIFD, FDIF,ZFAR,FPLA,FSOL,FCOSINC,COSINC0,COSINCD ! time interpolation
       REAL*8 TIFAC(MAXFAC),YTF(MAXN1P),YTR(MAXFLP)
       REAL*8 ZDZ(MAXFLP)
       REAL*8 FINSJ ! holds  FINSOL during eclipse and 1.0 during follow-on
@@ -182,6 +182,9 @@ C      XCEF(2)=BLAF(2)/2.0 ! center of first physicel sub-layer
         WRITE(IOSP,32)'T-dep. layers in TFINE:',IK1,IK2,IK3,IK4
       ENDIF
 
+c Sanity check:if solar penetration in the ground is lower than 1e-3m (1 mm), then assumed that we run krc as usual
+      if((RADGND).AND.(EFOLD_RADGND.LE.1e-3)) RADGND = .FALSE.
+
 C----------------------------------
 
 C     2016 Feb 16
@@ -216,7 +219,7 @@ C  MAXBOT is in parameter common krcc8m
       DTIMI=DTIM                ! current time step
       DO J=2,N1F                 ! LAYER LOOP 3: Assign time doubling
         IF (K.LT.KM .AND. J.GT.3 .AND. MOD(KKF,2).EQ.0 
-     &    .AND. ZDZ(J).GT. 2.D0*QA*CONVF) THEN ! double time step for this layer
+     &    .AND. ZDZ(J).GT. 2.D0*QA*CONVF.AND.(.NOT.RADGND)) THEN ! double time step for this layer
           DTIMI=2.*DTIMI        ! doubled time interval
           K=K+1                 ! have new binary interval
           N1Z(K)=J-1            ! bottom layer of prior interval
@@ -322,6 +325,13 @@ C interpolate input temperature profile onto the fine layers
       DELT=XCEN(1)              ! store virtual layer depth 
       XCEN(1)=0.                ! depth of  TTJ(1)=TSUR
       TSUR=TTJ(1)               ! extract Tsurf from transfer array
+      IF(EmisT) THEN
+        CALL EVMONO3D(CCEMIS,1,TSUR, EMIS) ! recompute emissivity
+        EMIS = MAX(0.,MIN(EMIS,1.))
+        FAC5  = SKYFAC*EMIS*SIGSB
+        FAC45 = 4.D0*FAC5
+        FAC6  = SKYFAC*EMIS
+      ENDIF      
       IF (LVFT) THEN            ! overload a logical flag
         CALL DSPLINE (XCEN,TTJ,N1, HUGE,HUGE,YTF) ! first 3 args from common
         DO I=2,N1F              ! each fine layer
@@ -385,6 +395,8 @@ C initiate radiation for first ctime interval
       FALBD=ALBJ(JJ+1)-FALB0    ! slope pairs for fine time interpolation 
       FSOL0=ASOL(JJ)            !  Direct solar flux on sloped surface
       FSOLD=ASOL(JJ+1)-FSOL0
+      COSINC0 = COSINC(JJ)
+      COSINCD = COSINC(JJ+1)-COSINC0
       FFAR0=FARAD(JJ)           ! far-field radiance
       FFARD=FARAD(JJ+1)-FFAR0
       FPLA0=EMIS*PLANH(JJ)+FAC3S*PLANV(JJ) ! combine  IR and visual load
@@ -403,6 +415,8 @@ C initiate radiation for first ctime interval
             FALBD=ALBJ(JJ+1)-FALB0 ! slope pairs for fine time interpolation 
             FSOL0=ASOL(JJ)      !  Direct solar flux on sloped surface
             FSOLD=ASOL(JJ+1)-FSOL0
+                        COSINC0 = COSINC(JJ)
+            COSINCD =  COSINC(JJ+1)-COSINC0
             FFAR0=FARAD(JJ)     ! far-field radiance
             FFARD=FARAD(JJ+1)-FFAR0
             FPLA0=EMIS*PLANH(JJ)+FAC3S*PLANV(JJ) ! combine  IR and visual load
@@ -416,8 +430,13 @@ C linear interpolation in time for the radiation fields
           FAC3  = 1.D0-(FALB0+TIFAC(JL)*FALBD) ! accomodate photometric functions
           FDIF=FDIF0+TIFAC(JL)*FDIFD ! diffuse flux
           ZFAR=FFAR0+TIFAC(JL)*FFARD ! far-field radiance.  FFAR is assigned
+          IF(EmisT) THEN ! in this case, as Tsurf as changed, we need to change FPLA0, FPLAD
+            FPLA0=EMIS*PLANH(JJ)+FAC3S*PLANV(JJ) ! combine  IR and visual load
+            FPLAD=EMIS*PLANH(JJ+1)+FAC3S*PLANV(JJ+1)-FPLA0
+          ENDIF
           FPLA=FPLA0+TIFAC(JL)*FPLAD ! planetary heat load
           FSOL=FSOL0+TIFAC(JL)*FSOLD ! collimated insolation onto slope surface
+          FCOSINC = COSINC0+TIFAC(JL)*COSINCD
 C Set the boundary conditions
           TTF(1)=TTF(2)-FAC4*(TTF(2)-TSUR) ! set virtual layer
           IF (LBASE) TTF(N1FP)=TTF(N1F)+DELBOT ! base heat-flow, constant
@@ -452,6 +471,17 @@ C     EVMONO3D loads arg2 output values into locations starting at last arg.
             FAC7=KTF(2)/XCEF(2)  ! do each time because  KTF(2) might be  T-dep.
           ENDIF                 !---------------------- 
 C     - - - - - - - - - - - - -
+          IF((RADGND).AND.
+     &     (FSOL.gt.0 ).AND.
+     &     (FCOSINC.GT.0)) THEN                  
+          DO J = 2,KN-1
+            DTJ(J) = DTJ(J) + DTIMI/(DENN(J)*CTT(J))*
+     s       (FSOL)*   
+     s       DEXP(-(XCEN(J))/(EFOLD_RADGND*FCOSINC))
+     s       /(EFOLD_RADGND*FCOSINC)
+          ENDDO
+          ENDIF
+C     - - - - - - - - - - - - -
           DO  J=2,KN
             TTF(J)=TTF(J) + DTJ(J) ! apply the delta-T
           ENDDO
@@ -466,10 +496,23 @@ C  upper boundary conditions.
  230      TS3=TSUR**3           ! bare ground
           II=II+1
           SHEATF= FAC7*(TTF(2)-TSUR) ! upward heat flow to surface
+          IF(RADGND) THEN
+            POWER = SHEATF - FAC5*TSUR*TS3       
+            IF (LPH) POWER=POWER+FPLA
+          ELSE
+            POWER = ABRAD + SHEATF - FAC5*TSUR*TS3 ! unbalanced flux
+          ENDIF
           POWER = ABRAD + SHEATF - FAC5*TSUR*TS3 ! unbalanced flux
           IF (LOPN3) POWER=POWER+ZFAR ! fff only
           DELT = POWER / (FAC7+FAC45*TS3)
           TSUR=TSUR+DELT
+          IF(EmisT) THEN
+            CALL EVMONO3D(CCEMIS,1,TSUR, EMIS) ! recompute emissivity
+            EMIS = MAX(0.,MIN(EMIS,1.))
+            FAC5  = SKYFAC*EMIS*SIGSB
+            FAC45 = 4.D0*FAC5
+            FAC6  = SKYFAC*EMIS
+          ENDIF
           IF (MOD(II,10).EQ.0) WRITE(IOPM,*)J5,J4,J3,JJ,II,TSUR,DELT !db
           IF (TSUR.LE. 0. .OR. TSUR.GT.TBLOW) GOTO 340 ! instability test
           IF (ABS(DELT).GE.GGT) GOTO 230 ! fails convergence test

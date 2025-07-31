@@ -450,6 +450,8 @@ Cvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
          CALL ROTV(MXX,3,-ANGLE, HXX) ! VAv  Sun progress thru day
          CALL VDOT(HXX,FXX, COSI) ! cos of incidence angle on horizontal
          CALL VDOT(HXX,TXX, COS2) ! cos of incidence angle onto tilted slope
+         COSINC(JJ) = COS2
+
 C     Get atmosphere transmission and heating for horizontal surface
          IF (COSI.GT.ACOSLIM) THEN ! Day: Sun is above horizon
 C PhotFunc for horizontal surface

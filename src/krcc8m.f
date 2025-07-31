@@ -35,13 +35,13 @@ C      PARAMETER (MAXN5 =2161)    ! dimension of saved seasons
      &,HUGE,TINY,EXPMIN,YRIDAY,FLOST,RGAS,TATMIN,PRES,OPACITY,TAUIR     ! :74
      &,TAUEFF,TATMJ,SKYFAC,TFNOW,AFNOW,PZREF,SUMF,TEQUIL,TBLOW,HOURO    ! :84
      &,SCALEH,BETA,DJU5,DAM,EFROST,DLAT,COND,DIFFU,SCALE                ! :93
-     &,PIVAL,SIGSB,RADC                       ! :96
+     &,PIVAL,SIGSB,RADC,EFOLD_RADGND,Emis0,Emis1,Emis2,Emis3            ! :96
 
       LOGICAL*4 LP1,LP2,LP3,LP4,LP5,  LP6,LPGLOB,LVFA,LVFT,LKOFT        !  1:10
      &,LPORB,LKEY,LSC,LZONE,LOCAL,   LD16,LD17,LD18,LD19,LONE ! 11:20
-     &,LATM,LSPARE, LFLUX
+     &,LATM,LSPARE, LFLUX,RADGND,EmisT
 
-      REAL*8 CCKU(4),CCKL(4),CCPU(4),CCPL(4) ! coef of K & Cp, Upper/Lower layers
+      REAL*8 CCKU(4),CCKL(4),CCPU(4),CCPL(4),CCEMIS(4) ! ! coef of K & Cp, Upper/Lower layers
 C      INTEGER*1  KITLE(84),DAYTIM(20) ! Sum= 104 bytes MUST be multiple of 8
       CHARACTER*20 DAYTIM       ! date/time that job stars
       CHARACTER*84 KITLE        ! purpose line from the input file
@@ -87,6 +87,10 @@ Cset   ---day1- lat ----day1-    main -day2- lats  seas
      C,LPORB,LKEY,LSC,LZONE,LOCAL,   LD16,LD17,LD18,LD19,LONE           ! 11:20
      D, KITLE,DAYTIM,LATM,LSPARE, LFLUX  ! 
 Cset   tcard tprint tcard tcard 
+Cset   Addition for transparence of the soil -solid state greenhouse effect
+     &, RADGND, EFOLD_RADGND
+Cset   Addition for EMISSIVITY which can be now temperature-dependant 
+     &, EmisT, Emis0,Emis1,Emis2,Emis3, CCEMIS
 C
       EQUIVALENCE (FD(1),ALB), (ID(1),N1), (LD(1),LP1) ! alignment
 
