@@ -38,8 +38,8 @@ LD=gfortran
 #<>D  Only for distribution
 KRCLIB=./src/
 
-#SYSLIBS = -L /usr/lib64  -lg2c -lgfortran -lc -lm    ## ? lgfortran 
- SYSLIBS = -L -lgfortran -lc -lm 
+#SYSLIBS = -L /usr/lib64  -lg2c -lgfortran -lc -lm    ## ? lgfortran
+ SYSLIBS = -lgfortran -lc -lm 
 
 # LDFLAGS= -fdump-tree-slim  # used, but does nothing 2014mar11
 LDBFLAGS= -g -fbounds-check  # prepare for debugger. Used only by krcdb
