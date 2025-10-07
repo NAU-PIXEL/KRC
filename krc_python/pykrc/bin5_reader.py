@@ -119,14 +119,19 @@ def read_bin5_header(filepath: Path) -> Bin5Header:
 
         # Find the position of C_END
         end_pos = buff.find(lbl_end_marker)
-        header.lbl_len = end_pos + len(lbl_end_marker) + 5  # +5 for architecture
 
-        # Extract architecture (5 chars before C_END)
+        # Extract architecture (5 chars BEFORE C_END, matching C code)
+        # C code: strncpy(arch, &buff[buff_sz-1-strlen(lbl_end_marker)-5], 5);
         arch = buff[end_pos - 5:end_pos].decode('ascii', errors='ignore')
-        header.arch = arch
-        header.arch_id = ARCH_NAMES.get(arch, 0)
+        header.arch = arch.strip()
+        header.arch_id = ARCH_NAMES.get(arch.strip(), 0)
 
-        # Parse the header data
+        # Header length is the total buffer size (which is multiple of 512)
+        # C code: (*b5h)->lbl_len = buff_sz-1;
+        # This is where data starts (end of the last 512-byte block read)
+        header.lbl_len = len(buff)
+
+        # Parse the header data (everything before arch string, which is 5 bytes before C_END)
         header_text = buff[:end_pos - 5].decode('ascii', errors='ignore')
 
         # Tokenize by spaces

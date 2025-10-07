@@ -24,12 +24,29 @@ def create_test_bin5(data: np.ndarray, word_type: int) -> Path:
     dims = data.shape
     nel = data.size
 
-    # Write header
-    header = f"{ndim} {' '.join(map(str, dims))} {word_type} {nel} >> Test data C_ENDx86  "
+    # Write header with arch BEFORE C_END (matching C implementation)
+    header = f"{ndim} {' '.join(map(str, dims))} {word_type} {nel} >> Test data "
     temp_file.write(header.encode('ascii'))
 
-    # Write data
-    temp_file.write(data.tobytes())
+    # Write architecture string (5 chars BEFORE C_END)
+    temp_file.write(b"x86  ")
+
+    # Write C_END marker
+    temp_file.write(b"C_END")
+
+    # Pad to 512-byte boundary
+    current_pos = temp_file.tell()
+    pad_to = ((current_pos + 511) // 512) * 512
+    padding = pad_to - current_pos
+    temp_file.write(b'\x00' * padding)
+
+    # Write data in Fortran (column-major) order to match real bin5 files
+    # Transpose before writing so that when read back it matches original
+    if ndim > 0:
+        fortran_data = np.transpose(data)
+        temp_file.write(fortran_data.tobytes())
+    else:
+        temp_file.write(data.tobytes())
     temp_file.close()
 
     return Path(temp_file.name)
@@ -47,7 +64,7 @@ def test_read_header():
         assert header.dims == [2, 3, 4]
         assert header.word_type == B5WT_FLOAT
         assert header.nel == 24
-        assert header.arch == "x86  "
+        assert header.arch == "x86"  # Stripped version
         assert "Test data" in header.text
 
     finally:

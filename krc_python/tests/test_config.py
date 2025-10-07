@@ -38,8 +38,8 @@ def test_get_krc_home_from_env(tmp_path, monkeypatch):
     krc_dir.mkdir()
 
     # Clear any existing setting
-    import krc.config
-    krc.config._KRC_HOME = None
+    import pykrc.config
+    pykrc.config._KRC_HOME = None
 
     # Set environment variable
     monkeypatch.setenv("KRC_HOME", str(krc_dir))
@@ -50,8 +50,8 @@ def test_get_krc_home_from_env(tmp_path, monkeypatch):
 
 def test_get_krc_home_not_set():
     """Test that error raised when KRC_HOME not set."""
-    import krc.config
-    krc.config._KRC_HOME = None
+    import pykrc.config
+    pykrc.config._KRC_HOME = None
 
     # Clear environment
     if "KRC_HOME" in os.environ:

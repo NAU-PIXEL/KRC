@@ -1,6 +1,7 @@
 *.o
 *.a
 *.so
+*.dvlog
 
 # Output binaries
 krc
