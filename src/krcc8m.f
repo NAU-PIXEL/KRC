@@ -20,7 +20,9 @@ C      PARAMETER (MAXN5 =2161)    ! dimension of saved seasons
       PARAMETER (N4KRC=NUMFD*2+NUMID+NUMLD+2*MAXN4*2+2+104/4) ! # of 4-byte words
               ! above is size of common in 32-bit words. it  MUST  BE  EVEN
       PARAMETER (NWKRC=N4KRC/2) ! number of 8-byte words in krccom. Used by tdisk
-      PARAMETER (KOMMON=512000000) ! 80 MB,  Storage used by tdisk
+C     PARAMETER (KOMMON=512000000) ! 80 MB,  Storage used by tdisk - ORIGINAL (4GB!)
+C     PARAMETER (KOMMON=10000000) ! TEST: Reduced to 80MB to fix Apple Silicon dyld issue
+      PARAMETER (KOMMON=50000000) ! Increased for full 96-hour output (400MB)
 
       INTEGER*4 N1,N2,N3,N4,N5,  N24,IIB,IC2,NRSET,NMHA                 !  1:10
      &,NRUN,JDISK,IDOWN,I14,I15,  KPREF,K4OUT,JBARE,NMOD,IDISK2         ! 11:20

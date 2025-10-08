@@ -1,0 +1,73 @@
+Auxiliary material for Paper 2012JE004164
+
+Thermal model for analysis of Mars infrared mapping
+
+Hugh H. Kieffer
+Celestial Reasonings, 180 Snowshoe Ln., POB 1057, Genoa, NV  89411-1057, USA.
+
+
+Kieffer, H.H. (2012) Thermal model for analysis of Mars infrared mapping,
+J. Geophys. Res., VVV, EXXXXX, doi:10.1029/2012JE004164
+
+
+INTRODUCTION
+
+These auxiliary files contain the source code, sample input files and associated
+description of the KRC numerical model, all in plain text. There is a
+full-resolution map of the computed annual average surface temperature on Mars
+corresponding to Figure 10 in the article.
+
+CONTENTS OF THE AUXILIARY FILES
+
+2012JE004164-ds01.txt  Architecture of the KRC code set
+
+2012JE004164-ds02.txt  Index of FORTRAN and C routines 
+       An extensive set of IDL routines to process output files are 
+       available on the KRC website, but are not described here.
+
+2012JE004164-ds03.txt  FORTRAN source code for KRC
+       Routines are separated by line:  C===========================
+       Two source files have the extension .F:  binf5.F and idarch.F
+       All the rest are .f
+
+2012JE004164-ds04.txt  FORTRAN include files for commons
+       Routines are separated by line:  C===========================
+
+2012JE004164-ds05.txt  C source code  
+       Routines are separated by line:  /*=============================*/
+
+2012JE004164-ds06.txt  Sample Make file: for compilation and link of KRC
+       The Makefile was designed to run on the development computer. 
+       It will require modification for other installations. 
+
+2012JE004164-ds07.txt  The Helplist
+       Defines all input items
+       Description of the binary output file formats
+       Guide to one-point mode input
+       List of some of the debug flag options
+       Notes on how some aspects of the code work
+
+2012JE004164-ds08.txt  Sample input files with some explanation text
+
+2012JE004164-ds09.txt  Sample layer table
+
+2012JE004164-ds10.txt  Sample One point input and output files
+
+2012JE004164-ds11.txt  is a description of the bin5 binary format used for some
+      KRC output files and by many of the associated IDL routines
+
+2012JE004164-ds12.bin5  is a 51.8 Mbyte binary file of Mars average annual
+surface temperature; full resolution version corresponding to Figure 10.  The
+map format is Simple-cylindrical projection, 1/20 degree resolution.  The file
+contains a 512 byte ASCII header followed by 16-bit integer array, 7200 samples
+by 3600 lines, of scaled annual average surface kinetic temperature.  The
+scaling from integer to temperature in Kelvin is T=I*160.+200.  [original file:
+TsaTiltP.bin5]
+
+2012JE004164-ds13.tar is a Unix/Linux tar (archive file) of all the individual
+files contains in Datasets 3, 4, and 6 (all the FORTRAN source code) and a Make
+file. This and ds14 should greatly simplify the installation of KRC for Unix or
+Linux users.
+
+2012JE004164-ds14.tar is a Unix/Linux tar (archive file) of all the individual
+files contains in Dataset 5 (all the C source code) and a library Make file

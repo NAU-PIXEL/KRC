@@ -65,7 +65,13 @@ def get_krc_home() -> Path:
 
 def get_support_dir() -> Path:
     """Get the krc_support directory path."""
-    return get_krc_home() / "krc_support"
+    # Support files are in krc_python/pykrc/data/krc_support
+    krc_home = get_krc_home()
+    support_dir = krc_home / "krc_python" / "pykrc" / "data" / "krc_support"
+    if not support_dir.exists():
+        # Fallback to old location
+        support_dir = krc_home / "krc_support"
+    return support_dir
 
 
 def get_run_dir() -> Path:
@@ -81,6 +87,38 @@ def get_src_dir() -> Path:
 def get_master_inp_path() -> Path:
     """Get the path to master.inp file."""
     return get_run_dir() / "master.inp"
+
+
+def get_krc_executable() -> Path:
+    """
+    Get the path to the KRC executable.
+
+    Returns
+    -------
+    Path
+        Path to the KRC executable
+
+    Raises
+    ------
+    FileNotFoundError
+        If KRC executable not found
+    """
+    krc_home = get_krc_home()
+
+    # Try root directory first (where it's compiled)
+    krc_exe = krc_home / "krc"
+    if krc_exe.exists() and krc_exe.is_file():
+        return krc_exe
+
+    # Try src directory
+    krc_exe = krc_home / "src" / "krc"
+    if krc_exe.exists() and krc_exe.is_file():
+        return krc_exe
+
+    raise FileNotFoundError(
+        f"KRC executable not found in {krc_home} or {krc_home / 'src'}. "
+        "Please compile KRC using 'make' in the root directory."
+    )
 
 
 class KRCPaths:
@@ -138,6 +176,16 @@ class KRCPaths:
     @property
     def fake_krc_input(self) -> Path:
         return self.support_dir / "fake_krc344"
+
+    @property
+    def porbcm_mat(self) -> Path:
+        """Path to PORBCM.mat binary orbital data file."""
+        return self.support_dir / "PORBCM.mat"
+
+    @property
+    def krc_executable(self) -> Path:
+        """Path to KRC executable."""
+        return get_krc_executable()
 
 
 def get_paths() -> KRCPaths:

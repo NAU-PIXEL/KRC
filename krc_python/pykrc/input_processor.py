@@ -65,6 +65,31 @@ class MasterInputParser:
         self._parse_latitudes(lines[28:32])
         self._parse_elevations(lines[32:34])
 
+        # Parse PORB orbital elements (6 lines after latitudes/elevations)
+        # Look for the PORB header line (contains "=RUNTIME" or body name pattern)
+        porb_start_idx = None
+        for i, line in enumerate(lines):
+            if '=RUNTIME' in line or 'IPLAN' in line:
+                porb_start_idx = i
+                self.params['PORB_HEADER'] = line.strip()
+                break
+
+        # Parse the 6 lines of PORB numerical data (30 values total, 5 per line)
+        if porb_start_idx is not None and porb_start_idx + 6 < len(lines):
+            porb_params = []
+            for i in range(1, 7):  # 6 lines after header
+                line = lines[porb_start_idx + i].strip()
+                # Split by whitespace and convert to float
+                values = line.split()
+                for val_str in values:
+                    try:
+                        porb_params.append(float(val_str))
+                    except ValueError:
+                        break  # Stop if we hit non-numeric data
+
+            if len(porb_params) == 30:
+                self.params['PORB_PARAMS'] = porb_params
+
         return self.params
 
     def _parse_param_block(

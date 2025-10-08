@@ -1,0 +1,4408 @@
+	PROGRAM KRC
+C_Titl  KRC planet surface thermal model  MGS-TES version
+C_Vars
+	INCLUDE 'krccom.inc' ! has IMPLICIT NONE
+	INCLUDE 'latcom.inc'
+	INCLUDE 'daycom.inc'
+	INCLUDE 'units.inc'
+	INCLUDE 'filcom.inc'
+	REAL PC(60)	
+	COMMON /PORBCM/ PC
+C_Hist	85oct01  Hugh_H_Kieffer
+C	87nov22  HHK  send errors to screen, force parameter print if error.
+C	93mar03  ECisneros converted include filename to lowercase, also
+C		           replace assign statement with an open statement,
+C			   and changed iokey variable from -4 to 5
+C	93mar04  ECisneros removed excess code at end of program, and added
+C		           check for ieee exceptions. previous version was
+C			   running but giving ieee exception.
+C 97jan30  HHK correct zero initialize
+C 97feb11 revise commons and much alogorithm
+C 97jul07 from calories to  SI units
+C 99dec07  HHK add option to continue from current condition
+C 2002mar07 HHK Add option for "one-point" rapid runs for Surface T
+C 2006mar22 HHK Minor: change default input file to   krc.inp
+C 2009mar05 HK Minor cleanup
+C 2010jan11HK Change to use of IMPLICIT NONE
+C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
+
+	REAL ELAPSED,TIMES(2)	! declare the types of DTIME()
+	INTEGER IOD, IQ, IR,KREC
+	INTEGER IOST		!? returned by OPEN
+	CHARACTER*80 CBUF	! temporary use
+C			zero out some commons
+	CALL R2R (0.,ALB, -NWKRC) !  KRCCOM
+	CALL R2R (0.,NDJ4,-NWLAT) !  LATCOM
+	CALL R2R (0.,XCEN,-NWDAY) !  DAYCOM
+	FDISK='krc.tdi'
+C		set logical units. See   units.com   for description
+	IOD1 = 1
+	IOD2 = 2
+	IOIN = 3
+	IOKEY = 5
+	IOPM = 6
+	IOSP = 7
+	IOERR = IOPM
+	LOPN2 = .FALSE.
+	LONE =.FALSE.		! true when in one-point mode
+C			set constants
+	PIVAL = 3.14159265
+	RADC = 180./PIVAL		! degrees/radian
+	SIGSB = 5.67051e-8 !  Stephan-Boltzman constant:  SI =  W m^-2 K^-4
+	RGAS = 8.3145	 ! ideal gas constant  (MKS=J/mol/K)
+	HUGE = 3.3E38	 ! largest   REAL constant
+	TINY = 2.0E-38	 ! smallest  REAL constant
+	EXPMIN = 86.80	 ! neg exponent that would almost cause underflow
+	KREC=0			! ensure it has a storage location
+	NRUN=0			! no output file yet
+C			open files: input, print, save
+50	FINPUT = 'krc.inp'
+	WRITE (IOPM,*)'?* Input file name or / for default =',FINPUT
+	READ (IOKEY,*,ERR=50,end=9) FINPUT
+	OPEN (UNIT=IOIN,FILE=FINPUT,STATUS='OLD',err=81)
+
+CC	call U_std_init ('krc','1997-09-09','invoke traps') ! to invoke traps
+
+60 	FOUT = 'krc.prt'
+	WRITE (IOPM,*)' ?* Print file name or / for default =',FOUT
+	READ (IOKEY,*,ERR=60,end=9) FOUT
+	OPEN (UNIT=IOSP,FILE=FOUT,err=82)
+C			read and check a complete set of input parameters
+D	write(iosp,*) 'before TCARD LP2=',LP2 !<<< debug 
+	CALL DATIME (DAYTIM)
+	CALL TCARD (1,IR)
+D	write(iosp,*) 'after TCARD IR,LP2=',IR, LP2 !<<< debug
+D	write(*,*) 'TCARD1 return=',ir !<<< debug
+	IF (IR.GT.4) GO TO 170
+	IF (LP1) CALL TPRINT (1) ! print program description
+	CALL DTIME(TIMES,ELAPSED) ! Start clock, GNU recommended form 
+C				*****  BEGIN case  *****
+ 140	NCASE = NCASE+1		! have a case defined
+	IF (IR.EQ.4) THEN	! Switch to "one-point" mode
+	  CLOSE(IOIN)		! close the card input file
+D	  write(*,*)'FINPUT=',finput !<<< debug
+	  OPEN (UNIT=IOIN,FILE=FINPUT,STATUS='OLD',iostat=iost,err=81)
+D	  write(*,*)' IOSTAT=',iost !<<< debug
+	  READ (IOIN,'(A80)',ERR=83,END=84) CBUF ! read Users title
+D	  write(*,*)' k2' !<<< debug
+	  WRITE(IOSP,*)'---- Start of one-point mode ----'
+	  WRITE(IOSP,*)CBUF	! write users title
+	  READ (IOIN,'(A80)',ERR=83,END=84) CBUF ! skip the col header line
+D	  write(*,*)' k3' !<<< debug
+	  WRITE(IOSP,'(A,A)')'C_END  Ls   Lat  Hour Elev  Alb Inerti '
+     &      ,'Opac Slop Azim  TkSur  TbPla             Comment'
+	  LONE=.TRUE.
+	  CALL TCARD (2,IR)	! read first one-point case
+D	write(IOSP,*) 'KRC TCARD2 return=',IR !<<< debug
+	ENDIF
+	IQ = IR	             ! transfer "continuing" flag from  TCARD to  TSEAS
+	IF (LONE) IQ=1		! set TSEAS to start fresh
+	CALL TDAY (1,IR) 	! initialize day computations
+D	write(IOSP,*)'KRC TDAY 1 return, LP2',IR,LP2 !<<< debug
+	IF (LP2 .OR. IR.NE.1) CALL TPRINT (2)
+C	IF (.NOT.LONE .AND. (LP2 .OR. IR.NE.1)) CALL TPRINT (2)	! print input parameters
+	IF (IR.NE.1) THEN
+		WRITE(IOSP,*)' PARAMETER ERROR IN TDAY(1)'
+		IF (N5.GT.0) GOTO 170
+	    ENDIF
+	IF (.NOT.LOPN2 .AND. JDISK.GT.0 .AND. MAX(N5,1).GE.JDISK) 
+     &    CALL TDISK (1,0) ! open output disk file
+C======
+D	write(*,*) 'cond=',cond	!<<< debug
+D	write(*,*)'KRC LP4=',LP4 !<<< debug
+        CALL DATIME (DAYTIM)	! reset the time at start of each model
+	CALL TSEAS (IQ,IR)		! %%%%% execute season loop %%%%
+D	write(*,*)'TSEAS return IQ,IR,N5,krec=',IQ,IR,N5,krec !<<< debug
+C======
+	IF (LONE) CALL TPRINT(9) ! print results at requested one-point
+
+	IF (IR.NE.1 .AND. N5.GT.0) GO TO 170	! stop on error in seasonal run
+	CALL TCARD (2,IR)		! read set of parameter changes
+
+D	WRITE(IOSP,*)'TCARD 2 IR=',IR,krec  !<<< Debug
+	IF (IR.EQ.3) NCASE=NCASE-1 ! do not increment case for continuing from memory
+	IF (.NOT. LONE .OR. IR.EQ.5) THEN 	! 
+	   CALL DTIME(TIMES,ELAPSED) ! elapsed seconds
+ 133	   FORMAT(1X,'Case',i3,2x,a1,'TIME: total, user, system=',3f10.4)
+	   WRITE(   *,133)NCASE,'D', ELAPSED,TIMES
+	   WRITE(IOSP,133)NCASE,'D', ELAPSED,TIMES
+	ENDIF
+	IF (IR.LT.5) GOTO 140	! 5 is END of data
+C
+ 170	IF (LOPN2) CALL TDISK (4,KREC)	! all done: close disk files
+
+C	check for ieee exceptions raised
+C	see page 127 in sun fortran manual, numerical computation guide
+C???	CALL CHKMATH(IOSP)
+
+ 9	WRITE (IOSP,*)'     END KRC'
+ 	STOP
+
+C error section
+ 81	WRITE(IOERR,*)'KRC error opening input file =',FINPUT
+	WRITE(IOERR,*) 'IOSTAT=',IOST
+	GOTO 50
+ 82	WRITE(IOERR,*)'KRC error opening print file =',FOUT
+	GOTO 60
+ 83	WRITE(IOERR,*)'KRC error reading one-point header lines',FDISK 
+	GOTO 9
+ 84	WRITE(IOERR,*)'KRC unexpected EOF reading one-point header lines' 
+	GOTO 9
+
+	END
+
+C======================================================================
+	SUBROUTINE ALBVAR (Q1, ALBV)
+C_Titl ALBVAR Compute frost albedo as linear function of insolation
+C_Vars
+	INCLUDE 'krccom.inc'
+C_Args:
+      REAL Q1    ! IN. average (over a day) solar flux ( direct and diffuse) 
+C   incident on a flat surface
+      REAL ALBV  ! OUT.  effective hemispheric albedo of frost deposit
+C	?? should phase function be here??
+C 2005dec28 HK Change to use of IMPLICIT NONE. But here no change needed
+C_END
+
+	ALBV = AF1 + AF2*Q1
+	RETURN
+	END
+
+C======================================================================
+        REAL FUNCTION ALSUBS (KODE, ARG)
+C_Titl  ALSUBS  Convert L-sub-s  <-> days into a Martian year
+      IMPLICIT NONE
+      INTEGER KODE ! IN. Controls which direction to do convertion
+C    1:  Convert days from start of Martian year (L_s=0) to L_s
+C    2:  Convert L_s to days (of 86400 seconds) into a martian year
+      REAL ARG               ! IN  days into year (kode=1) or Ls (kode=2)
+C Uses cosine series analytic approximation. Error < .01 degree L_s. ~ 1990.
+C_Hist 2002mar07  Hugh_Kieffer Adopted from l_sub_s.pro
+C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
+
+      DOUBLE PRECISION F,X
+      if (kode.eq.1) then       ! from Mars Day-of-year to L_s
+        x=dble(arg)/686.98D0    ! fractional martian year
+        x=x*2.0D0*3.1415926536D0 ! radians from start of martian year  
+        f= -10.328371D0 +57.296001D0*x -10.688416D0*cos(x+3.2931221D0) 
+     &       -0.62748339D0*cos(2.*x+5.0168313D0)
+     &       -0.050566287D0 *cos(3.*x+0.41753547D0)
+      ELSE             ! from degrees L_s to days since start of a Mars year
+        x=0.017453292520D0*arg  ! convert degrees to radians
+        f= 19.717923D0 + 109.33317D0*x + 20.417421D0*cos(x+3.4731399D0)
+     &       -0.70853928D0*cos(2.*x+5.3719812D0) 
+     &       + 0.029281483D0*cos(3.*x+0.92372042D0)
+      ENDIF
+
+      ALSUBS=REAL(F) ! convert back to sigle precision
+      RETURN
+      END
+
+C======================================================================
+      REAL FUNCTION AVEDAY (SDEC,XLAT)
+C_Titl  AVEDAY average daily exposure of surface to sunlight.
+c   this is the average daily insolation, normalized to the solar flux at 
+C    current distance from the sun.
+      IMPLICIT NONE
+C_Args
+	REAL SDEC ! in. solar declination in degrees.
+C			(the sub-solar latitude on the planet)
+	REAL XLAT ! in. latitude on surface; in degrees. 
+C
+C_Desc formula from  WARD(1974),  J.G.R. vol. 79, page 3375;
+C   equations 49 & 50 on page 3382.
+C Input angles should be no greater than 90. degrees, this routine does
+C   not check them.
+C_Hist	86jul03  HHKieffer; revision of earlier  CFSOLAR.
+C 1987sep13  HK incorporate the 1/pi term in this routine.
+C 2010jan11  HK convert to implicit none
+C 2012feb26  HK Remove unused variables
+C_End
+	REAL PI/3.1415926/
+C        REAL R2D /57.29578/     ! degrees in one radian
+        REAL D2R /1.7453293E-2/ ! radians pre degree
+        REAL sdecr            ! solar declination in radians
+        REAL xlatr            ! surface latitude, radians
+        REAL eta              ! length of half-day, in radians
+        REAL result
+
+        SDECR=D2R*SDEC
+        XLATR=D2R*XLAT
+	IF (ABS(XLAT).LT.(90.-ABS(SDEC))) THEN
+	  ETA=ACOS(-TAN(SDECr)*TAN(XLATr))	! day and night
+	  RESULT = ( ETA*SIN(SDECr)*SIN(XLATr) +
+     &		      SIN(ETA)*COS(SDECr)*COS(XLATr) )/PI
+	ELSEIF (XLAT.GE.(90.-SDEC).OR.XLAT.LE.(-90.-SDEC)) THEN
+CC***	  ETA=ACOS(-1.)				! polar day
+	  RESULT = SIN(SDECr)*SIN(XLATr)
+	ELSE
+CC***	ELSEIF (XLAT.LE.(-90.+SDEC).OR.(XLAT.GE.90.+SDEC)) THEN
+CC***	  ETA=ACOS(1.)			! polar night
+	  RESULT = 0.
+	ENDIF
+	AVEDAY = RESULT	! transfer to caller
+	RETURN
+	END
+
+C======================================================================
+	SUBROUTINE B2B (RA,RB,N)
+C_TITL  B2B  Byte-to-byte array move or fill
+C_ARGS
+	BYTE RA(1)  ! [In] Source array or constant
+	BYTE RB(1)  ! [Out] Destination array
+	INTEGER N   ! [In]  Number of items to move:
+C			     If  N>0, copies the source array	
+C			     If  N<0, replicates the first item in  RA
+C			     Into  RB  |N| times.  I.e., fill  RB
+C			      with a constant value.
+C_HIST	95JAN04  Hugh_h_Kieffer  USGS revise to structured code
+C_END
+	BYTE RA1
+
+	IF (N.GT.0) THEN
+	  DO I=1,N
+	    RB(I)=RA(I)
+	  ENDDO
+	ELSEIF (N.LT.0) THEN
+	  III=-N
+	  RA1=RA(1)
+	  DO I=1,III
+	    RB(I)=RA1
+	  ENDDO
+	ENDIF
+	
+	RETURN
+	END
+
+C======================================================================
+	SUBROUTINE BINF5 (ACTION,FILENAME, HEADER,ID,DDATA, RET)
+C_titl  BINF5:  read/write binary file with IDL-style header
+	IMPLICIT NONE
+C****************************************************************************
+C_Args  Type          name          i/o  Description
+        CHARACTER*1   ACTION       ! i   action -  R=read or  W=write
+C				   ! can be either uppercase or lowercase
+	CHARACTER*(*) FILENAME     ! i   input/output filename
+	CHARACTER*(*) HEADER       ! b   header text data
+	INTEGER*4 ID(10)	   ! b   array type and dimension
+C (1) = number of dimensions
+C (2:7) = dimensions 1:6
+C (8) = array type:  1=byte  2=I*2  3=I*4  4=R*4  5=R*8
+C (9) = header text length (in. Actual for  W, max for  R)
+C (10) = total header size in bytes (multiples of 512). set here
+	BYTE DDATA(*)	           ! b   data array;
+C
+        INTEGER*4     RET	   ! o   return code
+C                0 = normal return
+C               -1 = action invalid
+C               -2 = error opening filename
+C               -3 = error reading or writing header
+C               -4 = error reading or writing data
+C               -5 = error closing filename
+C               -6 =  ID was invalid
+C	        -7 = cpu architecture not recognized
+C	        -8 = file architecture unknown
+C	        -9 = word type in file unknown
+C              -10 = File size integers invalid
+C               >0 = file was this much larger than room provided by caller
+C_Descr
+C  Does all file operations during a single call;
+C   open, read or write, close
+C  WARNING: will overwrite existing file
+C  Note: the  ID values must be set for each  W call;
+C   this routine does not remember array sizes.
+C  For the read option, the dimensions will be considered for the maximum
+C   room allowed for the array to be returned.  RET >0 indicates how much
+C   bigger was the array on file.
+
+C  This routine meant to be usable on a number of platforms, and to detect if
+C byte swap is needed after reading a file.
+C  The initial integer items in the file header are meant to be compatible
+C with the idl routines BIN5W & BIN5R.
+C  Does not include the file creation data in the returned header
+C  First block of header can hold 455 characters of user text.
+C  Returned header may have up to 501 trailing blanks
+C
+C  !ISIS  indicate ISIS versions of code,  versus  !HK
+C_Lim
+	INTEGER*4  MAXT,MAXD,NBH,MAXARC
+	PARAMETER (MAXT=5) ! number of defined types
+	PARAMETER (MAXARC=6) ! number of machine architectures
+	PARAMETER (MAXD=6) ! max number of dimensions
+	PARAMETER (NBH=512) ! total length of header buffer
+C   on read, if  Header is too long, last part will be trimmed.
+C_Bugs
+C this version does byte-swapping after a read, but assumes  R*4 word type
+C_Call  PIO_ system  IDARCH  WHITE1  CATIME  B2B
+C_Hist	98may12  HHKieffer  Adopted from  binfil.f
+C 98sep07  HHK replace  B2B use for character varable
+C 98dec29  HHK disable byteswap on read ???
+C 99nov05  HHK allow longer headers
+C  and include as ckb real differences from the version at
+C    /home/kbecker/isis/apps/rolo2/libs/librolo/binf5.f
+C2004jul12 HK add arch-type for Mac.
+C 2008mar31 HK Replace  SWAPBYTER4 with SWAPBYTE4
+C           and  Replace C## with D for conditional compile
+C           and temporary firmcode machine architecture   << BEWARE
+C 2011oct23 HK Two continuation lines; replace leading tab with 5 spaces
+C_End
+
+	INTEGER*4 IERR		! return code from pio routines
+        INTEGER*4 NBD
+	INTEGER*4 ND1		! first byte after header
+        INTEGER*4 NBYTES
+
+	BYTE HH(NBH)
+	CHARACTER*512 CC	!  MUST be same size as  HH
+	EQUIVALENCE (CC,HH)	! align character and byte buffers
+
+	INTEGER*4 FID,I,IARCH,J,JCPU,K,KBLOCK,LL,LOC,NBY,NBYF,NIT,PLAN
+	INTEGER*4 I1 /1/
+
+	INTEGER*4 NBYPW(MAXT) /1,2,4,4,8/
+	INTEGER*4 IDL(10)		! array to contain idl size values
+	CHARACTER*120 BUF
+	CHARACTER*6 ARCH(MAXARC) /'sparc ','alpha ','ppc   ','x86   '
+     1 ,'x86_64','unknow'/		!hardware architecture
+C  IDARCH index =                   1      2       3=mac
+	INTEGER*4 BARCH(MAXARC) / 1,2,2 ,2 ,2,0 / ! byte-order type (arbitrary)
+	CHARACTER*6 ARCHCPU
+
+	INTEGER*4  BT2,BA1,BA2,BC1 ! fixed byte locations
+	PARAMETER (BC1=NBH-4)	! first of  C_END
+	PARAMETER (BA2=BC1-1)	! last byte of architecture
+	PARAMETER (BA1=BC1-8)	! first " " 2008 compatibility with bin5.pro
+	PARAMETER (BT2=BA1-1)	! last room for text
+	INTEGER*4  WHITE1,IDARCH		! functions
+C****************************************************************************
+
+	RET = 0
+
+	IF (ID(8).LT.1 .OR. ID(8).GT.MAXT) GOTO 86 ! invalid type
+	IF (ID(1).LT.1 .OR. ID(1).GT.MAXD) GOTO 86 ! invalid # dimensions
+	NIT=1			! # items
+	DO I=1,ID(1)		! compute total array size in bytes
+	  J=ID(I+1)
+	  IF (J.LT.1) GOTO 86	! invalid size
+	  NIT=NIT*J
+	ENDDO
+	NBY=NIT*NBYPW(ID(8))	! caller array bytes total
+	NBYTES = NBH+NBY        ! total # bytes in file
+
+	IARCH=IDARCH(BUF)	! get current machine type as integer and string
+	ARCHCPU=BUF(1:6)
+C-	ARCHCPU=ARCH(5)    ! BEWARE  BEWARE BEWARE BEWARE BEWARE
+	JCPU=0
+	DO I=1,MAXARC
+	  IF (ARCHCPU.EQ.ARCH(I)) JCPU=BARCH(I) ! save archit. type
+	ENDDO
+        WRITE (*,*) 'BINF5: ARCH S= ',IARCH,' >', ARCHCPU,'<',jcpu
+	WRITE (*,*) 'BINF5 called with ID= ',ID,'   2008apr01'
+	IF (JCPU.EQ.0) GOTO 87
+
+	IF (ACTION .EQ. 'W' .OR. ACTION .EQ. 'w') THEN !=======  WRITE ========
+
+	   CALL PIO_IN (FID, FILENAME, NBYTES, 3, IERR) !  OPEN even if exists
+	   IF (IERR .NE. 0) GOTO 92
+C construct header
+C don't know precisely how many 512-byte blocks will be needed because the
+C length to contain the initial integers can depend upon the number of blocks;
+C and, must allow for the rare event of one more character in  NBH requireing
+C an additional block. so, make initial estimate, then iterate on loop that
+C computes the number of blocks required until it will fit.
+	   K=9	! minimum number of characters to represent the size integers
+	   PLAN=(ID(9)+(K+28+10)-1)/NBH +1 ! estimate number of blocks required
+C  K for sizes, 28 for date and its delimiters, 10 for ending
+ 100	   WRITE (BUF,*) (ID(I),I=1,ID(1)+1),ID(8),NIT,PLAN*NBH ! sizes
+	   CC=' '		! initiate header as all blank
+	   K=WHITE1 (BUF,CC)	! remove excess spacing; put into header
+C  K is last non-blank character
+	   LL =(ID(9)+(K+28+10)-1)/NBH +1 ! number of blocks required
+D	   write(*,*)'ID(9),K,LL,plan=',ID(9),K,LL,plan !###
+	   IF (PLAN.LT.LL) THEN
+	     PLAN=PLAN+1
+	     GOTO 100
+	   ENDIF
+
+C  PLAN is now the number of header blocks that will be written
+	   ND1=plan*NBH+1	! first location after header
+D	WRITE (*,*) 'BINF5: NBH,ND1,NIT,NBY,NBYTES='
+D    &                     ,NBH,ND1,NIT,NBY,NBYTES
+
+	   CC(K+1:K+3)= '<< '	! end of dimensions
+	   K=K+3		! current end of stuff
+
+	   CALL CATIME (BUF)	!HK returned string is 22 long
+Ckb           call u_datime(buf) !ISIS
+
+	   CC(K+1:K+22)=BUF(1:22) ! move date into header
+	   K=K+22		! current end of stuff
+	   CC(K+1:K+3)= ' >>'	! end of date
+	   K=K+3		! current end of stuff
+	   KBLOCK=0
+	   J=0			! number of user text bytes alredy written
+	   LOC=1		! location to begin writting
+
+ 200	   KBLOCK=KBLOCK+1	! current block count
+	   IF (KBLOCK.EQ.PLAN) THEN ! this is the last block
+	     CC(BA1:BA2) =ARCHCPU ! place byte architecture
+	     CC(BC1:NBH) ='C_END' !   and ending
+	     I=BT2-K		! available space for text
+	   ELSE
+	     I=NBH-K		! space available to the end of the block
+	   ENDIF
+
+	   LL=ID(9)-J		! number of user text bytes still to write
+D	   write(*,*)'kblock,i,j,ll=',kblock,i,j,ll !##
+	   IF (LL.GT.0) THEN
+	     I=MIN(I,LL)	! amount to write, even if 0
+	     CC(K+1:K+I) = HEADER(J+1:J+I) ! move text to header
+	   ENDIF
+D	   write(*,*)'LOC=',LOC	!###
+	   CALL PIO_WT (FID, LOC, NBH, HH, IERR) ! write one block
+	   IF (IERR .NE. 0) GOTO 93
+	   LOC=LOC+NBH
+
+	   IF (KBLOCK.LT.PLAN) THEN
+	     CC=' '		! initiate header as all blank
+	     J=J+I		! increment # text bytes written
+	     K = 0		! Header text will be moved into output
+C				!   header record starting at beginning
+	     GOTO 200
+	   ENDIF
+
+D	   write(*,*)'LOC,ND1=',LOC,ND1	!###
+	   CALL PIO_WT (FID, ND1,NBY, DDATA, IERR) ! write data to file
+	   IF (IERR .NE. 0) GOTO 94
+
+
+	ELSEIF (ACTION .EQ. 'R' .OR. ACTION .EQ. 'r') THEN !======  READ =======
+
+	   CALL PIO_IN (FID, FILENAME, NBYTES, 0, IERR) !  OPEN existing file
+	   IF (IERR .NE. 0) GOTO 82
+	   LOC=1
+	   CALL PIO_RD (FID, LOC, NBH, HH, IERR) ! read first block of header
+	   IF (IERR .NE. 0) GOTO 83
+
+C decode sizes in first block of header (now equivalenced into  CC)
+	   READ (CC,*,err=330) IDL(1),(IDL(I),I=2,IDL(1)+1)
+     1	, IDL(8),NIT, IDL(10) ! sizes
+	   goto 340
+ 330	   write(*,*)'Num_Bytes_in_Header not found: Using 512'
+	   READ (CC,*,err=810) IDL(1),(IDL(I),I=2,IDL(1)+1), IDL(8),NIT
+	   IDL(10)=512 ! early bin5 version header length
+ 340	   WRITE (*,*) 'Sizes from file=',IDL	! ??? debug
+	   NIT=1		! # items
+	   DO I=1,IDL(1)	! compute total array size in bytes
+	      J=IDL(I+1)
+	      IF (J.LT.1) GOTO 86 ! invalid size
+	      NIT=NIT*J
+	   ENDDO
+	   IF (IDL(8).LT.1 .OR. IDL(8).GT.5) GOTO 89
+	   NBYF=NIT*NBYPW(IDL(8)) ! bytes in one item
+	   IF (NBYF.GT.NBY) THEN ! file bigger than array space
+	      NBD=NBY		! set read size to array space
+	      RET=NBYF-NBY	! set number of unread bytes
+	   ELSE
+	      NBD=NBYF		! set read size to file array size
+	      RET=0
+	   ENDIF
+
+C read rest of header, transfering to user up to their room limit
+	   J=0			   ! number of text bytes transferred
+	   K = INDEX (CC,' >>') +2 ! end of  SIZE array
+	   LL=NBH		   ! last byte of a block
+	   PLAN=(IDL(10)-1)/NBH +1   ! number of blocks in file header
+	   DO KBLOCK=1,PLAN	   ! one block at a time into local buffer
+	     IF (KBLOCK.GT.1) THEN
+	       LOC=LOC+NBH
+D	       write(*,*)'LOC=',LOC ! ###
+	       CALL PIO_RD (FID,LOC, NBH, HH, IERR) ! read a block
+D	       write(*,*)'CC=',cc ! ###
+	       IF (IERR .NE. 0) GOTO 83
+	     ENDIF
+	     IF (ID(9).GT.0) THEN ! user asked for header, extract it
+	       IF (KBLOCK.EQ.PLAN) LL=BT2 ! last available byte
+	       I = MIN(LL-K,ID(9)-J) ! end of text, or callers room to store
+	       IF (I.GT.0) HEADER(J+1:J+I)=CC(K+1:K+I) ! add to header
+	       J=J+I		! increment # text bytes written
+D	       write(*,*)'Last byt into header  J=',j !###
+	       K=0	! text starts at beginning of all but first block
+	     ENDIF
+	   ENDDO
+	   idl(9)=j		! bytes moved to caller
+
+C	   CALL R2R (IDL,ID,10) !HK return file array dimensions
+           call u_move4 (10,idl,id) ! return file array dimensions
+
+	   IF (NBD.GT.0) THEN	! read data from file
+	       LOC=LOC+NBH
+	      ND1= IDL(10)+1
+D	      write(*,*)'Read: LOC,ND1,NBD=',LOC,ND1,NBD !###
+	      CALL PIO_RD (FID, ND1,NBD, DDATA, IERR)
+	      IF (IERR .NE. 0) GOTO 84
+
+	      J=0
+	      DO I=1,3
+		IF (CC(BA1:BA2).EQ.ARCH(I)) J=BARCH(I) ! get file archit. type
+	      ENDDO
+	   WRITE (*,*)'BINF5 Read: file arch & J= >',CC(BA1:BA2),'<',J
+D	      IF(ID(9).GT.0) WRITE (*,*)'BINF5 Read: header= ',HEADER
+C       write (*,'(5a10)')(arch(i),i=1,3)
+	      IF (J.EQ.0) GOTO 88 ! unknown type
+
+	      IF (JCPU.NE.J) THEN ! swap bytes 
+!ISIS the # lines below
+#if defined(SWAP_RESTRICTIONS)
+		IF (IDL(8).EQ.4) THEN
+		  CALL SWAPBYTE4 (DDATA,NIT,DDATA) ! assumes real*4
+		  WRITE(*,*) 'BINF5 swapping bytes. # R*4 words=',NIT
+		ELSEIF (IDL(8).GT.1) THEN
+		  WRITE(*,*) 'BINF5 fails to swap bytes'
+		  RET=-10
+		ENDIF
+#else
+               if (nbypw(idl(8)) .gt. 1) then
+                  call u_swapn(nit, nbypw(idl(8)), ddata, ddata) ! ISIS routine
+                endif !ISIS
+#endif
+	      ENDIF
+	    ENDIF
+
+        ELSE                    !==========  ACTION not valid ============
+	   RET = -1
+	   RETURN
+	END IF			!=========================================
+
+C successfull read or write: close the binary file and return
+        CALL PIO_CL (FID, 0, IERR)
+	IF (IERR .NE. 0) RET = -5
+	RETURN
+
+C  Error section: set return codes, and delete file if error writing it
+ 810	RET = RET-1
+ 89     RET = RET-1
+ 88     RET = RET-1
+ 87     RET = RET-1
+ 86     RET = RET-2
+ 84     RET = RET-1
+ 83     RET = RET-1
+ 82     RET = RET-2
+        RETURN
+
+ 94     RET = RET-1
+ 93     RET = RET-1
+ 92     RET = RET-2
+        CALL PIO_CL (FID, 1, IERR)	! delete the binary file
+	RETURN
+
+	END
+
+C======================================================================
+	SUBROUTINE CATIME (DATETIME)
+C_TITL  CATIME  Returns current date & time as " yyyy mon dd hh:mm:ss "
+C_ARGS
+	character*22 DATETIME	!out, date/time value
+C_DESC  Uses SunPro specific calls get date/time, rearranges bytes
+C
+C_CALLS  TIME  CTIME
+C
+C_HIST  98jan22  Hugh_Kieffer character version derived from  DATIME
+C_END
+	integer j,time
+	character*24 string,ctime
+
+	j=time()		! seconds since 1970.0
+	string=ctime(j)		! convert to string
+
+C     123456789012345678901234
+C     www mon dd hh:mm:ss yyyy   from ctime
+C     _yyyy mon dd hh:mm:ss_     desired output
+	datetime(1:1)=' '
+	datetime(2:5)=string(21:24)
+	datetime(6:22)=string(4:20)
+
+	RETURN
+	END
+
+C======================================================================
+      REAL*4 FUNCTION CLIMTAU (LSUB,ALAT,TAUICE)
+C_Titl  CLIMTAU  Atmospheric opacities as function of Ls and latitude
+      IMPLICIT  NONE
+      INTEGER*4 NUMX,NUMY
+      PARAMETER (NUMX=72)      ! number of "sample"
+      PARAMETER (NUMY=36)      ! number of "lines"
+C_Vars
+      INCLUDE 'units.inc'
+      INCLUDE 'filcom.inc'
+C_Args
+      REAL*4 LSUB               !in. season; l-sub-s in degrees.
+C     If large negative, will read file and save values
+      REAL*4 ALAT               !in. Latitude in degrees
+      REAL*4 TAUICE             !out. opacity of water-ice cloud
+C     Function                  !out. opacity of aerosol dust
+C_Desc
+C  Initally reads a file of opacity versus Ls and latitude
+C  For each positive date request, does linear interpolation, with wrap around.
+C output will be negative if error occured
+C File dimensions firm-coded here
+C_Hist  Hugh_Kieffer  2012mar20 Derive from seastau.f
+C 2012mar27  HK  Include tau-ice 
+C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
+
+C local variables
+      REAL*4 DDATA(NUMX,NUMY,2) ! holds the table
+      INTEGER*4 MAXH /512/      !! These 2
+      CHARACTER*512 HEADER      !! must agree
+      INTEGER*4 ID(10)            ! array type and dimensions
+      INTEGER*4 I,J             ! number of defined dates
+      INTEGER*4 RET             !  BINF5 return code  
+      REAL*4 DELLS,DELLAT,OUT
+      REAL*4 FX,FY              ! interpolation parameters
+      REAL*4 Y1,Y2              ! intermediate interpolation
+      SAVE DDATA,DELLS,DELLAT
+
+      IF (IDB1.GE.5) WRITE(*,*)'CLIMTAU',LSUB ! 
+      OUT=-1.                   ! possible error flag
+
+      IF (LSUB .LT. -90.)  THEN ! read the file
+         DELLS=360./FLOAT(NUMX)
+         DELLAT=180./FLOAT(NUMY)
+         ID(1)=3
+         ID(2)=NUMX             ! num seasons
+         ID(3)=NUMY             ! num latitudes
+         ID(4)=2                ! tau dust and ice
+         ID(8)=4                ! singPrec float
+         ID(9)=MAXH             ! inform routine how much room for header
+         RET=3                  ! ask for both debug
+         CALL BINF5 ('R',FVTAU, HEADER,ID,DDATA, RET)
+         PRINT *,'CLIMTAU RET=',RET
+         PRINT *,'ID=',ID
+         PRINT *,HEADER
+C         Print *,(DDATA(I,I,0),I=1,NUMY)
+        IF (RET.LT. 0)
+     +          WRITE(IOERR,*)'CLIMTAU error opening input file>',FVTAU
+        OUT=RET
+
+        ELSE                    ! bi-linear interpolate
+
+           FX=AMOD(LSUB,360.)   ! ensure in range
+           FX=FX/DELLS +1.
+           FX= MIN(MAX(1.0,FX),REAL(NUMX)-1.0001)
+           I=INT(FX)            ! index of low point
+           FX=FX-I              ! fraction of upper point
+           FY=(ALAT+90.)/DELLAT +0.5
+           FY= MIN(MAX(1.0,FY),REAL(NUMY)-1.0001)
+           J=INT(FY)            ! index of low point
+           FY=FY-J              ! fraction of upper point
+           Y1= (1.-FX)*DDATA(I,J,1) +FX*DDATA(I+1,J,1) ! 1)=dust
+           Y2= (1.-FX)*DDATA(I,J+1,1) +FX*DDATA(I+1,J+1,1)
+           OUT=(1.-FY)*Y1+FY*Y2 ! tau dust
+           Y1= (1.-FX)*DDATA(I,J,2) +FX*DDATA(I+1,J,2) ! 2)=ice
+           Y2= (1.-FX)*DDATA(I,J+1,2) +FX*DDATA(I+1,J+1,2)
+           TAUICE=(1.-FY)*Y1+FY*Y2 ! tau ice
+
+      ENDIF
+
+      CLIMTAU=OUT
+      IF (IDB1.GE.5) WRITE (*,*) 'CLIMTAU out', LSUB,ALAT,OUT,TAUICE
+      RETURN
+      END
+
+C======================================================================
+      REAL FUNCTION CO2PT (KODE, ARG2)
+C_Titl  CO2PT:  CO2 pressure/temperature relation
+      IMPLICIT NONE
+C_Args
+      INTEGER KODE            !in. 1=P-to-T  2=T-to-P
+      REAL ARG2               !in. pressure (pascal) or temperature (kelvin)
+CC REAL  CO2PT !func. temperature or pressure
+C_Desc
+C  Clausius-Clapeyron equation based on  MARS p 959
+C  ln  P = a -  b/T   or  T = b/(a - ln  P)
+C this relation is good to ~ 1% for 120-160 kelvin or .4 to 314 pascal
+C_Hist  Hugh_Kieffer  97feb11
+C 2010jan11 HK Go to implicit none
+C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
+
+      REAL A   /27.9546/  ! first  C-C coefficient for  CO2 (mb) mars p 959
+      REAL B   /3182.48/  ! second  C-C coefficient for  CO2  (1/K)
+      REAL OUT,P, T
+
+      IF (KODE.EQ.1) THEN
+        P=ARG2
+        IF (P.LE.0.) P=1.  ! dumb insurance to avoid log failure
+        OUT = B/(A-LOG(P))
+      ELSE
+        T=ARG2
+        IF (T.LT.10.) T=10.
+        OUT = EXP( A-B/T)
+      ENDIF
+      CO2PT = OUT
+      RETURN
+      END
+
+C======================================================================
+	SUBROUTINE DATIME (DATETIME)
+C_TITL  DATIME  Returns current date and time as ccyy-mon-dd_hh:mm:ss in 5 4-byte words
+C 
+C_ARGS
+	REAL*4 DATETIME(5)	!out, date/time value
+                                ! in the format yyyy-mon-dd_hh:mm:ss
+C
+C_DESC 
+C
+C_CALLS  Intrinsic function TIME  CTIME,   B2B
+C
+C_HIST  97jan30  Hugh_H_Kieffer complete rewrite of older version
+C	98jan22  HHK revise; fdate had changed
+C     2012may09  HK Add century and drop leading and trailing blanks
+C_END
+	CHARACTER*24 STRING     ! to hold  return
+	CHARACTER*24 CTIME      ! Intrinsic function
+	INTEGER J,TIME
+        BYTE IBUF(20)
+
+	J=TIME()                ! get system time
+	STRING=CTIME(J)         ! convert to character
+
+C     123456789012345678901234
+C     www mon dd hh:mm:ss yyyy   from ctime
+C     yyyy mon dd hh:mm:ss        desired output
+
+        CALL B2B (STRING(21:24),IBUF,4) ! move the year
+        CALL B2B (STRING(4:19),IBUF(5),16) ! move the rest
+        CALL B2B (IBUF,DATETIME,20) ! transfer to R*4 array
+
+	RETURN
+	END
+C potential time intrinsic functions: DATE_AND_TIME IDATE ITIME SECNDS
+
+C======================================================================
+	SUBROUTINE DEDING2 (OMEGA,G0,ASUR,COSI,TAU, BOND,COLL,RI)
+C_Titl  DEDING2 delta-eddington solution for single homogeneous layer
+	IMPLICIT  NONE ! Double precision for internal variables only
+C_Arg
+	REAL*4 OMEGA	![i] dust single scattering albedo
+	REAL*4 G0 	![i] dust asymmetry parameter
+	REAL*4 ASUR	![i] surface albedo
+	REAL*4 COSI	![i] cosine of incidence angle
+	REAL*4 TAU	![i] dust vertical opacity
+	REAL*4 BOND	![o] planetary (atm plus surface system) albedo
+	REAL*4 COLL	![o] Direct beam at bottom = collimated + aureole
+	REAL*4 RI(2,2)	![o] diffuse irradiances: 
+C		(1,=  I0 = isotropic   (2, =  I1 = assymetric
+C		,1)= at top of atmosphere  ,2) = at bottom of atm
+C_Desc
+C  Assumes unit solar irradiance at top of atmosphere perpendicular to 
+C    the direction of incidence. e.g.,  pi*F = 1.
+C  {NOTE: this is different than older  DEDING, which used   pi*f = 1/cos_i .}
+C  Eddington approximation  I(t,u) =  I0(t) +  u*I1(t).  SW eq.2,
+C   where  t = tau = extinction opacity,  and u = cosine(angle from zenith).
+C  The diffuse flux is  F =  pi*[I0+-(2/3)*I1]   + is down, - is up.  SW eq. 8.
+C  For large tau, which would exceed machine single-precision range,
+C   this routine returns the semi-infinite result.
+C  Based upon:
+C.  JWW =  The  Delta-Eddington  Approximation for radiative flux transfer.
+C.  J.H.Joseph,W.J.Wiscombe,J.A.Weinman.  J.Atm.Sci vol.33,2453-2459 (1976)
+C.  SW = the transfer of solar irradiance through inhomgeneous turbid
+C    atmospheres evaluated by  Eddingtons approximation.
+C.  E.P.Shettle,J.A.Weinman.  J.Atm.Sci vol.27,1048-1055 (1970)
+C  All equation numbers are from  SW unless otherwise noted.
+C
+C  Upward diffuse irradiance at the top of atm is:  
+C	topdiff=PI*[RI(1,1)-(2./3.)*RI(2,1)]
+C  Downgoing diffuse irradiance at the bottom of atm is:  
+C	botdiff=PI*[RI(1,2)+(2./3.)*RI(2,2)]
+C  Total flux reaching a horizontal surface is: trans=botdiff + cosi*coll
+C  Atm. heating is : cosi-topdiff-(1.-ASUR)*trans
+C_Limitations
+C Limits  OMEGA to .999999 and  |G0| to .99 
+C_Calls  None
+C_Hist	88may05  HKieffer derive from  DEDING.
+C 99apr15  HHK bring  EXPMAX &  VLARGE well within single precision range
+C       and test for extreme  G0. 
+C  Add conservative scattering case, but it does not give similiar answers.
+C  Seems to works consistantly for  OMEGA up to .999999, so use this as limit
+C  After messing around with limiting cases for  G0 near +- 1, decide
+C to simply limit |G0| to .99 
+C 2002jul16 HK Changed name from DEDING1, 
+C	revised fourth and next-to-last argument
+C 2002jul16  Using qdeding2.pro, results agree with JWW figures only for BOND.
+C 2002jul21  Go to double precision computation; all agree with JWW figs 1,3
+C 2012feb26 HK Remove unused variables
+C_End
+C1	REAL vv(2,2),BB(2)	! matrix and right-hand side
+C1	INTEGER*4 INDX(2)		! used by ludcmp
+	REAL*8 PI/3.141592653589793D0/	! pi
+	REAL*8 ZERO  /0.D0/	! DOUBLE PRECISION CONSTANTS
+	REAL*8 ONE   /1.D0/
+	REAL*8 TWO   /2.D0/
+	REAL*8 THREE /3.D0/
+	REAL*8 FOUR  /4.D0/
+C	REAL*8 VLARGE/1.0D200/	! large real number
+	REAL*8 EXPMAX /460.51D0/ ! maximum exponent
+	REAL*8 GMAX /0.999D0/	! maximum magnitude of G
+	REAL*8 EPSILON /1.D-8/	! limit for 1-omega
+
+	REAL*8 A,ALPHA,A0,BETA,CAP,CAPT,C1,C2 
+     &,EPKT,EMTC,EMKT,F,FACTOR,F0,G, GIN,OMA, OMF,OMFA0
+     &,P,TT,T1,T1A ,VDET,V1,V2,V3,V4,V5,V6,X
+
+	GIN=MAX(MIN(G0,GMAX),-GMAX) ! G can cause blow up; limit assymetry
+	A0=     MIN(OMEGA,ONE-EPSILON) ! avoid 0 determinant at omega=1.
+	TT=TWO/THREE		! 2/3	
+C delta-eddington transformation
+	F = GIN**2		!  JWW eq. 5 for f'
+	OMF=ONE-F
+	G = (GIN-F)/OMF		!  JWW eq. 2b for g'
+	OMFA0=one-F*A0
+	T1 = OMFA0*TAU		!  JWW eq. 13 for tau'
+	X = T1/COSI		!
+	IF (X.LT.EXPMAX) THEN
+	  EMTC = EXP(-X)	! exp (- tau'/mu_0)
+	ELSE
+	  EMTC = ZERO		! outside machine range,  set=0 
+	ENDIF
+
+!  Non-conservative case ----- [ conservative case coded in DEDING1 ]
+
+	A = OMF*A0/OMFA0        !  JWW eq. 14 for omega'
+	OMA = ONE-A		! 1 - scaled albedo (used in 4 places)
+
+C  Eddington 2-stream single homogeneous layer
+C note. integral from -1 to +1 of   u*(x*u) du   is 2/3 x.  u = cos theta
+	CAP = SQRT (THREE*OMA*(one-A*G)) ! eq. 12b+1 for kappa_i ->0 as  A0->0
+	P = SQRT (THREE*OMA/(one-A*G))   ! eq. 12b+2 for p_i     ->0 as  A0->0
+C if  P=0, then  V1=V2 &  V4=V5 &  VDET=0
+C	if (p .lt. 1.e-4) P=1.e-4 ! avoid pole
+
+	F0 = one/PI				! unit irradiance
+	FACTOR=THREE*A*F0*COSI / (FOUR*(one-(CAP*COSI)**2))! used in next 2 lines
+	ALPHA = FACTOR* COSI*(one+G*OMA)		! eq. 12b+3 for alpha_i
+	BETA =  FACTOR* (one+THREE*G*OMA*COSI**2)	! eq. 12b+4 for beta_i
+
+C set up simultaneous equations
+CC [ V1 V2 ] [C1] = [V3]
+CC [ V4 V5 ] [C2]   [V6]
+	V1 = one+TT*P		! coefficients of eq. 13
+	V2 = one-TT*P
+	V3 = ALPHA+TT*BETA
+	CAPT = CAP*T1
+	IF (CAPT.LT.EXPMAX) THEN	! within machine floating-point range
+		EPKT = EXP(+CAPT)
+		EMKT = EXP(-CAPT)
+		T1A = TT*(one+ASUR) 	! used in 3 places
+C v4,v5,v6 are coeff. of eq. 14
+		V4 = (one-ASUR-T1A*P)*EMKT	! can get small
+		V5 = (one-ASUR+T1A*P)*EPKT	! can get large
+		V6 = ((one-ASUR)*ALPHA-T1A*BETA+ASUR*COSI*F0)*EMTC
+
+		VDET = V1*V5 - V4*V2		! determinant of eq. 13 and 14
+C determinant goes to  V1*V5 as tau gets large
+		C1 = (V3*V5-V6*V2)/VDET
+		C2 = (V1*V6-V4*V3)/VDET
+C Use LU decomp. to solve. 2002jul20. Confirmed that above C1,C2 correct.
+!		vv(1,1)=v1
+!		vv(1,2)=v2
+!		vv(2,1)=v4
+!		vv(2,2)=v5
+!		bb(1)=v3
+!		bb(2)=v6
+!		call ludcmp(vv,2,2,indx,d1) ! preform LU decomposition
+!		call lubksb(vv,2,2,indx,bb) ! solve for specific RHS.
+!		write(*,*) vdet,c1,c2
+!		write(*,*) 'bb=',bb
+!		c1=bb(1)
+!		c2=bb(2)
+c		write(*,*) v1,v2,v3
+c		write(*,*) v4,v5,v6
+c		write(*,*) vdet,c1,c2
+	    ELSE			! output semi-infinite case
+		EMKT = ZERO
+		C1 = V3/V1
+		C2 = ZERO
+	    ENDIF
+C thru ALPHA, BETA, V3 and V6, all the RI include a COSI factor in every term!
+	RI(1,1) = C1+C2-ALPHA			  !  I0_top	eq. 12a@tau=0
+	RI(2,1) = P*(C1-C2)-BETA		  !  I1_top	eq. 12b@tau=0
+	RI(1,2) = C1*EMKT + C2*EPKT - ALPHA*EMTC  !  I0_bot	eq. 12a
+	RI(2,2) = P*(C1*EMKT-C2*EPKT) - BETA*EMTC !  I1_bot	eq. 12b
+
+	BOND = PI*(RI(1,1)-TT*RI(2,1))/COSI		! eq. 8 & 11
+	COLL = EMTC	! direct beam per its cross-section
+	RETURN
+	END
+
+C======================================================================
+	REAL*4 FUNCTION ECCANOM (ECC,ANOM)
+C_Title  ECCANOM iterative solution of  Kepler's equations for eccentric orbit.
+	IMPLICIT NONE
+C_Args
+	REAL*4 ECC	!i. eccentricity of orbit
+	REAL*4 ANOM	!i. mean anomoly <radians>
+C 	REAL ECCANOM	!f. ECCENTRIC anomoly <radians>
+C_Keys  ORBITAL  GEOMETRY
+C_Desc
+C anom=mean anomaly = 2*pi*(time_from_periapsis / period)
+C e=eccentric anomaly
+C  Keplers equation: e = anom + ecc * sin (e)
+C  Initial guess is equal to 2 iterations plus an approximate curvature term
+C   If has not converged in  NTRY trys, returns the last estimate + 2 pi.
+C_Lims
+	INTEGER*4 NTRY /20/	! maximum number of iterations
+	REAL*4 ACCUR /0.5E-6/	! accuracy goal <radians>
+C_Calls:  [SIN,COS,SQRT,AMOD]
+C_Hist
+C	89dec08  Hugh_H_Kieffer  U.S.G.S._Flagstaff,  Derived from  ORBIT
+C 2005dec28 HK Change to use of IMPLICIT NONE.
+C 2012mar30 HK Explicit *4 for word size 
+C_End&___1_________2_________3_________4_________5_________6_________.72
+	REAL*4 	TWOPI /6.28318531/
+        INTEGER*4 I
+        REAL*4 E,DANOM,EE,ACC
+C initial guess
+	E=ANOM+ ECC*SIN(ANOM) + ECC**2 *SIN(2.0*ANOM)/2.0
+C iterate keplers equation
+	DO  I=1,NTRY
+	   DANOM= ANOM-E+ECC*SIN(E)
+	   EE= E+DANOM/(1.0-ECC*COS(E))
+	   ACC= ABS(E-EE)
+	   IF (ACC.LE.ACCUR) GO TO 110
+	   E= EE
+	ENDDO
+C	TYPE * 'WARNING, ECCANOM accuracy not reached for:',ANOM,ecc
+	EE = EE+TWOPI		! add 2 pi as indication of non-conergence
+110 	ECCANOM = EE
+	RETURN
+	END
+
+C======================================================================
+        REAL FUNCTION EPRED (Y,X,IDIM,YMIN,YMAX)
+C_Title:  EPRED  Exponetial Prediction of numerical iteration
+      IMPLICIT NONE
+C_Args:
+	INTEGER IDIM	 ! spacing of points in y-array
+        REAL Y(IDIM,*) !in. array beginning with 2 before last value;
+C                        !     assuming uniform spacing in x
+        REAL X         !in. prediction point,  FORWARD beyond 3rd point
+        REAL YMIN,YMAX !in. limits of allowed prediction range
+C_Desc
+C 3-point prediction; assumes asymptotic exponential form.
+C   y = c0 + c1 * exp (c2 * x);  WHERE c2 is <0. or y=c0+c1*r^x where r<1.
+C  IF not asymptotic (c2 >= 0.) does linear prediction using last 2 points
+C  If  X <  XLIN (below)  then uses linear relation between first two points.
+C  Thus, one can call this routine with only 2 y-values defined,
+C   but must remember that the x-origin is at the [virtual] 3rd point.
+C  However, MUST NOT call this routine with only 2 points and  X>=XLIN.
+C_Lim
+	REAL XLIN / -0.9 / ! minimum value for exponential form
+Calls: none
+C_Hist h.kieffer 1984jun03
+c  98sep03  HHK make linear for  X<XLIM, which allows use with 2 points
+C 2005dec28 HK Change to use of IMPLICIT NONE
+C_End&789012345678901234567890123456789012345678901234567890123456789012_456789
+
+        REAL D,DL,R,YP
+C_End of Typing_________________________________________________________
+
+C d=y3-y2   dl=y2-y1   r=(y3-y2)/(y2-y1)
+C c1 = d/(1 - 1/r)    c0 = y3 - c1    y=y3+[d/(1/r -1)](1-r^x)
+
+        DL = Y(1,2) - Y(1,1)    ! slope between first 2 points
+        IF (X .LT. XLIN) THEN   ! y3 may not be defined
+           YP=Y(1,2)+(X+1.)*DL  ! linear fit to first 2 points
+           GOTO 9
+        ENDIF
+
+        YP = Y(1,3)              ! last good point
+        IF (DL.EQ.0.) GOTO 9    ! no change between last two points
+
+        D = YP - Y(1,2)
+        R = D/DL                ! ratio of successive changes
+        IF (R.GT.0.0 .AND. R.LT.1.0) THEN ! asymptotic form
+           YP = YP + (D/(1./R-1.) ) * (1. -R**X)
+        ELSE                    ! linear form
+           YP = YP + X*D
+        ENDIF
+ 9      EPRED = MIN( YMAX, MAX (YP,YMIN)) ! check bounds
+        RETURN
+        END
+
+C======================================================================
+      SUBROUTINE EVMONO3 (CC,M,XX,XOFF,XMUL, YY)
+C_Titl  EVMONO3  Evaluate monomial of 3rd degree for a vector input, with scaling
+      IMPLICIT NONE
+      REAL CC(4)              ! in.  Coefficents
+      INTEGER M               ! in.  Number of independent values
+      REAL XX(M)              ! in.  Independent values
+      REAL XOFF               ! in.  Value to subtract from all  XX
+      REAL XMUL               ! in.  Multiply factor for offset  XX
+      REAL YY(M)              ! out. Dependant values
+C_Hist 2008nov04  Hugh  Kieffer: for thermal conductivity
+C 2010jan09 HK  Replace do loop for powers with explicit code 
+C 2012feb26 HK  Remove unused variables
+C_End
+      INTEGER J
+      REAL X
+
+      DO J=1,M                  ! each input value
+         X=(XX(J)-XOFF)*XMUL
+         YY(J)=(((CC(4)*X)+CC(3))*X+CC(2))*X+CC(1)
+      ENDDO
+
+      RETURN
+      END
+
+C======================================================================
+	REAL FUNCTION FINTERP (XIN,XX,N,YY)
+C_Titl  FINTERP  Floating-point interpolation of Y for monotonic X
+	IMPLICIT  NONE
+C Function will be Y at X limits if  XIN  not within  XX limits
+C_Args
+	REAL*4  XIN	! [i] value to be located within the array
+	REAL*4  XX(1)	! [i] array to be searched; should be monotonic;
+C				but can be of either slope.
+	REAL*4  YY(1)   ! [i] array of dependant values
+	INTEGER  N	! [i] size of array
+C_Desc  Uses binary search, and then linear interpolation within last interval.
+C_Calls  0
+C_Hist  2011jul31 HK  Use search code with NumRec LOCATE algorithm
+C_End
+	REAL F
+	INTEGER  JL,JM,JU
+	LOGICAL INC
+
+C NumRec LOCATE  algorithm: 	
+	JL=0			! lower test point index
+	JU=N+1			! upper "
+	INC = XX(N).GT.XX(1)	! true if table is increasing
+ 10	IF (JU-JL.GT.1) THEN	! need to narrow range further
+	   JM=(JU+JL)/2		! middle point
+	   IF (INC .EQV. (XIN.GT.XX(JM))) THEN 
+	      JL=JM
+	   ELSE
+	      JU=JM
+	   ENDIF
+	   GOTO 10
+	ENDIF
+C at this point, JL is the index at lower end of interval containing X
+C JL = 0 or N means X is outside the table
+	IF (JL.EQ.0) THEN	! request below end of table
+	   FINTERP=YY(1)	! return lower end
+	   GOTO 9
+	ELSEIF (JL.EQ.N) THEN	! request above end of table
+	   FINTERP=YY(N)	! return upper end
+	   GOTO 9
+	ELSE
+	   F = (XIN-XX(JL))/(XX(JU)-XX(JL)) ! fractional way into the interval
+	   FINTERP = YY(JL)+F*(YY(JU)-YY(JL))! linear interpolation
+	ENDIF
+
+9	RETURN
+	END
+
+C======================================================================
+      FUNCTION IDARCH(ARCH)
+      IMPLICIT NONE
+C**********************************************************************
+C_Title idarch Returns the running architecture as a string ident
+C_Args
+      CHARACTER*(*) ARCH             ! O   Returns a string identifying the
+C                                          current running architecture.
+C                                          Possible values are:
+C                                             UNK    - Unknown/indetermined
+C                                             SPARC  - SUN Solaris or SunOS
+C                                             PCI    - Intel PC based system
+C                                             ALPHA  - DEC Alpha
+C                                             SGI    - Silicon Graphics
+      INTEGER*4     IDARCH           ! O   Returns a numerical value that
+C                                          corresponds to the current
+C                                          system architecture.  Possible
+C                                          values are:
+C                                              0 - Unknown/indetermined
+C                                              1 - SUN SPARC Solaris or SunOS
+C                                              2 - PC w/Intel Inside
+C                                              3 - DEC ALPHA w/Digital Unix
+C                                              4 - SGI Irix
+C                                              5 - X86_64 Architecture
+      
+C_Descr idarch will return the system architecture that this routine
+C       is built on.  This implies that the architecture is determined
+C       at the compilation phase by compiler defines.  This further
+C       implies that this routine needs to be fed to the language
+C       preprocessor.  On most Unix-based systems, this is automatic
+C       if the source file ends in .F.
+
+C_Keys SYSTEM
+
+C_Hist May 12 1998 Kris Becker Flagstaff Original implementation
+C 98may12  HHK modify returned values
+C      Apr 01 2008 Kris Becker Added X86_64 architecture, string is
+C                              increased in size to at least 6 chars
+C_End
+C**********************************************************************
+
+C*******************************************************************
+C  Let the preprocessor do the determination for us.
+C*******************************************************************
+#if defined(sparc) || defined(sun) 
+      ARCH = 'sparc '
+      IDARCH = 2
+#elif defined(msdos) || defined(__i386__) || defined(__i486__)
+      ARCH = 'x86   '
+      IDARCH = 1
+#elif defined(__osf__) 
+      ARCH = 'alpha '
+      IDARCH = 3
+#elif defined(sgi) || defined(__sgi)
+      ARCH = 'sgi   '
+      IDARCH = 4
+#elif defined(__x86_64__) || defined(__amd64__)
+      ARCH = 'x86_64'
+      IDARCH = 5
+#else
+      ARCH = 'unknow'
+      IDARCH = 0
+#endif
+      RETURN
+      END
+
+
+C======================================================================
+	SUBROUTINE ORBIT (SMA,PERIOD,ECC,TPER, RADF,XX)
+C_TITL  ORBIT  Compute radius and coordinates for elliptical orbit. DefPrec.
+	IMPLICIT NONE
+C_ARG
+	REAL SMA        !I. semimajor axis, in units desired for  XX.
+	REAL PERIOD 	!I. orbital period in same units as  TPER
+	REAL ECC 	!I. eccentricity of orbit
+	REAL TPER	!I. request time from periapsis, same units as  PERIOD
+	REAL RADF	!O. current distance from focus, in units of  SMA.
+C			   Will be set negative if eccentric anomoly 
+C			   computation not fully accurate. 
+	REAL XX(3)	!O. cartesian position of body in system with "z" toward
+C			  positive pole of orbit, "x" toward periapsis
+C_Calls  ECCANOM  [SIN,COS,SQRT,AMOD]
+C_Hist 84may29  Hugh_H_Kieffer  From earlier versions ~69,~78
+C 1989dec11  HK  Move determination of eccentric anomoly into  ECCANOM
+C 2005dec28  HK  Change to use of IMPLICIT NONE
+C 2012mar02  HK  Clean up names and case. no change to algorithm
+C_END
+	REAL TWOPI/6.283185307179586/
+	REAL ANOM,EE,CE
+	REAL ECCANOM		! function
+
+	RADF=SMA
+	ANOM=AMOD(TWOPI*TPER/PERIOD,TWOPI)	! calc. mean anomoly
+	EE=ECCANOM(ECC,ANOM)			! get eccentric anomoly
+	IF (EE-ANOM.GT.4) RADF=-SMA  !  eccanom did not reach desired accuracy
+	CE=COS(EE)
+	XX(1)= SMA * (CE-ECC)
+	XX(2)= SMA * SQRT(1.-ECC**2) *SIN(EE)
+	XX(3)= 0.
+	RADF=RADF*(1.-ECC*CE)
+	RETURN
+	END
+
+C======================================================================
+	SUBROUTINE  PORB0
+C_Titl PORB0 Planetary orbit. Read pre-computed matrices and do rotation; minimal for KRC
+C_HIST	97jan30  HHK revised from  PORB1
+C 2005dec28 HK Change to use of IMPLICIT NONE
+C_END
+      IMPLICIT NONE
+	INCLUDE 'units.inc'
+	INCLUDE 'porbcm.inc'
+
+	REAL P(60)		! blcvk of 60 floats to read
+	EQUIVALENCE (P,PLANUM)	! correspond to start of common
+	logical LOP		! debug print
+	LOP=IDB1.GT.3
+	IF (LOP) WRITE(IOSP,*)'PORB0 1'
+	READ(IOIN,33)	! skip the line of PORB runtime
+	IF (LOP) WRITE(IOSP,*)'PORB0 2'
+	READ(IOIN,33) P
+	IF (LOP) WRITE(IOSP,33)p
+	IF (LOP) WRITE(IOSP,*)'PORB0 3'
+33	FORMAT (5G15.7) 
+	PICON=3.141592654 ! ensure value in porbcm set.
+	IF (LOP) WRITE(IOSP,*)'PORB0 4'
+	RETURN
+	END
+
+C======================================================================
+      SUBROUTINE PORB (TJ, PER,PEA,PEB,HFA,HFB)
+C_TITLE	PORB computes planetary angles and location for specific time.
+      IMPLICIT NONE
+C_ARGS	e.g.  WEIGHT (10) R*4 [I]  Weighting factors
+      REAL TJ !in. request time in same units as used in common (julian day).
+C outputs:   all returned angles in radians
+      REAL pea ! latitude       position of a planet 
+      REAL peb ! longitude         in heliocentric ecliptic
+      REAL per ! radius            coordinates.
+      REAL hfa ! latitude       position of sun in
+      REAL hfb ! longitude        planetocentric fixed coordinates.
+C_VARS
+	INCLUDE 'porbcm.inc'
+C_DESCR	conic orbit; uses solution to Keplers equation
+C_CALLS ORBIT ROTVEC /PORBCM/=PROBCM.INC
+C_HIST	70xxxxx HHKieffer UCLA ORIGINAL VERSION
+C 75sep29 HHK recode ?
+C 84may29 HHK VAX version
+C 85jan13 HHK revised PORBCM
+C 85sep14 HHK change called routine argument order to agree with *SP system
+C 2010jan12 HK Use IMPLICIT NONE
+C 2012nov08  HK Change ROTATE to ROTVEC to ensure getting proper routine
+C_END
+C
+        REAL T
+      T = TJ-TJO
+      CALL ORBIT (SJA,OPERIOD,ECC,T, PER,PHOXX)
+      CALL ROTVEC (EO,PHOXX, PHEXX)
+      PEA = ASIN (PHEXX(3)/PER)
+      PEB = ATAN2 (PHEXX(2),PHEXX(1))
+C PHOXX is vector from focus (sun) to planet in orbital plane
+C PHEXX is vector from focus to planet in equitorial system
+C HFXX  is vector from planet to sun in planetocentric-fixed system
+      CALL ROTVEC (HO,PHOXX, HFXX)
+      HFA = ASIN (HFXX(3)/PER)
+      HFB = ATAN2 (HFXX(2),HFXX(1) )
+      RETURN
+      END
+
+C======================================================================
+      INTEGER FUNCTION READTXT360 (FNAME,IOD, XXX,YYY)
+C_Titl  READTXT360  Read 2-column text file of REAL values
+      IMPLICIT  NONE
+C_Args
+      CHARACTER*80 FNAME        ! in. File name
+      INTEGER IOD               ! in. Available logi. unit
+      REAL XXX(*)               ! both.  Values from first column, [date]
+      REAL YYY(*)               ! both.  Values from 2nd  column
+      INTEGER KK                ! Function out Number of defined entries
+
+C_Desc
+C Reads an Text table of two columns, white-space separated
+C Columnar table must be immediately preceeded by a line beginning:  C_END
+C Before that may be up to 9 lines of free-form comments
+C Assumes first column is Modulo 360, and prepends and appends values
+C  to avoid later wrap-around
+C Returns -1 if error occurs
+C_Hist  Hugh_Kieffer  2006sep09
+C 2008mar31 HK integer >> INTEGER
+C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
+
+C Local variables
+      INTEGER MROW,MSKIP
+      PARAMETER (MROW=362)      ! max number of table entries
+      PARAMETER (MSKIP=10)      ! max number of lines to skip through C_END
+      INTEGER IOERR             ! logi. unit for reporting errors
+      PARAMETER(IOERR=6)
+      CHARACTER*80 RBUF
+      REAL XIN,YIN
+      INTEGER IOST              ! error status
+      INTEGER I,J
+
+      KK=-1                   ! possible error flag
+      
+D      WRITE(*,*)'FNAME=',fname
+      OPEN (UNIT=IOD,FILE=FNAME,STATUS='OLD',IOSTAT=IOST,ERR=81)
+C     Skip past the C_END line
+      DO I=1, MSKIP
+        READ (IOD,'(A80)',ERR=82,END=30) RBUF ! read into character buffer
+D        WRITE (*,*) I,RBUF
+        J=INDEX(RBUF,'C_END')
+        IF (J.GT.0 .AND. J.LT.5) GOTO 30
+      ENDDO
+
+C read single lines until a negative season [ indicating all done]
+ 30   DO I=2, MROW-1
+        READ (IOD,*,ERR=83,END=40), XIN,YIN 
+D       WRITE (*,*) I,XIN,YIN
+        XXX(I)=XIN
+        YYY(I)=YIN
+        KK=I
+      ENDDO
+
+C Fabricate first and last point to avoid wrap-araound later
+ 40   CONTINUE
+      XXX(1)=XXX(KK)-360.       ! wrap last point to negative LS
+      YYY(1)=YYY(KK)
+      KK=KK+1
+      XXX(KK)=XXX(2)+360.       ! wrap first point to > one year
+      YYY(KK)=YYY(2)
+
+ 9    READTXT360=KK
+D      write (*,*)' READT kk=',kk
+      CLOSE (IOD)
+      RETURN
+
+C error section
+ 81   WRITE(IOERR,*)'READTXT360 error opening input file =',FNAME
+      WRITE(IOERR,*),'IOSTAT=',IOST
+      GOTO 9
+
+ 82   WRITE(IOERR,*)'READTXT360 unexpected end-of file ',FNAME,I
+      GOTO 9
+ 
+ 83   WRITE(IOERR,*)'READTXT360 error reading a data line',FNAME,I
+      GOTO 9
+
+      END
+
+C======================================================================
+	SUBROUTINE R2R(RA,RB,N)
+C_TITL  R2R   Real-to-real array move or fill
+C_ARGS
+	REAL RA(1)  ! [In]  Source array or constant
+	REAL RB(1)  ! [Out] Destination array
+	INTEGER N   ! [In]  Number of items to move:
+C			     If  N>0, copies the source array	
+C			     If  N<0, replicates the first item in  RA
+C			     Into  RB  |N| times.  I.e., fill  RB
+C			      with a constant value.
+C_DESC  Note:  Can be used to move single value or to move
+C	binary words between variables of different type.	
+C	Macro version checks absolute location of arrays and
+C	goes forward or backward through arrays as required
+C	to insure source values are not overwritten before
+C	being read.
+C	*****  fortran version does not have overlap protection  *****
+C_HIST  70--  Hugh_H_Kieffer at  UCLA
+C	78--  Eric_Eliason  Macro version into system library
+C	81Oct18  HHK  Fortran version
+C_PAUS
+	IF(N) 2,9,5
+2	III=-N
+	RA1=RA(1)
+	DO 4 I=1,III
+4	RB(I)=RA1
+	GOTO 9
+5	III=N
+	DO 7 I=1,III
+7	RB(I)=RA(I)
+9	RETURN
+	END
+
+C======================================================================
+      SUBROUTINE ROTV (A,N,R, B) ! b = [r_n]*a
+C_Title  ROTV  Rotate a vector about a Cartesian axis
+      REAL*4 a(3) ! in.  original vector
+      INTEGER n   ! in.  Integer axis about which to rotate. 1=X, 2=Y, or 3=Z
+      REAL*4 r    ! in.  Size of rotation, in radians.
+      REAL*4 b(3) ! out. New vector
+C_Desc  
+C   Component along axis of rotation is not changed.
+C   Other two components subject to simple rotation
+C_Calls  none
+C_Hist 2002dec11 Hugh Kieffer  IDL version
+C 2012may31  HK  Fortran version
+C_End
+
+      C = COS(R)
+      S = SIN(R)
+!     Get indices as if rotation was about Z! which reduces this to rotation 
+!     effectively in XY plane.  Must keep all MOD positive
+      i=  mod(n+3,3)+1          ! 0-based location of effective X
+      j=  mod(n+1,3)+1          ! " " Y
+      k=  mod(n+2,3)+1          ! rotation axis 
+      xin=a(i)                  ! effective X input
+      yin=a(j)                  !  " Y "
+      b(i)= c*xin - s*yin       ! do the rotation, put X in proper location
+      b(j)= s*xin + c*yin       ! " Y "
+      b(k)=a(k)                 ! component along rotation axis is unchanged
+      RETURN
+      END
+
+C======================================================================
+
+        SUBROUTINE ROTVEC (B,V, U)
+C_Title  ROTVEC Apply rotation matrix to rotate a vector   !  U =  B *  V
+C_Arguments
+        REAL*4 B(9)     ![I] 3x3 Rotation matrix.
+        REAL*4 V(3)     ![I] Original vector.
+        REAL*4 U(3)     ![O] Rotated vector, must not be same array as V.
+C_Keys
+C_Desc  straight-forward product of rotation matrix and original vector.
+C_Calls 0
+C_History       1985April H.Kieffer argument order revised
+C               1985Oct15 H.Kieffer standard documentation
+C  2004sep28 HK Rename  rotate.f  to avoid conflict with NumRec routine
+C_Pause
+        DO I=1,3
+          U(I)=B(I)*V(1)+B(I+3)*V(2)+B(I+6)*V(3)
+          ENDDO
+        RETURN
+        END
+
+C======================================================================
+      REAL FUNCTION SEASALB (LSUB)
+C_Titl  SEASALB:  seasonally variable soil albedo
+      IMPLICIT  NONE
+      INTEGER MROW,MSKIP
+      PARAMETER (MROW=362)      ! max number of table entries
+      PARAMETER (MSKIP=10)      ! max number of lines to skip through c_end
+C_Vars
+      INCLUDE 'units.inc'
+      INCLUDE 'filcom.inc'
+
+C_Args
+      REAL LSUB               !in. season; l-sub-s in degrees.
+C  If large negative, will read file and save values
+C_Desc
+C initally reads an text table of two colums; l-sub-s and albedo
+C for each positive date request . does linear interpolation, with wrap around.
+C output will be negative if error occured
+C_Hist  Hugh_Kieffer  2006sep09
+C 2011jul31 HK  Use  FINTERP rather than  RNDEX (which was failing) and RNTERP
+C 2012feb26 HK Remove unused variables
+C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
+
+C local variables
+      REAL XXX(MROW)            ! holds the table of  Ls in degrees
+      REAL YYY(MROW)            ! holds albedo on that date
+      INTEGER KK                ! number of defined dates
+      REAL G,OUT
+      REAL FINTERP              ! called function
+      INTEGER READTXT360        ! called function
+      SAVE XXX,YYY,KK
+      OUT=-1.                   ! possible error flag
+
+      IF (LSUB .LT. -90.)  THEN ! read the file
+        KK=READTXT360(FVALB,IOD3,XXX,YYY)
+D        WRITE (*,*) 'SEASALB FVALB=', FVALB
+D        WRITE (*,*) 'SEASALB kk=', KK
+D       DO I=1,KK
+D          WRITE (*,*) I,XXX(I),YYY(I)
+D        ENDDO
+        OUT=KK
+        IF (KK.LT. 1)
+     +          WRITE(IOERR,*)'SEASALB error opening input file =',FVALB
+
+        ELSE                    ! interpolate
+
+          G=AMOD(LSUB,360.)     ! insure within 0. to 360..
+          OUT=FINTERP(G,XXX,KK,YYY)   ! linear interpolation 
+      ENDIF
+
+      SEASALB=OUT
+D     WRITE (*,*) 'SEASALB lsub,g,out=', LSUB,G,OUT
+      RETURN
+      END
+
+
+C======================================================================
+      REAL FUNCTION SEASTAU (LSUB)
+C_Titl  SEASTAU:  seasonally variable atmosphereic  tau
+      IMPLICIT  NONE
+      INTEGER MROW,MSKIP
+      PARAMETER (MROW=362)      ! max number of table entries
+      PARAMETER (MSKIP=10)      ! max number of lines to skip through c_end
+C_Vars
+      INCLUDE 'units.inc'
+      INCLUDE 'filcom.inc'
+
+C_Args
+      REAL LSUB               !in. season; l-sub-s in degrees.
+C  If large negative, will read file and save values
+C_Desc
+C initally reads an text table of two colums; l-sub-s and tau
+C for each positive date request . does linear interpolation, with wrap around.
+C output will be negative if error occured
+C_Hist  Hugh_Kieffer  2006sep09
+C 2011jul31 HK  Use  FINTERP rather than  RNDEX (which was failing) and RNTERP
+C 2012feb26 HK  Remove unused variables
+C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
+
+C local variables
+      REAL XXX(MROW)            ! holds the table of  Ls in degrees
+      REAL YYY(MROW)            ! holds tau on that date
+      INTEGER I,KK              ! number of defined dates
+      REAL G,OUT
+      REAL FINTERP              ! called function
+      INTEGER READTXT360        ! called function
+      SAVE XXX,YYY,KK
+
+D      IF (IDB5.GT.3) WRITE(*,*)'SEASTAU',LSUB,kk,yyy(1),yyy(kk) ! <<<<< temporary
+      OUT=-1.                   ! possible error flag
+
+      IF (LSUB .LT. -90.)  THEN ! read the file
+         KK=READTXT360(FVTAU,IOD3,XXX,YYY)
+         IF (IDB5.NE.0) THEN
+            WRITE (*,*) 'SEASTAU FVTAU=', FVTAU
+            WRITE (*,*) 'SEASTAU kk=', KK
+            DO I=1,KK
+               WRITE (*,*) I,XXX(I),YYY(I)
+            ENDDO
+         ENDIF
+        OUT=KK
+        IF (KK.LT. 1)
+     +          WRITE(IOERR,*)'SEASTAU error opening input file =',FVTAU
+
+        ELSE                    ! interpolate
+
+          G=AMOD(LSUB,360.)     ! insure within 0. to 360.
+          OUT=FINTERP(G,XXX,KK,YYY)   ! linear interpolation 
+          IF (IDB5.GT.1) WRITE(*,*)'SEASTAU',LSUB,G,OUT
+      ENDIF
+
+      SEASTAU=OUT
+D     WRITE (*,*) 'SEASTAU lsub,out=', LSUB,G,F,OUT
+      RETURN
+      END
+
+C======================================================================
+	SUBROUTINE SIGMA (BUF,N, AVE,SIG)
+C_TITLE	SIGMA Computes mean and standard deviation of real array 
+C_ARGS
+	REAL*4 BUF(*)   ! [In] array
+	INTEGER N 	! [In]  number of items in BUF
+	REAL*4 AVE 	! [Out] average value of input array
+	REAL*4 SIG	! [Out] standard deviation of input array
+C		will be 0. if  N less than 2.
+C_KEYS	MATH STATISTICS 
+C_DESC Sums the values and value_squared for entire array, then computes 
+C   mean and standard deviation from these sums.
+C_CALLS 0
+C_LIMS  Could overflow REAL sum_squares 
+C_HIST	85Jan09  Hugh_H_Kieffer  U.S.G.S. Flagstaff  ORIGINAL  VERSION
+C	86Dec06  HHK Revised to handle  N=1 properly (adapted from
+C			byte version). 
+C_END
+
+	SIG=0.			! set here in case N<2
+	IF (N.LT.1) THEN 	! not enough points 
+		AVE=0.
+		RETURN
+	   ENDIF
+	P=N		! need real number_of_points for formulas
+	S=0.		! initialise the sums
+	SS=0.
+	DO I=1,N
+		X=BUF(I)
+		S=S+X		! sum the values
+		SS=SS+X*X	! sum the values-squared
+		ENDDO
+	AVE=S/P			! average
+	IF (N.GT.1) SIG=SQRT((SS-2.*AVE*S+P*AVE*AVE)/(P-1.))	! standard dev.
+	RETURN
+	END
+
+C======================================================================
+	SUBROUTINE TCARD (IQ,IRET)
+C_Titl  TCARD data input routine for  KRC system
+C_Vars
+	INCLUDE 'krccom.inc'	! has IMPLICIT NONE
+	INCLUDE 'latcom.inc'
+	INCLUDE 'daycom.inc'
+	INCLUDE 'filcom.inc'
+	INCLUDE 'units.inc'
+C       INCLUDE 'titcom.inc'  
+C_Args
+	INTEGER IQ	!in.	1 = read full set and optional changes
+C                                   or start from disk
+C				2 = read change cards
+	INTEGER IRET	!out. status.  1 = normal start
+C			2 = restarted from disk record
+C       		3 = continue from current conditions
+C			4 = Switch to "one-point" mode
+C			5 = END of data
+C_Hist	85sep22  Hugh_H_Kieffer  First version was ~ 1971
+C 87nov22  HK  Put in report if any input item reset
+C 93mar93  ECisneros ported to unix
+C 97jan30  HK  Changed name of  PORB call
+C 98sep04  HK  Relax some constraints on  IB  &  N1
+C 99dec07  HK  Add 'continue from memory' option
+C 2006mar22  HK If I/O error on read of full card set, prints all current values.
+C 2008oct02  HK  Replace  ID22(1) and (2) with  KVALB and  KVTAU
+C 2008nov13  HK  Add  T-dependent conductivity parameters
+C 2009feb24  HK  Briefly try using titcom.inc and block data for parameter titles
+C 2009may10  HK  Add  TITONE as one-point comment field, Add 1. to start date
+C 2010jan12  HK  Use  IMPLICIT NONE
+C 2010feb17  HK  Add T-dependent specific heat 
+C  User can then look to see where zeros start as indication of error location.
+C 2010jan23  HK  Fix error that allowed one-point mode to exit without limit check
+C 2010apr21  HK  Add option for reading debug control integers
+C 2011jul16  HK  Fix so  IC=0 does not generate error message for each case
+C 2011jul31  HK  Add print of debug flags if they are read
+C 2010feb26  HK  -Wall yields 'initialization string truncated to match variable'
+C         at  SPEC_HEAT in DATA statement
+C 2012mar27  HK  Incorporate  CLIMTAU
+C 2012oct31 HK Minor format changes. Increment NRUN upon new file
+C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
+
+	INTEGER LNBLNK ! intrinsic function, need this because of implicit  L
+	REAL*4 ALSUBS,SEASALB,SEASTAU,CLIMTAU ! functions
+	REAL*4 QB,QF,XREAD	! temporary 
+	CHARACTER TEXT*74
+	CHARACTER RBUF*80 ! internal file buffer
+	CHARACTER*8 WHAT ! distinguish what was expected to read 
+	INTEGER NFDR,NIDR,NLDR
+        PARAMETER(NFDR = 64)            ! # of  REAL input variables
+        PARAMETER(NIDR = 20)            ! # of  INTEGER input variables
+        PARAMETER(NLDR = 20)            ! # of  LOGICAL input variables
+        CHARACTER*8 TITF(NFDR) 
+        CHARACTER*6 TITI(NIDR) 
+        CHARACTER*6 TITL(NLDR) 
+
+        INTEGER I,IG,IIIN,ILEN,IREAD,JERR,KEEP,KOUNT,NEW,KDB
+
+	DATA TITF /'ALBEDO','EMISS','INERTIA','COND2','DENS2','PERIOD' !6
+     & ,'SPEC_HEAT','DENSITY','CABR','AMW','ABRPHA','PTOTAL','FANON'   !7
+     & ,'TATM','TDEEP','SpHeat2','TAUD','DUSTA','TAURAT','TWILI'       !7
+     & ,'ARC2','ARC3','SLOPE','SLOAZI','TFROST','CFROST','AFROST'      !7
+     & ,'FEMIS','AF1','AF2','FROEXT','spare','RLAY','FLAY','CONVF'     !8
+     & ,'DEPTH','DRSET','DDT','GGT','DTMAX','DJUL','DELJUL','SolarDec' !8
+     & ,'DAU','L_S','SOLCON','GRAV','Atm_Cp','ConUp0','ConUp1','ConUp2' !8
+     & ,'ConUp3','ConLo0','ConLo1','ConLo2','ConLo3','SpHUp0','SpHUp1' !7
+     & ,'SpHUp2','SpHUp3','SpHLo0','SpHLo1','SpHLo2','SpHLo3'/ !6  total 64
+
+	DATA TITI /'N1','N2','N3','N4','N5','N24','IB','IC'
+     & ,'NRSET','NMHA','NRUN','JDISK','IDOWN','I1','I15','KPREF'
+     & ,'K4OUT','JBARE','NMOD','IDISK2'/
+
+	DATA TITL /'LP1','LP2','LP3','LP4','LP5','LP6'
+     & ,'LPGLOB','LVFA','LVFT','LKofT','LPORB','LKEY','LSC','LNOTIF'
+     & ,'LOCAL','LD16','LPTAVE','Prt.78','Prt.79','L_ONE'/
+
+	IF (IDB2.GE.5) WRITE(IOSP,*) 'TCARD-A',IQ
+C
+	IRET=1			! normal return is a new case
+	IF (J5.GT.1 .AND. J5.EQ.IDOWN) IRET=3 ! continue after changes
+	KOUNT=0			! Number of change cards read
+	JERR=0			! in case of IO error
+D	WRITE(*,*)'TCARD entry  IQ,J5=',IQ,J5 !< dbug
+D	WRITE(IOSP,*)'TCARD entry  IQ,J5=',IQ,J5 !< dbug
+	GO TO (100,160), IQ
+C
+C initiate commons from input file or from disk saved record  (IQ = 1)
+100	NFD=NFDR ! transfer sizes into common
+	NID=NIDR
+	NLD=NLDR
+	KDB=0
+	IDB1=0
+	IDB2=0
+	IDB3=0
+	IDB4=0
+	IDB5=0
+	IDB6=0
+        READ (IOIN,*) KOLD,KEEP,KDB ! get: 0=input card set,  >0 = disk record
+	IF (KDB.NE.0) THEN ! Read and print debug flags
+	   READ (IOIN,*) IDB1,IDB2,IDB3,IDB4,IDB5,IDB6
+	   WRITE(*,*)   'IDB1:6=',IDB1,IDB2,IDB3,IDB4,IDB5,IDB6
+	   WRITE(IOSP,*)'IDB1:6=',IDB1,IDB2,IDB3,IDB4,IDB5,IDB6
+	ENDIF
+	IF (KOLD.NE.0) THEN
+	  IRET=2
+	  WRITE (IOPM,*)' OLD DATA FILE?'
+	  CALL TDISK(1,1)    ! open old file to read starting conditions
+	  CALL TDISK(3,KOLD) ! read starting record; will override  KRCCOM
+	  IF (KEEP.EQ.0) THEN
+	    CALL TDISK(4,0)  ! close 'starting' file
+	  ELSE
+	    JDISK=J5 ! prepare to start saving to file after first new season
+	  ENDIF
+	ELSE		!  READ parameter cards
+	  READ (IOIN,'(20A4)'     ,END=430) TITLE
+	  READ (IOIN,'(/8F10.2)'  ,ERR=431,END=430) (FD(I),I=1,NFD)
+	  READ (IOIN,'(/8I10)'    ,ERR=432,END=430) (ID(I),I=1,NID)
+	  READ (IOIN,'(/10L7)'    ,ERR=433,END=430) (LD(I),I=1,NLD)
+	  print *, 'TCARD:notice N4,MAXN4=',n4,MAXN4
+	  READ (IOIN,'(/(10F7.2))',ERR=434,END=430) (ALAT(I),I=1,N4)
+	  READ (IOIN,'(/(10F7.2))',ERR=435,END=430) (ELEV(I),I=1,N4)
+	ENDIF
+	
+C  GET orbital parameters if needed
+	IF (IDB1.GE.1) PRINT *,'Before PORB0'
+	IF (LPORB) CALL PORB0
+	IF (IDB1.GE.1) PRINT *,'AFTER PORB0'
+
+C  READ a set of parameter change cards  (IQ = 2)
+C
+160	IIIN=IOIN
+	IF (LKEY) IIIN=IOKEY
+	IF (LKEY) WRITE(IOPM,162)
+162	FORMAT (' ENTER* CHANGES:  TYPE, LOCATION, NEW VALUE,[TEXT]'
+     &/'   TYPE: 0/=DONE, 1=REAL, 2=INT, 3=LOGI, 7=file, ?=HELP')
+	GOTO 164
+
+163	WRITE (IOPM,'(A)') RBUF
+	WRITE (IOPM,1635)
+1635	FORMAT(' input error, try again'
+     &/' location is index within the FD, ID, OR LD array'
+     &/' new value should be positive number for a logic. "true"'
+     &/' text = optional ascii description, within quotes')
+
+164	READ (IIIN,'(A80)',ERR=163,END=430) RBUF ! read into character buffer
+	KOUNT=KOUNT+1
+	READ (RBUF,*,ERR=163,END=430) IG
+	WRITE(*,*)'IG=',IG, '  RBUF=',RBUF
+	IF (IG.LT.1) GOTO 370 ! no more changes
+	IF (IG.LT.11) THEN	! read a single parameter
+	   READ (RBUF,*,ERR=163,END=430) IG,IREAD,XREAD,TEXT
+	   ILEN = LNBLNK(TEXT)
+	   IF (.NOT. LONE .AND. KOUNT.EQ.1) THEN
+	      CALL TPRINT (8)	! print page heading
+	      WRITE (IOSP,166)
+ 166	FORMAT ('--------- TYPE LOC VALUE -------- Parameter changes')
+	   ENDIF
+ 167	   FORMAT (' Changed>>',2I4,G12.4,1X,A,2x,A)
+	   IF (IG.GT.3) WRITE (IOSP,167) IG,IREAD,XREAD,TEXT(1:ILEN)
+	ENDIF
+	GO TO (210,220,230,240,250,260,270,280,100,300,310,320,330), IG
+C               1   2   3   4   5   6   7   8   9   10  11  12  13
+C IG=Type     Meaning                                     Valid Index
+C
+C    0   End of Current Changes                              any
+C    1   Real Parameter                                     1:NFDR
+C    2   Integer Parameter                                  1:NIDR
+C    3   Logical Parameter                                  1:NLDR
+C    4   New Latitude Card(s) Follow                         any
+C    5   New Elevation Card(s) Follow                        any
+C    6   New Orbital Parm Cards Follow (LPORB Must be True)  any
+C    7   Text becomes new Title                              any
+C    8   Text becomes new disk or season-variation file name
+C          if index=22, read variable ALBEDO
+C          if index=23, read variable TAUD
+C          if index=24, read climate opacity file
+C    9   Complete new set of input follows                   any
+C   10   Text becomes new One-Point input file name          any
+C   11   This is a set of parameters for "one-point" model   none
+C           For this type, 9 values must appear in a rigid format
+C   12   Set of 2*4 coefficents for T-dep. conductivity.  List-directed IO
+C   13   Set of 2*4 coefficents for T-dep. specific heat. List-directed IO 
+C For 12 and 13, 8 white-space-separated coefficients must follow after 
+C the type on the same line, with no interveening index or text 
+
+210	IF (IREAD.LT.1 .OR. IREAD.GT.NFDR) GOTO 295
+	FD(IREAD)=XREAD		!  IG=1: change  REAL parm
+	WRITE (IOSP,167)IG,IREAD,XREAD,TEXT(1:ILEN),TITF(IREAD)
+	GO TO 160
+
+220	IF (IREAD.LT.1 .OR. IREAD.GT.NIDR) GOTO 295
+	ID(IREAD)=NINT(XREAD)		!  IG=2: change  INTEGER parm
+C	IF (IREAD.EQ.12) NCASE=0 ! JDISK: 2009mar reason lost
+	WRITE (IOSP,167)IG,IREAD,XREAD,TEXT(1:ILEN),TITI(IREAD)
+	GO TO 160
+
+230	IF (IREAD.LT.1 .OR. IREAD.GT.NLDR) GOTO 295
+	LD(IREAD)=XREAD.GT.0.	!  IG=3: change  LOGICAL parm
+	WRITE (IOSP,167)IG,IREAD,XREAD,TEXT(1:ILEN),TITL(IREAD)
+	GO TO 160
+
+240	READ (IIIN,'(10F7.2)',END=430) (ALAT(I),I=1,N4) !  IG=4: read latitudes
+	GO TO 160
+
+250	READ (IIIN,'(10F7.2)',END=430) (ELEV(I),I=1,N4) !  IG=5: read elevations
+	GO TO 160
+
+260	CALL PORB0			!  IG=6: read  PORB data lines
+	GO TO 160
+
+270	READ (TEXT,'(20A4)',END=160) TITLE !  IG=7: change  TITLE
+	GO TO 160
+
+ 280	IF (IREAD.EQ.22) THEN	! IG=8 Read file name
+	  FVALB=TEXT		! move file name into common
+	  I=SEASALB(-999.)	! read data file
+	  KVALB=0		! set flag off
+	  IF (I.GT.1) KVALB=1	! set variable albedo flag
+	ELSEIF (IREAD.EQ.23) THEN 
+	  FVTAU=TEXT		! move file name into common
+	  I=SEASTAU(-999.)	! read data file
+	  KVTAU=0		! set flag off
+	  IF (I.GT.1) KVTAU=1	! set variable tau flag
+	ELSEIF (IREAD.EQ.24) THEN 
+	  FVTAU=TEXT		! move file name into common
+	  QF=CLIMTAU(-999.,0.,QB) ! read data file
+	  KVTAU=0		! set flag off
+	  IF (QF.EQ.0) KVTAU=2	! set variable Climate flag
+	ELSE
+	  CALL TDISK(4,0)	! Default: new disk file name, close current
+	  FDISK = TEXT		! move new file name into common
+	  NRUN=NRUN+1		! increment run count
+	  WRITE (IOSP,*)NRUN,'=Run. New Disk file name= ',FDISK(1:ILEN)
+	ENDIF
+	write(*,*)'TCARD_280',IREAD, I, KVALB,KVTAU
+	GOTO 160
+
+ 295	WRITE(IOERR,*)'Invalid change index: ',RBUF
+	GOTO 160
+
+ 300	FINPUT=TEXT(1:ILEN)	! 10. name of one-point input file
+	IRET=4			! flag for switch to new input file
+C	write(*,*)'TCARD setting IRET=4'
+	GOTO 370
+
+ 310	xread=123.456		! one-point model
+	WHAT='1-Point'
+	READ (RBUF,3103,ERR=417,END=418) XREAD,ALAT(1),HOURO,ELEV(1) 
+     &    ,ALB,SKRC,TAUD,SLOPE,SLOAZI,TITONE
+C                  ls   lat hour Elev  Alb Iner Opac Slop Azim
+ 3103	FORMAT(2X,F6.1,F6.1,F6.2,F5.1,F5.2,F7.1,F5.2,F5.1,F5.0,A20)
+C       10322.34 =  start of mars year circa 1986aug26, base 2440000
+C  Set starting date so that last season will be at requested L_s
+C 2009may11  Add emperical amount to yield requested L_s 
+C 2011 Aug 5 This due to difference between ALSUBS (which agrees with L_S.pro
+C and thus within .02 deg of lsubsgen.pro) and the PORB system for master.inp 
+C Average over a Mars year of Tseas SUBS- L_s.pro= -.52, StdDev=.075
+C Mean corresponds to offset of 0.9925 days
+	DJUL=10322.34+ALSUBS(2,XREAD)-(N5-1)*DELJUL+0.9925
+D	write(*,*)'TCARD got: ', XREAD,ALAT(1),HOURO,ELEV(1) !<<<debug
+D	1    ,ALB,SKRC,TAUD,SLOPE,SLOAZI,TITONE,djul         !<<<debug
+D	write(*,*)'TCARD returning with IRET=',IRET          !<<<debug
+	GOTO 390 ! skip limit checks that one-point file cannot change
+
+ 320	WHAT='8-Cond.'
+!	write(IOSP,*)' CCK Was',CCKU,CCKL
+	READ (RBUF,*,ERR=417,END=418) IG,CCKU,CCKL !ConUp0:ConLo3
+	write(IOSP,*)' CCK Now',CCKU,CCKL
+	GO TO 160 
+
+ 330	WHAT='8-SpHt.'
+!	write(IOSP,*)' CCK Was',CCPU,CCPL
+	READ (RBUF,*,ERR=417,END=418) IG,CCPU,CCPL !SphUp0:SphLo3
+	write(IOSP,*)' CCK Now',CCPU,CCPL
+	GO TO 160
+C
+C quit if there was no interactive input
+C
+370	IF (IQ.EQ.2 .AND. KOUNT.EQ.1) GOTO 430
+C
+C  NORMAL return -  Check input parameters.  Bound array dimensions
+C
+	N1PIB = N1		! set lowest layer used in calculations
+	IF (IB.GE.1) N1PIB=N1+1 !   :condition for constant  T_bottom
+	IF (N1.LT.2   .OR. N1PIB.GT.MAXN1) THEN
+	   NEW = MAXN1/2	! insure within dimen
+	   WRITE (IOERR,388) 'N1',N1,NEW
+ 388	   FORMAT (/1X,A,' invalid. Input and reset = ',2I6)
+	   N1 = NEW
+	   N1PIB = N1		! must reset 
+	   IF (IB.GE.1) N1PIB=N1+1 !
+	ENDIF
+	IF (IC.LT.3 ) THEN ! may not change first physical layer
+	   NEW=999	
+	   WRITE (IOERR,388) 'IC',IC,NEW
+	   IC = NEW
+	ENDIF
+	IF (N2.LT.32 .OR. N2.GT.MAXN2) THEN
+	   NEW = MAXN2/2	! insure within dimen
+	   WRITE (IOERR,388) 'N2',N2,NEW
+	   N2 = NEW
+	ENDIF
+	IF (N3.LT.1 .OR. N3.GT.MAXN3-1) THEN  ! 1 for j3+1 in  TDAY
+	   NEW = MAXN3/2	
+	   WRITE (IOERR,388) 'N3',N3,NEW
+	   N3 = NEW
+	ENDIF
+	IF (N4.LT.1  .OR. N4.GT.MAXN4) THEN
+	   NEW = MAXN4/2	! insure within dimen.
+	   WRITE (IOERR,388) 'N4',N4,NEW
+	   WRITE (IOERR,*) '^ This may cause Latitude read failure.'
+	   N4 = NEW
+	ENDIF
+	IF (N24.LT.2  .OR. N24.GT.MAXNH) THEN
+	   NEW = 24		! insure within dimen.
+	   WRITE (IOERR,388) 'N24',N24,NEW
+	   N24 = NEW
+	ENDIF
+	NMOD = MAX(NMOD,1)	! insure positive modulo
+	IF (DRSET.LT.0. .OR. DRSET.GT.0.) THEN ! insure reasonable
+ 389	  FORMAT (/1X,A,' invalid. Input and reset = ',2g12.5)
+	  QF=0.
+	  WRITE (IOERR,389) 'DRSET',DRSET,QF
+	  DRSET=QF
+	ENDIF
+
+ 390	IF (TAUD.LT.0.) THEN	! insure physically valid
+	  QF=0.
+	  WRITE (IOERR,389) 'TAUD',TAUD,QF
+	  TAUD=QF
+	ENDIF
+	GOTO 9
+
+ 417	WRITE(IOERR,*)'TCARD: Error reading internal buffer for ',WHAT
+	 IRET=5
+	GOTO 9
+ 418	WRITE(IOERR,*)'TCARD: EOF reading internal buffer for ',WHAT
+	 IRET=5
+	GOTO 9
+C
+C no more input data
+C
+ 435	JERR=JERR+1
+ 434	JERR=JERR+1
+ 433	JERR=JERR+1
+ 432	JERR=JERR+1
+ 431	JERR=JERR+1
+	WRITE (IOSP,*),'TCARD: IO error: at ',430+JERR
+	N4=MAX(N4,1)
+	CALL TPRINT(2)
+	STOP
+
+430	IRET=5
+	WRITE (IOSP,'(//5X,A)') 'END OF DATA ON INPUT UNIT'
+
+ 9	CONTINUE	! only exit from this routine
+	IF (IDB1.NE.0) WRITE(IOSP,*)'TCARD Exit: IRET=',IRET,NFD,ID(1) !< dbug
+	RETURN		
+	END
+
+C======================================================================
+	SUBROUTINE TDAY (IQ,IRET)
+C_Titl  TDAY  KRC day and layer computations
+C_Vars	
+	INCLUDE 'krccom.inc'	! has IMPLICIT NONE
+	INCLUDE 'daycom.inc'
+	INCLUDE 'hatcom.inc'
+	INCLUDE 'units.inc'
+C_Args
+	INTEGER IQ !in. 1=initialization   2=day computations
+	INTEGER IRET !out. 1=normal return  2=numerical blowup
+C_Hist	97feb11  Hugh_Kieffer  USGS_Flagstaff major revision
+C 1998sep04  HK  move setting  N1PIB to  TCARD, minor code cleanup
+C 2000jan22  HK  Adjust layer thickness if required for stability and
+C       redefine convergance factor to be square of earlier code.
+C 2002jul12  HK  Revise atmosphere.
+C 2004jul07  HK  Change  MIN (FROEXT,0.1) to MAX (FROEXT,0.01)
+C 2004sep30  HK  Allow output of surface fluxes every hour
+C 2008sep21  HK  Allow for Snow formation in cold atm and fall to surface
+C 2008nov07-2008feb14  HK  Incorporate temperature-dependent conductivity
+C 2010jan09  HK  Fix so FAC7 conforms to temperature-dependent conductivity
+C 2010jan12  HK  Use IMPLICIT NONE
+C 2010feb16  HK  Incorporate temperature-dependent specific heat  !kt
+C 2010sep04  HK  Remove the 0.9 pad on  N3 limit of deljul/period
+C 2011jul16  HK  Remove one unused statement   I=MIN0(KN+1,IC-1)
+C 2012feb26  HK  Remove unused variables
+C 2012feb29  HK  Add test for NAN's  UNSUCCESSFUL
+C 2012mar01  HK  Include logical switches for atmosphere. 
+C 2012apr24  HK  Tiny cleanup  May10: add FLOST calculation
+C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
+C
+C new variables for k(T)
+	REAL FBI(MAXN1),FCI(MAXN1),FKI(MAXN1) !kt layer factors
+	REAL KTT(MAXN1P)	!kt thermal conductivity of each layer
+	REAL VTT(MAXN1P)	!kt specific heat of each layer
+	REAL FBK,FBKL,FA1J,FA3J !kt temporary factors
+	LOGICAL LKOW ! true if there are lower layers of different properties
+	INTEGER IK2,IK3,IK4 ! layer indices for kofT
+	REAL TOFF/220./		!kt TEMPERATURE SCALING
+	REAL TMUL/0.01/		!kt TEMPERATURE SCALING
+
+	REAL FA1(MAXN1), FA2(MAXN1), FA3(MAXN1),DTJ(MAXN1) ! each max # layers
+	REAL KJ(MAXN2)	 ! bottom layer for calculations at each time step
+        REAL QK(MAXN1P),QR(MAXN1P),TAVE(MAXN1),DIFFI(MAXN1)
+C allow temporary shared space
+        EQUIVALENCE (ASOL,QK)      ! QK used only during initialization
+        EQUIVALENCE (TOUT,QR,TAVE) ! QR used only during initialization
+               ! TOUT used only on last day 
+               ! TAVE used only when LRSET True, which is never the last day
+C
+        INTEGER I,II,IH,IP,J,JJ,JJH,JJJ,JJP,JRSET,J3P1,K,KN,KM,KM1
+     &, N1P1,N1PBM1
+C
+        REAL ABRAD,ADEL,ADELN,AH,AP,ATMRAD,CPOG,DELT,DFROST,DTAFAC
+     &,DTIM,DTIMI,DTM,EMTIR,FAC3,FAC4,FAC45,FAC5,FAC6,FAC6F,FAC7,FAC8
+     &,FAC82,FAC9,FEMIT,FROEX,HEAT,HEATFM,PERSEC,POWER,SAFE2
+     &,SHEATF,SNOW,TATM4,TBOTM,TRSET,TSUR,TSURM,TS3,TSUR4,ZD,FCJ
+	REAL QA,QB,QQ ! temporary use
+D	REAL NAN  ! for testing if NAN
+	LOGICAL LDAY,LFROST,LRESET,LATM
+C D	LOGICAL ISNAN		! intrinsic Function NOT IN MY SYSTEM
+D	integer*4 mhist,jhist	!<dbug
+D	parameter (mhist=20)	!<dbug
+D	integer*4 ihist(mhist)	!<dbug
+C
+	SAVE KTT
+C
+	IF (IDB2.GE.5) WRITE(IOSP,*) 'TDAY IQ,J4=',IQ,J4,jjo
+	IRET=1
+	GOTO (100,200), IQ
+C
+C  initialization  (IQ = 1)
+C Set up grid based upon nominal conductivity, then use T-dependant values
+C in the time loops. Assumption here is that conductivity could depend on
+C several variables, but that having all but T constant for a given case is 
+C adequate.
+C The convergence safty factor should be chosen to be adequate to cover 
+C the conductivity variation
+
+100	JRSET=NRSET
+	IF (IB.GE.1) JRSET=999	! never reset the lower boundary
+	IF (JRSET.LT.1) JRSET=2
+C insure day loop does not go past next season
+	IF (N5.GT.1) N3=MIN(MAX(N3,IFIX(DELJUL/PERIOD)),MAXN3-1)
+	N1P1=N1+1
+	N1M1=N1-1
+	N1PBM1=N1PIB-1
+	NLW=1+(N1-3)/10
+	PERSEC = PERIOD * 86400. ! get solar period in seconds
+	DTIM=PERSEC/N2		 ! size of one time step
+	COND=SKRC**2/(DENS*SPHT) ! conductivity
+	DIFFU=COND/(DENS*SPHT)	 ! diffusivity
+	SCALE=SQRT(DIFFU*PERSEC/PIVAL)
+	IF (DEPTH.GE.1.0) THEN	 ! calculate  FLAY for bottom(n1) =  DEPTH
+	  QQ=1.
+	  QB=0.
+	  DO J=2,N1
+	    QQ=QQ*RLAY
+	    QB=QB+QQ
+	  ENDDO
+	  FLAY=DEPTH/QB
+	ENDIF
+C
+C  calculate frequently used constants
+C
+	FAC4 = 1.+1./RLAY
+C temporary  QK=cond  QR=dens*specific heat
+C  IC is first of lower material, including the virtual layer
+	DO  J=1,N1P1
+	  IF(J.LT.IC) THEN
+	    QK(J)=COND
+	    QR(J)=DENS*SPHT
+	  ELSE
+	    QK(J)=COND2
+	    QR(J)=DENS2*SPHT2
+	  ENDIF
+	  DIFFI(J)=QK(J)/QR(J)	! layer diffusivity
+	  K=1
+	  IF (LOCAL) K=J
+	  BLAY(J)= FLAY * RLAY**(J-1) * SQRT (DIFFI(K)*PERSEC/PIVAL) ! thickness
+	  KTT(J)=QK(J)		! thermal conductivity, in case not T-dependent
+D	  write(*,*)'J,diffi,blay=',J,diffi(J),blay(J)
+	ENDDO
+C
+C Print table of T-dependant inertias.  Temporary use of  FBI,FCI,FKI,FA1,FA2
+	IF (LKOFT) THEN		!kt   k of  T section
+	   K=20
+	   DO I=1,K
+	      FKI(I)=120.+10.*I ! vector of temperatures
+	   ENDDO
+	   CALL EVMONO3(CCKU,K,FKI,TOFF,TMUL, FBI) ! upper conductivities
+	   CALL EVMONO3(CCKL,K,FKI,TOFF,TMUL, FCI) ! lower "
+	   CALL EVMONO3(CCPU,K,FKI,TOFF,TMUL, FA1) ! upper specific heat
+	   CALL EVMONO3(CCPL,K,FKI,TOFF,TMUL, FA2) ! lower "
+	   WRITE(IOSP,*) 'CCKU/L=',CCKU,CCKL
+	   WRITE(IOSP,*) 'CCPU/L=',CCPU,CCPL
+	   WRITE(IOSP,*)'   T     cond_SpHeat_UPPER_iner'
+     &   ,'    cond_SpHeat__LOWER_iner'
+C                         130.0  0.02590  375.46  124.74 
+	   DO I=1,K
+	      QQ=SQRT(FBI(I)*FA1(I) *DENS) ! upper inertia
+	      QA =SQRT(FCI(I)*FA2(I)*DENS2)! lower inertia
+	      WRITE(IOSP,120) FKI(I),FBI(I),FA1(I),QQ,FCI(I),FA2(I),QA
+	   ENDDO
+ 120	    FORMAT(1X,F6.1,F9.5,2F8.2,F10.5,2F8.2)
+ 121	    FORMAT(1X,A6,2F10.5,2F10.2)
+C       Check that values agree at TOFF
+	 WRITE(IOSP,* )'          ConUp     ConLo     SphUp     SphLo' ! labels
+	    WRITE(IOSP,121 )'Input',COND,COND2,SPHT,SPHT2   ! inputs 
+	    WRITE(IOSP,121 )'T-dep',CCKU(1),CCKL(1),CCPU(1),CCPL(1) !  T-dep at TOFF
+	 ENDIF
+C
+C  Calculate layer dependent factors
+C  K=index of binary depth  N1K=bottom layer for binary  K
+C             2000jan22
+C  Allow doubling of time step at successive layers; but never more than a 
+C factor of 2 between layers, and never a decrease in the time step with 
+C increasing layers.
+C  Thus, a single pass of increasing the time step downwards would suffice 
+C except for the case of an increase of diffusivity at layer  IC.
+C  So, if  IC invoked, determine the time step increase that might be possible
+C there, and do not allow higher layers to exceed this value.
+C  If layer  IC is unstable, need to increase its thickness (and possibly lower
+C layers) to insure stability.
+C
+	KM1= MIN(MAXBOT,IFIX(ALOG(FLOAT(N2))/ALOG(2.)+.001) ) -1
+	KM=KM1			! number of time doublings allowed
+	K=0			! number of time doublings so far
+	KKK=N2			! current number of times steps per day 
+	SCONVG(1)=0.
+	XCEN(1)=-BLAY(1)/2.	! x is depth to layer center, [cm]
+	DTIMI=DTIM		! current time step
+	QQ=CONVF		! input safety factor
+	IF (QQ.LT.0.8) QQ=1.	! avoid unstable binary time division
+	SAFE2=2.*QQ		! safety convergence factor
+	IF (IC .LE. N1-2) THEN	! check safety at first modified layer
+	   QQ=BLAY(IC)**2/(SAFE2*DTIM* DIFFI(IC)) ! extra safety factor
+	  IF (QQ .LT. 1.) THEN ! must increase layer thickness
+	    DO J=IC,N1 ! set layer  IC just stable for local diffusivity
+	      BLAY(J)= RLAY**(J-IC) * SQRT(SAFE2*DTIM *DIFFI(J) )
+	    ENDDO
+	    KM=0		! allow no time doubling above this layer
+	  ELSE ! allow upper layer changes
+	    KM=LOG(QQ)/LOG(2.) ! max # of doublings before  IC
+	  ENDIF
+	ENDIF
+	  WRITE(*,*)'SAFE2,actual+',SAFE2,QQ,KM1,KM,KKK,DTIMI
+C
+	DO J=2,N1		! layer loop
+	  XCEN(J)= XCEN(J-1)+ (BLAY(J)+BLAY(J-1))/2. ! center depth
+	  SCONVG(J)=BLAY(J)**2/(2.*DTIMI* DIFFI(J)) ! Safety factor
+	  IF (J.EQ.IC) KM=KM1	! remove constraint on upper layers
+	  IF (K.LT.KM .AND. J.GT.2 .AND. MOD(KKK,2).EQ.0 
+     &    .AND. SCONVG(J).GT. SAFE2) THEN ! increase time step
+	    DTIMI=2.*DTIMI
+	    SCONVG(J)=SCONVG(J)/2.
+	    K=K+1		! have new binary interval
+	    N1K(K)=J-1		! bottom layer of prior interval
+	    KKK=KKK/2		! number of time steps for lower layers
+	  ENDIF
+	  IF (SCONVG(J).LT. 1.) THEN
+	    IRET=2		! error return if unstable
+	    WRITE (IOERR,137)J,K,SCONVG(J)
+ 137	    FORMAT (' UNSTABLE; Layer, #_doubleings, factor =',2I3,F8.4)
+	  ENDIF
+C for constant conductivity
+	  FCJ= 2.* DTIMI /(QR(J) * BLAY(J)**2) !kt
+	  FA1(J)=FCJ*QK(J)/(1.+(BLAY(J+1)*QK(J)/(BLAY(J)*QK(J+1))))
+	  FA3(J)= (BLAY(J)/QK(J) + BLAY(J+1)/QK(J+1))
+     &       / (BLAY(J)/QK(J) + BLAY(J-1)/QK(J-1))
+	  FA2(J)=-1.-FA3(J)
+C T-dependent conductivity
+	  FBI(J)=  BLAY(J+1)/BLAY(J)   !kt 
+	  FAC7=DENS		! temporary use of FAC7
+	  IF (J.GE.IC ) FAC7=DENS2 ! for upper/lower density
+	  FCI(J)= 2.* DTIMI /(FAC7 * BLAY(J)**2) !kt
+D 125	  FORMAT(1X,I4,E12.5,f10.1,F8.5,f10.5, F9.6,2F8.5,F9.5,2E12.5)
+D	  WRITE(41,125)J,DIFFI(J),DTIMI, BLAY(J),SCONVG(J)  !dbw
+D     &     ,FA1(J),FA3(J),FBI(J),FCI(J),QK(J),QR(J) !dbw
+	ENDDO			! end of layer loop
+C
+	FAC7=COND/XCEN(2)
+	KKK=K+1			! one larger than number of time doublings
+	N1K(KKK)=N1
+C set last layer for each time.  KJ(JJ)=K for  JJ time increment
+	II=1 ! spacing
+	DO K=1,KKK		! each doubling
+	   I=N1K(K)		! bottom layer for that doubling
+	   DO JJ=II,N2,II	! each time-step along current spacing
+	      KJ(JJ)=I		! set the deepest layer to do
+	   ENDDO
+	   II=II+II		! double the spacing
+	ENDDO
+C	
+	GOTO 9
+C=======================================================================
+C=============================================== day computations  (IQ = 2)
+C
+200	DTMJ(1)=-1.
+	LATM=PTOTAL.GT.1.	! atmosphere present flag
+	LDAY=N3.LE.1		! normally false
+	LRESET=.FALSE.		! flag for reset of lower layers
+C D	fac3=0.			! just for next statement
+C D	NAN=PIVAL/fac3		! generate a NAN
+	FAC3  = 1.-ALB
+	FAC5  = SKYFAC*EMIS*SIGSB
+	FAC45 = 4.*FAC5
+	FAC6  = SKYFAC*EMIS
+	FAC6F = SKYFAC*FEMIS
+C Following 5 used only  with atmosphere.  EMTIR used only for fac8, and FAC8 
+C used only with atmosphere. Ensure divisor CPOG is not zero
+	FAC9=SIGSB*BETA		! factor for downwelling hemispheric flux
+	CPOG=ATMCP*(max(PRES, 1.)/GRAV) ! atmosphere:  D_Energy / d_T
+	DTAFAC=DTIM/CPOG	! dT=heat*dtafac
+	EMTIR = EXP(-TAUIR)	! Zenith Infrared transmission of atm
+	FAC82=1.-EMTIR		!  " absorption "
+D       write(iosp,*)'CPOG,DTAFAC,CFROST =',CPOG,DTAFAC,CFROST !!!
+D	write(iosp,*) 'FAC9,DTAFAC=',FAC9,DTAFAC,EMTIR,FAC82
+	TSUR=TTJ(1)
+	DO J=1,N1		! save  T each layer at start of first day
+	  TT1(J,1)=TTJ(J)
+	ENDDO
+	IK2=MIN0(N1+1,IC-1)	! number of upper layers 2010jan20 KN >> N1
+	LKOW=IK2.LT.N1+1	! true if there are lower layers
+	IK3=IK2+1		! first of lower layers
+	IK4=N1+1-IK2		! number of lower layers
+C  TATMJ and  EFROST enter via  KRCCOM	
+	FROEX = MAX (FROEXT,0.01)	! scale-mass for insolation attenuation
+	FRO(1) = EFROST
+	IF (.NOT. LATM) EFROST=0.
+	IF (EFROST.GT.0.) THEN	! frost is present  kg/m^2
+	  LFROST = .TRUE.
+	  TSUR = TFNOW
+	  FEMIT = FAC6F*SIGSB*TFNOW**4 ! upward frost radiation toward space
+	  FAC8=EMTIR*FEMIS ! ground effective emissivity through atmosphere ?
+	ELSE			! bare ground
+	  LFROST = .FALSE.
+	  FAC8=EMTIR*EMIS
+	ENDIF
+	FLOST=0.		! sum of lost frost
+D	do i=1,mhist	!<dbug
+D	   ihist(i)=0	!<dbug
+D	enddo	!<dbug
+D	print *,'T200: J5,J4,TSUR,FAC8',j5,j4,tsur,fac8	!<dbug
+D	print *,'N4,LATM,tatmj',N4,latm,tatmj	!<dbug
+C
+C  *v*v*v*v*v*v*v*v*v*v*v*v*v* new day loop v*v*v*v*v*v*v*v*v*v*v*v
+C
+	DO 320 JJJ=1,N3
+	J3P1=JJJ+1
+	TBOTM=0.
+	TSURM=0.
+	HEATFM=0.
+	IF (LDAY) THEN 
+	   LRESET=.FALSE.	! must not use  TOUT for average on last day
+	   DO  J=1,N1
+	      TMIN(J)=TBLOW
+	      TMAX(J)=0.
+	   ENDDO
+	   IH = 1		! saving "hour" count
+	   AH = FLOAT(N2)/FLOAT(N24) ! time steps between saving results
+	   JJH = AH+.5		! round to time step of first saving
+	   IP = 1		! printout "hour count"
+	   AP = FLOAT(N2)/FLOAT(NMHA) ! time steps between printing results
+	   JJP = AP+.5		! time step of first "hourly" printout
+	ENDIF
+	IF (LRESET) THEN
+	  DO  J=2,N1
+	    TAVE(J)=0.
+	  ENDDO
+	ENDIF
+C
+C  +v+v+v+v+v+v+v+v+v+v+v+v+v+v+ new time loop +v+v+v+v+v+v+v+v+v+v+v+v+v+v+
+C
+	DO 270 JJ=JJO,N2
+	   TTJ(1)=TTJ(2)-FAC4*(TTJ(2)-TSUR) ! set virtual layer
+	   TTJ(N1P1)=TTJ(N1PIB)	! lower boundary condition
+	   KN=KJ(JJ)		! depth for this time interval
+C
+C  -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v- layer loops v-v-v-v-v-v-v-v-v-v-v-v-v-
+C
+	 IF (LKOFT) THEN	!kt section ----------------------
+	   CALL EVMONO3(CCKU,IK2,TTJ,TOFF,TMUL, KTT) !kt get thermal conductivity
+	   CALL EVMONO3(CCPU,IK2,TTJ,TOFF,TMUL, VTT) !kt get specific heat
+	   IF (LKOW) THEN
+	      CALL EVMONO3(CCKL,IK4,TTJ(IK3),TOFF,TMUL,KTT(IK3)) !" lower
+	      CALL EVMONO3(CCPL,IK4,TTJ(IK3),TOFF,TMUL,VTT(IK3)) !" lower
+	   ENDIF
+	   FBK=RLAY		!kt F_B_i * F_k_i for virtual layer
+	   DO  J=2,KN		!kt
+	      FBKL=FBK		!kt
+	      FBK= FBI(J)*KTT(J)/KTT(J+1) !kt F_B_i * F_k_i 
+	      FA1J=FCI(J)*KTT(J)/(VTT(J)*(1.+FBK)) !kt eq F1
+	      FA3J=(1.+FBK)/(1.+1./FBKL)  !kt eq F3
+	      DTJ(J)= FA1J* (TTJ(J+1)-(1.+FA3J)*TTJ(J)+FA3J*TTJ(J-1)) !kt diffusion
+D	      IF (JJJ.EQ.2) WRITE(26,126)JJ,J,FBK,FA1J,FA3J,DTJ(J)
+	   ENDDO		!kt
+D 126	   FORMAT(1X,2I3,F10.6,F12.6,F11.6,E13.5)
+	   FAC7=KTT(2)/XCEN(2)
+	ELSE        ! original constant conductivity ----------------------
+           DO  J=2,KN
+             DTJ(J)=FA1(J)* (TTJ(J+1)+FA2(J)*TTJ(J)+FA3(J)*TTJ(J-1)) ! diffusion
+           ENDDO
+	ENDIF          !----------------------
+	   DO  J=2,KN
+	      TTJ(J)=TTJ(J) + DTJ(J) ! apply the delta-T
+	   ENDDO
+D	   if (kn.eq.n1) write(43,343)jj,jjj,j5,kn,fac7,(dtj(j),j=2,kn) !dbw
+D 343	   format(i4,i3,i4,i3,32f12.7)
+C
+C -^-^-^-^-^-^-^-^-^-^-^-^-^-^-^- end of layer loops ^-^-^-^-^-^-^-^-^-^-^
+        IF (LFROST) THEN	!+-+-+-+ surface temperature is frost-buffered
+	   ATMRAD= FAC9*TATMJ**4 ! hemispheric downwelling  IR flux
+	   QA = AFNOW + (ALB-AFNOW)*EXP(-EFROST/FROEX) ! albedo for frost layer
+	   SHEATF= FAC7*(TTJ(2)-TSUR) ! upward heatflow into the surface
+C   unbalanced flux into surface
+	   POWER = (1.-QA)*ASOL(JJ) + FAC6F*ATMRAD + SHEATF - FEMIT
+	   DFROST = -POWER/CFROST ! rate of frost formation or sublimation
+	   EFROST=EFROST + DFROST*DTIM ! amount on ground; kg*m**-2
+	   IF (EFROST.LE.0.) THEN ! reset to bare ground
+	      LFROST = .FALSE.
+	      EFROST = 0.
+	      FAC8=EMTIR*EMIS
+	   ENDIF
+	ELSE IF (LATM) THEN	!+-+-+-+ boundary condition with atmosphere
+	   ATMRAD= FAC9*TATMJ**4 ! hemispheric downwelling  IR flux
+	   ABRAD = FAC3*ASOL(JJ) + FAC6*ATMRAD ! surface absorbed radiation
+C iterate as needed for  Newton convergance
+C 992	  j=1 ! next 11  C lines 2010apr21 tracing down NAN from Tlats
+D	   ii=0			!<dbug
+ 230	   TS3=TSUR**3		! bare ground
+	   SHEATF= FAC7*(TTJ(2)-TSUR) ! upward heat flow to surface
+	   POWER = ABRAD + SHEATF - FAC5*TSUR*TS3 ! unbalanced flux
+	   DELT = POWER / (FAC7+FAC45*TS3)
+C	  if (delt.ne.delt) then
+C	     write(ioerr,*)'DELT bad',TSUR,sheatf,power,DELT
+C	     write(ioerr,*) fac3,asol(jj),fac6,ATMRAD,abrad
+C	     write(ioerr,'(6i6)')j,jj,j2,j3,j4,j5
+C	     delt=1.e-3
+C	  endif
+	   TSUR=TSUR+DELT
+	   ADEL=ABS(DELT)
+D	   ii=ii+1		!<dbug
+D	   if (ii.ge.mhist) then !<dbug
+D	      print *,'TDAY: j5,j4,j3,jj',j5,j4,j3,jj !<dbug
+D	      print *,'...tsur',abrad,sheatf,power,delt,tsur !<dbug
+D	      goto 9		!<dbug
+D	   endif		!<dbug
+C       if (ISNAN(TSUR)) goto 340 ! FAILS
+C       if( (TSUR+1.).eq.tsur) goto 340 !  FAILS. True only if is  NAN 
+	   IF (ADEL.LT.GGT) GOTO 240 ! satisfies convergence test
+C	   if (TSUR.eq.NAN) goto 340 ! FAILS. also true if  DELT is  NAN
+	   ADELN=ADEL/TSUR
+	   IF (ADELN.GT.0.8) GOTO 340 ! probably blowing up numerically
+	   IF (ADELN.GT.0.1) TSUR=TSUR-0.7*DELT ! reduce increment, help stability
+	   GOTO 230
+C	   
+ 240	   CONTINUE
+D	   ihist(ii)=ihist(ii)+1 !<dbug
+	   IF (TSUR.GT.TBLOW) GOTO 340 ! numerical stability test
+	   IF (TSUR.LT.TFNOW) THEN ! reset to frost on ground
+	      LFROST = .TRUE.	! turn frost flag on
+	      TSUR = TFNOW	! set to local frost temperature
+	      FEMIT = FAC6F*SIGSB*TFNOW**4
+	      FAC8=EMTIR*FEMIS
+	   ENDIF
+	ELSE			!+-+-+-+ no atmosphere
+	   ABRAD = FAC3*ASOL(JJ) ! surface absorbed radiation
+C iterate as needed for  Newton convergance
+C 992	  j=1 ! next 11  C lines 2010apr21 tracing down NAN from Tlats
+D	   ii=0			!<dbug
+ 232	   TS3=TSUR**3		! bare ground
+	   SHEATF= FAC7*(TTJ(2)-TSUR)
+	   POWER = ABRAD +SHEATF - FAC5*TSUR*TS3 ! unbalanced flux
+	   DELT = POWER / (FAC7+FAC45*TS3) ! Newton estimate
+	   TSUR=TSUR+DELT
+	   ADEL=ABS(DELT)
+	   IF (ADEL.LT.GGT) GOTO 242 ! satisfies convergence test
+C	   if (TSUR.eq.NAN) goto 340 ! FAILS. also true if  DELT is  NAN
+	   ADELN=ADEL/TSUR
+	   IF (ADELN.GT.0.8) GOTO 340 ! probably blowing up numerically
+	   IF (ADELN.GT.0.1) TSUR=TSUR-0.7*DELT !reduce increment,help stability
+	   GOTO 232
+C
+ 242	  IF (TSUR.GT.TBLOW) GOTO 340 ! numerical stability test
+	ENDIF			!+-+-+-+ end no atmosphere
+C
+	TSURM=TSURM+TSUR	! sum over the day
+	TBOTM=TBOTM+TTJ(N1)	! "
+	HEATFM=HEATFM+SHEATF	! "
+	IF (LRESET) THEN	! accumulate average temperature at each layer
+	   DO  J=2,N1
+	      TAVE(J)=TAVE(J)+TTJ(J)
+	   ENDDO
+	ENDIF
+	TSUR4=TSUR**4
+C
+	IF (LATM) THEN		!v-v-v-v-v  with atmosphere
+	   TATM4=TATMJ**4
+C       2002jul12  ADGR was downwelling  IR flux; becomes solar heating
+	   HEAT=ADGR(JJ)+FAC9*(EMIS*TSUR4-2.*TATM4) ! net atm. heating flux
+	   TATMJ=TATMJ+HEAT*DTAFAC ! delta Atm Temp in 1 time step
+	ENDIF			!^-^-^-^-^
+	IF (.NOT.LDAY) GOTO 270
+	TOUT(JJ)=TSUR		! save surface temperatures at each time
+	IF (JJ.EQ.JJH) THEN	!  JJH is next saving hour
+	   TTJ(1)=TSUR
+	   TSFH(IH)=TSUR	! save hourly temperatures on last iteration
+	   IF (LATM) THEN	!v-v-v-v-v  with atmosphere
+	      TPFH(IH)=(FAC8*TSUR4+FAC82*TATM4)**0.25 ! planetary  
+	      TAF(IH,J4)=TATMJ	! save Atm Temp.
+	      DOWNIR(IH,J4)=ATMRAD ! save downward IR flux
+	   ENDIF		!^-^-^-^-^
+	   DOWNVIS(IH,J4)=ASOL(JJ) ! save downward solar flux
+D       write(iosp,*)'L299', ASOL(JJ),ATMRAD,heat,tatmj
+	   DO  J=1,N1		! save extreme temperatures for each layer
+C..     th(j,ih)=t(j)	! save depth-time solution [th(maxn1,MAXNH]
+	      IF (TTJ(J).LT.TMIN(J)) TMIN(J)=TTJ(J)
+	      IF (TTJ(J).GT.TMAX(J)) TMAX(J)=TTJ(J)
+	   ENDDO
+	   IH = IH+1
+	   JJH = IH*AH+.5
+	ENDIF
+C
+	IF (JJ.EQ.JJP) THEN	! print "hourly" temperatures
+	   IF (LP3) WRITE(IOSP,260)IP,EFROST,TTJ(1),(TTJ(I),I=2,N1M1,NLW)
+     &     ,TTJ(N1),tatmj
+ 260	   FORMAT (I7,F8.3,(12F8.1))
+	   IP = IP+1
+	   JJP = IP*AP+.5	! time step of next print
+	ENDIF
+270	CONTINUE  !^+^+^+^+^+^+^+^+^+^+^+ end of time loop ^+^+^+^+^+^+^+^+^+^+^
+C
+C  store results of day, calculate rms change
+C
+	IF (LATM .and. (TATMJ.LT.TATMIN)) THEN ! Tatm is below saturation T
+	   SNOW= (TATMIN-TATMJ)*CPOG/CFROST ! snow formation  Kg/m^2 in this time step
+	   IF (LFROST) THEN
+	      EFROST=EFROST + SNOW ! let it fall to surface
+	   ELSE
+	      FLOST=FLOST+ SNOW ! record mass "lost" from system ??
+	   ENDIF
+D	write(*,*)'jjj,Tmin,Ta,SNOW,EFR=',jjj,TATMIN,TATMJ,SNOW,EFROST !!!
+	   TATMJ=TATMIN		! keep no colder that saturation
+	ENDIF
+C
+	TTJ(1)=TSUR
+	ZD=0.
+	DO  J=1,N1		! each layer
+	  ZD=ZD+(TTJ(J)-TT1(J,JJJ))**2  ! add square of diff from prior midnight
+	  TT1(J,J3P1)=TTJ(J)	! save new midnight temperature
+	ENDDO
+	DTM=SQRT(ZD/N1) ! RMS change of layer temperatures in prior day
+	DTMJ(J3P1)=DTM
+	QQ=FLOAT(N2+1-JJO)	! temporary divisor
+	TTS(J3P1)=TSURM/QQ	! average surface T
+	TTB(J3P1)=TBOTM/QQ	! average bottom T
+	HEAT1M=HEATFM/QQ	! average upward heatflow into the surface
+	IF (LATM) THEN		!v-v-v-v-v  with atmosphere
+	   TTA(J3P1)=TATMJ	! final atm. temperature
+	   FRO(J3P1)=EFROST	! final frost amount
+	ENDIF			!^-^-^-^-^
+C
+C  are we done?
+C
+	IF (LDAY.AND.(DTM.LE.DTMJ(JJJ) .OR. DTM.LE.DTMAX ! some convergence
+     &  .OR. JJJ.GE.N3-1 )) GOTO 330 ! or end of season
+	JJO=1
+C
+C  not yet - is next day the last?
+C
+	ZD = MAX(DTMJ(JJJ),1.E-6) ! yesterdays DTM:  temporary reuse of ZD
+	IF (((ABS(1.-DTM/ZD).LE.DDT .OR. DTM.LE.DTMAX) 
+     &          .AND. JJJ.GE.2) .OR. JJJ.EQ.N3-1) THEN  !  initiate last day
+	   LDAY=.TRUE.
+	ELSE			! not last day yet
+	   LDAY=.FALSE.
+	   IF (LRESET) THEN	! reset lower temps to have
+	      TRSET=TTS(J3P1)-TTB(J3P1)
+	      DO  J=2,N1	!   same average
+		 TAVE(J)= TAVE(J)/N2 -TTS(J3P1) !
+		 IF (DRSET.NE.0.) THEN
+		    QQ=XCEN(J)/XCEN(N1)
+		    TTJ(J)=TTJ(J)+TRSET*(QQ+DRSET*QQ*(1.-QQ))
+		 ELSE
+		    TTJ(J)=TTJ(J)-TAVE(J) !   as  TSUR
+		 ENDIF
+	      ENDDO
+	      IF (LD17) WRITE(IOSP,'(I7,F8.3,F8.1,12F8.3)') !+
+     &      JJJ,DTM,TTS(J3P1),(TAVE(I),I=2,N1M1,NLW),TAVE(N1) !+
+	   ENDIF
+	   IF (J5.LE.1 .AND. JJJ.GE.JRSET) LRESET=.TRUE.
+	ENDIF
+ 320	CONTINUE ! *^*^*^*^*^*^*^*^*^*^*^*^ end of day loop *^*^*^*^*^*^*^*^*^*
+C
+	JJJ=N3			! if loop finished, index value not guarenteed
+ 330	J3=JJJ			! reset the counter kept in common
+	GOTO 9
+C
+340	IRET=2  !   blow-up. force a stop; print current conditions
+	write(IOSP,*)'TDAY blowup: jjj,j4,j5=',jjj,j4,j5
+	write(IOSP,*)'LRESET,LDAY,tsur=',LRESET,LDAY,TSUR
+	IF (LATM) write(IOSP,*)'atm items=',atmrad,abrad,LFROST,EFROST
+	write(IOSP,*)'sheatf,power,delt=',sheatf,power,delt
+	TTJ(1)=TSUR
+	J2=JJ
+	J3=JJJ
+	CALL TPRINT (7)		! print message and  TTJ
+	WRITE(IOSP,*) 'DELT,TATMJ,TBLOW=',DELT,TATMJ,TBLOW
+	CALL TPRINT (2)		! print full input set
+	CALL TPRINT (4)		! print daily convergence
+C
+ 9	IF (IDB2.GE.6) WRITE(IOSP,*) 'TDAYx'
+D	print *,'TDAY: j5,j4',j5,j4	!<dbug
+D	print *,ihist		!<dbug
+	RETURN
+C
+	END
+
+C======================================================================
+	SUBROUTINE TDISK (KODE,KREC)
+C_Titl  TDISK  save/read results at the end of a season.  Version  for  BINF5
+C_Vars
+	INCLUDE 'krccom.inc'	! has IMPLICIT NONE
+	INCLUDE 'latcom.inc'
+	INCLUDE 'daycom.inc'
+	INCLUDE 'hatcom.inc'
+	INCLUDE 'units.inc'
+	INCLUDE 'filcom.inc'
+C_Lims
+	INTEGER*4 MAXDIM
+	PARAMETER (MAXDIM=6)	! max number of dimensions needed
+        REAL*4 FFF (KOMMON)	!   the largest of the 5n types
+	INTEGER*4 MMM(MAXDIM)	! to hold cumulative size of each dimension
+        INTEGER*4 JJJ(10)		! sizes to go to  BINF5
+        REAL*4 FRONT(4)		! Leading size integers converted to real
+	INTEGER*4 KASE,KODED	! words/case, file type
+	COMMON /BINCOM/ JJJ,KODED,KASE,FFF ! ensure these are remembered
+C_Args
+	INTEGER*4 KODE		! in. control
+C  1 = open file.  then see  KREC
+C        will set  LOPN2=.true. if file opened
+C  2 = write a season. appended after  JREC.  KREC ignored
+C  3 = read a season.  input  KREC as record number,  IERR returned as iostat
+C	also, sets record position to append on next write
+C  4 = close the file.  KREC ignored
+C  5 = write a record of  KRCCOM.  KREC ignored
+	INTEGER*4 KREC	!in (when  KODE=1): file status: 0=new  1=old
+C_Desc
+C Can write several styles of binary files; controled by K4OUT. See helplist.txt
+C The two basic families are Direct access files containing combinations of
+C the COMMON arrays, and bin5 files of specific variables and arrays.
+C The bin5 files have K4OUT=50+; the parameter statements above set the 
+C maximum allowed sizes, but they are written dense to the requested array
+C sizes, and BINF5 writes only the utilized part of the storage allocated.
+C 2008oct22 All bin5 files have 4 indices and KRCCOM [and other vectors) in the 
+C first few latitudes or seasons. The indices are always: NWKRC, 
+C     1-based index of the dimension that has the extra leading values, 
+C     how many extra are used, and spare
+C_Hist ~1975 Hugh Kieffer Original version; evolved over 20 years
+C 93mar03 ecisneros ported code to unix platform
+C		          converted include filenames to lowercase.
+C 97feb11  HK  Get file name only from common
+C 97aug03  HK  Add short form output  97sep08 accomodate  TPF,ALAT,ELEV
+C 98may26  HK  NRECL in bytes for  Linux
+C 98aug31  HK  Include custom  bin5 file capablity 
+C                   51=(30 layers, 2 min/max,  5 lat, 40 seasons,  5 cases)
+C  The last 2 layers for min are:  TpMin,L_sub_s; for max are:  TpMax,DJU5
+C 1998nov16  HK  Add  52=(24 hours,   Tsurf/Tp, 10 lat, 80 seasons, 10 cases)
+C 1999nov24  HK  Move setting  LOPN2 false at 400
+C 2002aug04  HK  Add 53=(combo  at 1 lat, 2+80 seasons, 10 cases). Recode logic
+C 2002aug15  HK  Increase season size
+C 2003may25  HK  Increase  MD23 from 10 to 19. Use NDx consistently for  K4OUT=52
+C 2003jun10  HK  Fix indexing for seasons for type 53
+C 2003aug27  HK  Fix indexing error
+C 2004jul06  HK  Add file style 54.
+C 2004Oct05  HK  Revise style 52; add Down fluxes and spare
+C 2005aug04  HK  Add first version of type 55
+C 2005nov16  HK  Set ncase=0 after a file close so next would start at 1
+C 2006apr12  HK  Change file style 54 to have both 1am and 1pm surface  Temp..
+C 2006apr22  HK  Allow flexible number of cases for  output file type 52 and 54
+C 2006may04  HK  Remove the parameter statements for each type. Add  BINCOM
+C 2006Oct16  HK  Add two convergence items into output file type 52
+C 2008mar31  HK  Ensure all INTEGER are INTEGER before successful 63-bit compile
+C 2008apr13  HK  Add spaced TMIN and TMAX to Type 52
+C 2008sep30-oct15  HK Add type 56, Revise type 51 and 52, remove type 53
+C 2009feb23  HK  Recode all bin5 outputs
+C 2010jan12  HK  Use  IMPLICIT  NONE
+C 2010apr21  HK  Write notice of writing record only if count <=  IDISK2
+C 2012feb26  HK  Remove unused variables  apr04 minor cleanup
+C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
+C JJJ are the IDL SIZE sent to BIN5 files;  JJJ[1]= dimensionality
+C MMj are the number of words in the j'th dimension
+C ie MM1 =JJJ[2], MM2=MM1*JJJ[3] etc   OR MM4 used as saved other values
+C Direct write will zero-fill unused part of record
+	CHARACTER CSTAT*3
+C Make arrays that overlay each of the major   Commons
+	REAL*4 COMKRC(NWKRC),COMLAT(NWLAT),COMDAY(NWDAY)
+	EQUIVALENCE (COMKRC,ALB),(COMLAT,NDJ4),(COMDAY,XCEN) ! first word of each
+        CHARACTER*30 HEADER /'KRC-tes custom save'/
+	REAL*4 RASE
+        INTEGER*4 HEADLEN /30/
+        INTEGER*4 JREC		! the 1-based output record number
+        INTEGER*4 I,I2,I4,IDX,IOS,IRET,J,JOUT,K,NWTOT,NRECL
+	INTEGER*4 HEAD,NDX,ND4,MASE,MM1,MM2,MM3,MM4 ! multiple array dimensions
+	INTEGER*4 NSOUT		! number of seasons expected to be output
+	SAVE IDX,NDX,JREC,MASE,MMM ! insure these 
+	SAVE FRONT,NSOUT	! remain defined
+C
+ 31	 FORMAT(A,5I7)  !<dbug
+ 	IF (IDB3.NE.0) WRITE(IOSP,*)'TDISKa ',KODE,KREC,NCASE,J5,K4OUT
+	IF (IDB3.GE.2) WRITE(IOSP,31)'TDISKa N3,N4+',N3,N4,N5,J5,MASE !<dbug
+	IF (IDB3.GE.3) WRITE(*   ,31)'TDISKa N3,N4+',N3,N4,N5,J5,MASE !<dbug
+	GOTO (100,200,300,400,500),KODE
+C
+C request file name and open file			1  1  1  1  1  1  1  1
+C Note. Case and KRCCOM are completely defined at this point
+100	IF (LOPN2) CLOSE (IOD2)
+	LOPN2=.FALSE.
+	IF (KREC.EQ.0) THEN
+	  CSTAT='NEW'
+CC	  WRITE (IOPM,*) ' File for saving results?'
+	ELSE
+	  CSTAT='OLD'
+	  WRITE (IOPM,*) ' File to start (and continue) from ?'
+	ENDIF
+C     recl may be bytes or longwords, depending upon  OS and compiler options.
+C Solaris: is longwords, since file is unformatted (default for direct access)
+	IF (K4OUT.LT.50) THEN	! Open direct-access output file
+	  IF (K4OUT.LT.0) THEN	!  K4OUT is negative
+	    NWTOT=2*MAXNH*MAXN4 !  TSF  &  TPF only
+	  ELSEIF (K4OUT.EQ.0) THEN
+	    NWTOT=NWKRC+NWLAT	!  KRCCOM & LATCOM
+	  ELSE			!  K4OUT is 1:49
+	    NWTOT=NWKRC+NWDAY	!  KRCCOM & DAYCOM
+	  ENDIF
+	  NRECL=4*NWTOT		!  or  NRECL=NWTOT  ! depends upon compiler <<<<
+	  OPEN (UNIT=IOD2,FILE=FDISK,ACCESS='DIRECT',STATUS=CSTAT
+     &      ,RECL=NRECL,ERR=191,IOSTAT=IOS)
+	  LOPN2=.TRUE.
+	  JREC=0		! no records written yet
+	  WRITE(IOSP,110)CSTAT,FDISK,NWTOT, NRECL,DAYTIM
+	  WRITE(IOERR,110)CSTAT,FDISK,NWTOT, NRECL,DAYTIM
+ 110	  FORMAT (/'0TDISK:  Opened ',A,' direct access file = ',A
+     &      /8X,'Record length in R*4 & NRECL = ',2I6,3X,'NOW = ',5A4)
+	ELSE			! setup for BIN5 file
+	  JJJ(4) = 0		!
+	  JJJ(5) = 0		!
+	  JJJ(6) = 0		!
+	  JJJ(7) = 0		!
+	  JJJ(8) = 4		! set type as  REAL
+	  JJJ(9) = HEADLEN	! header length
+	  NSOUT=N5-JDISK+1 ! number of seasons to output
+	  IF (K4OUT.EQ.51) THEN 
+	    ND4=N4		! remember how many latitudes in first case
+	    JJJ(1) = 5		! # of dimensions
+	    JJJ(2) = N24	! Size of Dim. 1: # hours output
+	    JJJ(3) = 2		! Size of Dim. 2: 2 temperature
+	    JJJ(4) = N4		! Size of Dim. 3: latitudes
+	    JJJ(5) = NSOUT	!  number of seasons to come.
+	    HEAD   =5*NSOUT	! Extra words in case header
+	  ELSEIF (K4OUT.EQ.52) THEN 
+	    ND4=N4		! remember how many latitudes in first case
+	    JJJ(1) = 5		! # of dimensions
+	    JJJ(2) = N24	! # hours output
+	    JJJ(3) = 7		! 3 temperature, 2 fluxes, 2 layers
+	    JJJ(4) = N4		! dimen of latitudes
+	    JJJ(5) = NSOUT	!  number of seasons to come.
+	    HEAD   =5*NSOUT	!  Extra words in case header
+	  ELSEIF (K4OUT.EQ.54) THEN
+	    JJJ(1) = 4		! # of dimensions
+	    JJJ(2) = NSOUT	! expected total seasons
+	    JJJ(3) = 5		! the items
+            JJJ(4) = N4		! # latitudes 
+	    HEAD=NSOUT		! extra words in case header
+	  ELSEIF (K4OUT.EQ.55) THEN
+	    JJJ(1) = 3		! # of dimensions
+	    JJJ(2) = NSOUT	! # seasons to store
+	    JJJ(3) = 9		!  constant must agree with # items stored 
+	    HEAD=NSOUT
+	  ELSEIF (K4OUT.EQ.56) THEN
+	    JJJ(1) = 4		! # of dimensions
+	    JJJ(2) = 2*N24+N1+3	! # words in a latitude
+	    JJJ(3) = N4		! # latitudes
+	    JJJ(4) = NSOUT	! number of seasons to come.
+	    HEAD=5*NSOUT	! words in case header
+          ELSE
+	     WRITE (IOERR,*)' TDISK Invalid K4OUT fatal: ',K4OUT
+	     LOPN2=.FALSE.
+	     GOTO 9
+	  ENDIF
+D	  WRITE(IOSP,13)K4OUT,JJJ
+D 13	  FORMAT ('Initiated custom output: K4OUT=',I3,/'JJJ=',10I6)
+C at this point, jbb(2:n) contain the dimension needed for data.
+C need to update next to last for NDX, and compute the number of cases possible
+	  IDX=JJJ(1)-1		! dimension that has extra size
+	  WRITE(IOPM,*)'IDX=',IDX
+CC	  IF (IDX.LT.2) THEN STOP ! ensure enough dimensions for this scheme
+	  MMM(1)=JJJ(2)		! compute number of words for each dimension
+	  DO J=2,IDX		! up to the largest used
+	     MMM(J)=MMM(J-1)*JJJ(J+1) !
+	  ENDDO
+	  K=4+NWKRC+HEAD	! Increase case header for standard things
+	  NDX=(K-1)/MMM(IDX-1)+1 ! extra Dim N-1 needed to hold case header
+	  WRITE(IOPM,*)'N4,NDX,K=',N4,NDX,K
+	  JJJ(IDX+1)=JJJ(IDX+1)+NDX ! revised this dimension
+	  WRITE(IOPM,*)'IDX,JJJ=',IDX,JJJ
+	  WRITE(IOPM,*)'MMM=',MMM
+	  WRITE(IOSP,*)'IDX,JJJ=',IDX,JJJ
+	  WRITE(IOSP,*)'MMM=',MMM
+	  KASE=MMM(IDX-1)*JJJ(IDX+1) ! # words in a case
+	  RASE=FLOAT(KOMMON)/FLOAT(KASE) ! # cases that could be accomodated
+	  MASE=IFIX(RASE)	! # cases that could be accomodated
+	  KODED=K4OUT		! transfer into Common
+	  FRONT(1)=FLOAT(NWKRC)	! first 4 words are sizes used
+	  FRONT(2)=FLOAT(IDX)	! 1-based index of dimension with extra values
+	  FRONT(3)=FLOAT(NDX)	! Number of those extra
+	  FRONT(4)=FLOAT(NSOUT)	! not used yet
+	  WRITE(IOSP,*),'KOMMON,KASE,RASE,MASE,MTOT='
+     &          ,KOMMON,KASE,RASE,MASE,KASE*MASE
+	  JREC=0		! records written thus far = none
+	  LOPN2=.TRUE.
+	  IF (MASE.LT.1) LOPN2=.FALSE. ! KASE larger than KOMMON
+	ENDIF
+	GOTO 9
+C
+191	WRITE (IOERR,*) ' TDISK:1, ERROR OPENING FILE. IOSTAT=',IOS
+	WRITE (IOERR,*) '   IOD2=',IOD2,'  status=',cstat,'  recl=',nrecl
+	WRITE (IOERR,*) '   file=  ',FDISK
+	LOPN2=.FALSE.
+	GOTO 9
+C
+C write next record (internal record count)		2  2  2  2  2  2  2  2
+ 200	IF (K4OUT.LT.50) THEN !---------------------------------------------..
+	  IF (LOPN2) THEN	! save current values
+	    JREC=JREC+1
+	    I=JREC		! may be incremented by the  WRITE command
+	    IF (K4OUT.LT.0) THEN ! K4OUT negative
+	      WRITE(IOD2,REC=I)TSF,TPF
+	    ELSEIF (K4OUT.EQ.0) THEN
+	      WRITE(IOD2,REC=I)COMKRC,COMLAT
+	    ELSE		! K4OUT=1:49
+	      WRITE(IOD2,REC=I)COMKRC,COMDAY
+	    ENDIF
+	    I=LNBLNK(FDISK)	! last non-blank character in file name
+	    IF (JREC.LT.IDISK2) WRITE(IOSP,210)J5,JREC,SUBS,FDISK(1:I)
+ 210	    FORMAT(' TDISK wrote: J5 rec Ls File ',2I4,F7.2,1X,A)
+	  ELSE
+	    WRITE (IOERR,*) ' TDISK:2, WRITE, BUT NO FILE OPEN'
+	  ENDIF 
+	  GOTO 9
+	ENDIF
+C get here if type 5x  !---------------------------------------
+D	  WRITE(IOSP,*)'TDISKb ',kode,krec,ncase,j5,' jd,jjj',jdisk,JJJ
+	IF (NCASE.GT.MASE) GOTO 9 ! no room left for storage
+	JOUT=J5-JDISK		! 0-based season count after start to disk
+	JREC=JOUT+1		! 1-based count of this record
+	IF (JREC.GT.NSOUT) GOTO 9 ! beyond allocated season range
+	I=(NCASE-1)*KASE+1	! first word for this case
+	IF (JOUT.EQ.0) then	! first season of this case
+	   CALL R2R(0.,FFF(I),-KASE) ! zero the case
+	   CALL R2R (FRONT,FFF(I),4) ! first 4 words are sizes used
+	   CALL R2R (ALB,FFF(I+4),NWKRC) ! followed by KRCCOM
+	ENDIF
+	I4=I+4+NWKRC      ! first word in prefix after standard case header
+	MM1=MMM(1)		! may be needed several times in 5x sections
+	MM2=MMM(2)
+	MM3=MMM(3)
+	MM4=MMM(4)
+	IF (K4OUT.EQ.51) THEN !---------------------------------------
+C For Global temperatures: 2008oct16
+C [N24,2,Nlat,nseas+x,ncase]   First x "seasons" of each case contains: 
+C   Float of NWKRC & nlay & nlat & nseas, KRCCOM, DJU5(nseas),SUBS(nseas)
+C   ,PZREF(nseas), TAUD(nseas), SUMF(nseas)
+C True seasons contain for every hour: TSF,TPF
+	  MM4 = MIN(N1-1,MM1-2) ! compute # layers to store
+	  IF (JOUT.EQ.0) THEN	! insure done only once per case 
+	    J=N5-JDISK+1+NDX	! season dimension required 
+	    IF (N24.NE.JJJ(2) .OR. N4.GT.JJJ(4) .OR. J.NE.JJJ(5)) THEN
+	       WRITE (IOERR,*)
+     &  'Change of NHOUR, NLAT, or #to Disk not allowed for K4OUT=51'
+	       WRITE (IOERR,*)N24,MM1, N4,JJJ(4) ,J,JJJ(5)
+	       GOTO 9
+	    ENDIF
+	  ENDIF
+	  J=I4+JOUT		! loc of this seasons DJU5
+	  FFF(J) =DJU5		! date for this case and season
+	  FFF(J+NSOUT) =SUBS
+	  FFF(J+NSOUT+NSOUT) =PZREF
+	  FFF(J+3*NSOUT) =TAUD
+	  FFF(J+4*NSOUT) =SUMF
+	  J=I+MM3*(NDX+JOUT)	! first word of this case, season
+	  DO J4=1,N4		! do each latitude
+	      I=J+(J4-1)*MM2 ! first word of this case, season, latitude
+	      CALL R2R (TSF(1,J4),FFF(I)          ,MM1) ! copy one day
+	      CALL R2R (TPF(1,J4),FFF(I+MM1)      ,MM1)
+	   ENDDO
+	ELSEIF (K4OUT.EQ.52) THEN !------------------------------------
+C For hourly conditions:  revised 2004jul22  and 2004Oct06 and 2008oct15
+C [N24,7,Nlat,x+nseas,ncase]   First x "seasons" of each case contains: 
+C   Float of Front+KRCCOM, DJU5(nseas),SUBS(nseas)
+C   ,PZREF(nseas), TAUD(nseas), SUMF(nseas)
+C True seasons contain for every hour: TSF,TPF,TAF,DOWNVIS,DOWNIR
+C  and float(NDJ4)+ DTM4 + TTA4+ Tmin(Nlay-) Omitting virtual first layer
+C  and    FROST4+ AFRO4+ HEATMM+ Tmax(Nlay-) " " "
+C the Nlay- are as many layers as fit within the number of Hours
+	   MM4 = MIN(N1-1,MM1-2) ! compute # layers to store
+	   IF (JOUT.EQ.0) THEN	! insure done only once per case 
+	     J=N5-JDISK+1+NDX	! season dimension required 
+	     IF (N24.NE.JJJ(2) .OR. N4.GT.JJJ(4) .OR. J.NE.JJJ(5)) THEN
+	       WRITE (IOERR,*)
+     &   'Change of NHOUR, NLAT, or #to Disk not allowed for K4OUT=52'
+	       WRITE (IOERR,*)N24,MM1, N4,JJJ(4) ,J,JJJ(5)
+	       GOTO 9
+	     ENDIF
+	   ENDIF
+	   J=I4+JOUT		! loc of this seasons DJU5
+	   FFF(J) =DJU5		! date for this case and season
+	   FFF(J+NSOUT) =SUBS
+C	   write(*,*)'t1', subs
+	   FFF(J+NSOUT+NSOUT) =PZREF
+	   FFF(J+3*NSOUT) =TAUD
+	   FFF(J+4*NSOUT) =SUMF
+	   J=I+MM3*(NDX+JOUT)	! first word of this case, season
+	   DO J4=1,N4		! do each latitude
+	     I=J+(J4-1)*MM2	! first word of this case, season, latitude
+	     CALL R2R (TSF(1,J4),FFF(I)          ,MM1) ! copy one day
+	     CALL R2R (TPF(1,J4),FFF(I+MM1)      ,MM1)
+	     CALL R2R (TAF(1,J4),FFF(I+MM1+MM1)  ,MM1)
+	     CALL R2R (DOWNVIS(1,J4),FFF(I+3*MM1),MM1)
+	     CALL R2R (DOWNIR (1,J4),FFF(I+4*MM1),MM1) ! item 5
+	     K=I+5*MM1		! first index of item 6
+	     FFF(K)=FLOAT(NDJ4(J4)) ! # days to compute solution 
+	     FFF(K+1)=DTM4(J4)	! rms temperature change on last day
+	     FFF(K+2)=TTA4(J4) 
+	     CALL R2R (TIN(2,J4),FFF(K+3),MM4)
+	     K=K+MM1		! first index of item 7
+	     FFF(K)=FROST4(J4)	! Frost at midnight
+	     FFF(K+1)=AFRO4(J4) ! frost albedo
+	     FFF(K+2)=HEATMM(J4)  
+	     CALL R2R (TAX(2,J4),FFF(K+3),MM4)
+	   ENDDO
+D	   WRITE(iosp,*)'JOUT,J,I,K',JOUT,J,I,K
+	ELSEIF (K4OUT.EQ.54) THEN	!------------------------------------
+C for Heat flow. [seasons, 5 items, x+latitudes, cases]
+C Save surface temperature and heat flow at midnight
+C   as function of season and latitude.
+C Items are: Tsur 1am, Tsur 1pm, heat flow, frost, Tbot
+C  First x "latitudes" of each case contains: 
+C     Float of Front+KRCCOM, DJU5(nseas)
+	   FFF(I4+JOUT)=DJU5	! save the season in header
+	   K=I+(NDX-1)*MM2+JOUT ! base index of 0 real lat. at this season
+	   I2=1+N24/2		! index of noon
+	   DO J=1,N4		! each latitude
+	      I=K+J*MM2		! location in first vector for this latitude
+	      FFF(I)      =TSF(1,J) ! surface temperature 1am
+	      FFF(I+MM1)  =TSF(I2,J) ! surface temperature 1pm
+	      FFF(I+MM1+MM1)    =HEATMM(J) ! surface heat flow
+	      FFF(I+MM1+MM1+MM1)=FROST4(J) ! frost budget
+	      FFF(I+4*MM1)      =TTB4(J) ! T bottom 
+	   ENDDO
+	ELSEIF (K4OUT.EQ.55) THEN	! ------------------------------
+C for seasonal studies at one latitude, [seasons,x+9 items,cases]
+C Items: Ts 1am, Ts 3am, Ts 1pm, spare, Tp 1am, Tp 1pm, heat flow, frost, T_bot.
+C  First x "items" of each case contains: 
+C     Float of Front+KRCCOM, DJU5(nseas)
+	   FFF(I4+JOUT)=DJU5	! save the season in the header
+	   J=I+(NDX-1)*MM1+JOUT ! base index of 0 real item at this season
+	   I2=1+N24/2		  ! index of noon
+	   FFF(J+  MM1)=TSF(1,1)  ! surface temperature 1am
+	   FFF(J+2*MM1)=TSF(3,1)  ! surface temperature 3am
+	   FFF(J+3*MM1)=TSF(I2,1) ! surface temperature 1pm
+	   FFF(J+4*MM1)=DJU5	  ! spare   DJU5 is redundant with prefix
+	   FFF(J+5*MM1)=TPF(1,1)  ! TOA bolo temperature 1am
+	   FFF(J+6*MM1)=TPF(I2,1) ! TOA bolo temperature 1pm
+	   FFF(J+7*MM1)=HEATMM(1) ! surface heat flow
+	   FFF(J+8*MM1)=FROST4(1) ! frost budget
+	   FFF(J+9*MM1)=TTB4(1)	  ! T bottom 
+        ELSEIF (K4OUT.EQ.56) THEN ! ------------------------------
+C (TSF+TPF+TMN4+3,latitudes,x+seasons, cases)
+C For each latitude, surface and planet temperature every hour, 
+C   plus for each layer, midnight temp.
+C   plus frost, heatflow, midnight atm temp
+C Header contains KRCCOM plus, sub-array(seasons,5) containing:
+C    djul, L-sub-s, global pressure, tauD, total_frost
+	   J=I4+JOUT
+	   FFF(J)=DJU5		! load as if an additional season
+	   FFF(J+NSOUT)=SUBS
+	   FFF(J+2*NSOUT)=PZREF
+	   FFF(J+3*NSOUT)=TAUD
+	   FFF(J+4*NSOUT)=SUMF
+	   K=I+MM2*(NDX+JOUT)	! Skip over KRCCOM and earlier seasons
+	   DO J=1,N4		! each latitude
+	     I=K+(J-1)*MM1	! location in first vector for this latitude 
+	     CALL R2R (TSF(1,J),FFF(I) ,N24) ! every hour
+	     I=I+N24 
+	     CALL R2R (TPF(1,J),FFF(I) ,N24) ! every hour
+	     I=I+N24
+	     CALL R2R (TMN4(1,J),FFF(I) ,N1) ! every layer at midnight
+	     I=I+N1
+	     FFF(I)  =FROST4(J)	! predicted frost amount kg/m^2.
+	     FFF(I+1)=HEATMM(J) ! Mean upward heat flow into surface
+	     FFF(I+2)=TTA4(J)	! predicted final atmosphere temperature 
+	   ENDDO
+        ENDIF			!---------------------------------------------
+	GOTO 9
+C
+C read requested record (external record control)	3  3  3  3  3  3  3  3
+300	IF (LOPN2) THEN
+		I=KREC
+		READ(IOD2,REC=I,IOSTAT=IOS)COMKRC,COMLAT
+		WRITE(IOSP,310)FDISK,KREC
+310		FORMAT(' TDISK:  READ FILE= ',A,' RECORD=',I3)
+		IERR=IOS
+		JREC=KREC
+	    ELSE
+		WRITE (IOERR,*)' TDISK:3, READ, BUT NO FILE OPEN'
+	    ENDIF
+	GOTO 9
+C
+C close the file					4  4  4  4  4  4  4  4
+ 400	IF (LOPN2) then
+	  IF (K4OUT.GE.50) THEN ! save custom array
+	    JJJ(IDX+2) = NCASE
+	    WRITE (IOSP,*)'JJJ=',JJJ
+	    CALL BINF5 ('W',FDISK,HEADER,JJJ,FFF,IRET) ! others equivalenced
+	    WRITE (IOSP,*)'Wrote bin5 file: type and iret= ',K4OUT,IRET
+	    WRITE (IOSP,*)'  File name=',FDISK
+	  ELSE			! close direct access file, or message
+	    CLOSE (IOD2)
+	    WRITE (IOSP,*)'Closed direct access file'
+	  ENDIF
+	  LOPN2=.FALSE.
+	ELSE ! not open
+	  IF (K4OUT.LT.50) WRITE (IOERR,*)' TDISK:4, no file was open'
+	ENDIF
+	NCASE=0			! ensure next file indexing start at 1 
+	GOTO 9
+C       
+C       output parameters once                          5  5  5  5  5  5  5  5
+ 500	IF (K4OUT.LT.0 .AND. JREC.EQ.0) THEN
+	   JREC=1
+	   I=JREC		! need room for NWKRC items
+	   IF (IDB3.GE.3) WRITE(IOSP,*)'TDISKc  KREC=',KREC,LOPN2,IOD2,I
+	   WRITE (IOD2,REC=I) COMKRC
+	ELSE 
+      WRITE (IOERR,*) 'TDISK:5,wrong conditions: k4out,jrec=',K4OUT,JREC
+	ENDIF
+	
+ 9	CONTINUE
+	IF (IDB3.GE.3) WRITE(IOSP,*)'TDISKx  KREC=',KREC
+	RETURN
+	END
+
+C======================================================================
+	SUBROUTINE TINT (VIN, AREA, SUM)
+C_Titl  TINT   spherical integrals over globe
+C_Vars
+	INCLUDE 'krccom.inc'	! contains  IMPLICIT statement. Uses  RADC  N4  ALAT = band latitudes <degrees>
+C_Args
+	REAL VIN(*)	! in. values representative of each latitude band
+	REAL AREA(*)	! in/out. normalized area of each band
+	REAL SUM	! out. global average 
+C_Lims
+C  Latitudes in  ALAT must increase (from south to north), and should cover 
+C that part of the planet where  VIN will be non-zero.
+C_Desc 
+C  Starts at south pole, and places boundaries between the bands at the
+C point halfway between successive entries in  ALAT.  The weighting functions
+C are computed on an intializing call with  AREA(1) = 0. on input.
+C_Hist	84jun12  Hugh_H_Kieffer  U.S.G.S._Flagstaff original version
+C   87sep23 HK revise documentation
+C   93mar03 ECisneros Ported to UNIX; made include filenames lowercase
+C   97jan30 HK minor edits
+C 2010jan12 HK Use IMPLICIT NONE
+C 2011aug01 HK Fix incorrect typing
+C_End
+        INTEGER*4 I
+        REAL EDGE,SL,S
+Cd	print * , 'TINT: N4',N4,MAXN4 !<dbug
+	IF (AREA(1).LE.0.) THEN	! first time, compute area array
+	  SL = -1.0		! sine of prior band edge (south pole at start)
+	  DO  I = 1,N4
+	    IF (I.LT.N4) THEN
+	      EDGE = (ALAT(I)+ALAT(I+1))/2. ! halfway between
+	    ELSE
+	      EDGE = 90.	! north pole for last edge
+	    ENDIF
+	    S = SIN (EDGE/RADC)
+	    AREA(I) = (S-SL)/2.	! normalized area for this band
+	    SL = S
+	  ENDDO
+C	  write(*,*) 'Radc=',radc
+C	  write(*,*) 'alat=',(alat(i),i=1,n4)
+	ENDIF
+C	write(*,*) 'area=',(area(i),i=1,n4)
+	SUM = 0.		! do summing weighted by area
+	DO I = 1, N4
+	  SUM = SUM + AREA(I) * VIN(I)
+	ENDDO
+	RETURN
+	END
+
+C======================================================================
+	SUBROUTINE TLATS (IQ,IRL)
+C_Titl  TLATS latitude computations for the  KRC thermal model system
+C_Vars
+	INCLUDE 'krccom.inc'
+	INCLUDE 'latcom.inc'
+	INCLUDE 'daycom.inc'
+	INCLUDE 'hatcom.inc'
+	INCLUDE 'porbcm.inc'	! need only for no-atm version
+	INCLUDE 'units.inc'
+C_Args
+	INTEGER IQ		!in. not used
+	INTEGER IRL		!out return codes: 1=normal  2=blow-up
+C_hist  1969 thru 97  Hugh_H_Kieffer
+C   97feb11  HK major revision
+C   97may30  HK 2nd version of atmospheric radiation
+C   97jul22  HK 3rd version of atmospheric radiation
+C   97sep08  HK add planetary temperatures
+C   97jul07  HK from calories to  SI units
+C   99dec10  HK revise insolation
+C 2002jul12  HK Revise atmosphere to use Delta-Eddington
+C 2005nov18  HK Add optional solar xenith angle limit 
+C 2005dec28  HK Fix bug using ZENLIM. Additional comments
+C 2006jan25  HK Modify SKYFAC from linear with slope to (1+cos s)/2
+C 2008sep27  HK fix error in G1: was MIN(1.,(90.-AINC)/ZENLIM))
+C 2008oct01  HK Use slope azimuth as a flag for a pit of slope SLOPE
+C 2008oct04  HK Fix transfer of wrong BETA to KRCCOM
+C 2010jan12  HK Use IMPLICIT NONE, move TINT call from TLATS to TSEAS
+C 2012feb29  HK  Remove unused variables
+C 2012mar01  HK  Include logical switches for atmosphere
+C 2012mar27  HK  Incorporate  CLIMTAU
+C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
+C
+	REAL DERI(2,2)		! diffuse irradiances from Delta-Eddington
+	REAL COSIAM(2)		! cos_incidence angle: average and noon
+	REAL COLL,COL3,BOND	! returned by Delta-Eddington
+C
+	REAL*4 ACOSLIM,AH,AINC,ANGLE,AVEA,AVEE,ATMHEAT,AVEI,AVEH
+     &,BOTDOWN,BOUNCE,CC,CC2,CD,CL,CL2,COSAM,COSI,COSZLIM,COS2,COS3
+     &,DIFAC,DIFFUSE,DIP,DIRECT,DIRFLAT,EFP,FACTOR,F23,FP,G0,G1,OMEGA
+     &,PCAP,PFACTOR,PCO2G,PCO2M,RADEAST,RANG,RLAT,RLAT2,RSDEC,SAZ
+     &,SLONOR,SD,SL,SL2,SOLR,SS,SS2,TAEQ4,TATMAVE,TATMSIG
+     &,TAUICE,TAUVIS,TBOT,TOPUP,TSEQ4,TSUR,TWILFAC,TWILIM
+	REAL*4 QI,QA,QH,QHS,QS	! temporary use
+	REAL*4 FXX(3),HXX(3),MXX(3),PXX(3),RXX(3),TXX(3) ! cartesian vectors
+      REAL*4 YUNIT(3) / 0,1.,0./ ! unit vector along  Y axis
+C
+      INTEGER*4 I,IH,IR, J,JE,JJ,JJH,JHOT,J3P1,KODE
+      LOGICAL LQ1,LQ2,LATM
+C
+      REAL*4 VFDOT ! Function names with *4
+C
+      REAL VLPRES,CO2PT,EPRED ! Function names. Default precision
+      REAL AVEDAY,AVEYEAR,CLIMTAU     ! Function names  Default precision
+C
+	LATM=PTOTAL.GT.1.0      ! atmosphere present flag
+	LQ1=IDB2.GE.3		! once per season or latitude
+	LQ2=IDB2.GE.6		! each day
+	IF (IDB2.NE.0) WRITE(IOSP,*)'TLATSa',N3,N4,J5,LATM,LQ1,LQ2
+D	print *,'TLATSa',N3,N4,J5,LATM,LQ1,LQ2 !<dbug
+C
+	IRL=1			! set return code to normal
+	I=IQ		! simply to avoid compiler complaint that IQ is not used
+C
+C============ factors that do not depend upon season ===================
+	RANG=2.0*PIVAL/N2	! time step expressed in radians
+	F23=2./3.
+	JHOT=INT(FLOAT(N24)*13.5/24.) ! index of warmest time of day
+C
+C radiation parameters:
+C  ASOL = direct + diffuse insolation as a function of local time
+	TWILFAC = 90./(90.+TWILI) ! twilight factor
+	TWILIM = COS((90.+TWILI)/RADC) ! minimum cosine i for twilight
+C
+C for sloping terrain
+C;	SLONOR = SLOPE*COS(SLOAZI/RADC) ! north component of dip, degrees
+C;	RADEAST = (SLOPE/RADC)*SIN(SLOAZI/RADC) ! east " " , radians
+	IF (SLOAZI .GT. -360.) THEN ! slope is regional
+	   SKYFAC = (1.+ COS(SLOPE/RADC))/2. ! effective isotropic radiation.
+	   COSZLIM=0.		! zenith angle default limit is 90 degrees
+	ELSE			! slope is of conical pit wall
+	   QA=(90.-SLOPE)/RADC	! zenith angle of slope, in radians
+	   QI=SIN(QA)
+	   SKYFAC = QI**2	! effective isotropic radiation.
+	   COSZLIM=COS(QA)      ! 
+	ENDIF
+C============ factors constant over latitude that depend upon season ==========
+C
+	SOLR=SOLCON/(DAU*DAU)	! solar flux at this heliocentric range
+	RSDEC=SDEC/RADC		! current solar declination
+	SD=SIN(RSDEC)
+	CD=COS(RSDEC)
+	MXX(1)=CD		! Sun at midnight
+	MXX(2)=0.
+	MXX(3)=SD
+	DIP=SLOPE/RADC		! dip in radians
+	SAZ=SLOAZI/RADC		! azimuth of dip, east from north
+	CALL ROTV (YUNIT,3,-SAZ,  PXX) ! PXX is temp. axis in equator
+	IF (LQ1) THEN
+	   WRITE(75,*) 'J5+',J5,SUBS,SLOPE,SLOAZI,SKYFAC
+	   WRITE(75,*) 'MXX+',MXX,DIP,SAZ
+	   WRITE(75,*) 'PXX+',PXX
+	ENDIF
+C       set blowup test to a factor larger than perpendicular black surface
+	TBLOW = 2.0 *  ( SOLR / (EMIS*SIGSB) )**0.25
+C      
+C get current total pressure at 0 elevation
+	IF (N4.GT.8) THEN	! use global integrations
+	   PCAP = SUMF*GRAV	! cap_frost equivalent surface pressure
+	ELSE
+	   PCAP=0.
+	ENDIF
+	PCO2M = (1.-FANON)*PTOTAL ! initial partial pres. of  CO2 at 0 elev
+	IF (KPREF.EQ.0) THEN	! constant 
+	   PZREF = PTOTAL       ! current total pressure at 0 elevation
+	   PCO2G = PCO2M	!  partial pres. of  CO2 at 0 elev. now
+	ELSEIF (KPREF.EQ.1) THEN ! follows Viking
+	   KODE=4		! average of all years and both landers
+	   PZREF = PTOTAL*VLPRES(KODE, DJU5) ! current total P at 0
+	   PCO2G = PCO2M+(PZREF-PTOTAL) ! all changes are pure CO2
+	ELSEIF (KPREF.EQ.2) THEN ! based on polar cap balance
+	   PZREF = PTOTAL - PCAP
+	   PCO2G = PCO2M -PCAP	! all changes are pure CO2
+	ENDIF
+C
+	IF (LPGLOB) THEN	! print global properties
+	   CALL TPRINT(8)	! print page heading
+	   WRITE(IOSP,'(A,F10.4)')' GLOBAL AVERAGE FROST; kg/m^2 =',SUMF
+	ENDIF
+C
+	IF (LQ1) PRINT *,'TLAT1 J5,TBLOW=',J5,TBLOW
+	J4=0
+C  ----------------new latitude loop loop loop--------------------------
+C
+ 100	J4=J4+1
+	DLAT=ALAT(J4)		! current latitude, degrees
+	RLAT=DLAT/RADC		! latitude in radian
+	CL=COS(RLAT)
+	SL=SIN(RLAT)
+	SS=SL*SD		! not really needed for VAV version
+	CC=AMAX1(1.E-10,CL*CD)	! not really needed for VAV version
+C       for slope
+C;	RLAT2=(DLAT+SLONOR)/RADC ! effective latitude in radians
+C;	CL2=COS(RLAT2)
+C;	SL2=SIN(RLAT2)
+C;	SS2=SL2*SD
+C;	CC2=AMAX1(1.E-10,CL2*CD)
+C       
+	COSIAM(1)= MAX(1.E-6,AVEDAY(SDEC,DLAT)) ! get average cosine incidence
+C;	COSIAM(2)= SS+CC	!  cos ( incidence angle at noon )
+	COSAM=-SS/CC            !  find length of day and daylight intervals
+	IF (ABS(COSAM).LT.1.) THEN
+	   DAM=RADC*ACOS(COSAM)      ! occurs in COMMON. Used only in tprint.f
+	ELSEIF (COSAM.GE.1.) THEN
+	   DAM=0.
+C;	   COSIAM(2) = 1.E-6	! sun never rises
+	ELSE
+	   DAM=180.
+	ENDIF
+C Vector algebra version 2012may31  !VAv
+	
+! fxx=[-cos(rlat),0.,sin(rlat)]  ; level normal at midnight
+	FXX(1)=-CL
+	FXX(2)=0.
+	FXX(3)=SL
+!    rxx=ROTV(pxx,2,-!dtor*(90.-xlat)) ; axis around which to rotate dip
+	QA=PIVAL/2.-RLAT ! colat in radians
+	CALL ROTV (PXX,2,-QA,  RXX)  ! axis around which to rotate dip
+!    txx= VROTV(fxx,rxx,!dtor*tilt[0]) 
+	CALL VROTV(FXX,RXX,DIP,  TXX) ! tilted surface normal
+	IF (LQ1) THEN
+	   WRITE(75,*)'FXX+',FXX,J4,DLAT
+	   WRITE(75,*)'RXX=',RXX  ! R should be 90 deg from F
+	   WRITE(75,*)'TXX=',TXX
+	ENDIF
+C       
+	AVEE=EMIS
+	AVEA=ALB ! surface albedo; will be frost if frosty at end of prior day
+	TAUVIS=TAUD		! solar dust opacity
+	TAUICE=0.		! IR ice-cloud opacity
+C
+	IF (LATM) THEN		!v-v-v-v-v  with atmosphere
+	   IF (J5.LE.1) THEN	! No prior season  Repaired: 2011aug14
+	      TATMAVE=TATM      ! diurnal average
+	      EFROST = 0.	! frost on the ground
+	   ELSE			! use results from prior season
+	      CALL SIGMA(TAF(1,J4),N24,TATMAVE,TATMSIG) ! diurnal average Tatm.
+	      EFROST = FROST4(J4) ! starting frost amount
+	   ENDIF
+	   SCALEH = TATMAVE*RGAS/(AMW*GRAV) ! scale height in km
+	   PFACTOR = EXP(-ELEV(J4)/SCALEH) ! relative to global annual mean
+	   PRES = PZREF * PFACTOR ! current local total pressure 
+	   IF (KVTAU.EQ.2) THEN ! use climate opacities
+	      QA=CLIMTAU (SUBS,DLAT,TAUICE) ! IR opacity
+	      TAUVIS=QA/TAURAT ! solar dust opacity
+	   ENDIF
+	   OPACITY = TAUVIS*PRES/PTOTAL+TAUICE/TAURAT ! normal solar opacity
+C       not used?      SLOLIM = ACOS(ACOSLIM)             ! or 89.94 deg
+C       
+	   IF (LVFA) THEN	! use variable frost albedo
+	      CALL ALBVAR (COSIAM(1)*SOLR, AFNOW) ! var. frost albedo
+	   ELSE
+	      AFNOW = AFROST
+	   ENDIF
+	   IF (LVFT) THEN	! use variable frost temperature
+	      TFNOW = CO2PT(1,PFACTOR*PCO2G) ! get local frost temperature
+	   ELSE
+	      TFNOW = TFROST
+	   ENDIF
+	   TATMIN = CO2PT(1,PFACTOR*PCO2G/2.71828) ! frost point for 1-layer atm
+	   IF (EFROST.GT.0.) THEN ! use frost emissivity and albedo
+	      AVEE=FEMIS
+	      AVEA=AFNOW
+	   ENDIF
+	   OMEGA=DUSTA		! single scattering albedo
+	   G0=ARC2		! Henyey-Greenstein asymmetry parameter
+	ELSE			! +-+-+-+-+  no atm.
+	   EFROST=0.
+	   OPACITY=0. 
+	ENDIF			!^-^-^-^-^
+	ACOSLIM = AMAX1(OPACITY/EXPMIN,0.001) ! limit to avoid math checks
+	IF (LQ1) print *,'TLATS: J4,SOLR...',J4,SOLR,ACOSLIM,COSIAM(1)
+C
+ 777	FORMAT(9G12.5)		! default format
+C insolation at mid-step and its average. time origin is midnight.
+C  angle from noon is (j2/n2 * 2.pi) - pi, so cos of this is -cos(j2/n2 *2pi)
+C  cosi = cosine of solar incidence angle onto horizontal
+C  cos2 = cosine of solar incidence angle onto surface slope
+C  cos3 = cosine of twilight angle onto horizontal
+	AVEI=.0			! to sum solar onto slope surface
+	AVEH=.0			! to sum atm. heating
+	DIFAC=SKYFAC+AVEA*(1.-SKYFAC) ! sky plus regional surface reflection
+	IH = 1                  ! saving "hour" count
+	AH = FLOAT(N2)/FLOAT(N24) ! time steps between saving results
+	JJH = AH+.5		! round to time step of first saving
+	DO JJ =1,N2		! ------------------time of day loop----------
+	   ANGLE=(FLOAT(JJ)-0.5)*RANG ! rotation angle at middle of time step
+!     hxx=ROTV(mxx,3,k*dt)       ; Sun progress thru day
+!     cosi=VDOT(hxx,fxx)         ; incidence on level
+!     if cosi gt 0. then begin   ; daytime
+!         cos2=VDOT(hxx,txx)>0.  ; incidence on tilted
+!         if doa then cos2=cos2+sas*cosi ; add regional reflectance
+	   CALL ROTV( MXX,3,ANGLE, HXX) !VAv  Sun progress thru day
+	   COSI=VFDOT(HXX,FXX)	! cos of incidence angle on horizontal
+	   COS2=VFDOT(HXX,TXX)	! cos of incidence angle onto slope
+C;	   COSI= SS  -CC*COS (ANGLE) ! cos of incidence angle on horizontal
+C;	   COS2= SS2 -CC2*COS (ANGLE+RADEAST) ! " " onto slope
+C       Get atmosphere transmission and heating for horizontal surface
+	   IF (COSI.GT.ACOSLIM) THEN ! Day: Sun is above horizon
+	     IF (LATM) THEN	!v-v-v-v-v  with atmosphere
+	       CALL DEDING2 (OMEGA,G0,AVEA,COSI,OPACITY, BOND,COLL,DERI)
+	       TOPUP  =PIVAL*(DERI(1,1)-F23*DERI(2,1)) ! diffuse up at top atm.
+	       BOTDOWN=PIVAL*(DERI(1,2)+F23*DERI(2,2)) ! diffuse down at surf.
+	       ATMHEAT=COSI-TOPUP-(1.-AVEA)*(BOTDOWN+COSI*COLL) ! atm. heating
+	       DIRFLAT=COSI*COLL ! collimated onto regional flat plane
+	     ELSE		! -+-+-+-+ day with no atmosphere
+C As opacity goes to zero, COLL->1., topup-> cosi*ALB, botdown->0 athmheat->0
+		 TOPUP  =COSI*AVEA !  Lambert surface
+		 BOTDOWN=0.	! no atm scattering
+		 ATMHEAT=0.	! no atm absorbtion
+		 COLL=1.	! no atm attenuation of beam
+		 DIRFLAT=COSI	! incident intensity on horizontal
+	      ENDIF
+	   ELSE			! night: set several values for dark
+	      ATMHEAT=0.
+	      DIRFLAT=0.
+	      TOPUP=0.
+	      COLL=0.      
+	   ENDIF
+C Get diffuse insolation, including twilight and first-order surface reflection 
+	   IF (COSI.GT.TWILIM) THEN ! in day or twilight zone
+	      COS3= COS(TWILFAC*ACOS(COSI)) ! twilight effective cosine
+	      IF (LATM.AND.(COS3.GT.1.E-5)) THEN
+		 CALL DEDING2 (OMEGA,G0,AVEA,COS3,OPACITY, BOND,COL3,DERI)
+		 BOTDOWN=PIVAL*(DERI(1,2)+F23*DERI(2,2)) !diffuse down at surf
+	      ELSE
+		 BOTDOWN=0.
+	      ENDIF
+	      DIFFUSE=SKYFAC*BOTDOWN ! diffuse flux onto surface
+	      IF (SLOAZI .LE. -360.) THEN ! bounce in a pit
+		 AINC=ACOS(COSI)*RADC ! incidence angle in degrees
+		 G1=MIN(1.,(90.-AINC)/SLOPE) ! (90-i)/slope
+	      ELSE
+		 G1=1.0
+	      ENDIF 
+	      BOUNCE=(1.-SKYFAC)*AVEA*(G1*DIRFLAT+DIFFUSE)
+	   ELSE
+	      DIFFUSE=0.
+	      BOUNCE=0.
+	   ENDIF
+C       
+C       Set direct surface insolation
+	   IF (COS2.GT.COSZLIM) then ! target is directly illuminated
+	      DIRECT=COS2*COLL	! slope is in sunlight
+	   ELSE
+	      DIRECT=0.		! Target is in shadow
+	   ENDIF
+C       
+	   QI=(DIRECT+DIFFUSE+BOUNCE)*SOLR ! solar onto slope surface
+	   IF (LQ1.AND.(MOD(JJ,24).EQ.1)) THEN
+     	      WRITE(75,*)'HXX+',HXX,JJ
+              WRITE(75,*)'ANG:',ANGLE,COSI,COS2,DIRECT,QI
+	   ENDIF
+	   IF (LQ2) WRITE(IOSP,*),'TLatc',JJ,COSI,COS3,DIRECT,DIFFUSE 
+	   QA=ATMHEAT*SOLR      ! solar heating of atm.
+	   ASOL(JJ)=QI		! total insolation onto slope surface
+	   ADGR(JJ)=QA
+	   AVEI=AVEI+QI
+	   AVEH=AVEH+QA
+	   IF (LD19) WRITE(79,777) QA,QI,DIRECT,DIFFUSE,BOUNCE
+	   IF (JJ.EQ.JJH) THEN	!  JJH is next saving hour
+	      TOFALB(IH,J4)=TOPUP
+	      IH = IH+1		! increment to next hour
+	      JJH = IH*AH+.5	! next time-step to save
+	   ENDIF
+	ENDDO			!-------------end time-of-day loop-----------
+C       
+C       find equilibrium temperature at current latitude !+no atm
+C
+	AVEI=AMAX1((1.-AVEA)*AVEI/FLOAT(N2),0.) ! average absorbed insolation
+	IF (LATM) THEN		!v-v-v-v-v  with atmosphere
+	   TAUIR=(CABR+TAUVIS*TAURAT)*(PRES/PTOTAL)+TAUICE! thermal opacity, zenith
+	   QA=AMIN1(0.0168455,AMAX1(TAUIR,62.4353)) ! limits 1. < FACTOR < 2.
+	   FACTOR= 1.50307 -0.121687*ALOG(QA) ! from fit to hemisphere integrals
+	   TAUEFF=FACTOR*TAUIR	! effective hemispheric opacity
+	   BETA=1.-EXP(-TAUEFF)	! hemispheric thermal absorption of atmosphere
+	   AVEH=AMAX1(AVEH/FLOAT(N2),0.) ! average atm. solar heating
+	   QS=AVEH/BETA		! atm heating term
+	   IF (TAUIR.LT .01) QS=TAUD*SOLR/PIVAL+TAUIR*AVEI ! small tau limit
+	   TAEQ4=(QS+AVEI)/(SIGSB*(2.-AVEE*BETA)) ! equilib T_a^4
+	   TSEQ4=BETA*TAEQ4+AVEI/(SIGSB*AVEE) ! equilib T_s^4
+	   TEQUIL = AMAX1( TSEQ4,1.e4)**0.25 ! equilib T_s, min of 10.
+	   IF (TEQUIL.LT.TFNOW) TEQUIL=TFNOW
+	ELSE
+	   BETA=0.
+C       start using annual average insolation
+	   QA=1./(SQRT(1.-ECC**2)) ! average orbit insolation factor
+	   QS=AVEYEAR(RADC*BLIP,DLAT) ! Ave. fraction.  Args. in degrees
+	   AVEI=QA*QS*SOLCON/SJA**2 ! average insolation in W/m^2
+	   TEQUIL = ((1.-AVEA)*AVEI/(SIGSB*AVEE))**0.25 ! equilib T_s
+	ENDIF
+	IF (LQ1) then
+	   PRINT *,'AVEA ...',AVEA,AVEE,AVEI,AVEH
+	   PRINT *,'CABR...',CABR,TAUD,TAUIR,FACTOR,TAUEFF
+	   PRINT *,'BETA...',BETA,QS,SIGSB 
+	   PRINT *,'TAEQ4,TSEQ4,TEQUIL',TAEQ4,TSEQ4,TEQUIL
+	ENDIF
+	JJO=1
+C       if at start, use linear profile, else  continuing from prior season
+	IF (J5.LE.1) THEN	! start with linear profile
+	   IF (N3.GT.3) JJO=.75*N2+1.5 ! start first day just past 3/4 day
+	   TSUR=TEQUIL		!  isothermal if bottom is insulating
+	   TBOT=TEQUIL		!  "  "
+	   IF(IB.GE.1) TBOT=TDEEP ! case for constant bottom  T
+	   IF(IB.GT.1) TSUR=TDEEP ! case for isothermal initial condition
+C       
+	   IF (LQ1) PRINT *,'TSUR,TBOT',TEQUIL,TSUR,TBOT
+	   IF (LQ1) PRINT *,'XCEN',XCEN 
+	   DO  I=1,N1
+	     TTJ(I)=TSUR+(TBOT-TSUR)*(XCEN(I)-XCEN(1))/(XCEN(N1)-XCEN(1))
+	   ENDDO
+	   TTJ(N1PIB)=TBOT
+	   TTS(1)=TEQUIL
+	   TTB(1)=TEQUIL
+	   IF (LATM) TATMJ=TAEQ4**0.25
+	ELSE			! start with final value from previous season
+	   DO  I=1,N1PIB
+	      TTJ(I)=TMN4(I,J4)
+	   ENDDO
+	   TTS(1)=TTS4(J4)
+	   TTB(1)=TTB4(J4)
+	   IF (LATM) TATMJ=TTA4(J4) ! predicted final atm temp from prior season
+	ENDIF
+D       write(iosp,*)'tauir,taueff,BETA=',tauir,taueff,BETA
+D       write(iosp,*)'aveh,avei=',aveh,avei
+D       write(iosp,*)'tatmj,tequil=',tatmj,tequil
+C       write(iosp,*) asol
+C       write(iosp,*) adgr
+	IF (LP3) CALL TPRINT (3) ! print header for hourly summary
+	IF (LQ1) PRINT *,'TTJ',TTJ
+C====== 
+C       
+	CALL TDAY (2,IR)	! execute day loop
+C       
+C====== 
+	IF (IR.EQ.2) THEN	! if blow-up; stop the model
+	   IRL=2
+	   GOTO 9
+	ENDIF
+C       save results for current latitude
+C       
+	J3P1=J3+1
+C       i=n24/2                  ! noonish
+D       write(44,344) j3,j4,j5,ncase,efrost,ave_a,taud,pres !dbw 44
+D       & ,DTMJ(J3),DTMJ(J3P1),TMIN(2),TMAX(2) !dbw 44
+D       344       format(i3,i3,i4,i3,f12.6,f12.9,f12.9,f12.6,2f12.9,2f12.6) 
+C       
+	TST4(J4)=TEQUIL
+	DTM4(J4)=DTMJ(J3P1)	!  RMS change of layer temperatures in prior day
+	NDJ4(J4)=J3
+	DO  I=1,N24
+	   TSF(I,J4)=TSFH(I)
+	   TPF(I,J4)=TPFH(I)
+	ENDDO
+	DO  I=1,N1		! save extrema for each layer
+	   TIN(I,J4)=TMIN(I)	!   and predict next season's
+	   TAX(I,J4)=TMAX(I)	!   temperatures.
+	ENDDO
+C  
+	TTX4(J4)=FLOST*DELJUL/(J3*PERIOD)  ! linear extrap. of frost lost over this season     
+	FP=DELJUL/PERIOD-J3	! undone iterations to end of this season.
+C The 4 items predicted are stored for the end of the day prior to their index;
+C so they are defined up to J3P1.  DTMJ(1)==-1.
+C If 2 or more new days were computed this season, do aymptotic prediction.
+C If have 1 new day, do linear predication; signaled by negative extrapol.
+	IF (J3.GE.2) THEN	! have at least 3 points in array to predict
+	   JE=J3-1
+	ELSEIF (FP.LT.0.1) THEN ! can use 2-points
+	   FP=FP-1.		! force  EPRED into 2-point mode
+	   JE=1
+	ELSE
+	   JE=-1		! turn off any interpolation
+	ENDIF
+	IF (JE.GE.1) THEN	! can use extrapolation
+	   DO  I=1,N1		! predict next season's temperatures
+	      TMN4(I,J4)= EPRED(TT1(I,JE),FP,MAXN1,TFNOW,TBLOW)
+	   ENDDO
+	   TTS4(J4)   = EPRED(TTS(JE),FP,1,TFNOW,TBLOW) ! surface average
+	   TTB4(J4)   = EPRED(TTB(JE),FP,1,TFNOW,TBLOW) ! bottom layer average
+	   IF (LATM) THEN	!v-v-v-v-v  with atmosphere
+	      TTA4(J4)   = EPRED(TTA(JE),FP,1,TFNOW,TBLOW) ! end-of-day Atm 
+	      EFP        = EPRED(FRO(JE),FP,1,0.,9999.)
+	   ENDIF		! -+-+-+-+ day with no atmosphere
+	ELSE			! extrapolation not possible
+	   DO  I=1,N1		!  start next season where this one ended
+	      TMN4(I,J4)= TTJ(I)
+	   ENDDO
+	   TTS4(J4) = TTS(J3P1)
+	   TTB4(J4) = TTB(J3P1)
+	   TTA4(J4) = TTA(J3P1) ! wont hurt to do if no atm == WHINA
+	   EFP      = FRO(J3P1) ! wont hurt to do if no atm
+	ENDIF
+	IF (IB.GE.1) TMN4(N1PIB,J4)=TTJ(N1PIB)
+	TEXTRA(J4,1) = TTS4(J4)-TTS(J3P1) ! amount of extrapolation,Top
+	TEXTRA(J4,2) = TTB4(J4)-TTB(J3P1) ! " " , bottom
+C       TAX(MAXN1,J4)= TEXTRA(J4,1) ! overload into tax
+C       TIN(MAXN1,J4)= TEXTRA(J4,2) ! overload 
+	HEATMM(J4) = HEAT1M	! daily average surface heat flow
+	AFRO4(J4) = AFNOW	! current cap frost albedo WHINA
+	IF (J5.EQ.JBARE) EFP=0.	! remove any remaining frost WHINA
+	FROST4(J4) = EFP	! current cap frost amount WHINA
+C       
+	IF (LP4) CALL TPRINT (4) ! print daily convergence summary
+	IF (LD16) THEN
+	   WRITE(76,761)SUBS,DLAT,ALB,SKRC,TAUD,PRES
+ 761	   FORMAT(/,'      Ls      Lt       A       I    TauD       P'
+     &	    /F8.2,F8.2,F8.3,F8.1,F8.3,F8.2
+     &     //'   Hour      T_K  IR_Inc    Solar T_Planet')
+ 762	   FORMAT(F7.2,F9.3,F8.3,F9.3,F9.3)
+	   QHS=24./FLOAT(N24)
+	   DO I=1,N24
+	      J=(I*N2)/N24
+	      QH=I*QHS
+	      QS=(1.-ALB)*ASOL(J) ! absorbed insolation
+	      WRITE(76,762)QH,TSFH(I),ADGR(J),QS,TPFH(I)
+	   ENDDO
+	ENDIF
+	IF (J4.LT.N4) GO TO 100
+C       
+C       ---------------------------------------------------------------------
+C       
+ 9      IF (IDB2.GE.3) WRITE(IOSP,*)'TLATSx',N1,N1PIB,N2,N24,J3
+	RETURN
+	END
+
+C======================================================================
+      SUBROUTINE TPRINT (IQIN) 
+C_Titl  TPRINT printed output routine
+C_Vars
+        INCLUDE 'krccom.inc'
+        INCLUDE 'latcom.inc'
+        INCLUDE 'daycom.inc'
+        INCLUDE 'units.inc'
+        INCLUDE 'filcom.inc'
+C        INCLUDE 'titcom.inc'
+
+C_Args
+        INTEGER IQIN !in. what to print: 
+C   +=also page title first       calling routine line number as of 2010jan22 
+C 1=+ program description            krc.f:95IF(LP1
+C 2=+ all parameters & depth table  krc.f:97IF(LP2   tcard.f:283beforeStop
+C 3=+ latitude page titles           tlats.f:273
+C 4=convergence summary {depth table} tlats.f:343IF(LP4) tday.f:458afterBlowup  
+C 5=+ latitude summary               tseas.f:80
+C 6=+ layer min and max temperatures tseas.f:81
+C 7=blowup conditions              tday.f:456
+C 8=page heading  tcard.f:129 tlats.f:97 
+C 9=one line for "one=point' mode  krc.f:110
+
+C_Hist	87sep21  HHK  CHANGE format 142 to  G, and narrow depth table
+C	93mar03  ECisneros ported to unix 
+C 97feb13  HHK major revision
+C 97aug22  HHK correct printed scales to  MKS
+C 2002mar07 HHK Add one line output for "one-point" mode
+C 2002aug04 HHK Fix errors in interpolation for one-point temperatures
+C 2005nov19 HK Add print of depth to top of 2nd layer
+C 2008nov13 HK Add input card for T-dependent conductivity
+C 2009feb24 HK Briefly try using titcom.inc and block data for parameter titles
+C               but prints left-adjusted, not useful for aligning input.
+C 2009may10 HK add TITONE as one-point comment field
+C 2012feb26 HK Remove unused variables
+C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
+
+C
+        INTEGER I,J,J3P1,K,IQ
+        INTEGER IPG /0/
+        REAL Q2,Q4,Q6,TOUTO
+
+D        WRITE(IOSP,*)'TPRINT CALLED ',IQIN  !debug
+
+	IQ = IQIN
+        GO TO (800,800,800,400,800,800,700,800,900,99), IQ ! print page title
+C               1   2   3   4   5   6   7   8   9  +
+C
+C  PRINT program description  (IQ = 1)
+C
+100     OPEN (IOD1, FILE='KRCEXP.TXT',STATUS='OLD')
+        DO 110 I=1,60		!  SCONVG is used here as a scratch array
+                READ  (IOD1,'(30A4)',END=128,ERR=110) SCONVG
+110             WRITE (IOSP,'(1X,30A4)') SCONVG
+128     CLOSE (IOD1)
+        GOTO 99
+C
+C  PRINT all parameters  (IQ = 2)
+C
+200	WRITE (IOSP,210) FINPUT,FOUT,FDISK
+210    FORMAT ('0Input file: ',A/' Print file: ',A/' Save file: ',A)
+
+        WRITE (IOSP,212) (FD(I),I=1,NFD)
+212     FORMAT ( '0    ALBEDO     EMISS   INERTIA     COND2     DENS2'
+     &, '    PERIOD  SpecHeat   DENSITY'/1X,8F10.4
+     &/'0      CABR       AMW   [ABRPHA    PTOTAL     FANON      TATM'
+     &, '     TDEEP   SpHeat2'/1X,8F10.4
+     &/'0      TAUD     DUSTA    TAURAT     TWILI      ARC2     [ARC3'
+     &, '     SLOPE    SLOAZI'/1X,3F10.4,3F10.2,2F10.1 
+     &/'0    TFROST    CFROST    AFROST     FEMIS       AF1       AF2'
+     &, '    FROEXT     [FD32'/1X,F10.4,F10.1,2F10.4,F10.5,3F10.4
+     &/'0      RLAY      FLAY     CONVF     DEPTH     DRSET       DDT'
+     &, '       GGT     DTMAX'/1X,8F10.4
+     &/'0      DJUL    DELJUL SOLAR DEC       DAU       L_S    SOLCON'
+     7, '      GRAV    Atm_Cp'/1X,F10.3,2F10.4,F10.5,4F10.4
+     8/'0    ConUp0    ConUp1    ConUp2    ConUp3    ConLo0    ConLo1'
+     &, '    ConLo2    ConLo3'/1X,8F10.4
+     8/'0    SphUp0    SphUp1    SphUp2    SphUp3    SphLo0    SphLo1'
+     &, '    SphLo2    SphLo3'/1X,8F10.4)
+
+        WRITE (IOSP,214) (ID(I),I=1,NID)
+214     FORMAT ( '0        N1        N2        N3        N4        N5'
+     &, '       N24        IB        IC'/1X,8I10
+     &/'0     NRSET      NMHA      NRUN     JDISK    [IDOWN    FlxP14'
+     &, '    FlxP15     KPREF'/1X,8I10
+     &/'0     K4OUT     JBARE     Notif    IDISK2',/1X,4I10)
+
+        WRITE (IOSP,216) (LD(I),I=1,NLD)
+216     FORMAT('0    LP1    LP2    LP3    LP4    LP5'
+     &,         '    LP6 LPGLOB   LVFA   LVFT  LKofT'/1X,10L7
+     &/        '0  LPORB   LKEY    LSC LNOTIF  LOCAL'
+     &,         '   LD16 LPTAVE  Prt78  Prt79  L_ONE'/1X,10L7)
+
+D	  print *, 'TPRINT: N4,MAXN4=',n4,MAXN4
+        WRITE (IOSP,230) 'Latitudes: ',(ALAT(I),I=1,N4)
+        WRITE (IOSP,230) 'Elevations:',(ELEV(I),I=1,N4)
+ 230    FORMAT (/1X,A/(1X,10F7.2))
+	IQ = 4	! temporary, to return from header line
+	GOTO 800 ! Print page title, then come back to  250
+C
+C print layer depth table
+C
+250     Q2=DENS*SPHT
+        WRITE(IOSP,260) COND,Q2,DIFFU,SCALE
+260     FORMAT (' Conductiv.=',1PE10.3,'  Dens*Cp=',E10.3,'  Diffu.='
+     &,E10.3,'  Scale=',E10.3)
+        IF (IC.GE.3 .AND. IC.LE.N1-1) then
+          Q2=DENS2*SPHT2
+          Q4=SQRT(Q2*COND2)     ! inertia
+          Q6=XCEN(IC-1)+BLAY(IC-1)/2. ! depth to top of 2nd material
+          WRITE(IOSP,262),IC,Q6,Q4
+ 262      FORMAT(' Beginning at layer ',I3,'  At ',F8.4
+     &,' m.   Inertia=',F8.1)
+          Q4=COND2/Q2           ! diffusivity
+          Q6=SQRT(Q4*PERIOD*86400./PIVAL) ! Diurnal scale
+          WRITE(IOSP,260) COND2,Q2,Q4,Q6
+        ENDIF
+        WRITE(IOSP,265)
+ 265    FORMAT(
+     &'0        ___THICKNESS____   _______CENTER_DEPTH_____ CONVERGENCE'
+     &/' LAYER     scale    meter     scale    meter   kg/m^2   factor')
+C       123456789 123456789 123456789 123456789 123456789 123456789 123456789
+C2345 789 123456789 123456789 123456789 123456789 123456789 123456789 72________
+        Q6=0.
+        DO 270 I=1,N1
+                Q2 = BLAY(I)/SCALE ! thickness in units of surface scale
+                Q4 = XCEN(I)/SCALE    ! center-depth in units of scale
+                IF (I.GT.1 .AND. I.LT.IC) Q6=Q6+BLAY(I)*DENS
+                IF (I.GE.IC) Q6=Q6+BLAY(I)*DENS2 ! layer-center columnar mass
+270             WRITE(IOSP,280) I,Q2,BLAY(I),q4,XCEN(I),q6,SCONVG(I)
+280     FORMAT (I5,F10.4,F10.4,F10.4,f10.4,F10.3,F8.3)
+        WRITE(IOSP,290) (N1K(K),K=1,KKK)
+290     FORMAT ('0Bottom layers for time doubling:  ',10I5)
+        GOTO 99
+C
+C latitude page titles  (IQ = 3)
+C
+300     WRITE(IOSP,310) DLAT,SDEC,DAM,TEQUIL
+310     FORMAT ('0  LAT=',F6.1,'  SOLAR DEC=',F6.2,'   HALF DAY=',F6.2
+     &,' DEGREES   EQUILIBRIUM TEMP=',F7.2/)
+        WRITE(IOSP,330) (XCEN(I),I=2,N1M1,NLW),XCEN(N1)
+330     FORMAT ('    HOUR  FROST  X = 0.',(11F8.3))
+        GOTO 99
+C
+C print daily convergence summary  (IQ = 4)
+C
+400   WRITE(IOSP,410)TTS4(J4),TTB4(J4),DTM4(J4),J3,FROST4(J4)
+410     FORMAT ('0SURF AVE =',F6.1,'  BOTM AVE =',F6.1
+     &,'  DELTA T =',F7.4,'  NUM DAYS =',I3,'  FROST =',F9.4)
+        WRITE(IOSP,430) (I,I=2,N1M1,NLW),N1
+430     FORMAT (' AT START OF DAY'
+     &/' DAY  DTMJ SUR_AVE BOT_AVE     1',13I8)
+        J3P1=J3+1
+        DO 440 J=1,J3P1
+440     WRITE(IOSP,450) J,DTMJ(J),TTS(J),TTB(J),TT1(1,J)
+     &,(TT1(I,J),I=2,N1M1,NLW), TT1(N1,J)
+450     FORMAT (1X,I3,F6.2,(14F8.1))
+        GOTO 99
+C
+C print latitude summary  (IQ = 5)
+C
+500   WRITE(IOSP,'(A)') '0SURFACE TEMP VS LATITUDE AND LOCAL HOUR ANGLE'
+        WRITE(IOSP,'(A,20F6.1)') ' LATITUDE =',(ALAT(I),I=1,N4)
+        DO 520 I=1,N24
+                IF (MOD(I,6).EQ.1) WRITE(IOSP,'(1X)')
+520             WRITE(IOSP,'(5X,I4,A,20F6.1)') I,'HR',(TSF(I,J),J=1,N4)
+        WRITE(IOSP,'(A,20F6.1)') '0SURF AVE =',(TTS4(I),I=1,N4)
+        WRITE(IOSP,'(A,20F6.1)') ' BOTM AVE =',(TTB4(I),I=1,N4)
+        WRITE(IOSP,'(A,20F6.1)') ' GM FROST =',(FROST4(I),I=1,N4)
+        WRITE(IOSP,'(A,20F6.3)') ' ALB/dayF =',(AFRO4(I),I=1,N4)
+        WRITE(IOSP,'(A,20F6.1)') ' T. EQUIL =',(TST4(I),I=1,N4)
+        WRITE(IOSP,'(A,20F6.2)') ' DELTA T. =',(DTM4(I),I=1,N4)
+        WRITE(IOSP,'(A,20I6  )') ' NUM DAYS =',(NDJ4(I),I=1,N4)
+        WRITE(IOSP,'(A,20F6.2)') ' TS EPRED =',(TAX(MAXN1,I),I=1,N4)
+        WRITE(IOSP,'(A,20F6.2)') ' TB EPRED =',(TIN(MAXN1,I),I=1,N4)
+        GOTO 99
+C
+C print max and min layer temperature summaries  (IQ = 6)
+C
+600     WRITE(IOSP,'(A)') '0MAXIMUM TEMPERATURE'
+        WRITE(IOSP,'(A,19F6.1)') ' LAYER LAT',(ALAT(I),I=1,N4)
+        DO 620 J=1,N1
+ 620       WRITE(IOSP,'(1X,I5,4X,20F6.1)') J,(TAX(J,I),I=1,N4)
+        WRITE(IOSP,'(A)') '0MINIMUM TEMPERATURE'
+        WRITE(IOSP,'(A,19F6.1)') ' LAYER LAT', (ALAT(I),I=1,N4)
+        DO 640 J=1,N1
+ 640       WRITE(IOSP,'(1X,I5,4X,20F6.1)') J,(TIN(J,I),I=1,N4)
+        GOTO 99
+C
+C print blowup  (IQ = 7)
+C
+700     WRITE(IOSP,710) J2,J3,J4,J5
+710     FORMAT ('0 TEMP BLOWING UP. J2,J3,J4,J5=',4I10/)
+        WRITE(IOSP,'(1X,10E12.4)') (TTJ(I),I=1,N1PIB)
+        GOTO 99
+C
+C print page heading  (IQ =8)  & for 2,3,5,6
+C
+800     IPG=IPG+1
+        WRITE(IOSP,810) TITLE,NRUN,NCASE,DAYTIM,IPG
+810     FORMAT ('1',20A4,' RUN-CASE',I3,'-',I2
+     &,3X,5A4,'  PAGE=',I3)
+        GOTO (100,200,850,250,850,850,99,99,99) ,IQ
+C              1   2   3   4   5   6   7  8  9
+C print model constants for  IQ = 3,5,6
+C
+850     WRITE(IOSP,860) ALB,EMIS,SKRC,SDEC,DAU,SUBS,DJU5,J5
+     &,FD(I14),FD(I15)
+860     FORMAT ('     ALBEDO     EMISS   INERTIA SOLAR DEC'
+     &,'       DAU       L_S JULIAN DAY    J5   two from KRCCOM'
+     &/1X,3F10.4,F10.2, F10.5,2F10.2,I7,2X,2G10.4)
+        GO TO (99,99,300,99,500,600,99,99,99) ,IQ
+C
+C Print one line of "one-point" results
+C
+C Model should have been run for the precise season and latitude of request.
+C Need to interpolate temperatures to the "hour" requested.
+ 900    Q2=HOURO*REAL(N2)/24.   ! real index of requested time in time steps
+        I=Q2                    ! INTEGER index of prior point
+        J=I+1                   ! index of next point
+        IF (I.LT.1) I=N2        ! wrap around midnight
+        IF (J.GT.N2)J=1         ! wrap around midnight
+        TOUTO=TOUT(I)+(Q2-REAL(INT(Q2)))*(TOUT(J)-TOUT(I)) ! linear interp
+C planetary temperature available only on the hour, so interpolate Tp-Ts
+C  and add this to Ts at the exact requested time
+        Q2=HOURO*REAL(N24)/24.  ! real index of requested time in "hours"
+        I=Q2                    ! INTEGER index of prior point
+        J=I+1                   ! index of next point
+        IF (I.LT.1) I=N24
+        IF (J.GT.N24)J=1
+        Q4=(TPFH(I)-TSFH(I))    ! planetary-kinetic
+        Q4=TOUTO+ Q4+(Q2-REAL(INT(Q2)))*((TPFH(J)-TSFH(J))-Q4)
+        WRITE(IOSP,903) SUBS,ALAT(1),HOURO,ELEV(1) 
+     &       ,ALB,SKRC,TAUD,SLOPE,SLOAZI,TOUTO,Q4,TITONE
+C903  format(' 11',2F6.1,F6.2,F5.1,F5.2,F7.1,F5.2,F5.1,F5.0,2f7.1)  Original
+C903  format(' 11',2F6.1,F6.2,F5.1,F5.2,F7.1,F5.2,F5.1,F5.0,2f11.5) Robin F.
+ 903  FORMAT(' 11',2F6.1,F6.2,F5.1,F5.2,F7.1,F5.2,F5.1,F5.0,2f7.2,A20)
+
+99      RETURN
+C
+        END
+
+C======================================================================
+	SUBROUTINE TSEAS (IQ,IR)
+C_Titl TSEAS Advance one "season" along planets orbit for KRC system
+C_Vars
+	INCLUDE 'krccom.inc'	! has IMPLICIT NONE
+	INCLUDE 'latcom.inc'
+	INCLUDE 'hatcom.inc'
+	INCLUDE 'units.inc'
+        REAL  PCOM1(22),SLP,BLIP,PHOXX(3),PCOM2(33)
+	COMMON /PORBCM/ PCOM1,SLP,BLIP,PHOXX,PCOM2 ! only SLP, PHOXX used
+
+C_Args
+	INTEGER IQ ! in. 1 = start from scratch
+C		           2 = restart  from disk
+C			   3 = continue from current conditions
+	INTEGER IR		! return from lower routine
+C_Desc
+C if IQ =3, then continuing from existing model, and adopt its last date
+C_Hist 97feb11  Hugh_Kieffer  USGS_Flagstaff
+C 97aug22  HHK calculated julian day by multiplication, not addition
+C 2002nov01 HK Have DJU5 increment by current DELJUL for each season
+C 2008oct02 HK Replace ID22(1) and (2) with KVALB and KVTAU
+C 2008oct22 HK Used IDOWN as season to make changes
+C 2009mar05 HK Minor cleanup
+C 2009apr22 HK Add call to TYEAR
+C 2010jan12 HK Use IMPLICIT NONE, move TINT call from TLATS to TSEAS
+C 2011aug07 HK Change test to call PORB from N5.GT.0
+C 2012mar02 HK Add atmosphere flag, remove unused labels
+C 2012mar27  HK	 Test on KVTAU changed from .GE.0 to EQ.1
+C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
+
+C 
+	INTEGER I,J,IRL,ITIM0,ITIM,KREC
+	REAL*4 PEA,PEB,HFA,HFB,TANOM ! related to PORB
+
+	INTEGER TIME	! system function, time in seconds since 1970
+	REAL SEASALB,SEASTAU	! functions called
+	REAL BUF(MAXN4)	! fractional surface area in each latitude zone
+	REAL*4 QLOST
+	DATA BUF(1) /0./
+	LOGICAL LATM
+
+	LATM=PTOTAL.GT.1.		! atmosphere present flag
+ 	IF (IDB1.NE.0) WRITE(IOSP,*)'MSEASa',IQ,IR,J5,LSC,N5,LONE
+
+	IF (IQ .EQ. 1) THEN 	! if start of a model
+C	   IF (IQ .EQ. 1) then ! ryped
+	  J5=0			! initialize season counter
+	  ITIM0=TIME()		! save starting time 
+	  DJU5=DJUL-DELJUL      ! set date to -1 season
+	  SUMF=0.		! global seasons frost
+	ENDIF
+	BUF(1)=0.	! flag for  TINT to compute areas
+
+C  ----------------------------new season loop loop loop------------
+C
+100	J5=J5+1
+	IF (LSC .OR. J5.EQ.IDOWN) THEN !  LSC  invokes changes at each season
+	  CALL TCARD (2,IR)	! read parameter change cards
+	  IF (IR.GE.4) RETURN	! either 1-point or end-of-data
+D         write (*,*)'TSEAS: ',J5,N5,LOPN2,IDOWN,IR !<< ,KVALB,alb
+	  CALL TDAY (1,IR)	! re-initialize day computations
+	  IF (IR.NE.1) RETURN
+	ENDIF
+	DJU5=DJU5+DELJUL	! increment julian date
+	IF (MOD(J5,NMOD).EQ.0) THEN	! notify terminal
+	  ITIM = TIME ()
+	  ITIM=ITIM-ITIM0
+	  WRITE(IOPM,115) ITIM,'start',J5,N5
+ 115	  FORMAT(1X,I5,' seconds at ',A,' of season ',I4,' of ',I4)
+	ENDIF
+	IF (LPORB) THEN	                ! get orbital parameters 
+	  CALL PORB (DJU5,DAU,PEA,PEB,HFA,HFB)  ! FIND CURRENT PLANET POSITION
+	  SDEC = HFA*RADC	        ! CONVERT SOLAR DECLINATION TO DEGREES
+	  TANOM = ATAN2 (PHOXX(2),PHOXX(1))     ! TRUE ANOMOLY
+	  SUBS = MOD(((TANOM+SLP)*RADC)+360.,360.)	! L-SUB-S IN DEGREES
+CC      SUBS=ANG360 ((TANOM+SLP)*RADC)
+	ENDIF
+C
+	IF (KVALB .GT. 0) ALB=SEASALB(SUBS) ! variable soil albedo
+	IF (KVTAU .EQ. 1) TAUD=SEASTAU(SUBS) ! variable atm. opacity
+D	write (*,*)'TSEAS: ',J5,N5,LOPN2,IDOWN,SUBS ! ,KVALB,alb
+C======
+
+	CALL TLATS (IQ,IRL)		! execute latitude loop
+
+C======
+
+	IF (N4.GT.8 .AND. LATM) CALL TINT (FROST4, BUF, SUMF) !  MKS units  BUF = normalized area 
+	IF (LP5) CALL TPRINT (5)	! print latitude summary
+	IF (LP6) CALL TPRINT (6)	!  & min and max layer temperature
+
+DCC temporary check on lost energy 2012may10
+DC	QLOST= 0.
+DC	DO I=1,N4
+DC	   IF (TTX4(I).GT.QLOST) THEN
+DC	      QLOST=TTX4(I)
+DC	      J=I		! location of max
+DC	   ENDIF
+DC	ENDDO
+DC	IF (QLOST.GT.0) THEN
+DC	   WRITE(*,*)'J5,J,QLOST=',J5,J,QLOST
+DC 377	   FORMAT(I3,37F9.3)
+DC	   WRITE(77,377) J5,TTX4
+DC	   WRITE(77,377) IFIX(SUBS),FROST4
+DC	ENDIF
+
+C	CALL TYEARP (1,IRY) ! store midnight T for all layers and latitudes
+C	IF (IRY.LT.0) WRITE(IOERR,*)'TYEARP error return=',IRY
+
+C save season result by appending to disk file
+C write  KRCCOM record only if first season and short file form
+C
+C	write (*,*)'j5,jdisk,kold,k4out=',j5,jdisk,kold,k4out
+C	write(*,*)'s1', subs
+	IF (J5.EQ.JDISK .AND. KOLD.EQ.0 ! write  KRCCOM record
+     &        .AND. K4OUT.LT.0) CALL TDISK (5,KREC) ! must follow tday(1)
+	IF (J5.GE.JDISK .AND. JDISK .GT.0) CALL TDISK(2,KREC) ! write this season
+C
+C  check if more seasons
+	IF (J5.LT.N5 .AND. IRL.NE.2) GO TO 100
+C  ---------------------------------------------------------------------
+	IF (.NOT.LONE) THEN
+	  ITIM = TIME ()
+	  ITIM=ITIM-ITIM0
+	  WRITE(IOPM,115) ITIM,'end',J5,N5
+	  WRITE(IOSP,115) ITIM,'end',J5,N5
+	ENDIF
+	IR=IRL
+C	write(*,*)'s2', subs
+	RETURN
+	END
+
+C======================================================================
+	SUBROUTINE VADD (U,V, W)		!  W =  U +  V
+C_Title  VADD add two vectors of dimension 3.   single precision
+C_Args
+	REAL*4 U(*)	! [i] vector to be added.
+	REAL*4 V(*)	! [i] vector to be added.
+	REAL*4 W(*)	! [o] sum of two vectors; may overwrite input.
+C_Keys  MATH  VECTOR
+C_Desc  Add two vectors of dimension 3 resulting in a third vector.
+C -----------------------------------------------------------------------
+C  This is the top of a general  N-dimension vector geometry package.
+C  There are four such files, single and double precision, 3 and  N dimensions
+C  All routines similiar in all four files.
+C    Argument order in all routines is:  INPUT _space_  OUTPUT
+C  Output vector may validly be the same location as input vector for:
+C routines:  VNORM_  VSUB_  VADD_  VNEG_  VSCALE_
+C  VADDNDP is considered the primary version
+C -----------------------------------------------------------------------
+C_Hist	75-----  Hugh_H_Kieffer  VECTSP.FOR.  Revised 1982Jan12 84May24 84Oct26
+C	85Apr12  H.Kieffer, change argument order from algebraic 
+C	85Oct17  HHK  Change variable symbols; document to  NIMS standards
+C	91dec27  HHK add  VMAGN; treat  VADDNDP as primary file
+C_Paus
+
+	DO I=1,3
+		W(I) = U(I) + V(I)
+		ENDDO
+	RETURN
+	END
+
+
+	SUBROUTINE VCROSS (U,V, W)		!  W =  U X  V
+C_Title  VCROSS cross product of two vectors of dimension 3.
+C_Args
+	REAL*4  U(*)	! [i] first vector.
+	REAL*4  V(*)	! [i] second vector.
+	REAL*4  W(*)	! [o] cross product; must not overwrite input.
+C_Keys  MATH  VECTOR
+C_Desc  Calculates the cross product of two vectors.
+C_Hist  90dec27  HHKieffer  U.S.G.S.,Flagstaff. see comments in first routine
+C_LIM  uncertain of definition of cross-product for  N dimensions
+C_Paus
+	DO I=1,3
+	  IP = I+1
+	  IF (IP.GT.3) IP=1
+	  IM = I-1
+	  IF (IM.LT.1) IM=N
+	  W(I) = U(IP)*V(IM) - U(IM)*V(IP)
+	  ENDDO
+	RETURN
+	END
+
+
+	SUBROUTINE VDOT (U,V, R)		!  R =  U .  V
+C_Title  VDOT calculates the dot product of two vectors of dimension 3.
+C_Args
+	REAL*4  U(*)	! [i] first vector.
+	REAL*4  V(*)	! [i] second vector.
+	REAL*4  R	! [o] dot product of two vectors.
+C_Keys  MATH  VECTOR
+C_Desc  Produces the dot product of two vectors of dimension 3,  R=U.V
+C_Hist  90dec27  HHKieffer  U.S.G.S.,Flagstaff. see comments in first routine
+C_Paus
+	REAL*4 SUM
+	SUM = 0.E0
+	DO I=1,3
+	SUM  = SUM + U(I)*V(I)
+		ENDDO
+	R = SUM
+	RETURN
+	END
+
+
+	SUBROUTINE VEQUAL (V, W)		!  W =  V
+C_Title  VEQUAL equate one vector of dimension 3 to another.
+C_Args
+	REAL*4  V(*)	! [i] initial vector 
+	REAL*4  W(*)	! [o] vector equal to input
+C_Keys  MATH  VECTOR
+C_Desc  Equates a vector of dimension 3 to another vector.
+C_Hist  90dec27  HHKieffer  U.S.G.S.,Flagstaff. see comments in first routine
+C_Paus
+	DO I=1,3
+		W(I)=V(I)
+		ENDDO
+	RETURN
+	END
+
+
+	SUBROUTINE VMAG (V, R)		!  R =  |V|
+C_Title	VMAG  get magnitude (length) of a vector of dimension 3.
+C_Args
+	REAL*4  V(3) ! [I] Vector to be normalized
+	REAL*4  R    ! [O] Vector length
+C_Keys	MATH VECTOR
+C_Desc  Finds length of a vector of dimension 3.  R = |V|.
+C_Call	0
+C_Hist  90dec27  HHKieffer  U.S.G.S.,Flagstaff. see comments in first routine
+C_Paus
+	R = 0.E0
+	DO I=1,3
+		R = R + V(I)**2
+		ENDDO
+	R = SQRT(R)
+	RETURN
+	END
+
+
+	SUBROUTINE VNEG (V, W)		!  W =  -V
+C_Title  VNEG  Negate each element of a vector of dimension 3.
+C_Args
+	REAL*4  V(*)	! [i] vector to be negated
+	REAL*4  W(*)	! [o] vector of negated elements; 
+C			may overwrite input
+C_Keys  MATH  VECTOR
+C_Desc  Each element of the input vector is copied with a change of sign.
+C_Hist  90dec27  HHKieffer  U.S.G.S.,Flagstaff. see comments in first routine
+C_Paus
+
+	DO I=1,3
+		W(I)=-V(I)
+		ENDDO
+	RETURN
+	END
+
+
+	SUBROUTINE VNORM (V, W)		!  W =  V/|V|
+C_Title  VNORM normalize a vector of dimension 3.
+C_Args
+	REAL*4  V(*)	! [i] vector to be normalized
+	REAL*4  W(*)	! [o] vector of unit length; may overwrite input
+C_Keys  MATH  VECTOR
+C_Desc  Normalizes a vector of dimension 3 to unit length.  W=V/|V|.
+C_Hist  90dec27  HHKieffer  U.S.G.S.,Flagstaff. see comments in first routine
+C_Paus
+	REAL*4 SUM
+	SUM = 0.E0
+	DO I=1,3
+		SUM = SUM +V(I)**2
+		ENDDO
+	SUM = 1.E0/SQRT(SUM)
+	DO I=1,3
+		W(I) = SUM * V(I)
+		ENDDO
+	RETURN
+	END
+
+	SUBROUTINE VPRF (ID,V,IOP,FMT)
+C_Title  VPRF print a vector of dimension 3 in user format.
+C_Args
+	CHARACTER*(*) ID ! [i] character variable identification
+	REAL*4 V(*)	! [i] vector to print
+	INTEGER  IOP	! [i] logical unit for printer
+	CHARACTER*(*) FMT ![i] format to use for vector. this should be only
+C			the core of the format, e.g.   '8F8.3' 
+C_Keys  MATH  VECTOR
+C_Desc  Prints a vector of dimension 3 to the logical unit specified
+C	and in the format specified (up to 30 characters).
+C_Hist  90dec27  HHKieffer  U.S.G.S.,Flagstaff. see comments in first routine
+C_Paus
+	CHARACTER*60 FMT2
+	FMT2 = '(1X,A,''='',(/1X,' // FMT // '))'
+	WRITE (IOP,FMT2) ID,(V(I),I=1,3)
+	RETURN
+	END
+
+
+	SUBROUTINE VSCALE (R,V, W)		!  W =  R *  V
+C_Title  VSCALE multiply a vector of dimension 3 by a constant.
+C_Args
+	REAL*4  R	! [i] constant multiplier.
+	REAL*4  V(*)    ! [i] vector to be multiplied.
+	REAL*4  W(*)	! [o] product of a vector and a constant; 
+C			may overwrite input vector
+C_Keys  MATH  VECTOR
+C_Desc  Multiplies a one dimensional array of dimension 3 by a constant  R 
+C producing a third one dimensional array w.
+C_Hist  90dec27  HHKieffer  U.S.G.S.,Flagstaff. see comments in first routine
+C_Paus
+
+	DO I=1,3
+		W(I)=R*V(I)
+		ENDDO
+	RETURN
+	END
+
+
+	SUBROUTINE VSUB (U,V, W)			!  W =  U -  V
+C_Title  VSUB  find difference of two vectors of dimension 3
+C_Args
+	REAL*4  U(*)	! [i] vector, initial
+	REAL*4  V(*)	! [i] vector to be subtracted
+	REAL*4  W(*)	! [o] difference of two input vectors; 
+C			may overwrite input
+C_Keys  MATH  VECTOR
+C_Desc  Difference of two vectors of dimension 3.  W=U-V.
+C_Hist  90dec27  HHKieffer  U.S.G.S.,Flagstaff. see comments in first routine
+C_Paus
+
+	DO I=1,3
+		W(I)=U(I)-V(I)
+		ENDDO
+	RETURN
+	END
+
+
+	SUBROUTINE VSUBR (U,V, W)			!  W =  U -  V
+C_Title  VSUBR  find reduced-precision difference of two vectors of dimension 3
+C_Args
+	REAL*8  U(*)	! [i] vector, initial
+	REAL*8  V(*)	! [i] vector to be subtracted
+	REAL*4  W(*)	! [o] difference of two input vectors; 
+C_Keys  MATH  VECTOR
+C_Desc  Difference of two vectors of dimension 3.  W=U-V.
+C_Hist  90dec27  HHKieffer  U.S.G.S.,Flagstaff. see comments in first routine
+C_Paus
+
+	DO I=1,3
+		W(I)=U(I)-V(I)
+		ENDDO
+	RETURN
+	END
+
+
+	SUBROUTINE VUNIT (IAX, U)
+C_Title  VUNIT construct unit vector of dimnension 3 along one axis 
+C_Args
+	INTEGER IAX	! [i] axis along which vector will point.
+	REAL*4  U(*)	! [o] unit vector along axis.
+C_Keys  MATH  VECTOR
+C_Desc  Creates a unit vector of dimension 3 along a cartesian axis.
+C     if  IAX is not within  1:N, then a zero vector is returned.
+C_Hist  90dec27  HHKieffer  U.S.G.S.,Flagstaff. see comments in first routine
+C_End
+
+	DO I=1,3
+		U(I)=0.E0
+		ENDDO
+	IF (IAX.GE.1 .AND. IAX.LE.3) U(IAX)=1.E0
+	RETURN
+	END
+
+C======================================================================
+      SUBROUTINE VCROS (U,V, W) !  W =  U X  V
+C_Title  VCROS  cross product of two vectors of dimension 3.
+C_Args
+      REAL*4  U(3)              ! [i] first vector.
+      REAL*4  V(3)              ! [i] second vector.
+      REAL*4  W(3)              ! [o] cross product
+C_Keys  MATH  VECTOR
+C_Desc  Calculates the cross product of two vectors.
+C   use temporary vector in case caller  W in same location  U or  V
+C_Hist  2012jun02  Hugh Kieffer  Celestial reasonings
+C_END
+      REAL*4  Y(3)              ! temporary
+C cross product into temporary    
+      Y(1) = U(2)*V(3) - U(3)*V(2)
+      Y(2) = U(3)*V(1) - U(1)*V(3)
+      Y(3) = U(1)*V(2) - U(2)*V(1)
+C move temporary to output      
+      W(1) = Y(1)
+      W(2) = Y(2)
+      W(3) = Y(3)
+      
+      RETURN
+      END
+
+C======================================================================
+      REAL*4 FUNCTION VFDOT (U,V) !  R =  U .  V
+C_Title  VFDOT calculates the dot product of two vectors of dimension 3.
+      IMPLICIT NONE
+C_Args
+      REAL*4  U(*)              ! in. first vector.
+      REAL*4  V(*)              ! in. second vector
+C_Keys  MATH  VECTOR
+C_Desc  Produces the dot product of two vectors of dimension 3,  R=U.V
+C_Hist  2012may31 HK Derived from vaddsp.f subroutines
+C_Pause
+      INTEGER I
+      REAL*4 SUM
+      SUM = 0.E0
+      DO I=1,3
+         SUM  = SUM + U(I)*V(I)
+      ENDDO
+      VFDOT = SUM
+      RETURN
+      END
+
+C======================================================================
+      REAL*4 FUNCTION VFMAG (V) !  R =  |V|
+C_Title	VFMAG  get magnitude (length) of a vector of dimension 3.
+C_Args
+      REAL*4  V(3)              ! [I] Vector to be normalized
+      REAL*4  R                 ! [O] Vector length
+C_Keys	MATH VECTOR
+C_Desc  Finds length of a vector of dimension 3.  R = |V|.
+C_Call	0
+C_Hist  2012may31 HK Derived from vaddsp.f subroutines
+C_End
+      R = 0.E0
+      DO I=1,3
+         R = R + V(I)**2
+      ENDDO
+      VFMAG = SQRT(R)
+      RETURN
+      END
+
+C======================================================================
+      REAL FUNCTION VLPRES (KODE, DATE)
+C_Titl  VLPRES  Viking lander pressure curves
+      IMPLICIT NONE
+C_Args
+      INTEGER KODE	!in.  1=VL1_yr1  2=VL1_yr2  3=VL2  4=normalized average
+      REAL DATE	!in. date in julian days, offset from 2440000
+C_Desc
+C  Derived from the coefficents in:  JGR vol 98,  E6, pp 10,973-971
+C    provided by  Neal  Johnson.
+C relation is  P = pmean*sum [sin (i*2*pi*frac_year + phase(i)*{pi/180})]
+C where frac_year is the fraction of a martian year from base time of equations;
+C  VL1 sol 405 &  VL2 sol 360.50865.
+C  I compute these as  JD 2440000 + 3395.45 & 3395.53 respectively.
+C this is stated to be  L-sub-s 330.2 in article.
+C upon first call, each set of coefficents is normalized 
+C to its mean pressure, and the 3 curved averaged.
+C  If called with invalid  KODE, 4 will be used.
+C ---------
+C  The following values from  Neal: 
+C  Lander 1, local midnight, sol 1.0 is at julian date =  2442980.346866330
+C == gmt time    = 1976 202 20:19:29.25     20 july      
+C == epoch & gcsc=   2        4243427  == llt = 1  0: 0: 0.00
+C == lsubs       =     97.19599
+C  Lander 2, local midnight, sol 1 is at julian date =  2443026.061346330
+C == gmt time    = 1976 248 13:28:20.32      4 september 
+C == epoch & gcsc=   2        6533130  == llt =  1  0: 0: 0.00
+C == lsubs       =    117.99265
+C_Hist 97feb11  Hugh_Kieffer original version
+C 99nov18  HHK  add  SAVE statement
+C 2010jan11 HK Go to implicit none
+C_End6789012345678901234567890123456789012345678901234567890123456789012_4567890
+      REAL PMEAN  (4) ! mean pressure (4th is normalized to 1.)
+      REAL AMP  (5,4) ! amplitude of harmonic term
+      REAL PHASE(5,4) ! phase of harmonic term
+
+      REAL YEARM / 686.98 /
+      REAL DJ0 / 3395.49 / ! julian date for  L-sub-s of start of curve
+C	 this is average of  VL1 and  VL2 origins, near L_s 330.
+CC    REAL DJ0 / 10265.0 /  L_S 330. OCCURS ON  JD 2450265.0  = 1996 Jun 30.5
+C this is 10.000 martian years later than start of pressure curve
+      LOGICAL LFIRST /.TRUE./
+      REAL D2R,DJ,FRAC,FYEAR,PI,PIF,RI,SUM,SUMA,SUMP
+      INTEGER I,J
+
+      DATA PMEAN / 7.936, 7.942, 8.663, 1./
+
+      DATA AMP / 0.661, 0.574, 0.113, 0.065, 0.014
+     &         , 0.658, 0.557, 0.096, 0.056, 0.015
+     &         , 0.798, 0.613, 0.114, 0.063, 0.018
+     & , 5*0./
+
+      DATA PHASE /91.96, -129.23, -66.20,  -4.04, 25.60 ! in degrees
+     &         ,  91.37, -131.80, -75.58,  -8.78, 24.22
+     &         ,  93.59, -131.37, -67.50, -17.19, 98.84
+     & , 5*0./
+
+      SAVE LFIRST,AMP,PHASE,D2R ! insure these are defined after first call
+
+
+      IF (LFIRST) THEN          ! form normalized averages
+        DO I = 1,5                ! do each period
+          SUMA = 0.
+          SUMP = 0.
+          DO J = 1,3              ! for each input set
+            SUMA = SUMA+AMP(I,J)/PMEAN(J)
+            SUMP = SUMP+PHASE(I,J)
+          ENDDO
+          AMP(I,4) = SUMA/3.      ! store them in 4th array
+          PHASE(I,4) = SUMP/3.
+        ENDDO
+        PI = ACOS(-1.) ! pi to machine precision
+        D2R = PI/180.
+        LFIRST = .FALSE.
+      ENDIF
+
+      J = KODE                    ! transfer to local
+      IF (J.LT.1 .OR. J.GT.4) J = 4 ! and insure valid value
+
+C find positive year fraction
+      DJ = DATE                   ! transfer input date to local variable
+      IF (DJ.LT.DJ0) THEN       ! if neg offset, add years to make positive
+        FRAC = (DJ0-DJ)/YEARM     ! determine how many years to add
+        DJ = DJ+INT(FRAC+1.)*YEARM
+      ENDIF
+      FYEAR = AMOD((DJ-DJ0)/YEARM,1.) ! positive fraction of year 
+      PIF = 2.*PI*FYEAR         ! 2 pi fyear; constant factor in equation
+
+C evalute the formula
+      SUM = PMEAN(J)
+      DO I=1,5
+        RI = REAL(I)
+        SUM = SUM + AMP(I,J) * SIN (RI*PIF+ PHASE(I,J)*D2R)
+      ENDDO
+      
+      VLPRES = SUM ! transfer to function
+      RETURN
+      END
+
+C======================================================================
+      SUBROUTINE VROTV ( VIN, AXIS, THETA,   ROUT )
+C_Titl  VROTV  Vector rotation about another vector
+      IMPLICIT NONE
+C_Args
+      REAL*4   VIN  (3)   ! I   Vector to be rotated.
+      REAL*4   AXIS (3  ) ! I   Axis of the rotation
+      REAL*4   THETA      ! I Angle of rotation (radians)
+      REAL*4   ROUT (3)   ! O Result of rotating V about AXIS by THETA
+C_Calls    VADD  VCROS  VFDOT  VEQUAL VFMAG  VSUB   
+C_History
+C 2003feb04 Hugh Kieffer  Derived IDL version from NAIF vrotv.f
+C 2012may31 HK  Derive from IDL version using local .f library
+C 2012jun03 HK  Extensive testing. 
+C
+      REAL*4 VFMAG,VFDOT              ! called functions
+      INTEGER I
+      REAL*4 AXMAG,Q,CT,ST ! ,  Q2,q3
+      REAL*4 RPLANE (3)
+      REAL*4 P      (3) ! ,  p3(3)
+      REAL*4 V1     (3)
+      REAL*4 V2     (3)
+      REAL*4 X      (3)
+ 
+      AXMAG=VFMAG( AXIS ) ! length of AXIS, used to normalize it
+C
+      IF (AXMAG .EQ. 0.) THEN ! if axis has zero length
+         CALL VEQUAL (VIN, ROUT)     ! return the input vector
+         RETURN
+      END IF
+C 
+      DO I=1,3                  ! equiv to VHAT(AXIS,X)
+         X(I)=AXIS(I)/AXMAG     !  unit vector in the direction of axis
+      ENDDO
+C
+C     Compute the projection of V onto AXIS.  Call it P.
+C      CALL VPROJ ( V, X, P )   sub VPROJ ( A, B, P )
+C  t=a/maxa  r=b/maxb || scale= vdot(T,R)*maxa / cdot(R,R)==r^2
+C  VSCL (scale,R,P)  == out=scale*R
+      Q= VFDOT (VIN,X)            ! dot product with length of VIN 
+C-      q2=(VFDOT(VIN,X)/VFDOT(X,X))*VFMAG(X) ! full math
+C-      Q3= VFDOT(VIN,AXIS)/(AXMAG*AXMAG) ! simplist implimentation
+      DO I=1,3                  !
+         P(I)=Q*X(I)
+C         P(I)=Q3*AXIS(I)
+      ENDDO     
+C
+      CALL VSUB (VIN,P,  V1 ) ! component of V orthogonal to AXIS
+C
+      CALL VCROS (X,V1, V2) ! Rotate V1 by 90 degrees about the AXIS 
+C
+C     Compute COS(THETA)*V1 + SIN(THETA)*V2. This is V1 rotated about
+C     the AXIS in the plane normal to the axis, call the result RPLANE
+C     CALL VLCOM ( C, V1, S, V2, RPLANE )
+      CT = COS (THETA)
+      ST = SIN (THETA) 
+      DO I=1,3
+         RPLANE(I)=CT*V1(I) + ST*V2(I)
+      ENDDO
+C
+C     Add the rotated component in the normal plane to AXIS to the
+C     projection of V onto AXIS (P) to obtain R.
+C
+      CALL VADD (RPLANE,P, ROUT )
+
+D      i=6
+D 33   format(a6,'=[',f9.5,',',f9.5,',',f9.5,']')
+D         write(i,33)' V',vin
+D         write(i,33)'axis ',axis
+D         print *,'theta+',theta,c,s
+D         print *,'axmag',axmag
+D         write(i,33)' X',x
+D         print *,' Q=',q,q2,q3
+D         write(i,33)' p',p
+D         write(i,33)'P3',p3
+D         write(i,33)'V1',v1
+D         write(i,33)'V2',v2
+D         write(i,33)'RP',rplane
+D         write(i,33)' out',rout
+C
+      RETURN
+      END
+
+C======================================================================
+      integer function white1(ss, ww)
+C_Titl  WHITE1: reduce each white space to 1 blank
+C_args
+      character*(*) SS  ! in. string to be treated
+      character*(*) WW  ! out. string with no adjacent blanks
+C      integer white1   ! f. out. location of last defined character
+C_Desc
+C treats tabs as one blank, removes contiguous blanks
+C stops processing when either input exhausted ot ourput full
+C_bugs
+C no warning if input was too long to fit in output
+C_Hist
+C  98may10  Hugh_h_Kieffer  original version
+C 2009may16 HK replace CHAR("011) with CHAR(9)
+C_end
+      logical last              ! prior character was white
+      character*1 c             ! current character
+
+      lss=len(ss) ! get defined length of input and output strings
+      lww=len(ww)
+      
+      last = .false.
+      j=0                       ! # characters output thus far
+      do i=1,lss
+         c=ss(i:i)              ! current character
+         if (c.eq.' ' .or. c.eq.CHAR(9)) then ! have blank or TAB
+            if (.not.last) then ! if last was blank, do nothing
+               j=j+1
+               ww(j:j)=' ' ! output the one blank separator
+               last=.true.
+            endif
+         else
+            j=j+1
+            ww(j:j)=c
+            last=.false.
+         endif
+         if (j.eq.lww) goto 9 ! output area full, quit
+      enddo
+ 9    white1=j
+      return
+      end
+      
+
+C======================================================================
+
+	SUBROUTINE XTREME (AA,ID1,N, XMIN,XMAX)
+C_Title  XTREME Find extreme range of a real array
+C_Arguments
+	REAL AA(ID1,*) ! [I] input array
+	INTEGER ID1    ! [I] Spacing of elements (first dimension of A), 
+C				should be 1 for singly dimensioned array
+	INTEGER N      ! [I] number of element in AA
+ 	REAL XMIN      ! [O] minimum value in AA
+	REAL XMAX      ! [O] maxmum value in AA
+C_Calls 0
+C_History  86MAR20  Hugh_H_Kieffer original version
+C_end
+C
+
+	XMIN = AA(1,1)
+	XMAX = XMIN
+	IF (N.LT.2) GOTO 9
+	DO I=2,N
+	    A=AA(1,I)
+	    IF (A.LT.XMIN) THEN
+		XMIN = A
+	    ELSEIF (A.GT.XMAX) THEN
+		XMAX = A
+	    ENDIF
+	  ENDDO
+9	RETURN
+	END

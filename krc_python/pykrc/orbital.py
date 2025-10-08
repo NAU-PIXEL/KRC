@@ -97,7 +97,7 @@ def identify_body_type(body_name: str) -> str:
 
 def load_body_parameters(body_name: str, data_loader=None) -> Dict[str, Any]:
     """
-    Load orbital parameters for a celestial body.
+    Load orbital parameters for a celestial body from HDF files.
 
     Parameters
     ----------
@@ -109,22 +109,72 @@ def load_body_parameters(body_name: str, data_loader=None) -> Dict[str, Any]:
     Returns
     -------
     dict
-        Dictionary of body parameters
+        Dictionary of body parameters including PORB_HEADER and PORB_PARAMS
 
     Raises
     ------
     ValueError
         If body not found in database
     """
-    # Try to get from defaults
+    import h5py
+    from pathlib import Path
+
+    params = {}
+
+    # Try to load from porb_defaults directory
+    if data_loader:
+        porb_file = data_loader.support_dir / "porb_defaults" / f"{body_name}.porb.hdf"
+
+        if porb_file.exists():
+            with h5py.File(porb_file, 'r') as f:
+                # Read the 'rot' field which contains the complete PORB text block
+                if 'rot' in f:
+                    rot_text = f['rot'][0].decode('utf-8')
+                    # Split into lines
+                    lines = rot_text.strip().split('\n')
+                    if lines:
+                        # First line is the PORB header
+                        params['PORB_HEADER'] = lines[0]
+
+                        # Next 6 lines contain 30 float values (5 per line)
+                        porb_params = []
+                        for line in lines[1:7]:
+                            values = line.split()
+                            for val in values:
+                                try:
+                                    porb_params.append(float(val))
+                                except ValueError:
+                                    pass
+
+                        if len(porb_params) == 30:
+                            params['PORB_PARAMS'] = porb_params
+
+                # Read KRC-specific parameters
+                if 'krc' in f:
+                    krc_group = f['krc']
+                    for key in krc_group.keys():
+                        dataset = krc_group[key]
+                        # Extract scalar value
+                        val = dataset[0, 0, 0]
+                        params[key.upper()] = float(val) if hasattr(val, 'dtype') else val
+
+                # Read rotation period
+                if 'rot_per' in f:
+                    params['rotation_period'] = float(f['rot_per'][0, 0, 0])
+
+                # Read orbital period
+                if 'period' in f:
+                    params['orbital_period'] = float(f['period'][0, 0, 0])
+
+                # Read body type
+                if 'type/body_type' in f:
+                    params['body_type'] = f['type/body_type'][0].decode('utf-8')
+
+                return params
+
+    # Fallback to hardcoded defaults
     if body_name in BODY_DEFAULTS:
         return BODY_DEFAULTS[body_name].copy()
-
-    # In full implementation, would:
-    # 1. Check porb_master.hdf
-    # 2. Check small_bodies.hdf
-    # 3. Check comets.hdf
-    # 4. Check porb_defaults directory
 
     raise ValueError(f"Body '{body_name}' not found in database")
 
@@ -178,11 +228,37 @@ def porb(
     body_type = identify_body_type(body)
     params = load_body_parameters(body, data_loader)
 
-    return OrbitalElements(
+    # Extract PORB data (these don't go into OrbitalElements)
+    porb_header = params.pop('PORB_HEADER', None)
+    porb_params = params.pop('PORB_PARAMS', None)
+
+    # Extract KRC-specific parameters (these also don't go into OrbitalElements)
+    krc_params = {}
+    krc_keys = ['ARC2_G0', 'DELJUL', 'DUSTA', 'GRAV', 'N24', 'PERIOD', 'PTOTAL', 'TAURAT']
+    for key in krc_keys:
+        if key in params:
+            krc_params[key] = params.pop(key)
+
+    # Don't pass body_type twice if it's already in params
+    if 'body_type' in params:
+        body_type = params.pop('body_type')
+
+    # Create OrbitalElements with only the orbital parameters
+    orbital_elem = OrbitalElements(
         name=body,
         body_type=body_type,
         **params
     )
+
+    # Store PORB data as attributes for use in input generation
+    if porb_header:
+        orbital_elem.porb_header = porb_header
+    if porb_params:
+        orbital_elem.porb_params = porb_params
+    if krc_params:
+        orbital_elem.krc_params = krc_params
+
+    return orbital_elem
 
 
 def generic_porb(

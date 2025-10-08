@@ -1,0 +1,17 @@
+#!/Applications/davinci.app/Contents/Resources/bin/davinci -f
+# Simple test script for davinci KRC interface
+# This tests the most basic KRC functionality
+
+# Run a simple KRC test at latitude 12 degrees
+result = krc(lat=12.)
+
+# Check if we got a result
+if (HasValue(result)) {
+    printf("SUCCESS: KRC ran successfully!\n")
+    printf("Output shape: %dx%dx%d\n", dim(result.tsurf)[1], dim(result.tsurf)[2], dim(result.tsurf)[3])
+    printf("Time points: %d\n", dim(result.time)[1])
+    printf("Min temperature: %.2f K\n", min(result.tsurf))
+    printf("Max temperature: %.2f K\n", max(result.tsurf))
+} else {
+    printf("FAILED: KRC did not return a result\n")
+}

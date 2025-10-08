@@ -5,3 +5,123 @@
 krc
 exit
 quit
+###################################################
+# User: chaberle    Date:  Tue Oct  7 14:59:15 2025
+# Host: <UNKNOWN>   Cwd: /Users/chaberle/Documents/GitHab/KRC
+###################################################
+krc()
+quit
+###################################################
+# User: chaberle    Date:  Tue Oct  7 14:59:37 2025
+# Host: <UNKNOWN>   Cwd: /Users/chaberle/Documents/GitHab/KRC
+###################################################
+krc
+krc()
+quit
+###################################################
+# User: chaberle    Date:  Tue Oct  7 17:09:21 2025
+# Host: <UNKNOWN>   Cwd: /Users/chaberle/Documents/GitHab/KRC
+###################################################
+$DV_SCRIPT_FILES = "/Users/chaberle/Documents/GitHab/KRC/krc_python/pykrc/data"
+$DV_KRC_HOME = "/Users/chaberle/Documents/GitHab/KRC"
+$DV_KRC_HOME = "/Users/chaberle/Documents/GitHab/KRC"
+putenv("DV_SCRIPT_FILES","/Users/chaberle/Documents/GitHab/KRC/krc_python/pykrc/data")
+quit
+###################################################
+# User: chaberle    Date:  Tue Oct  7 17:12:16 2025
+# Host: <UNKNOWN>   Cwd: /Users/chaberle/Documents/GitHab/KRC
+###################################################
+putenv("DV_SCRIPT_FILES","/Users/chaberle/Documents/GitHab/KRC/krc_python/pykrc/data")
+putenv("DV_KRC_HOME","/Users/chaberle/Documents/GitHab/KRC")
+source("/Users/chaberle/Documents/GitHab/KRC/krc_python/docs/davinci/krc.dvrc")
+out = krc(lat=25.)
+out = krc(lat=25.)
+###################################################
+# User: chaberle    Date:  Tue Oct  7 22:01:57 2025
+# Host: <UNKNOWN>   Cwd: /Users/chaberle/Documents/GitHab/KRC
+###################################################
+putenv("DV_SCRIPT_FILES","/Users/chaberle/Documents/GitHab/KRC/krc_python/pykrc/data")
+putenv("DV_KRC_HOME","/Users/chaberle/Documents/GitHab/KRC")
+source("/Users/chaberle/Documents/GitHab/KRC/krc_python/docs/davinci/krc.dvrc")
+out = krc(lat=25.)
+printf("Davinci output: %dx%dx%d, %.2f-%.2f K\n", dim(out.tsurf)[1], dim(out.tsurf)[2], dim(out.tsurf)[3], min(out.tsurf), max(out.tsurf))
+###################################################
+# User: chaberle    Date:  Tue Oct  7 22:04:50 2025
+# Host: <UNKNOWN>   Cwd: /Users/chaberle/Documents/GitHab/KRC
+###################################################
+putenv("DV_SCRIPT_FILES","/Users/chaberle/Documents/GitHab/KRC/krc_python/pykrc/data")
+putenv("DV_KRC_HOME","/Users/chaberle/Documents/GitHab/KRC")
+source("/Users/chaberle/Documents/GitHab/KRC/krc_python/docs/davinci/krc.dvrc")
+out = krc(lat=25., KEEP=1)
+workdirs = split(syscall("ls -d /tmp/dv_*/krc_* 2>/dev/null"), "\n")
+if (length(workdirs) > 0) {
+    t52path = workdirs[length(workdirs)] + "/krc.t52"
+    syscall("cp " + t52path + " /tmp/davinci_good.t52")
+    printf("Saved from: %s\n", t52path)
+}
+syscall("ls -lh /tmp/davinci_good.t52")
+printf("Davinci: %dx%dx%d\n", dim(out.tsurf)[1], dim(out.tsurf)[2], dim(out.tsurf)[3])
+###################################################
+# User: chaberle    Date:  Tue Oct  7 22:05:06 2025
+# Host: <UNKNOWN>   Cwd: /Users/chaberle/Documents/GitHab/KRC
+###################################################
+putenv("DV_SCRIPT_FILES","/Users/chaberle/Documents/GitHab/KRC/krc_python/pykrc/data")
+putenv("DV_KRC_HOME","/Users/chaberle/Documents/GitHab/KRC")
+source("/Users/chaberle/Documents/GitHab/KRC/krc_python/docs/davinci/krc.dvrc")
+out = krc(lat=25., workdir="/tmp/krc_persist_dv", KEEP=1)
+printf("Davinci: %dx%dx%d, %.2f-%.2f K\n", dim(out.tsurf)[1], dim(out.tsurf)[2], dim(out.tsurf)[3], min(out.tsurf), max(out.tsurf))
+###################################################
+# User: chaberle    Date:  Tue Oct  7 22:06:30 2025
+# Host: <UNKNOWN>   Cwd: /Users/chaberle/Documents/GitHab/KRC
+###################################################
+putenv("DV_SCRIPT_FILES","/Users/chaberle/Documents/GitHab/KRC/krc_python/pykrc/data")
+putenv("DV_KRC_HOME","/Users/chaberle/Documents/GitHab/KRC")
+source("/Users/chaberle/Documents/GitHab/KRC/krc_python/docs/davinci/krc.dvrc")
+out = krc(lat=25.)
+###################################################
+# User: chaberle    Date:  Tue Oct  7 22:07:52 2025
+# Host: <UNKNOWN>   Cwd: /Users/chaberle/Documents/GitHab/KRC
+###################################################
+putenv("DV_SCRIPT_FILES","/Users/chaberle/Documents/GitHab/KRC/krc_python/pykrc/data")
+putenv("DV_KRC_HOME","/Users/chaberle/Documents/GitHab/KRC")
+source("/Users/chaberle/Documents/GitHab/KRC/krc_python/docs/davinci/krc.dvrc")
+out = krc(lat=25., KEEP=1)
+workdir = syscall("ls -d /tmp/dv_*/krc_* 2>/dev/null | tail -1")
+if (strlen(workdir) > 0) {
+    t52 = workdir + "/krc.t52"
+    syscall("cp -v " + t52 + " /tmp/davinci_good.t52")
+    printf("\nCopied from: %s\n", workdir)
+    syscall("ls -lh /tmp/davinci_good.t52")
+}
+printf("\nDavinci: %dx%dx%d, %.2f-%.2f K\n", dim(out.tsurf)[1], dim(out.tsurf)[2], dim(out.tsurf)[3], min(out.tsurf), max(out.tsurf))
+###################################################
+# User: chaberle    Date:  Tue Oct  7 22:08:06 2025
+# Host: <UNKNOWN>   Cwd: /Users/chaberle/Documents/GitHab/KRC
+###################################################
+putenv("DV_SCRIPT_FILES","/Users/chaberle/Documents/GitHab/KRC/krc_python/pykrc/data")
+putenv("DV_KRC_HOME","/Users/chaberle/Documents/GitHab/KRC")
+source("/Users/chaberle/Documents/GitHab/KRC/krc_python/docs/davinci/krc.dvrc")
+out = krc(lat=25., KEEP=1)
+system("bash -c 'W=$(ls -d /tmp/dv_*/krc_* 2>/dev/null | tail -1); if [ -n \"$W\" ]; then cp -v $W/krc.t52 /tmp/davinci_good.t52 && ls -lh /tmp/davinci_good.t52; fi'")
+printf("Davinci: %dx%dx%d, %.2f-%.2f K\n", dim(out.tsurf)[1], dim(out.tsurf)[2], dim(out.tsurf)[3], min(out.tsurf), max(out.tsurf))
+###################################################
+# User: chaberle    Date:  Tue Oct  7 22:15:00 2025
+# Host: <UNKNOWN>   Cwd: /Users/chaberle/Documents/GitHab/KRC
+###################################################
+putenv("DV_SCRIPT_FILES","/Users/chaberle/Documents/GitHab/KRC/krc_python/pykrc/data")
+putenv("DV_KRC_HOME","/Users/chaberle/Documents/GitHab/KRC")
+source("/Users/chaberle/Documents/GitHab/KRC/krc_python/docs/davinci/krc.dvrc")
+# Load the raw bin5 file 
+raw = load_bin5("/Users/chaberle/Documents/GitHab/KRC/dvkrc_good.52")
+printf("Raw bin5 structure:\n")
+printf("  Hours: %d\n", length(raw))
+printf("  Fields: %d\n", length(raw[1]))
+printf("  Block shape: %dx%dx%d\n", dim(raw[1][1])[1], dim(raw[1][1])[2], dim(raw[1][1])[3])
+# Check first few values at field 1 (TSF), lat 1, season 5, case 1
+printf("\nFirst 10 hours, field[1], lat[1], season[5]:\n")
+i=1
+while(i<=10) {
+    val = raw[i][1][1,5,1]
+    printf("  Hour %2d: %.2f\n", i, val)
+    i = i+1
+}

@@ -3,6 +3,7 @@
 from pathlib import Path
 from typing import Dict, Any, Optional, Union
 import tempfile
+import numpy as np
 
 from pykrc.config import get_krc_home, get_paths
 from pykrc.input_processor import parse_master_inp
@@ -10,7 +11,7 @@ from pykrc.data_loaders import KRCDataLoader
 from pykrc.materials import calculate_thermal_properties
 from pykrc.orbital import porb, OrbitalElements
 from pykrc.executor import KRCExecutor
-from pykrc.bin52_complete import parse_bin52
+from pykrc.bin_parser import parse_bin52
 
 
 def krc(
@@ -164,6 +165,22 @@ def krc(
 
     body_params = porb(body, data_loader=data_loader)
 
+    # Set N24 from porb (davinci krc.dvrc lines 2755-2756)
+    # N24 is number of output timesteps per day, calculated from rotation period
+    # Minimum value is 96 (every 15 minutes)
+    rot_per = body_params.rotation_period
+    n24_from_porb = int(np.floor((rot_per * 4) / 96) * 96)
+    if n24_from_porb < 96:
+        n24_from_porb = 96
+
+    # Set N5 and JDISK from davinci logic (krc.dvrc lines 816-817)
+    # N5 = total seasons to run (3 years)
+    # JDISK = starting season for output (after 2 years of spinup)
+    # With DELLS=1: N5=1080, JDISK=721, giving 360 output seasons
+    dells = 1.0  # Ls step size in degrees
+    n5_from_porb = int(np.ceil(360.0 / dells * 3))
+    jdisk_from_porb = int(np.ceil(360.0 / dells * 2 + 1))
+
     # Set defaults based on body
     if INERTIA is None:
         INERTIA = master_params.get("INERTIA", 200.0)
@@ -230,6 +247,17 @@ def krc(
     if hasattr(body_params, 'rotation_period'):
         params["PERIOD"] = body_params.rotation_period
 
+    # Override N24, N5, and JDISK with porb-calculated values (davinci behavior)
+    params["N24"] = n24_from_porb
+    params["N5"] = n5_from_porb
+    params["JDISK"] = jdisk_from_porb
+
+    # Set PORB data if available
+    if hasattr(body_params, 'porb_header'):
+        params["PORB_HEADER"] = body_params.porb_header
+    if hasattr(body_params, 'porb_params'):
+        params["PORB_PARAMS"] = body_params.porb_params
+
     # Override with any additional kwargs
     params.update(kwargs)
 
@@ -239,6 +267,9 @@ def krc(
 
     params["Latitudes"] = [lat]
     params["Elevations"] = [ELEV if ELEV is not None else 0.0]
+
+    # Update N4 to match the number of latitudes
+    params["N4"] = 1
 
     # Set output format
     params["K4OUT"] = 52  # bin52 output

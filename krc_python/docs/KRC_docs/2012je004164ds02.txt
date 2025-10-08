@@ -1,0 +1,74 @@
+Index of FORTRAN and C Routines
+
+The KRC source code is in FORTRAN except for low-level I/O and utility routines
+written in C, both are on the KRC website.
+
+Name 	 Description
+
+ 	 	 Primary routines 
+KRC 	 Planet surface thermal model; top routine
+TSEAS 	 Advance one "season" along planets orbit
+TLATS  	 Latitude computations
+TDAY  	 Day and layer computations
+
+ 	 	  Input / output routines 
+TCARD 	 Read input file and changes
+TDISK  	 Save/read results at the end of a season
+TPRINT 	 Print all forms of output
+
+ 	 	  Specific task routines 
+ALBVAR 	 Compute frost albedo as linear function of insolation
+ALSUBS   Convert between L$_s$ and days into a Martian year
+AVEDAY 	 Average daily exposure of surface to sunlight. 
+CLIMTAU  Atmospheric dust and ice opacities as function of Ls and latitude 
+CO2PT  	 CO2 pressure/temperature relation
+DEDING2  Delta-Eddington 2-stream solution for single homogeneous layer
+EPRED 	 Asymptotic Prediction of numerical iteration 
+EVMONO3  Evaluate monomial of 3rd degree for a vector input, with scaling
+SEASALB  Seasonally variable soil albedo
+SEASTAU  Seasonally variable atmospheric opacity
+TINT  	 Spherical integrals over globe
+VLPRES   Viking Lander pressure curves
+
+ 	 	 Orbit geometry routines (after matrix calculation)
+ECCANOM  Iterative solution of Kepler's equations for eccentric orbit
+ORBIT 	 Compute radius and coordinates for elliptical orbit
+PORB 	 Computes planetary angles and location for specific time.
+PORB0 	 Planetary orbit. Read pre-computed matrices and do rotation; minimal 
+            for KRC
+
+ 	 	 Vector geometry 
+ROTV     Rotate a vector about a Cartesian axis 
+ROTVEC   Apply rotation matrix to rotate a vector
+VADDSP   A collection of vector operations for dimension 3
+VCROS    Cross product of two vectors of dimension 3. Allows overlapping arrays
+VFDOT    Calculates the dot product of two vectors of dimension 3
+VFMAG    Get magnitude (length) of a vector of dimension 3
+VROTV    Vector rotation about another vector
+
+ 	 	 Utility routines  
+B2B      Byte-to-byte array move or fill
+BINF5    Read/write binary file with IDL-style header
+CATIME   Returns current date & time as " yyyy mon dd hh:mm:ss "
+DATIME   Returns current date and time as ccyy-mon-dd_hh:mm:ss in 5 4-byte words
+FINTERP  Floating-point interpolation of Y for monotonic X
+IDARCH   Returns the running architecture as a string ident. & numerical value
+R2R      Real-to-real array move or fill
+READTXT360 Read 2-column text file of REAL values 
+SIGMA    Computes mean and standard deviation of real array 
+WHITE1   Reduce each white space to 1 blank
+XTREME   Find extreme range of a real array
+
+ 	 	 Utility routines in C
+binf5_bind.c Binding for bin5F
+b2b.c        Transfers bytes from one buffer to another (very fast)
+b_alloc.c    Allocate memory for elements of a specified size
+b_c2fstr.c   Reformat C strings to FORTRAN strings
+b_f2cstr.c   Reformat FORTRAN strings to C strings
+b_free.c     Frees memory allocated by b_alloc
+pio_bind_c.c Binding for the primio system
+primio.c     Package of routines for basic Input/ouput to files
+r2r.c        Transfers longs from one buffer to another (very fast)
+u_move1.c    Transfers bytes from one buffer to another (very fast)
+u_move4.c    Transfers longs from one buffer to another (very fast)
+u_swapn.c    Swap n-byte elements

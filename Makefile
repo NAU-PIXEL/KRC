@@ -18,12 +18,23 @@
 # 2018feb01 HK include $(KRCLIB)/orlint.f
 # 2018oct14 HK Include $(KRCLIB)/wraper.f
 # 2019dec04 HK Change from $(KRCLIB)/wraper.f to  $(KRCLIB)/wraper8.f
+# 2025oct07 Haberle: Add SDK path for macOS 15+ compatibility
 ####################################################
 
 SHELL=/bin/csh
 RM=/bin/rm -f
 
 FC=gfortran
+
+# macOS 15+ SDK path for system libraries
+SDKROOT := $(shell xcrun --show-sdk-path)
+ifneq ($(SDKROOT),)
+    export SDKROOT
+    # Use -isysroot to properly link against SDK libraries
+    LDFLAGS_SDK = -isysroot $(SDKROOT)
+else
+    LDFLAGS_SDK =
+endif
 
 # Use 2nd version below to allow debugger and enable most IDBG actions
 FFLAGS= -fno-automatic -fno-second-underscore -fd-lines-as-comments -fallow-argument-mismatch -Wall -cpp
@@ -74,21 +85,21 @@ OBJP3 = $(KRCLIB)/porbmn.o $(KRCLIB)/porbio.o $(KRCLIB)/ephemr.o $(KRCLIB)/ymd2j
 
 # normal link
 krc: $(OBJ8) $(CLIB)
-	$(FC) $(LIBDIRS_PROD) -o $@ $(OBJ8) \
+	$(FC) $(LDFLAGS_SDK) $(LIBDIRS_PROD) -o $@ $(OBJ8) \
 	$(CLIB) $(SYSLIBS)
 
 porbmn: $(OBJP3)
-	$(FC)  $(LIBDIRS_PROD) -o $@ $(OBJP3) \
+	$(FC) $(LDFLAGS_SDK) $(LIBDIRS_PROD) -o $@ $(OBJP3) \
 	$(SYSLIBS)
 
 # testing and development
 
 krcdb: $(OBJ8) $(CLIB)  # -  with debug
-	$(FC) $(LDBFLAGS) $(LIBDIRS) -o $@ $(OBJ8) \
+	$(FC) $(LDFLAGS_SDK) $(LDBFLAGS) $(LIBDIRS) -o $@ $(OBJ8) \
 	$(CLIB) $(SYSLIBS)
 
 porbmndb: $(OBJP3)
-	$(FC) $(LDBFLAGS) $(LIBDIRS) -o $@ $(OBJP3) \
+	$(FC) $(LDFLAGS_SDK) $(LDBFLAGS) $(LIBDIRS) -o $@ $(OBJP3) \
 	$(SYSLIBS)
 
 # make routines for program dependencies 
