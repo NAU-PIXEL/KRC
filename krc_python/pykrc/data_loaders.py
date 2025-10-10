@@ -111,10 +111,7 @@ def read_hdf5_file(filepath: Path) -> Dict[str, Any]:
 
 def read_vicar_image(filepath: Path) -> np.ndarray:
     """
-    Read VICAR format image file.
-
-    Note: This is a simplified reader. For full VICAR support,
-    consider using specialized libraries like pvl or rasterio.
+    Read VICAR format image file (simplified reader for KRC support files).
 
     Parameters
     ----------
@@ -124,19 +121,43 @@ def read_vicar_image(filepath: Path) -> np.ndarray:
     Returns
     -------
     numpy.ndarray
-        Image data array
-
-    Raises
-    ------
-    NotImplementedError
-        VICAR format requires specialized parsing
+        Image data array (NL x NS)
     """
-    # TODO: Implement full VICAR reader or use external library
-    # For now, attempt to read as raw binary after header
-    raise NotImplementedError(
-        "VICAR format reader not fully implemented. "
-        "Consider using pvl, gdal, or rasterio libraries for VICAR support."
-    )
+    with open(filepath, 'rb') as f:
+        # Read header to get parameters
+        header = f.read(2880).decode('latin-1')
+
+        # Parse key parameters from header
+        import re
+        nl_match = re.search(r'NL=(\d+)', header)
+        ns_match = re.search(r'NS=(\d+)', header)
+        lblsize_match = re.search(r'LBLSIZE=(\d+)', header)
+        format_match = re.search(r"FORMAT='(\w+)'", header)
+
+        if not all([nl_match, ns_match, lblsize_match]):
+            raise ValueError(f"Could not parse VICAR header in {filepath}")
+
+        nl = int(nl_match.group(1))  # number of lines
+        ns = int(ns_match.group(1))  # number of samples
+        lblsize = int(lblsize_match.group(1))
+        fmt = format_match.group(1) if format_match else 'REAL'
+
+        # Seek to data start (after label)
+        f.seek(lblsize)
+
+        # Read data based on format
+        if fmt == 'REAL':
+            dtype = np.float32
+        elif fmt == 'BYTE':
+            dtype = np.uint8
+        else:
+            dtype = np.float32
+
+        # Read the image data
+        data = np.fromfile(f, dtype=dtype, count=nl*ns)
+
+        # Reshape to (lines, samples) - note: VICAR uses (NL, NS) ordering
+        return data.reshape((nl, ns))
 
 
 class KRCDataLoader:

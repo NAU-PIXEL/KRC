@@ -158,9 +158,10 @@ def load_body_parameters(body_name: str, data_loader=None) -> Dict[str, Any]:
                         val = dataset[0, 0, 0]
                         params[key.upper()] = float(val) if hasattr(val, 'dtype') else val
 
-                # Read rotation period
+                # Read rotation period (stored in hours, convert to days)
                 if 'rot_per' in f:
-                    params['rotation_period'] = float(f['rot_per'][0, 0, 0])
+                    rot_per_hours = float(f['rot_per'][0, 0, 0])
+                    params['rotation_period'] = rot_per_hours / 24.0  # Convert hours to days
 
                 # Read orbital period
                 if 'period' in f:

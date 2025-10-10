@@ -125,3 +125,81 @@ while(i<=10) {
     printf("  Hour %2d: %.2f\n", i, val)
     i = i+1
 }
+###################################################
+# User: chaberle    Date:  Wed Oct  8 15:43:57 2025
+# Host: <UNKNOWN>   Cwd: /Users/chaberle/Documents/GitHab/KRC
+###################################################
+quit
+quit
+###################################################
+# User: chaberle    Date:  Wed Oct  8 15:45:14 2025
+# Host: <UNKNOWN>   Cwd: /Users/chaberle/Documents/GitHab/KRC
+###################################################
+return
+quit
+###################################################
+# User: chaberle    Date:  Wed Oct  8 15:45:26 2025
+# Host: <UNKNOWN>   Cwd: /Users/chaberle/Documents/GitHab/KRC
+###################################################
+\n
+quit
+###################################################
+# User: chaberle    Date:  Wed Oct  8 15:46:12 2025
+# Host: <UNKNOWN>   Cwd: /Users/chaberle/Documents/GitHab/KRC
+###################################################
+quit
+###################################################
+# User: chaberle    Date:  Wed Oct  8 15:47:45 2025
+# Host: <UNKNOWN>   Cwd: /Users/chaberle/Documents/GitHab/KRC
+###################################################
+quit
+###################################################
+# User: chaberle    Date:  Wed Oct  8 21:29:56 2025
+# Host: <UNKNOWN>   Cwd: /Users/chaberle/Documents/GitHab/KRC
+###################################################
+source("/Users/chaberle/Documents/GitHab/KRC/krc_python/docs/davinci/krc.dvrc")
+###################################################
+# User: chaberle    Date:  Thu Oct  9 14:46:57 2025
+# Host: <UNKNOWN>   Cwd: /Users/chaberle/Documents/GitHab/KRC
+###################################################
+krc()
+quit
+###################################################
+# User: chaberle    Date:  Thu Oct  9 14:49:01 2025
+# Host: <UNKNOWN>   Cwd: /Users/chaberle/Documents/GitHab/KRC
+###################################################
+quit
+###################################################
+# User: chaberle    Date:  Thu Oct  9 14:49:50 2025
+# Host: <UNKNOWN>   Cwd: /Users/chaberle/Documents/GitHab/KRC
+###################################################
+krc
+krc()
+exit
+quit
+###################################################
+# User: chaberle    Date:  Thu Oct  9 14:50:06 2025
+# Host: <UNKNOWN>   Cwd: /Users/chaberle/Documents/GitHab/KRC
+###################################################
+davinci
+quit
+###################################################
+# User: chaberle    Date:  Thu Oct  9 18:12:55 2025
+# Host: <UNKNOWN>   Cwd: /Users/chaberle/Documents/GitHab/KRC
+###################################################
+$DV_KRC_HOME = "/Users/chaberle/Documents/GitHab/KRC"
+include("krc.dvrc", target=$DV_KRC_HOME+"/krc_davinci")
+# Generate input file
+result = krc(lat=0.0, lon=0.0, body="Mars", ALBEDO=0.25, INERTIA=200.0, DELLS=5.0, workdir="/tmp/davinci_krc_test", skip=1)
+quit
+###################################################
+# User: chaberle    Date:  Thu Oct  9 18:19:12 2025
+# Host: <UNKNOWN>   Cwd: /Users/chaberle/Documents/GitHab/KRC
+###################################################
+exit
+quit
+###################################################
+# User: chaberle    Date:  Thu Oct  9 18:23:01 2025
+# Host: <UNKNOWN>   Cwd: /Users/chaberle/Documents/GitHab/KRC
+###################################################
+quit

@@ -1,0 +1,19 @@
+#!/Applications/davinci.app/Contents/Resources/bin/davinci -f
+
+# Test case 1: Simple Mars run
+# Parameters match PyKRC test case
+printf("Running Davinci KRC with test parameters...\n")
+
+result = krc(
+    lat=0.0,
+    lon=0.0,
+    body="Mars",
+    ALBEDO=0.25,
+    INERTIA=200.0,
+    DELLS=5.0,
+    workdir="/tmp/davinci_comparison_test",
+    skip=1
+)
+
+printf("Davinci run complete\n")
+printf("Input file written to: /tmp/davinci_comparison_test/krc.inp\n")

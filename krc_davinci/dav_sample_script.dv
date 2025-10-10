@@ -1,0 +1,5 @@
+#!/Applications/davinci.app/Contents/Resources/bin/davinci -f
+
+y = krc(lat=12.,GD="1994-Feb-05",KEEP="T")
+#x = krc(lat=12.,JD=2450075.5,KEEP="T")
+#w = krc(lat=12.,DJUL=-1000.,LKEY="T",KEEP="T")

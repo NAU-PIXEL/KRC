@@ -1,0 +1,4 @@
+#!/Applications/davinci.app/Contents/Resources/bin/davinci -f
+
+# Direct comparison test - simple parameters
+y = krc(lat=0.,lon=0.,ALBEDO=0.25,INERTIA=200.,DELLS=5.,skip=1,workdir="/tmp/dav_compare")
