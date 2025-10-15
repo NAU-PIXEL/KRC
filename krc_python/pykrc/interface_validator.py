@@ -317,17 +317,29 @@ class KRCValidator:
         if not self.krc_home.exists():
             raise ValueError(f"KRC home not found: {krc_home}")
 
-    def run_davinci_krc(self, command: str, workdir: Path) -> Dict[str, Any]:
+    def run_davinci_krc(self, command: str, workdir: Path, outdir: Path = None) -> Dict[str, Any]:
         """
         Run a davinci krc command and capture results.
 
         Args:
             command: Davinci krc command (e.g., 'krc(lat=12.,ls=23.,KEEP="T")')
-            workdir: Working directory for output files
+            workdir: Working directory for script file
+            outdir: Optional output directory for KRC files (passed to davinci krc)
 
         Returns:
             dict: Results including stdout, stderr, and file locations
         """
+        # Modify command to include outdir if specified
+        if outdir:
+            # Insert outdir parameter into the krc() call
+            # Handle both with and without KEEP parameter
+            if 'KEEP=' in command:
+                # Insert outdir before KEEP
+                command = command.replace('KEEP=', f'outdir="{outdir}",KEEP=')
+            else:
+                # Insert outdir before closing parenthesis
+                command = command.replace(')', f',outdir="{outdir}")')
+
         # Create executable davinci script with shebang
         # This method works reliably because it loads .dvrc automatically
         # which sets up DV_KRC_HOME and sources krc.dvrc
@@ -430,7 +442,8 @@ printf("Davinci KRC complete\\n")
     def compare_run(self, pykrc_params: Dict[str, Any],
                    davinci_cmd: str,
                    tolerance: float = 1e-6,
-                   keep_files: bool = False) -> Dict[str, Any]:
+                   keep_files: bool = False,
+                   test_name: str = None) -> Dict[str, Any]:
         """
         Run both PyKRC and davinci krc.dvrc and compare results.
 
@@ -439,111 +452,116 @@ printf("Davinci KRC complete\\n")
             davinci_cmd: Davinci command string
             tolerance: Numerical comparison tolerance
             keep_files: Keep temporary files after comparison
+            test_name: Optional name for test directory (creates persistent /tmp/krc_integration_test_{test_name}/)
 
         Returns:
-            dict: Comprehensive comparison results
+            dict: Comprehensive comparison results including test_directory path
         """
         # Create temporary working directories
-        with tempfile.TemporaryDirectory() as tmpdir:
-            tmpdir = Path(tmpdir)
+        if test_name:
+            # Use persistent named directory in /tmp
+            tmpdir = Path(f"/tmp/krc_integration_test_{test_name}")
+            if tmpdir.exists():
+                import shutil
+                shutil.rmtree(tmpdir)
+            tmpdir.mkdir(parents=True)
             pykrc_dir = tmpdir / "pykrc"
             davinci_dir = tmpdir / "davinci"
             pykrc_dir.mkdir()
             davinci_dir.mkdir()
+            should_cleanup = False
+        else:
+            # Use auto-cleanup temp directory
+            tmpdir = Path(tempfile.mkdtemp())
+            pykrc_dir = tmpdir / "pykrc"
+            davinci_dir = tmpdir / "davinci"
+            pykrc_dir.mkdir()
+            davinci_dir.mkdir()
+            should_cleanup = not keep_files
 
-            # Run PyKRC
-            # Set KRC_HOME before running
-            set_krc_home(str(self.krc_home))
+        # Run PyKRC
+        # Set KRC_HOME before running
+        set_krc_home(str(self.krc_home))
 
-            pykrc_params_with_keep = {
-                **pykrc_params,
-                "workdir": str(pykrc_dir),
-                "verbose": True
+        pykrc_params_with_keep = {
+            **pykrc_params,
+            "workdir": str(pykrc_dir),
+            "verbose": True
+        }
+
+        try:
+            pykrc_output = krc(**pykrc_params_with_keep)
+            pykrc_success = True
+            pykrc_error = None
+        except Exception as e:
+            pykrc_success = False
+            pykrc_error = str(e)
+            pykrc_output = None
+
+        # Run davinci krc.dvrc with outdir parameter to write directly to our directory
+        # davinci_krc_path is optional - davinci loads krc.dvrc from ~/.dvrc automatically
+        davinci_result = self.run_davinci_krc(davinci_cmd, davinci_dir, outdir=davinci_dir)
+        davinci_success = davinci_result["success"]
+        davinci_error = davinci_result["stderr"] if not davinci_success else None
+
+        # Find files (davinci now writes directly to davinci_dir via outdir parameter)
+        pykrc_files = self.find_krc_files(pykrc_dir, is_davinci=False)
+        davinci_files = self.find_krc_files(davinci_dir, is_davinci=False)
+
+        # Compare input files
+        inp_comparison = None
+        if pykrc_files["inp"] and davinci_files["inp"]:
+            inp_comparison = InputFileComparator.compare_inp_files(
+                pykrc_files["inp"], davinci_files["inp"]
+            )
+
+        # Compare binary output files
+        bin_comparison = None
+        float_comparison = None
+        if pykrc_files["bin52"] and davinci_files["bin52"]:
+            bin_comparison = BinaryFileComparator.compare_binary_files(
+                pykrc_files["bin52"], davinci_files["bin52"], tolerance
+            )
+
+            # Also compare as float arrays
+            float_comparison = BinaryFileComparator.compare_float_arrays(
+                pykrc_files["bin52"], davinci_files["bin52"],
+                tolerance=tolerance
+            )
+
+        # Cleanup temporary directory if needed
+        if should_cleanup:
+            import shutil
+            shutil.rmtree(tmpdir)
+
+        return {
+            "test_directory": str(tmpdir) if not should_cleanup else None,
+            "pykrc": {
+                "success": pykrc_success,
+                "error": pykrc_error,
+                "files": {k: str(v) if v else None for k, v in pykrc_files.items()}
+            },
+            "davinci": {
+                "success": davinci_success,
+                "error": davinci_error,
+                "files": {k: str(v) if v else None for k, v in davinci_files.items()}
+            },
+            "input_file_comparison": inp_comparison,
+            "binary_file_comparison": bin_comparison,
+            "float_array_comparison": float_comparison,
+            "summary": {
+                "both_succeeded": pykrc_success and davinci_success,
+                "input_files_match": inp_comparison["identical"] if inp_comparison else False,
+                "binary_files_match": bin_comparison["identical"] if bin_comparison else False,
+                "float_arrays_match": float_comparison["identical"] if float_comparison else False,
+                "overall_match": (
+                    pykrc_success and davinci_success and
+                    # Only require output arrays to match, not input files
+                    # (PyKRC now properly filters changecards to only user-set params)
+                    (float_comparison["identical"] if float_comparison else False)
+                )
             }
-
-            try:
-                pykrc_output = krc(**pykrc_params_with_keep)
-                pykrc_success = True
-                pykrc_error = None
-            except Exception as e:
-                pykrc_success = False
-                pykrc_error = str(e)
-                pykrc_output = None
-
-            # Run davinci krc.dvrc
-            if self.davinci_krc_path:
-                davinci_result = self.run_davinci_krc(davinci_cmd, davinci_dir)
-                davinci_success = davinci_result["success"]
-                davinci_error = davinci_result["stderr"] if not davinci_success else None
-            else:
-                davinci_success = False
-                davinci_error = "No davinci krc path provided"
-                davinci_result = None
-
-            # Find files
-            pykrc_files = self.find_krc_files(pykrc_dir, is_davinci=False)
-            davinci_files = self.find_krc_files(davinci_dir, is_davinci=True)
-
-            # Compare input files
-            inp_comparison = None
-            if pykrc_files["inp"] and davinci_files["inp"]:
-                inp_comparison = InputFileComparator.compare_inp_files(
-                    pykrc_files["inp"], davinci_files["inp"]
-                )
-
-            # Compare binary output files
-            bin_comparison = None
-            if pykrc_files["bin52"] and davinci_files["bin52"]:
-                bin_comparison = BinaryFileComparator.compare_binary_files(
-                    pykrc_files["bin52"], davinci_files["bin52"], tolerance
-                )
-
-                # Also compare as float arrays
-                float_comparison = BinaryFileComparator.compare_float_arrays(
-                    pykrc_files["bin52"], davinci_files["bin52"],
-                    tolerance=tolerance
-                )
-            else:
-                float_comparison = None
-
-            # Optionally keep files
-            if keep_files:
-                import shutil
-                keep_dir = tmpdir / "kept_files"
-                keep_dir.mkdir()
-                if pykrc_dir.exists():
-                    shutil.copytree(pykrc_dir, keep_dir / "pykrc")
-                if davinci_dir.exists():
-                    shutil.copytree(davinci_dir, keep_dir / "davinci")
-                print(f"Files kept in: {keep_dir}")
-
-            return {
-                "pykrc": {
-                    "success": pykrc_success,
-                    "error": pykrc_error,
-                    "files": {k: str(v) if v else None for k, v in pykrc_files.items()}
-                },
-                "davinci": {
-                    "success": davinci_success,
-                    "error": davinci_error,
-                    "files": {k: str(v) if v else None for k, v in davinci_files.items()}
-                },
-                "input_file_comparison": inp_comparison,
-                "binary_file_comparison": bin_comparison,
-                "float_array_comparison": float_comparison,
-                "summary": {
-                    "both_succeeded": pykrc_success and davinci_success,
-                    "input_files_match": inp_comparison["identical"] if inp_comparison else False,
-                    "binary_files_match": bin_comparison["identical"] if bin_comparison else False,
-                    "float_arrays_match": float_comparison["identical"] if float_comparison else False,
-                    "overall_match": (
-                        pykrc_success and davinci_success and
-                        # Only require output arrays to match, not input files
-                        # (PyKRC now properly filters changecards to only user-set params)
-                        (float_comparison["identical"] if float_comparison else False)
-                    )
-                }
-            }
+        }
 
 
 class ValidationTestSuite:

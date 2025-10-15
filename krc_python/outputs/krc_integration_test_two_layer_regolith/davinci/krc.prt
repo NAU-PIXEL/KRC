@@ -1,0 +1,169 @@
+
+
+ ============================= New case  0 =============================
+ --------- TYPE LOC  VALUE ----- ITEM  Comments
+ Changed>>   3   9   0.000        LVFT   LVFT
+ Changed>>   3  10   0.000        LKofT  LKofT
+ Changed>>   3  12   1.000        LKEY   LKEY
+ Changed>>   3  14   0.000        LZONE  LZONE
+ Changed>>   2   1   39.00        N1     N1
+ Changed>>   2   2   1152.        N2     N2
+ Changed>>   2   3   1.000        N3     N3
+ Changed>>   2   5   1080.        N5     N5
+ Changed>>   2   6   96.00        N24    N24
+ Changed>>   2   7  -1.000        IIB    IIB
+ Changed>>   2   8   20.00        IC2    IC2
+ Changed>>   2   9   999.0        NRSET  NRSET
+ Changed>>   2  12   721.0        JDISK  JDISK
+ Changed>>   2  15   0.000        I15    TUN_Flx15
+ Changed>>   2  16   1.000        KPREF  KPREF
+ Changed>>   2  17   52.00        K4OUT  K4OUT
+ Changed>>   2  18   0.000        JBARE  JBARE
+ Changed>>   1   1  0.1864      ALBEDO   ALBEDO
+ Changed>>   1   2   1.000      EMISS    EMISS
+ Changed>>   1   3   200.0      INERTIA  INERTIA
+ Changed>>   1   4   1.249      COND2    COND2
+ Changed>>   1   5   1891.      DENS2    DENS2
+ Changed>>   1   6   1.026      PERIOD   PERIOD
+ Changed>>   1   7   609.9      SPECHEAT SPEC_HEAT
+ Changed>>   1   8   1182.      DENSITY  DENSITY
+ Changed>>   1  12   546.0      PTOTAL   PTOTAL
+ Changed>>   1  15   180.0      TDEEP    TDEEP
+ Changed>>   1  16   609.9      SpHeat2  SpHeat2
+ Changed>>   1  17  0.3000      TAUD     TAUD
+ Changed>>   1  18  0.9000      DUSTA    DUSTA
+ Changed>>   1  19  0.2200      TAURAT   TAURAT
+ Changed>>   1  21  0.5000      ARC2/PHT ARC2_G0
+ Changed>>   1  23   0.000      SLOPE    SLOPE
+ Changed>>   1  24   0.000      SLOAZI   SLOAZI
+ Changed>>   1  25   146.0      TFROST   TFROST
+ Changed>>   1  33   1.150      RLAY     RLAY
+ Changed>>   1  34  0.8488E-01  FLAY     FLAY
+ Changed>>   1  38   0.000      PhotF    PhotoFunc
+ Changed>>   1  39   99.00      GGT      GGT
+ Changed>>   1  41  0.1000      DJUL     DJUL
+ Changed>>   1  42   1.908      DELJUL   DELJUL
+ Changed>>   1  47   3.711      GRAV     GRAV
+ Changed>>   1  49  0.5579E-01  ConUp0   ConUp0
+ Changed>>   1  50  0.1280E-01  ConUp1   ConUp1
+ Changed>>   1  51 -0.1988E-02  ConUp2   ConUp2
+ Changed>>   1  52  0.3693E-03  ConUp3   ConUp3
+ Changed>>   1  53   1.255      ConLo0   ConLo0
+ Changed>>   1  54  0.2881      ConLo1   ConLo1
+ Changed>>   1  55 -0.4473E-01  ConLo2   ConLo2
+ Changed>>   1  56  0.8309E-02  ConLo3   ConLo3
+ Changed>>   1  57   609.9      SpHUp0   SphUp0
+ Changed>>   1  58   214.2      SpHUp1   SphUp1
+ Changed>>   1  59  -40.94      SpHUp2   SphUp2
+ Changed>>   1  60   11.26      SpHUp3   SphUp3
+ Changed>>   1  61   609.9      SpHLo0   SphLo0
+ Changed>>   1  62   214.2      SpHLo1   SphLo1
+ Changed>>   1  63  -40.94      SpHLo2   SphLo2
+ Changed>>   1  64   11.26      SpHLo3   SphLo3
+ Changed>>   8   5   0.000               /tmp/krc_integration_test_two_layer_regolith/davinci/outdata.bin.52
+ New T52 file name= /tmp/krc_integration_test_two_layer_regolith/davinci/outdata.bin.52
+Version 356 default values.  19 latitudes with mean Mars zonal elevations           
+KRCv3.6.5    RUN-CASE  0- 1   2025 Oct 15 15:24:46  PAGE=  1
+ Input file: krc.inp                                                                         
+ Print file: krc.prt                                                                         
+ Save file: /tmp/krc_integration_test_two_layer_regolith/davinci/outdata.bin.52             
+     ALBEDO     EMISS   INERTIA     COND2     DENS2    PERIOD  SpecHeat   DENSITY
+     0.1864    1.0000  200.0000    1.2486 1890.9092    1.0260  609.9060 1181.8181
+       CABR       AMW    SatPrA    PTOTAL     FANON      TATM     TDEEP   SpHeat2
+     0.1100   43.5000   27.9546  546.0000    0.0550  200.0000  180.0000  609.9060
+       TAUD     DUSTA    TAURAT     TWILI   ARC2=G0 ARC3=safe     SLOPE    SLOAZI
+     0.3000    0.9000    0.2200      0.00      0.50      0.80       0.0       0.0
+     TFROST    CFROST    AFROST     FEMIS       AF1       AF2    FROEXT    SatPrB
+   146.0000  589944.0    0.6500    0.9500   0.54000    0.0009   50.0000 3182.4800
+       RLAY      FLAY     CONVF     DEPTH     DRSET PhotoFunc       GGT     DTMAX
+     1.1500    0.0849    3.0000    0.0000    0.0000    0.0000   99.0000    0.1000
+       DJUL    DELJUL  SOLARDEC       DAU     LsubS    SOLCON      GRAV    Atm_Cp
+      0.100    1.9083    0.0000   1.46500    0.0000 1368.0000    3.7110  735.9000
+     ConUp0    ConUp1    ConUp2    ConUp3    ConLo0    ConLo1    ConLo2    ConLo3
+     0.0558    0.0128   -0.0020    0.0004    1.2553    0.2881   -0.0447    0.0083
+     SphUp0    SphUp1    SphUp2    SphUp3    SphLo0    SphLo1    SphLo2    SphLo3
+   609.9060  214.2310  -40.9437   11.2575  609.9060  214.2310  -40.9437   11.2575
+         N1        N2        N3        N4        N5       N24       IIB       IC2
+         39      1152         1         1      1080        96        -1        20
+      NRSET      NMHA      NRUN     JDISK     IDOWN    FlxP14 TUN/Flx15     KPREF
+        999        24         0       721         0        45         0         1
+      K4OUT     JBARE     Notif    IDISK2
+         52         0        50         0
+     LP1    LP2    LP3    LP4    LP5    LP6 LPGLOB   LVFA   LVFT  LKofT
+       F      T      F      F      F      F      F      F      F      F
+   LPORB   LKEY    LSC  LZONE  LOCAL   LD16 LPTAVE  Prt78  Prt79  L_ONE
+       T      T      F      F      T      F      F      T      F      F
+
+ Latitudes: 
+    0.00
+
+ Elevations:
+   -1.41
+TDAY: LZONE,LALCON,IC3, IK1:4=  F  T    20     1     0     1     0
+ Time-doubling fraction:  0.221833885    
+ 7.208E+05=Dens*Cp   7.699E-08=Diffu.      0.0466=Scale      200.00=Inertia
+ Beginning at layer  20  At      0.3000 m.
+ 1.153E+06=Dens*Cp   1.083E-06=Diffu.      0.1748=Scale     1199.99=Inertia
+         ___THICKNESS____    __CENTER_DEPTH__  Conductiv. Density Sp.Heat     Total Converg.
+ LAYER  D_scale     meter   D_scale     meter      W/m-K   kg/m^3   J/kg     kg/m^2  factor
+    1    0.0738    0.0034   -0.0369   -0.0017 0.5549E-01  1181.82  609.91     0.000   0.000
+    2    0.0849    0.0040    0.0424    0.0020 0.5549E-01  1181.82  609.91     4.676   1.321
+    3    0.0976    0.0045    0.1337    0.0062 0.5549E-01  1181.82  609.91    10.052   1.747
+    4    0.1123    0.0052    0.2386    0.0111 0.5549E-01  1181.82  609.91    16.236   2.310
+    5    0.1291    0.0060    0.3593    0.0167 0.5549E-01  1181.82  609.91    23.347   3.055
+    6    0.1485    0.0069    0.4981    0.0232 0.5549E-01  1181.82  609.91    31.524   4.041
+    7    0.1707    0.0080    0.6577    0.0307 0.5549E-01  1181.82  609.91    40.928   5.344
+    8    0.1963    0.0092    0.8412    0.0392 0.5549E-01  1181.82  609.91    51.743   3.534
+    9    0.2258    0.0105    1.0522    0.0490 0.5549E-01  1181.82  609.91    64.180   4.673
+   10    0.2596    0.0121    1.2950    0.0604 0.5549E-01  1181.82  609.91    78.482   3.090
+   11    0.2986    0.0139    1.5741    0.0734 0.5549E-01  1181.82  609.91    94.930   4.087
+   12    0.3434    0.0160    1.8951    0.0883 0.5549E-01  1181.82  609.91   113.845   5.405
+   13    0.3949    0.0184    2.2642    0.1055 0.5549E-01  1181.82  609.91   135.597   3.574
+   14    0.4541    0.0212    2.6887    0.1253 0.5549E-01  1181.82  609.91   160.612   4.727
+   15    0.5222    0.0243    3.1769    0.1481 0.5549E-01  1181.82  609.91   189.380   3.125
+   16    0.6006    0.0280    3.7383    0.1742 0.5549E-01  1181.82  609.91   222.462   4.133
+   17    0.6907    0.0322    4.3840    0.2043 0.5549E-01  1181.82  609.91   260.507   5.466
+   18    0.7943    0.0370    5.1264    0.2389 0.5549E-01  1181.82  609.91   304.259   3.615
+   19    0.9134    0.0426    5.9803    0.2787 0.5549E-01  1181.82  609.91   354.573   4.780
+   20    1.0504    0.1836    6.9622    0.3918  1.249      1890.91  609.91   701.739   3.161
+   21    1.2080    0.2111    8.0914    0.5892  1.249      1890.91  609.91  1100.981   4.180
+   22    1.3892    0.2428    9.3900    0.8162  1.249      1890.91  609.91  1560.108   5.529
+   23    1.5976    0.2792   10.8834    1.0772  1.249      1890.91  609.91  2088.105   3.656
+   24    1.8372    0.3211   12.6008    1.3774  1.249      1890.91  609.91  2695.301   4.835
+   25    2.1128    0.3693   14.5758    1.7225  1.249      1890.91  609.91  3393.577   6.394
+   26    2.4297    0.4247   16.8470    2.1195  1.249      1890.91  609.91  4196.594   8.456
+   27    2.7942    0.4884   19.4590    2.5760  1.249      1890.91  609.91  5120.063  11.183
+   28    3.2133    0.5616   22.4627    3.1010  1.249      1890.91  609.91  6182.053  14.790
+   29    3.6953    0.6459   25.9170    3.7048  1.249      1890.91  609.91  7403.341  19.559
+   30    4.2496    0.7428   29.8894    4.3991  1.249      1890.91  609.91  8807.823  25.867
+   31    4.8870    0.8542   34.4577    5.1976  1.249      1890.91  609.91 10422.977  34.210
+   32    5.6201    0.9823   39.7112    6.1158  1.249      1890.91  609.91 12280.404  45.242
+   33    6.4631    1.1296   45.7528    7.1718  1.249      1890.91  609.91 14416.445  59.833
+   34    7.4325    1.2991   52.7005    8.3861  1.249      1890.91  609.91 16872.892  79.129
+   35    8.5474    1.4939   60.6905    9.7826  1.249      1890.91  609.91 19697.806 104.648
+   36    9.8295    1.7180   69.8790   11.3886  1.249      1890.91  609.91 22946.458 138.397
+   37   11.3039    1.9757   80.4457   13.2355  1.249      1890.91  609.91 26682.407 183.030
+   38   12.9995    2.2721   92.5974   15.3594  1.249      1890.91  609.91 30978.748 242.057
+   39   14.9495    2.6129  106.5719   17.8020  1.249      1890.91  609.91 35919.541 320.121
+ Bottom                    114.0466   19.1084
+ Lower layer of time doubling:   7  9 12 14 17 19 22 39
+ IDX= 4  JJJ=    5   96    7    1  364    0    0    5   25    0
+ MMM=          96         672         672      241920           0           0
+ KOMMON,KASE=    10000000      244608
+ RASE,MASE,MTOT=   40.8817368              40     9784320
+ -----------------------  RUN-CASE     1     1 ----------------------- 
+     0.282 seconds at end of season 1080 of 1080
+ Case  1  DTIME: total, user, system=    0.2820    0.2769    0.0051
+
+
+ ============================= New case  1 =============================
+ --------- TYPE LOC  VALUE ----- ITEM  Comments
+
+
+     END OF DATA ON INPUT UNIT
+ KRC@180 IRL,IRC=           1           5
+ IDX= 4  JJJ=    5   96    7    1  364    1    0    5   25    0
+ Wrote bin5 file type 52: iret=            0
+   File name=/tmp/krc_integration_test_two_layer_regolith/davinci/outdata.bin.52
+      END KRC   Total time [s]=      0.282
+ Elog= eLog20251015T152446.684                 

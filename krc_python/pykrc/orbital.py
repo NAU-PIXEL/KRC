@@ -136,7 +136,14 @@ def load_body_parameters(body_name: str, data_loader=None) -> Dict[str, Any]:
                         # First line is the PORB header
                         params['PORB_HEADER'] = lines[0]
 
-                        # Next 6 lines contain 30 float values (5 per line)
+                        # Store pre-formatted text lines (6 lines) for exact davinci parity
+                        # This eliminates the need for G15.7 formatting and guarantees
+                        # character-by-character match with davinci output
+                        if len(lines) >= 7:
+                            params['PORB_TEXT_LINES'] = lines[1:7]
+
+                        # Also parse to numeric for backward compatibility
+                        # (used as fallback for generic bodies without pre-formatted text)
                         porb_params = []
                         for line in lines[1:7]:
                             values = line.split()
@@ -231,6 +238,7 @@ def porb(
 
     # Extract PORB data (these don't go into OrbitalElements)
     porb_header = params.pop('PORB_HEADER', None)
+    porb_text_lines = params.pop('PORB_TEXT_LINES', None)
     porb_params = params.pop('PORB_PARAMS', None)
 
     # Extract KRC-specific parameters (these also don't go into OrbitalElements)
@@ -254,8 +262,10 @@ def porb(
     # Store PORB data as attributes for use in input generation
     if porb_header:
         orbital_elem.porb_header = porb_header
+    if porb_text_lines:
+        orbital_elem.porb_text_lines = porb_text_lines  # Pre-formatted text (preferred)
     if porb_params:
-        orbital_elem.porb_params = porb_params
+        orbital_elem.porb_params = porb_params  # Numeric values (fallback)
     if krc_params:
         orbital_elem.krc_params = krc_params
 

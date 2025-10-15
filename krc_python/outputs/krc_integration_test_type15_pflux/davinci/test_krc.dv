@@ -1,0 +1,6 @@
+#!/Applications/davinci.app/Contents/Resources/bin/davinci -f
+
+# Auto-generated validation script
+# Note: KRC is loaded from ~/.dvrc which sources krc.dvrc
+result = krc(lat=0.,INERTIA=50.,body="Europa",ALBEDO=0.55,PFlux="T",Lon_Hr=12.,LKofT="F",outdir="/tmp/krc_integration_test_type15_pflux/davinci",KEEP="T")
+printf("Davinci KRC complete\n")

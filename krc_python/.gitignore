@@ -82,3 +82,4 @@ fort.*
 pykrc/data/*.vicar
 pykrc/data/*.hdf
 pykrc/data/*.bin
+pykrc/outputs/*

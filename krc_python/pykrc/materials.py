@@ -272,8 +272,10 @@ def calculate_thermal_properties(
     COND = thermal_inertia**2 / (DENSITY * SPEC_HEAT)
 
     # Create temperature table for k(T) fitting
+    # Davinci krc.dvrc lines 604-608: T_min=30, T_max=500, T_Step=10
+    # T_NUM = int(1 + (T_max - T_min)/T_Step) = int(1 + 470/10) = 48 points
     T_min, T_max, T_step = 30.0, 500.0, 10.0
-    T_tab = np.arange(T_min, T_max + T_step, T_step)
+    T_tab = np.arange(T_min, T_max + T_step, T_step)  # 30, 40, 50, ..., 500 (48 points)
     X = (T_tab - 220.0) * 0.01
 
     # Calculate k(T) table based on style
@@ -284,18 +286,20 @@ def calculate_thermal_properties(
         # Increases with T, sqrt(T) trend (Morgan et al.)
         k_table = COND * np.sqrt(T_tab / T_user)
     elif k_style == "Bulk":
-        # Decreases with T, bulk conductivity
-        k_user = (coeffs.Con0 + coeffs.Con1*X_user +
-                  coeffs.Con2*X_user**2 + coeffs.Con3*X_user**3)
-        k_table_raw = (coeffs.Con0 + coeffs.Con1*X +
-                       coeffs.Con2*X**2 + coeffs.Con3*X**3)
-        k_table = k_table_raw / k_user
+        # Bulk conductivity - use material database polynomial directly (Davinci behavior)
+        # k_Table = Mat_Prop.ConB.ConB0 + Mat_Prop.ConB.ConB1*X + ...
+        k_table = (coeffs.Con0 + coeffs.Con1*X +
+                   coeffs.Con2*X**2 + coeffs.Con3*X**3)
     else:
         raise ValueError(f"Unknown k_style: {k_style}")
 
     # Fit cubic polynomial to k_table
-    con_coeffs = np.polyfit(X, k_table, 3)
-    ConUp3, ConUp2, ConUp1, ConUp0 = con_coeffs
+    # Use numpy.polynomial.polynomial.polyfit which returns coefficients in ascending order
+    # [c0, c1, c2, c3] to match davinci's fit() function behavior
+    # Davinci: fit(y=k_Table, x=X, "cube") returns [a0, a1, a2, a3] for a0 + a1*x + a2*x² + a3*x³
+    from numpy.polynomial import polynomial as P
+    con_coeffs = P.polyfit(X, k_table, 3)
+    ConUp0, ConUp1, ConUp2, ConUp3 = con_coeffs
 
     return {
         "INERTIA": thermal_inertia,

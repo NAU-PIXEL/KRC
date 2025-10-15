@@ -1,0 +1,66 @@
+
+
+ ============================= New case  0 =============================
+ --------- TYPE LOC  VALUE ----- ITEM  Comments
+ Changed>>   3   9   0.000        LVFT   LVFT
+ Changed>>   3  10   1.000        LKofT  LKofT
+ Changed>>   3  12   1.000        LKEY   LKEY
+ Changed>>   3  14   0.000        LZONE  LZONE
+ Changed>>   2   1   32.00        N1     N1
+ Changed>>   2   2   864.0        N2     N2
+ Changed>>   2   3   1.000        N3     N3
+ Changed>>   2   5   1080.        N5     N5
+ Changed>>   2   6   96.00        N24    N24
+ Changed>>   2   7  -1.000        IIB    IIB
+ Changed>>   2   8   999.0        IC2    IC2
+ Changed>>   2   9   999.0        NRSET  NRSET
+ Changed>>   2  12   721.0        JDISK  JDISK
+ Changed>>   2  15   0.000        I15    TUN_Flx15
+ Changed>>   2  16   1.000        KPREF  KPREF
+ Changed>>   2  17   52.00        K4OUT  K4OUT
+ Changed>>   2  18   0.000        JBARE  JBARE
+ Changed>>   1   2   1.000      EMISS    EMISS
+ Changed>>   1   3   45.00      INERTIA  INERTIA
+ Changed>>   1   4  0.3097E-02  COND2    COND2
+ Changed>>   1   5   1072.      DENS2    DENS2
+ Changed>>   1   6   3.550      PERIOD   PERIOD
+ Changed>>   1   7   609.9      SPECHEAT SPEC_HEAT
+ Changed>>   1   8   1072.      DENSITY  DENSITY
+ Changed>>   1  12   0.000      PTOTAL   PTOTAL
+ Changed>>   1  15   180.0      TDEEP    TDEEP
+ Changed>>   1  16   609.9      SpHeat2  SpHeat2
+ Changed>>   1  17   0.000      TAUD     TAUD
+ Changed>>   1  18  -999.0      DUSTA    DUSTA
+ Changed>>   1  19  -999.0      TAURAT   TAURAT
+ Changed>>   1  21   0.000      ARC2/PHT ARC2_G0
+ Changed>>   1  23   0.000      SLOPE    SLOPE
+ Changed>>   1  24   0.000      SLOAZI   SLOAZI
+ Changed>>   1  25   146.0      TFROST   TFROST
+ Changed>>   1  33   1.150      RLAY     RLAY
+ Changed>>   1  34  0.1000      FLAY     FLAY
+ Changed>>   1  38   0.000      PhotF    PhotoFunc
+ Changed>>   1  39   99.00      GGT      GGT
+ Changed>>   1  41  0.1000      DJUL     DJUL
+ Changed>>   1  42   12.04      DELJUL   DELJUL
+ Changed>>   1  47   1.315      GRAV     GRAV
+ Changed>>   1  49  0.3114E-02  ConUp0   ConUp0
+ Changed>>   1  50  0.7147E-03  ConUp1   ConUp1
+ Changed>>   1  51 -0.1110E-03  ConUp2   ConUp2
+ Changed>>   1  52  0.2061E-04  ConUp3   ConUp3
+ Changed>>   1  53  0.3114E-02  ConLo0   ConLo0
+ Changed>>   1  54  0.7147E-03  ConLo1   ConLo1
+ Changed>>   1  55 -0.1110E-03  ConLo2   ConLo2
+ Changed>>   1  56  0.2061E-04  ConLo3   ConLo3
+ Changed>>   1  57   609.9      SpHUp0   SphUp0
+ Changed>>   1  58   214.2      SpHUp1   SphUp1
+ Changed>>   1  59  -40.94      SpHUp2   SphUp2
+ Changed>>   1  60   11.26      SpHUp3   SphUp3
+ Changed>>   1  61   609.9      SpHLo0   SphLo0
+ Changed>>   1  62   214.2      SpHLo1   SphLo1
+ Changed>>   1  63  -40.94      SpHLo2   SphLo2
+ Changed>>   1  64   11.26      SpHLo3   SphLo3
+ Changed>>   8   5   0.000               ./krc.t52
+ New T52 file name= ./krc.t52
+ KRC@180 IRL,IRC=           0           6
+      END KRC   Total time [s]=      0.000
+ Elog= eLog20251015T152447.717                 

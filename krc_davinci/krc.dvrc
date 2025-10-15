@@ -82,7 +82,7 @@ verbose=oldverbose
 F="F"
 T="T"
 
-define krc(T_Tol,k_style,WRITE,LMST,GD,JD,KEEP,COND,ffout,ffin,lbound,TUN8,thick,bodyforce,body,TPREDICT,T,adv_usage,stability,anc,v,lat,lon,ELEV,type,hour,ls,DELLS,Mat1,Mat2,Por1,Por2,INERTIA2,MAXN1,MAXN2,PFlux,BT_Avg,BT_Max,BT_Min,Dis_AU,Geom_alb,Mut_Period,Orb_Radius,Radius,Lon_Hr,IR,Vis,Eclipse,Eclipser,Ecl_Cent_Hr,Eclipse_Style,Sun_Dis,Eclipser_Rad,CM,Eclipsed_Rad,Per_Mut,Bias,Date,T_user,TI_Guess,TI_Guess_PCT,KRC_MASTER_INP_VARS_AFTER_HERE,ALBEDO,EMISS,INERTIA,COND2,DENS2,PERIOD,SPEC_HEAT,DENSITY,CABR,AMW,SatPrA,PTOTAL,FANON,TATM,TDEEP,SpHeat2,TAUD,DUSTA,TAURAT,TWILI,ARC2_G0,ARC3_Safe,SLOPE,SLOAZI,TFROST,CFROST,AFROST,FEMIS,AF1,AF2,FROEXT,SatPrB,RLAY,FLAY,CONVF,DEPTH,DRSET,PhotoFunc,GGT,DTMAX,DJUL,DELJUL,SOLARDEC,DAU,LsubS,SOLCON,GRAV,Atm_Cp,ConUp0,ConUp1,ConUp2,ConUp3,ConLo0,ConLo1,ConLo2,ConLo3,SphUp0,SphUp1,SphUp2,SphUp3,SphLo0,SphLo1,SphLo2,SphLo3,N1,N2,N3,N4,N5,N24,IIB,IC2,NRSET,NMHA,NRUN,JDISK,IDOWN,FlxP14,TUN_Flx15,KPREF,K4OUT,JBARE,Notif,IDISK2,end,LP1,LP2,LP3,LP4,LP5,LP6,LPGLOB,LVFA,LVFT,LKofT,LPORB,LKEY,LSC,LZONE,LOCAL,Prt76,LPTAVE,Prt78,Prt79,L_ONE){
+define krc(T_Tol,k_style,WRITE,LMST,GD,JD,KEEP,COND,ffout,ffin,outdir,lbound,TUN8,thick,bodyforce,body,TPREDICT,T,adv_usage,stability,anc,v,lat,lon,ELEV,type,hour,ls,DELLS,Mat1,Mat2,Por1,Por2,INERTIA2,MAXN1,MAXN2,PFlux,BT_Avg,BT_Max,BT_Min,Dis_AU,Geom_alb,Mut_Period,Orb_Radius,Radius,Lon_Hr,IR,Vis,Eclipse,Eclipser,Ecl_Cent_Hr,Eclipse_Style,Sun_Dis,Eclipser_Rad,CM,Eclipsed_Rad,Per_Mut,Bias,Date,T_user,TI_Guess,TI_Guess_PCT,KRC_MASTER_INP_VARS_AFTER_HERE,ALBEDO,EMISS,INERTIA,COND2,DENS2,PERIOD,SPEC_HEAT,DENSITY,CABR,AMW,SatPrA,PTOTAL,FANON,TATM,TDEEP,SpHeat2,TAUD,DUSTA,TAURAT,TWILI,ARC2_G0,ARC3_Safe,SLOPE,SLOAZI,TFROST,CFROST,AFROST,FEMIS,AF1,AF2,FROEXT,SatPrB,RLAY,FLAY,CONVF,DEPTH,DRSET,PhotoFunc,GGT,DTMAX,DJUL,DELJUL,SOLARDEC,DAU,LsubS,SOLCON,GRAV,Atm_Cp,ConUp0,ConUp1,ConUp2,ConUp3,ConLo0,ConLo1,ConLo2,ConLo3,SphUp0,SphUp1,SphUp2,SphUp3,SphLo0,SphLo1,SphLo2,SphLo3,N1,N2,N3,N4,N5,N24,IIB,IC2,NRSET,NMHA,NRUN,JDISK,IDOWN,FlxP14,TUN_Flx15,KPREF,K4OUT,JBARE,Notif,IDISK2,end,LP1,LP2,LP3,LP4,LP5,LP6,LPGLOB,LVFA,LVFT,LKofT,LPORB,LKEY,LSC,LZONE,LOCAL,Prt76,LPTAVE,Prt78,Prt79,L_ONE){
 
 
 	#determine the criteria for usage
@@ -336,6 +336,7 @@ define krc(T_Tol,k_style,WRITE,LMST,GD,JD,KEEP,COND,ffout,ffin,lbound,TUN8,thick
   if(HasValue(LVFT)==0)       LVFT="F"
   if(HasValue(ffout)==0)      ffout=""
   if(HasValue(ffin)==0)       ffin=""
+  if(HasValue(outdir)==0)     outdir=""
 	if(HasValue(KEEP)==0)       KEEP="F"
 	if(HasValue(N24)==0)        N24=porb.krc.N24
 	if(HasValue(PERIOD)==0)     PERIOD=porb.krc.PERIOD
@@ -717,17 +718,25 @@ define krc(T_Tol,k_style,WRITE,LMST,GD,JD,KEEP,COND,ffout,ffin,lbound,TUN8,thick
 
   # Copy files over to temp directories and setup the initial input file
   # use randdir as the zone file name, sequential test
-	randdir="krc_"+int(random(1,type=rand))
-  if($DV_OS=="mac") {
-		base=basename($TMPDIR)
-		workdir="/tmp/"+base+"/"+randdir
-		syscall("mkdir -p "+workdir)
-	} else if ($DV_OS=="linux") {
-		workdir=$TMPDIR
-	} else {
-		printf("Your operating system is not supported for use with krc\n\n")
-		return(null)
-	}
+  # User can specify custom outdir, otherwise use default random directory
+  if(outdir != "") {
+    # User specified custom output directory
+    workdir = outdir
+    syscall("mkdir -p "+workdir)
+  } else {
+    # Default random directory behavior
+    randdir="krc_"+int(random(1,type=rand))
+    if($DV_OS=="mac") {
+      base=basename($TMPDIR)
+      workdir="/tmp/"+base+"/"+randdir
+      syscall("mkdir -p "+workdir)
+    } else if ($DV_OS=="linux") {
+      workdir=$TMPDIR
+    } else {
+      printf("Your operating system is not supported for use with krc\n\n")
+      return(null)
+    }
+  }
 
   #Start construction of parameter change lines for default input files
   #We now use the input file generator rather than set values
@@ -1462,11 +1471,11 @@ if(T[TI_i,TI_j,TI_k] > 0.){
 			out.T_table_orig = T_table_orig
       out.T=T
     } else {
-  	  #clean up
- 			if(KEEP != "T") syscall("rm -rf "+workdir+"/*")                           #KEEP FOR DEBUG
+  	  #clean up (only if using default random directory)
+ 			if(KEEP != "T" && outdir == "") syscall("rm -rf "+workdir+"/*")           #KEEP FOR DEBUG
 			if($DV_OS=="mac") {
-			  if(KEEP != "T") syscall("rmdir "+workdir)
-			  if(KEEP != "T") syscall("rm -rf "+workdir+"/*")                         #KEEP FOR DEBUG
+			  if(KEEP != "T" && outdir == "") syscall("rmdir "+workdir)
+			  if(KEEP != "T" && outdir == "") syscall("rm -rf "+workdir+"/*")         #KEEP FOR DEBUG
 			}
 			return(TI)
     }
@@ -1534,8 +1543,8 @@ if(T[TI_i,TI_j,TI_k] > 0.){
     out.anc.prt=prt
 	}
 
-  # Clean up the mess that we've created
-  if(KEEP != "T") syscall("rm -rf "+workdir+"/*")                               #KEEP FOR DEBUG
+  # Clean up the mess that we've created (only if using default random directory)
+  if(KEEP != "T" && outdir == "") syscall("rm -rf "+workdir+"/*")               #KEEP FOR DEBUG
 
 	if(stability==1 && HasValue(T)==0) {
 		out.stability=stability_flag_krc(out,TFROST)

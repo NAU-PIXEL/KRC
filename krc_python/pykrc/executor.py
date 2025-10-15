@@ -8,6 +8,10 @@ from typing import Dict, Any, Optional, List
 import platform
 
 from .config import get_krc_executable, get_paths
+from .defaults import (
+    MASTER_INP_HEADER_DEFAULTS as MASTER_INP_DEFAULTS,
+    PORB_TOUCHED_PARAMS
+)
 
 
 # Formatted strings from master.inp - preserves exact Fortran formatting
@@ -29,142 +33,6 @@ MASTER_INP_FORMATS = {
     "ConLo0": "  2.766722", "ConLo1": " -1.298966", "ConLo2": "  0.629224", "ConLo3": " -0.527291",
     "SphUp0": "  646.6275", "SphUp1": "  246.6678", "SphUp2": "  -49.8216", "SphUp3": "    7.9520",
     "SphLo0": "  1710.648", "SphLo1": "  721.8740", "SphLo2": "  57.44873", "SphLo3": "  24.37532",
-}
-
-# Master.inp default values - these MUST be written to the input file header
-# Only changecards should deviate from these values
-MASTER_INP_DEFAULTS = {
-    # Line 1: KOLD KEEP
-    "KOLD": 0,
-    "KEEP": 0,
-
-    # Line 3-4: Material properties block 1
-    "ALBEDO": 0.25,
-    "EMISS": 1.00,
-    "INERTIA": 200.0,
-    "COND2": 2.77,
-    "DENS2": 928.0,
-    "PERIOD": 1.0275,
-    "SPEC_HEAT": 647.0,
-    "DENSITY": 1600.0,
-
-    # Line 5-6: Atmosphere and thermal properties
-    "CABR": 0.11,
-    "AMW": 43.5,
-    "SatPrA": 27.9546,
-    "PTOTAL": 546.0,
-    "FANON": 0.055,  # NOTE: NOT 0.3!
-    "TATM": 200.0,
-    "TDEEP": 180.0,
-    "SpHeat2": 1711.0,
-
-    # Line 7-8: Atmospheric opacity and scattering
-    "TAUD": 0.3,
-    "DUSTA": 0.90,
-    "TAURAT": 0.25,  # NOTE: NOT 2.0!
-    "TWILI": 0.0,
-    "ARC2_G0": 0.5,
-    "ARC3_Safe": 0.801,
-    "SLOPE": 0.0,
-    "SLOAZI": 90.0,
-
-    # Line 9-10: Frost properties
-    "TFROST": 146.0,
-    "CFROST": 589944.0,
-    "AFROST": 0.65,
-    "FEMIS": 0.95,
-    "AF1": 0.54,
-    "AF2": 0.0009,
-    "FROEXT": 50.0,
-    "SatPrB": 3182.48,
-
-    # Line 11-12: Layer and convergence
-    "RLAY": 1.15,
-    "FLAY": 0.10,
-    "CONVF": 3.0,
-    "DEPTH": 0.0,
-    "DRSET": 0.0,
-    "PhotoFunc": 0.0,
-    "GGT": 0.1,
-    "DTMAX": 0.1,
-
-    # Line 13-14: Orbital and solar
-    "DJUL": -1222.69,
-    "DELJUL": 17.174822,
-    "SOLARDEC": 0.0,
-    "DAU": 1.465,
-    "LsubS": 0.0,
-    "SOLCON": 1368.0,
-    "GRAV": 3.727,
-    "Atm_Cp": 735.9,
-
-    # Line 15-16: Conductivity polynomial coefficients (upper layer)
-    "ConUp0": 0.038640,
-    "ConUp1": -0.002145,
-    "ConUp2": 0.002347,
-    "ConUp3": -0.000750,
-    "ConLo0": 2.766722,
-    "ConLo1": -1.298966,
-    "ConLo2": 0.629224,
-    "ConLo3": -0.527291,
-
-    # Line 17-18: Specific heat polynomial coefficients
-    "SphUp0": 646.6275,
-    "SphUp1": 246.6678,
-    "SphUp2": -49.8216,
-    "SphUp3": 7.9520,
-    "SphLo0": 1710.648,
-    "SphLo1": 721.8740,
-    "SphLo2": 57.44873,
-    "SphLo3": 24.37532,
-
-    # Line 19-20: Grid parameters
-    "N1": 28,
-    "N2": 1536,
-    "N3": 15,
-    "N4": 19,
-    "N5": 120,
-    "N24": 48,
-    "IIB": 0,
-    "IC2": 999,
-
-    # Line 21-22: Run control
-    "NRSET": 3,
-    "NMHA": 24,
-    "NRUN": 0,
-    "JDISK": 81,
-    "IDOWN": 0,
-    "FlxP14": 45,
-    "TUN_Flx15": 65,
-    "KPREF": 1,
-
-    # Line 23-24: Output control
-    "K4OUT": 52,
-    "JBARE": 0,
-    "Notif": 50,
-    "IDISK2": 0,
-
-    # Booleans (line 25-28)
-    "LP1": False,
-    "LP2": True,
-    "LP3": False,
-    "LP4": False,
-    "LP5": False,
-    "LP6": False,
-    "LPGLOB": False,
-    "LVFA": False,
-    "LVFT": False,
-    "LKofT": False,
-    "LPORB": True,
-    "LKEY": False,
-    "LSC": False,
-    "LZONE": False,
-    "LOCAL": True,
-    "Prt76": False,
-    "LPTAVE": False,
-    "Prt78": False,
-    "Prt79": False,
-    "L_ONE": False,
 }
 
 
@@ -346,42 +214,25 @@ class KRCExecutor:
                     porb_header = f" {timestamp}=RUNTIME.  IPLAN AND TC= {iplan:.1f} {tc:.5f} {body}:{body}"
                 f.write(porb_header + '\n')
 
-                # Write PORB parameters (30 values in 6 lines of 5G15.7 each)
-                # Format: 5 values per line, each in a 15-character field
-                # Fortran G format: uses E notation for |val| < 0.1 or |val| >= 1e8
-                # Otherwise uses F format with 7 significant figures
-                porb_params = params.get('PORB_PARAMS')
-                if porb_params is not None:
-                    for i in range(0, len(porb_params), 5):
-                        chunk = porb_params[i:i+5]
-                        formatted_vals = []
-                        for val in chunk:
-                            abs_val = abs(val)
-                            # Fortran G15.7: uses E notation for |val| < 0.1 or |val| >= 1e8
-                            if (abs_val < 0.1 and abs_val > 0) or abs_val >= 1e8:
-                                # E format: 0.dddddddE±ee (d=7 digits after decimal)
-                                formatted = f"{val:15.7E}"
-                            else:
-                                # F format with up to 7 significant figures
-                                # Determine decimal places needed
-                                if abs_val >= 1:
-                                    # For values >= 1, show appropriate decimals
-                                    if abs_val >= 1000:
-                                        decimals = 3  # e.g., 3397.977
-                                    elif abs_val >= 100:
-                                        decimals = 4  # e.g., 101.0000
-                                    elif abs_val >= 10:
-                                        decimals = 5  # e.g., 24.62296
-                                    else:
-                                        decimals = 6  # e.g., 5.544402
-                                else:
-                                    # For 0.1 <= val < 1
-                                    decimals = 7  # e.g., 0.4090926
-
-                                formatted = f"{val:{15}.{decimals}f}"
-                            formatted_vals.append(formatted)
-                        line = ''.join(formatted_vals) + '    '
+                # Write PORB parameters
+                # Prefer pre-formatted text from HDF (exact davinci parity)
+                # Fallback to G15.7 formatting for generic/custom bodies
+                porb_text_lines = params.get('PORB_TEXT_LINES')
+                if porb_text_lines is not None:
+                    # Use pre-formatted text from HDF (guaranteed exact match with davinci)
+                    for line in porb_text_lines:
                         f.write(line + '\n')
+                else:
+                    # Fallback: format numeric values using G15.7 (for generic bodies)
+                    porb_params = params.get('PORB_PARAMS')
+                    if porb_params is not None:
+                        for i in range(0, len(porb_params), 5):
+                            chunk = porb_params[i:i+5]
+                            formatted_vals = []
+                            for val in chunk:
+                                formatted_vals.append(self._format_g15_7(val))
+                            line = ''.join(formatted_vals) + '    '  # 4 trailing spaces
+                            f.write(line + '\n')
 
             # Write changecards for parameter overrides
             # This must come BEFORE the disk file specification (see krc.dvrc line 1092)
@@ -391,6 +242,14 @@ class KRCExecutor:
             k4out = params.get('K4OUT', 52)
             output_filename = f"./{filename.replace('.inp', f'.t{k4out}')}"
             f.write(f"8 5 0 '{output_filename}' /\n")
+
+            # Type 15: Planetary flux (if PFlux enabled)
+            if params.get('PFlux', False) or params.get('PFlux', 'F') == 'T':
+                self._write_planetary_flux_changecard(f, params)
+
+            # Type 14: Eclipse (if Eclipse enabled)
+            if params.get('Eclipse', 'F') == 'T':
+                self._write_eclipse_changecard(f, params)
 
             f.write("0/\n")
             f.write("0/\n")
@@ -440,6 +299,56 @@ class KRCExecutor:
         if end_marker:
             value_line += "                                       0"
         f.write(value_line + "\n")
+
+    def _format_g15_7(self, val: float) -> str:
+        """
+        Format a value using Fortran G15.7 format.
+
+        Only used for generic/custom bodies without pre-formatted PORB text.
+        For cached bodies, pre-formatted text is used directly from HDF files.
+
+        G15.7 format:
+        - 15 character field width
+        - 7 significant figures
+        - Auto-switches between F (fixed) and E (exponential) notation
+
+        Parameters
+        ----------
+        val : float
+            Value to format
+
+        Returns
+        -------
+        str
+            15-character formatted string matching Fortran G15.7 output
+        """
+        abs_val = abs(val)
+
+        # E format: |val| < 0.1 (excluding zero) or |val| >= 1e8
+        if (abs_val < 0.1 and abs_val > 0) or abs_val >= 1e8:
+            return f"{val:15.7E}"
+
+        # F format: 0.1 <= |val| < 1e8 or val == 0
+        # Determine decimal places to maintain ~7 significant figures
+        if abs_val < 1:
+            # 0 <= val < 1 (including zero)
+            decimals = 7
+        elif abs_val < 10:
+            decimals = 6
+        elif abs_val < 100:
+            decimals = 5
+        elif abs_val < 1000:
+            decimals = 4
+        elif abs_val < 10000:
+            decimals = 3
+        elif abs_val < 100000:
+            decimals = 2
+        elif abs_val < 1000000:
+            decimals = 1
+        else:  # 1e6 <= abs_val < 1e8
+            decimals = 0
+
+        return f"{val:15.{decimals}f}"
 
     def _write_logical_flags(self, f, params: Dict[str, Any]):
         """Write logical flag lines."""
@@ -505,8 +414,9 @@ class KRCExecutor:
         differ from master.inp defaults OR were touched by PORB/materials.
         This matches Davinci's HasValue() behavior (krc.dvrc lines 1026-1089).
         """
-        # Get PORB-touched parameters list (if provided)
-        porb_touched = params.get('_porb_touched_params', set())
+        # Get PORB-touched parameters list
+        # Prefer params override if provided, otherwise use canonical set from defaults.py
+        porb_touched = params.get('_porb_touched_params', PORB_TOUCHED_PARAMS.copy())
 
         # Debug: Check if TDEEP and PhotoFunc are in porb_touched
         # print(f"DEBUG: porb_touched = {porb_touched}")
@@ -617,11 +527,76 @@ class KRCExecutor:
                         f.write(f"8 {changecard_type} 0 './{array_file.name}' /\n")
                     else:
                         # Regular scalar value
-                        # Use scientific notation for small values
-                        if -1 < val < 1 and val != 0:
+                        # Match Davinci logic (krc.dvrc line 1087): if(val<1 && val>-1) → use .3E
+                        # This includes 0.0 (davinci writes 0.000E+00, not 0.0000)
+                        if -1 < val < 1:
                             f.write(f"1 {i} {val:.3E} '{param_name}' /\n")
                         else:
                             f.write(f"1 {i} {val:.4f} '{param_name}' /\n")
+
+    def _write_planetary_flux_changecard(self, f, params: Dict[str, Any]):
+        """
+        Write Type 15 changecard for planetary thermal flux (satellite modeling).
+
+        Format: 15 BT_Avg BT_Min BT_Max Dis_AU Geom_alb Mut_Period Orb_Radius Radius Lon_Hr IR Vis /
+
+        This is used when modeling satellites that receive thermal flux from their parent planet.
+        """
+        # Extract planetary flux parameters
+        BT_Avg = params.get('BT_Avg', 0.0)
+        BT_Min = params.get('BT_Min', 0.0)
+        BT_Max = params.get('BT_Max', 0.0)
+        Dis_AU = params.get('Dis_AU', 0.0)
+        Geom_alb = params.get('Geom_alb', 0.0)
+        Mut_Period = params.get('Mut_Period', 0.0)
+        Orb_Radius = params.get('Orb_Radius', 0.0)
+        Radius = params.get('Radius', 0.0)
+        Lon_Hr = params.get('Lon_Hr', 12.0)
+        IR = params.get('IR', 0.0)
+        Vis = params.get('Vis', 0.0)
+
+        # Write Type 15 changecard (matches davinci krc.dvrc line 1095-1101)
+        f.write(f"15 {BT_Avg:.4f} {BT_Min:.4f} {BT_Max:.4f} {Dis_AU:.6f} "
+                f"{Geom_alb:.4f} {Mut_Period:.6f} {Orb_Radius:.4f} {Radius:.4f} "
+                f"{Lon_Hr:.4f} {IR:.4f} {Vis:.4f} /\n")
+
+    def _write_eclipse_changecard(self, f, params: Dict[str, Any]):
+        """
+        Write Type 14 changecard for eclipse modeling (satellite eclipses).
+
+        Format: 14 Eclipse_Style Eclipser Sun_Dis Eclipser_Rad Eclipsed_Rad CM Gamma Date /
+
+        This is used when modeling satellites that experience eclipses from their parent planet.
+        """
+        # Check if user provided custom Eclipse_line
+        if 'Eclipse_line' in params and params['Eclipse_line']:
+            # Use custom line directly
+            f.write(params['Eclipse_line'] + '\n')
+        else:
+            # Build Type 14 changecard from individual parameters
+            Eclipse_Style = params.get('Eclipse_Style', 1.0)
+            Eclipser = params.get('Eclipser', '')
+            Sun_Dis = params.get('Sun_Dis', 0.0)
+            Eclipser_Rad = params.get('Eclipser_Rad', 0.0)
+            Eclipsed_Rad = params.get('Eclipsed_Rad', 0.0)
+            CM = params.get('CM', 0.0)
+            Gamma = params.get('Gamma', 0.0)
+            Date = params.get('Date', '')
+
+            # Write Type 14 changecard (matches davinci krc.dvrc line 1110-1112)
+            # Format depends on Eclipse_Style:
+            # Style 1.0 (daily): 14 1.0 'Eclipser' Sun_Dis Eclipser_Rad Eclipsed_Rad CM /
+            # Style 2.0 (rare):  14 2.0 'Eclipser' Sun_Dis Eclipser_Rad Eclipsed_Rad Gamma 'Date' /
+            if Eclipse_Style == 1.0:
+                f.write(f"14 {Eclipse_Style:.1f} '{Eclipser}' {Sun_Dis:.4f} "
+                        f"{Eclipser_Rad:.4f} {Eclipsed_Rad:.4f} {CM:.4f} /\n")
+            elif Eclipse_Style == 2.0:
+                f.write(f"14 {Eclipse_Style:.1f} '{Eclipser}' {Sun_Dis:.4f} "
+                        f"{Eclipser_Rad:.4f} {Eclipsed_Rad:.4f} {Gamma:.4f} '{Date}' /\n")
+            else:
+                # Default to style 1.0
+                f.write(f"14 1.0 '{Eclipser}' {Sun_Dis:.4f} "
+                        f"{Eclipser_Rad:.4f} {Eclipsed_Rad:.4f} {CM:.4f} /\n")
 
     def run_krc(
         self,

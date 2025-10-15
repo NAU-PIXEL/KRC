@@ -1,7 +1,7 @@
 """Main KRC interface function."""
 
 from pathlib import Path
-from typing import Dict, Any, Optional, Union, List
+from typing import Dict, Any, Optional, Union, List, Tuple, Set
 import tempfile
 import numpy as np
 
@@ -29,6 +29,544 @@ def _extract_user_params(**local_vars):
         k: v for k, v in local_vars.items()
         if v is not None and not k.startswith('_') and k not in ['kwargs']
     }
+
+
+def _extract_material_properties_for_numerics(
+    using_direct_props: bool,
+    DENSITY: Optional[float],
+    SPEC_HEAT: Optional[float],
+    INERTIA: float,
+    upper_props: Dict[str, Any]
+) -> Tuple[float, float]:
+    """
+    Extract density and specific heat for numerical calculations.
+
+    When using direct property specification, returns DENSITY and SPEC_HEAT directly.
+    Otherwise derives density from INERTIA using: ρ = I²/(k·c)
+
+    Parameters
+    ----------
+    using_direct_props : bool
+        True if COND, DENSITY, SPEC_HEAT were directly specified
+    DENSITY : float or None
+        Direct density specification (kg/m³)
+    SPEC_HEAT : float or None
+        Direct specific heat specification (J/kg/K)
+    INERTIA : float
+        Thermal inertia (J m⁻² K⁻¹ s⁻½)
+    upper_props : dict
+        Calculated material properties with keys: 'SphUp0', 'ConUp0'
+
+    Returns
+    -------
+    density : float
+        Material density (kg/m³)
+    specific_heat : float
+        Specific heat (J/kg/K)
+
+    Notes
+    -----
+    This helper appears 3 times in the original krc() function:
+    - For N1 calculation (subsurface layers)
+    - For N2 calculation (timesteps per day)
+    - For stability check
+
+    Examples
+    --------
+    >>> # Direct specification
+    >>> dens, cp = _extract_material_properties_for_numerics(
+    ...     True, 1600.0, 800.0, 200.0, {}
+    ... )
+    >>> dens, cp
+    (1600.0, 800.0)
+
+    >>> # Derived from INERTIA
+    >>> props = {"SphUp0": 647.0, "ConUp0": 0.025}
+    >>> dens, cp = _extract_material_properties_for_numerics(
+    ...     False, None, None, 200.0, props
+    ... )
+    >>> # dens ≈ 2469.14 from I²/(k·c) = 200²/(0.025·647)
+    >>> cp
+    647.0
+    """
+    if using_direct_props:
+        return DENSITY, SPEC_HEAT
+    else:
+        cp = upper_props["SphUp0"]
+        k = upper_props["ConUp0"]
+        # From I² = k·ρ·c, we get ρ = I²/(k·c)
+        dens = (INERTIA**2) / (k * cp)
+        return dens, cp
+
+
+def _apply_default_parameters(
+    DELLS: Optional[float],
+    spinup_years: Optional[float],
+    output_years: Optional[float],
+    LKEY: Optional[str],
+    LKofT: Optional[bool],
+    thick: Optional[float],
+    FANON: Optional[float],
+    N3: Optional[int],
+    NRSET: Optional[int],
+    GGT: Optional[float],
+    TPREDICT: Optional[float],
+    MAXN1: Optional[int],
+    MAXN2: Optional[int],
+    auto_numerical: Optional[bool],
+    bodyforce: Optional[int],
+    TUN8: Optional[int],
+    LMST: Optional[str],
+    WRITE: Optional[str],
+    KEEP: Optional[str],
+    Eclipse: Optional[str],
+    Eclipse_Style: Optional[float],
+    PFlux: Optional[str],
+    Lon_Hr: Optional[float],
+    verbose: Optional[bool],
+    keep_files: Optional[bool],
+    lon: Optional[float]
+) -> Dict[str, Any]:
+    """
+    Apply default values for parameters not explicitly set by user.
+
+    This consolidates lines 338-406 of the original krc() function,
+    implementing the default assignment logic in one place.
+
+    Parameters
+    ----------
+    [All parameters that need defaults]
+
+    Returns
+    -------
+    defaults : dict
+        Dictionary mapping parameter names to their default values
+
+    Notes
+    -----
+    PORB-related parameters (FLAY, RLAY, IIB, LZONE, EMISS, SLOPE, SLOAZI,
+    DUSTA, TAURAT, KPREF, LVFT, JBARE, TDEEP, DJUL, PhotoFunc) are NOT
+    set here - they will be set in PORB section to ensure changecards are
+    written properly.
+
+    TPREDICT=0.0 triggers stability overrides (GGT=99.0, N3=1, NRSET=999).
+    """
+    defaults = {}
+
+    # Time control defaults
+    defaults['DELLS'] = 1.0 if DELLS is None else DELLS
+    defaults['spinup_years'] = 2.0 if spinup_years is None else spinup_years
+    defaults['output_years'] = 1.0 if output_years is None else output_years
+    defaults['LKEY'] = "T" if LKEY is None else LKEY
+
+    # Material properties
+    defaults['LKofT'] = True if LKofT is None else LKofT
+    defaults['thick'] = 0.0 if thick is None else thick
+
+    # Surface/atmospheric parameters (non-PORB)
+    defaults['FANON'] = 0.055 if FANON is None else FANON
+
+    # Numerical control
+    defaults['N3'] = 1 if N3 is None else N3  # Match Davinci default
+    defaults['NRSET'] = 0 if NRSET is None else NRSET
+    defaults['GGT'] = 1.0 if GGT is None else GGT
+    defaults['TPREDICT'] = 0.0 if TPREDICT is None else TPREDICT
+
+    # Temperature prediction control logic (matches Davinci lines 841-847)
+    # Short timesteps disable prediction for stability
+    if defaults['TPREDICT'] == 0.0:  # TPREDICT="F" in Davinci
+        defaults['GGT'] = 99.0
+        defaults['N3'] = 1
+        defaults['NRSET'] = 999
+
+    defaults['MAXN1'] = 100 if MAXN1 is None else MAXN1
+    defaults['MAXN2'] = 1000 if MAXN2 is None else MAXN2
+    defaults['auto_numerical'] = True if auto_numerical is None else auto_numerical
+
+    # Output control
+    defaults['bodyforce'] = 0 if bodyforce is None else bodyforce
+    defaults['TUN8'] = 0 if TUN8 is None else TUN8
+
+    # Flags
+    defaults['LMST'] = "F" if LMST is None else LMST
+    defaults['WRITE'] = "F" if WRITE is None else WRITE
+    defaults['KEEP'] = "F" if KEEP is None else KEEP
+    defaults['Eclipse'] = "F" if Eclipse is None else Eclipse
+    defaults['Eclipse_Style'] = 1.0 if Eclipse_Style is None else Eclipse_Style
+    defaults['PFlux'] = "F" if PFlux is None else PFlux
+    defaults['Lon_Hr'] = 12.0 if Lon_Hr is None else Lon_Hr
+
+    # Runtime control
+    defaults['verbose'] = False if verbose is None else verbose
+    defaults['keep_files'] = False if keep_files is None else keep_files
+
+    # Location (lon gets default if not set)
+    defaults['lon'] = 0.0 if lon is None else lon
+
+    return defaults
+
+
+def _load_ancillary_data(
+    body: str,
+    lat: float,
+    lon: float,
+    ALBEDO: Optional[float],
+    ELEV: Optional[Union[float, List[float]]],
+    INERTIA: Optional[float],
+    master_params: Dict[str, Any],
+    verbose: bool
+) -> Tuple[float, Union[float, List[float]], Optional[float]]:
+    """
+    Load ancillary data (albedo, elevation, inertia) for Mars or apply defaults.
+
+    This consolidates lines 633-668 of the original krc() function,
+    implementing ancillary data lookup logic for Mars.
+
+    Parameters
+    ----------
+    body : str
+        Celestial body name
+    lat : float
+        Latitude (degrees)
+    lon : float
+        Longitude (degrees)
+    ALBEDO : float, optional
+        User-specified albedo (skips lookup)
+    ELEV : float or list, optional
+        User-specified elevation (skips lookup)
+    INERTIA : float, optional
+        User-specified thermal inertia (skips lookup)
+    master_params : dict
+        Master.inp defaults
+    verbose : bool
+        Print details
+
+    Returns
+    -------
+    ALBEDO : float
+        Surface albedo
+    ELEV : float or list
+        Surface elevation (km)
+    INERTIA : float or None
+        Thermal inertia (J m⁻² K⁻¹ s⁻½), None if not set
+
+    Notes
+    -----
+    For Mars, tries to load TES albedo, MOLA elevation, and TES thermal inertia
+    from ancillary data files. Falls back to master.inp defaults if unavailable.
+
+    For non-Mars bodies, uses master.inp defaults.
+    """
+    if body == "Mars":
+        # Import ancillary data functions
+        try:
+            from .ancillary import lookup_albedo, lookup_elevation, lookup_inertia
+
+            # Use ancillary data lookups if not explicitly provided
+            if ALBEDO is None:
+                ALBEDO = lookup_albedo(lat, lon)
+                if verbose:
+                    print(f"Using TES albedo from ancillary data: {ALBEDO:.4f}")
+
+            if ELEV is None:
+                ELEV = lookup_elevation(lat, lon)
+                if verbose:
+                    print(f"Using MOLA elevation from ancillary data: {ELEV:.2f} km")
+
+            # Load INERTIA from TES map if not explicitly provided (matches Davinci)
+            if INERTIA is None:
+                INERTIA = lookup_inertia(lat, lon)
+                if verbose:
+                    print(f"Using TES thermal inertia from ancillary data: {INERTIA:.1f}")
+        except Exception as e:
+            # Fall back to defaults if ancillary data unavailable
+            if verbose:
+                print(f"Warning: Could not load ancillary data ({e}), using defaults")
+            if ALBEDO is None:
+                ALBEDO = master_params.get("ALBEDO", 0.25)
+            if ELEV is None:
+                ELEV = 0.0
+    else:
+        # For non-Mars bodies, use defaults
+        if ALBEDO is None:
+            ALBEDO = master_params.get("ALBEDO", 0.25)
+        if ELEV is None:
+            ELEV = 0.0
+
+    return ALBEDO, ELEV, INERTIA
+
+
+def _calculate_material_properties(
+    COND: Optional[float],
+    DENSITY: Optional[float],
+    SPEC_HEAT: Optional[float],
+    INERTIA: Optional[float],
+    Mat1: str,
+    Mat2: str,
+    T_user: float,
+    k_style: str,
+    LKofT: bool,
+    INERTIA2: Optional[float],
+    thick: float,
+    master_params: Dict[str, Any],
+    verbose: bool
+) -> Tuple[bool, float, float, Dict[str, Any], Dict[str, Any]]:
+    """
+    Calculate thermal properties for upper and lower layers.
+
+    This consolidates lines 760-814 of the original krc() function,
+    implementing material property calculation logic.
+
+    Parameters
+    ----------
+    COND : float, optional
+        Direct thermal conductivity specification (W/m/K)
+    DENSITY : float, optional
+        Direct density specification (kg/m³)
+    SPEC_HEAT : float, optional
+        Direct specific heat specification (J/kg/K)
+    INERTIA : float, optional
+        Thermal inertia (J m⁻² K⁻¹ s⁻½)
+    Mat1 : str
+        Upper layer material name
+    Mat2 : str
+        Lower layer material name
+    T_user : float
+        Reference temperature (K)
+    k_style : str
+        Conductivity model ("Mars", "Moon", "Bulk")
+    LKofT : bool
+        Use temperature-dependent thermal properties
+    INERTIA2 : float, optional
+        Lower layer thermal inertia
+    thick : float
+        Layer thickness (m)
+    master_params : dict
+        Master.inp defaults
+    verbose : bool
+        Print details
+
+    Returns
+    -------
+    using_direct_props : bool
+        True if using direct COND/DENSITY/SPEC_HEAT specification
+    INERTIA : float
+        Thermal inertia (calculated if using direct props)
+    INERTIA2 : float
+        Lower layer thermal inertia (defaults to INERTIA)
+    upper_props : dict
+        Upper layer thermal property coefficients
+    lower_props : dict
+        Lower layer thermal property coefficients
+
+    Notes
+    -----
+    Two modes of operation:
+    1. Direct specification: COND, DENSITY, SPEC_HEAT all provided
+       - Calculates INERTIA from I = sqrt(k·ρ·c)
+       - Optionally generates T-dependent coefficients if LKofT=True
+    2. INERTIA-based: Standard approach using material database
+       - Calculates properties from Mat1, INERTIA, T_user, k_style
+    """
+    # Determine if using INERTIA or direct COND/DENSITY/SPEC_HEAT specification
+    using_direct_props = (COND is not None and DENSITY is not None and SPEC_HEAT is not None)
+
+    if using_direct_props:
+        if verbose:
+            print(f"Using direct material properties: COND={COND}, DENSITY={DENSITY}, SPEC_HEAT={SPEC_HEAT}")
+
+        # Calculate implied INERTIA for reference
+        INERTIA = np.sqrt(COND * DENSITY * SPEC_HEAT)
+
+        upper_props = {
+            "COND": COND,
+            "DENSITY": DENSITY,
+            "SPEC_HEAT": SPEC_HEAT,
+        }
+
+        # Generate T-dependent coefficients if requested
+        if LKofT:
+            # Use calculate_thermal_properties to get coefficients
+            temp_props = calculate_thermal_properties(Mat1, INERTIA, T_user, k_style)
+            upper_props.update({
+                "ConUp0": temp_props["ConUp0"],
+                "ConUp1": temp_props["ConUp1"],
+                "ConUp2": temp_props["ConUp2"],
+                "ConUp3": temp_props["ConUp3"],
+                "SphUp0": temp_props["SphUp0"],
+                "SphUp1": temp_props["SphUp1"],
+                "SphUp2": temp_props["SphUp2"],
+                "SphUp3": temp_props["SphUp3"],
+            })
+        else:
+            # Constant properties (no T-dependence)
+            upper_props.update({
+                "ConUp0": COND, "ConUp1": 0.0, "ConUp2": 0.0, "ConUp3": 0.0,
+                "SphUp0": SPEC_HEAT, "SphUp1": 0.0, "SphUp2": 0.0, "SphUp3": 0.0,
+            })
+    else:
+        # Standard INERTIA-based approach
+        if INERTIA is None:
+            INERTIA = master_params.get("INERTIA", 200.0)
+
+        if verbose:
+            print(f"Calculating material properties for {Mat1} with INERTIA={INERTIA}...")
+
+        upper_props = calculate_thermal_properties(Mat1, INERTIA, T_user, k_style)
+
+    # Handle lower layer (for two-layer regolith)
+    if INERTIA2 is None:
+        INERTIA2 = INERTIA
+
+    if verbose and thick != 0.0:
+        print(f"Two-layer regolith: thick={thick}m, upper TI={INERTIA}, lower TI={INERTIA2}")
+
+    lower_props = calculate_thermal_properties(Mat2, INERTIA2, T_user, k_style)
+
+    return using_direct_props, INERTIA, INERTIA2, upper_props, lower_props
+
+
+def _calculate_numerical_parameters(
+    auto_numerical: bool,
+    N1: Optional[int],
+    N2: Optional[int],
+    using_direct_props: bool,
+    DENSITY: Optional[float],
+    SPEC_HEAT: Optional[float],
+    INERTIA: float,
+    upper_props: Dict[str, Any],
+    RLAY: float,
+    FLAY: float,
+    DELJUL: float,
+    N5: int,
+    JDISK: int,
+    MAXN1: int,
+    rot_per: float,
+    INERTIA2: float,
+    thick: float,
+    n24_from_porb: int,
+    MAXN2: int,
+    GGT: float,
+    TPREDICT: float,
+    N3: int,
+    DELLS: float,
+    master_params: Dict[str, Any],
+    verbose: bool
+) -> Tuple[int, int, int]:
+    """
+    Calculate or validate numerical parameters (N1, N2, N3).
+
+    This consolidates lines 946-1034 of the original krc() function,
+    implementing numerical parameter auto-calculation and stability checking.
+
+    Parameters
+    ----------
+    auto_numerical : bool
+        Auto-calculate N1, N2 if not provided
+    N1 : int, optional
+        Number of subsurface layers (calculated if None)
+    N2 : int, optional
+        Number of timesteps per day (calculated if None)
+    using_direct_props : bool
+        Using direct COND/DENSITY/SPEC_HEAT specification
+    DENSITY : float, optional
+        Material density (kg/m³)
+    SPEC_HEAT : float, optional
+        Specific heat (J/kg/K)
+    INERTIA : float
+        Thermal inertia (J m⁻² K⁻¹ s⁻½)
+    upper_props : dict
+        Upper layer thermal property coefficients
+    [... all other parameters ...]
+
+    Returns
+    -------
+    N1 : int
+        Number of subsurface layers
+    N2 : int
+        Number of timesteps per day
+    N3 : int
+        Convergence parameter
+
+    Notes
+    -----
+    Auto-calculation uses krc_evalN1() and krc_evalN2() from numerical.py.
+    Performs stability check using check_stability().
+    Updates N3 if auto_numerical and convergence mode enabled (GGT=1.0, TPREDICT=0.0).
+    """
+    # Auto-calculate N1, N2 if not provided and auto_numerical is True
+    if auto_numerical:
+        if N1 is None:
+            # Extract actual DENSITY and SPEC_HEAT for N1 calculation
+            dens_for_N1, cp_for_N1 = _extract_material_properties_for_numerics(
+                using_direct_props, DENSITY, SPEC_HEAT, INERTIA, upper_props
+            )
+
+            N1 = krc_evalN1(
+                RLAY=RLAY,
+                FLAY=FLAY,
+                INERTIA=INERTIA,
+                SPEC_HEAT=cp_for_N1,
+                DENSITY=dens_for_N1,
+                DELJUL=DELJUL,
+                N5=N5,
+                JDISK=JDISK,
+                MAXN1=MAXN1,
+                PERIOD=rot_per,
+                INERTIA2=INERTIA2 if thick != 0.0 else None,
+                verbose=verbose
+            )
+            if verbose:
+                print(f"Auto-calculated N1={N1} layers")
+
+        if N2 is None:
+            # Extract actual DENSITY and SPEC_HEAT for N2 calculation
+            dens_for_N2, cp_for_N2 = _extract_material_properties_for_numerics(
+                using_direct_props, DENSITY, SPEC_HEAT, INERTIA, upper_props
+            )
+
+            N2 = krc_evalN2(
+                FLAY=FLAY,
+                INERTIA=INERTIA,
+                DENSITY=dens_for_N2,
+                SPEC_HEAT=cp_for_N2,
+                PERIOD=rot_per,
+                N24=n24_from_porb,
+                MAXN2=MAXN2,
+                verbose=verbose
+            )
+            if verbose:
+                print(f"Auto-calculated N2={N2} timesteps/day")
+    else:
+        # Use master.inp defaults if not auto-calculating
+        if N1 is None:
+            N1 = master_params.get("N1", 50)
+        if N2 is None:
+            N2 = master_params.get("N2", 288)
+
+    # Check numerical stability
+    if N1 is not None and N2 is not None:
+        # Get material properties for stability check
+        dens_check, cp_check = _extract_material_properties_for_numerics(
+            using_direct_props, DENSITY, SPEC_HEAT, INERTIA, upper_props
+        )
+
+        is_stable, stability_msg = check_stability(
+            N1, N2, INERTIA, rot_per, FLAY, dens_check, cp_check, warn=True
+        )
+        if verbose:
+            print(f"  {stability_msg}")
+
+    # Auto-calculate convergence parameters if not provided
+    if auto_numerical and (GGT == 1.0 and TPREDICT == 0.0):
+        conv_params = calculate_convergence_params(N1, N2, DELLS, fast_mode=False)
+        # Only override defaults if they weren't explicitly set
+        if N3 == 10:
+            N3 = conv_params["N3"]
+        if verbose:
+            print(f"Convergence parameters: N3={N3}, GGT={GGT}, TPREDICT={TPREDICT}")
+
+    return N1, N2, N3
 
 
 def krc(
@@ -70,24 +608,24 @@ def krc(
     Mat2: str = "basalt",
     Por2: Optional[float] = None,
     IC2: Optional[int] = None,
-    FLAY: Optional[float] = None,  # Default: 2.0
-    RLAY: Optional[float] = None,  # Default: 1.08
-    IIB: Optional[int] = None,  # Default: 2
+    FLAY: Optional[float] = None,  # PORB default: 0.10 (layer spacing factor)
+    RLAY: Optional[float] = None,  # PORB default: 1.15 (layer thickness ratio)
+    IIB: Optional[int] = None,  # PORB default: -1 (temperature prediction mode)
     LZONE: Optional[str] = None,  # Use zone file for layer properties, Default: "F"
 
     # ========== SURFACE PROPERTIES ==========
     ALBEDO: Optional[Union[float, List[float]]] = None,  # Can be time-varying array
     EMISS: Optional[float] = None,  # Default: 1.0
     SLOPE: Optional[float] = None,  # Default: 0.0
-    SLOAZI: Optional[float] = None,  # Default: 90.0
+    SLOAZI: Optional[float] = None,  # PORB default: 0.0 (slope azimuth, degrees E of N)
 
     # ========== ATMOSPHERE ==========
     TAUD: Optional[Union[float, List[float]]] = None,  # Can be time-varying array
     PTOTAL: Optional[float] = None,
     TATM: Optional[float] = None,
-    DUSTA: Optional[float] = None,  # Default: 0.9
-    TAURAT: Optional[float] = None,  # Default: 2.0
-    FANON: Optional[float] = None,  # Default: 0.3
+    DUSTA: Optional[float] = None,  # PORB default: 0.9 (dust single-scattering albedo)
+    TAURAT: Optional[float] = None,  # PORB default: 0.25 (thermal/visible opacity ratio)
+    FANON: Optional[float] = None,  # Default: 0.055 (atmospheric anisotropy factor, NOT 0.3!)
     KPREF: Optional[int] = None,  # Seasonal pressure model (1=Viking, 2=frost budget), Default: 1
 
     # ========== FROST/CONDENSATION ==========
@@ -100,7 +638,7 @@ def krc(
     # ========== NUMERICAL CONTROL ==========
     N1: Optional[int] = None,
     N2: Optional[int] = None,
-    N3: Optional[int] = None,  # Default: 10
+    N3: Optional[int] = None,  # Default: 1 (Davinci default, matches TPREDICT=0.0 mode)
     NRSET: Optional[int] = None,  # Default: 0
     GGT: Optional[float] = None,  # Default: 1.0
     TPREDICT: Optional[float] = None,  # Default: 0.0
@@ -266,76 +804,45 @@ def krc(
     user_params = _extract_user_params(**locals())
 
     # ========== APPLY DEFAULTS FOR UNSET PARAMETERS ==========
-    # Set defaults for parameters that were not explicitly provided
-    if DELLS is None:
-        DELLS = 1.0
-    if spinup_years is None:
-        spinup_years = 2.0
-    if output_years is None:
-        output_years = 1.0
-    if LKEY is None:
-        LKEY = "T"
-    if LKofT is None:
-        LKofT = True
-    if thick is None:
-        thick = 0.0
-    # These defaults will be set later in PORB section to ensure changecards are written:
-    # FLAY, RLAY, IIB, LZONE, EMISS, SLOPE, SLOAZI, DUSTA, TAURAT, KPREF, LVFT, JBARE
+    # Apply defaults using helper function
+    defaults = _apply_default_parameters(
+        DELLS, spinup_years, output_years, LKEY, LKofT, thick, FANON,
+        N3, NRSET, GGT, TPREDICT, MAXN1, MAXN2, auto_numerical,
+        bodyforce, TUN8, LMST, WRITE, KEEP, Eclipse, Eclipse_Style,
+        PFlux, Lon_Hr, verbose, keep_files, lon
+    )
 
-    # Keep FANON default here since it's not PORB-related
-    if FANON is None:
-        FANON = 0.055
-    if N3 is None:
-        N3 = 1  # Match Davinci default (was 10)
-    if NRSET is None:
-        NRSET = 0
-    if GGT is None:
-        GGT = 1.0
-    if TPREDICT is None:
-        TPREDICT = 0.0
-
-    # Temperature prediction control logic (matches Davinci lines 841-847)
-    # Short timesteps disable prediction for stability
-    if TPREDICT == 0.0:  # TPREDICT="F" in Davinci
-        GGT = 99.0
-        N3 = 1
-        NRSET = 999
-    if MAXN1 is None:
-        MAXN1 = 100
-    if MAXN2 is None:
-        MAXN2 = 1000
-    if auto_numerical is None:
-        auto_numerical = True
-    # TDEEP, DJUL, PhotoFunc will be set in PORB section
-    if bodyforce is None:
-        bodyforce = 0
-    if TUN8 is None:
-        TUN8 = 0
-    if LMST is None:
-        LMST = "F"
-    if WRITE is None:
-        WRITE = "F"
-    if KEEP is None:
-        KEEP = "F"
-    if Eclipse is None:
-        Eclipse = "F"
-    if Eclipse_Style is None:
-        Eclipse_Style = 1.0
-    if PFlux is None:
-        PFlux = "F"
-    if Lon_Hr is None:
-        Lon_Hr = 12.0
-    if verbose is None:
-        verbose = False
-    if keep_files is None:
-        keep_files = False
+    # Unpack defaults back to local variables
+    DELLS = defaults['DELLS']
+    spinup_years = defaults['spinup_years']
+    output_years = defaults['output_years']
+    LKEY = defaults['LKEY']
+    LKofT = defaults['LKofT']
+    thick = defaults['thick']
+    FANON = defaults['FANON']
+    N3 = defaults['N3']
+    NRSET = defaults['NRSET']
+    GGT = defaults['GGT']
+    TPREDICT = defaults['TPREDICT']
+    MAXN1 = defaults['MAXN1']
+    MAXN2 = defaults['MAXN2']
+    auto_numerical = defaults['auto_numerical']
+    bodyforce = defaults['bodyforce']
+    TUN8 = defaults['TUN8']
+    LMST = defaults['LMST']
+    WRITE = defaults['WRITE']
+    KEEP = defaults['KEEP']
+    Eclipse = defaults['Eclipse']
+    Eclipse_Style = defaults['Eclipse_Style']
+    PFlux = defaults['PFlux']
+    Lon_Hr = defaults['Lon_Hr']
+    verbose = defaults['verbose']
+    keep_files = defaults['keep_files']
+    lon = defaults['lon']
 
     # Validate required parameters
     if lat is None:
         raise ValueError("lat (latitude) is required")
-
-    if lon is None:
-        lon = 0.0
 
     # Get KRC paths
     krc_home = get_krc_home()
@@ -373,16 +880,34 @@ def krc(
     if JDISK is None:
         JDISK = int(np.ceil(360.0 / DELLS * spinup_years + 1))
 
-    # Get DELJUL from PORB if available, otherwise calculate from orbital period
+    # Get DELJUL - complex precedence matching Davinci (krc.dvrc lines 347-355)
     # DELJUL is the time step in Julian days for each Ls degree
-    if hasattr(body_params, 'krc_params') and 'DELJUL' in body_params.krc_params:
-        # Use pre-calculated value from PORB (more accurate)
+    #
+    # Davinci logic:
+    # if(HasValue(DELJUL)==0 && HasValue(DELLS)==0)  → DELJUL from PORB
+    # if(HasValue(DELJUL)==0 && HasValue(DELLS)==1)  → DELJUL = PERIOD/360*DELLS (DELLS blocks PORB!)
+    # if(HasValue(DELJUL)==1 && HasValue(DELLS)==0)  → User DELJUL kept
+    # if(HasValue(DELJUL)==1 && HasValue(DELLS)==1)  → Error (both set)
+    #
+    # PyKRC: DELJUL is not user-facing, so only check if DELLS was user-set
+
+    if 'DELLS' in user_params:
+        # User set DELLS → calculate DELJUL from DELLS (blocks PORB value!)
+        if hasattr(body_params, 'orbital_period'):
+            DELJUL = body_params.orbital_period * DELLS / 360.0
+        else:
+            # Fallback: estimate from rotation period
+            DELJUL = rot_per * DELLS / 360.0
+            if verbose:
+                print(f"Warning: Using rotation period for DELJUL (orbital_period not in PORB)")
+    elif hasattr(body_params, 'krc_params') and 'DELJUL' in body_params.krc_params:
+        # User did NOT set DELLS → use PORB DELJUL
         DELJUL = body_params.krc_params['DELJUL']
     elif hasattr(body_params, 'orbital_period'):
-        # Calculate from orbital period (not rotation period!)
+        # No PORB DELJUL → calculate from orbital period and default DELLS
         DELJUL = body_params.orbital_period * DELLS / 360.0
     else:
-        # Fallback: estimate from rotation period (will be wrong for planets!)
+        # Final fallback
         DELJUL = rot_per * DELLS / 360.0
         if verbose:
             print(f"Warning: Using rotation period for DELJUL calculation (may be inaccurate)")
@@ -482,192 +1007,38 @@ def krc(
         LZONE = False  # No zone control
         porb_touched_params.add('LZONE')
 
+    # Physical constraint: No atmosphere → no dust (Davinci krc.dvrc line 547)
+    if PTOTAL is not None and PTOTAL < 1.0:
+        if verbose and TAUD != 0.0:
+            print(f"Warning: PTOTAL={PTOTAL} < 1 Pa → forcing TAUD=0 (no atmosphere)")
+        TAUD = 0.0
+        porb_touched_params.add('TAUD')
+
     if verbose:
         print(f"Time control: DELLS={DELLS}°, N5={N5} seasons, JDISK={JDISK}")
         print(f"  Total run: {N5*DELLS/360:.1f} years, Output: {(N5-JDISK)*DELLS/360:.1f} years")
 
-    # Set defaults based on body - use ancillary data lookups for Mars
-    if body == "Mars":
-        # Import ancillary data functions
-        try:
-            from .ancillary import lookup_albedo, lookup_elevation, lookup_inertia
-
-            # Use ancillary data lookups if not explicitly provided
-            if ALBEDO is None:
-                ALBEDO = lookup_albedo(lat, lon)
-                if verbose:
-                    print(f"Using TES albedo from ancillary data: {ALBEDO:.4f}")
-
-            if ELEV is None:
-                ELEV = lookup_elevation(lat, lon)
-                if verbose:
-                    print(f"Using MOLA elevation from ancillary data: {ELEV:.2f} km")
-
-            # Load INERTIA from TES map if not explicitly provided (matches Davinci)
-            if INERTIA is None:
-                INERTIA = lookup_inertia(lat, lon)
-                if verbose:
-                    print(f"Using TES thermal inertia from ancillary data: {INERTIA:.1f}")
-        except Exception as e:
-            # Fall back to defaults if ancillary data unavailable
-            if verbose:
-                print(f"Warning: Could not load ancillary data ({e}), using defaults")
-            if ALBEDO is None:
-                ALBEDO = master_params.get("ALBEDO", 0.25)
-            if ELEV is None:
-                ELEV = 0.0
-    else:
-        # For non-Mars bodies, use defaults
-        if ALBEDO is None:
-            ALBEDO = master_params.get("ALBEDO", 0.25)
-        if ELEV is None:
-            ELEV = 0.0
+    # ========== LOAD ANCILLARY DATA ==========
+    # Load albedo, elevation, and inertia from ancillary data (Mars) or defaults
+    ALBEDO, ELEV, INERTIA = _load_ancillary_data(
+        body, lat, lon, ALBEDO, ELEV, INERTIA, master_params, verbose
+    )
 
     # ========== MATERIAL PROPERTY HANDLING ==========
-    # Determine if using INERTIA or direct COND/DENSITY/SPEC_HEAT specification
-    using_direct_props = (COND is not None and DENSITY is not None and SPEC_HEAT is not None)
-
-    if using_direct_props:
-        if verbose:
-            print(f"Using direct material properties: COND={COND}, DENSITY={DENSITY}, SPEC_HEAT={SPEC_HEAT}")
-
-        # Calculate implied INERTIA for reference
-        INERTIA = np.sqrt(COND * DENSITY * SPEC_HEAT)
-
-        upper_props = {
-            "COND": COND,
-            "DENSITY": DENSITY,
-            "SPEC_HEAT": SPEC_HEAT,
-        }
-
-        # Generate T-dependent coefficients if requested
-        if LKofT:
-            # Use calculate_thermal_properties to get coefficients
-            temp_props = calculate_thermal_properties(Mat1, INERTIA, T_user, k_style)
-            upper_props.update({
-                "ConUp0": temp_props["ConUp0"],
-                "ConUp1": temp_props["ConUp1"],
-                "ConUp2": temp_props["ConUp2"],
-                "ConUp3": temp_props["ConUp3"],
-                "SphUp0": temp_props["SphUp0"],
-                "SphUp1": temp_props["SphUp1"],
-                "SphUp2": temp_props["SphUp2"],
-                "SphUp3": temp_props["SphUp3"],
-            })
-        else:
-            # Constant properties (no T-dependence)
-            upper_props.update({
-                "ConUp0": COND, "ConUp1": 0.0, "ConUp2": 0.0, "ConUp3": 0.0,
-                "SphUp0": SPEC_HEAT, "SphUp1": 0.0, "SphUp2": 0.0, "SphUp3": 0.0,
-            })
-    else:
-        # Standard INERTIA-based approach
-        if INERTIA is None:
-            INERTIA = master_params.get("INERTIA", 200.0)
-
-        if verbose:
-            print(f"Calculating material properties for {Mat1} with INERTIA={INERTIA}...")
-
-        upper_props = calculate_thermal_properties(Mat1, INERTIA, T_user, k_style)
-
-    # Handle lower layer (for two-layer regolith)
-    if INERTIA2 is None:
-        INERTIA2 = INERTIA
-
-    if verbose and thick != 0.0:
-        print(f"Two-layer regolith: thick={thick}m, upper TI={INERTIA}, lower TI={INERTIA2}")
-
-    lower_props = calculate_thermal_properties(Mat2, INERTIA2, T_user, k_style)
+    # Calculate thermal properties for upper and lower layers
+    using_direct_props, INERTIA, INERTIA2, upper_props, lower_props = _calculate_material_properties(
+        COND, DENSITY, SPEC_HEAT, INERTIA, Mat1, Mat2, T_user, k_style,
+        LKofT, INERTIA2, thick, master_params, verbose
+    )
 
     # ========== NUMERICAL PARAMETERS ==========
-    # Auto-calculate N1, N2 if not provided and auto_numerical is True
-    if auto_numerical:
-        if N1 is None:
-            # Extract actual DENSITY and SPEC_HEAT for N1 calculation
-            # These may come from direct specification or from material properties
-            if using_direct_props:
-                dens_for_N1 = DENSITY
-                cp_for_N1 = SPEC_HEAT
-            else:
-                # Extract from calculated properties
-                # upper_props contains ConUp0 (conductivity) and SphUp0 (specific heat)
-                # We need to derive density from: I² = k·ρ·c
-                cp_for_N1 = upper_props["SphUp0"]
-                k_for_N1 = upper_props["ConUp0"]
-                # From I² = k·ρ·c, we get ρ = I²/(k·c)
-                dens_for_N1 = (INERTIA**2) / (k_for_N1 * cp_for_N1)
-
-            N1 = krc_evalN1(
-                RLAY=RLAY,
-                FLAY=FLAY,
-                INERTIA=INERTIA,
-                SPEC_HEAT=cp_for_N1,
-                DENSITY=dens_for_N1,
-                DELJUL=DELJUL,
-                N5=N5,
-                JDISK=JDISK,
-                MAXN1=MAXN1,
-                PERIOD=rot_per,
-                INERTIA2=INERTIA2 if thick != 0.0 else None,
-                verbose=verbose
-            )
-            if verbose:
-                print(f"Auto-calculated N1={N1} layers")
-
-        if N2 is None:
-            # Extract actual DENSITY and SPEC_HEAT for N2 calculation
-            if using_direct_props:
-                dens_for_N2 = DENSITY
-                cp_for_N2 = SPEC_HEAT
-            else:
-                cp_for_N2 = upper_props["SphUp0"]
-                k_for_N2 = upper_props["ConUp0"]
-                dens_for_N2 = (INERTIA**2) / (k_for_N2 * cp_for_N2)
-
-            N2 = krc_evalN2(
-                FLAY=FLAY,
-                INERTIA=INERTIA,
-                DENSITY=dens_for_N2,
-                SPEC_HEAT=cp_for_N2,
-                PERIOD=rot_per,
-                N24=n24_from_porb,
-                MAXN2=MAXN2,
-                verbose=verbose
-            )
-            if verbose:
-                print(f"Auto-calculated N2={N2} timesteps/day")
-    else:
-        # Use master.inp defaults if not auto-calculating
-        if N1 is None:
-            N1 = master_params.get("N1", 50)
-        if N2 is None:
-            N2 = master_params.get("N2", 288)
-
-    # Check numerical stability
-    if N1 is not None and N2 is not None:
-        # Get material properties for stability check
-        if using_direct_props:
-            dens_check = DENSITY
-            cp_check = SPEC_HEAT
-        else:
-            cp_check = upper_props["SphUp0"]
-            k_check = upper_props["ConUp0"]
-            dens_check = (INERTIA**2) / (k_check * cp_check)
-
-        is_stable, stability_msg = check_stability(
-            N1, N2, INERTIA, rot_per, FLAY, dens_check, cp_check, warn=True
-        )
-        if verbose:
-            print(f"  {stability_msg}")
-
-    # Auto-calculate convergence parameters if not provided
-    if auto_numerical and (GGT == 1.0 and TPREDICT == 0.0):
-        conv_params = calculate_convergence_params(N1, N2, DELLS, fast_mode=False)
-        # Only override defaults if they weren't explicitly set
-        if N3 == 10:
-            N3 = conv_params["N3"]
-        if verbose:
-            print(f"Convergence parameters: N3={N3}, GGT={GGT}, TPREDICT={TPREDICT}")
+    # Calculate or validate numerical parameters (N1, N2, N3)
+    N1, N2, N3 = _calculate_numerical_parameters(
+        auto_numerical, N1, N2, using_direct_props, DENSITY, SPEC_HEAT,
+        INERTIA, upper_props, RLAY, FLAY, DELJUL, N5, JDISK, MAXN1,
+        rot_per, INERTIA2, thick, n24_from_porb, MAXN2, GGT, TPREDICT,
+        N3, DELLS, master_params, verbose
+    )
 
     # ========== TWO-LAYER CONFIGURATION ==========
     # Validate two-layer configuration
@@ -913,8 +1284,10 @@ def krc(
     # Set PORB data if available
     if hasattr(body_params, 'porb_header'):
         params["PORB_HEADER"] = body_params.porb_header
+    if hasattr(body_params, 'porb_text_lines'):
+        params["PORB_TEXT_LINES"] = body_params.porb_text_lines  # Pre-formatted text (preferred)
     if hasattr(body_params, 'porb_params'):
-        params["PORB_PARAMS"] = body_params.porb_params
+        params["PORB_PARAMS"] = body_params.porb_params  # Numeric fallback
 
     # Override with any additional kwargs
     params.update(kwargs)
