@@ -8,7 +8,7 @@ The functions here replicate:
 - krc_evalN2: lines 2107-2154 in krc.dvrc
 """
 
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Dict, Any
 import numpy as np
 import warnings
 
@@ -29,7 +29,7 @@ def krc_evalN1(
     DENSITY2: Optional[float] = None,
     THICK: float = 0.0,
     verbose: bool = False
-) -> int:
+) -> Dict[str, Any]:
     """
     Calculate optimal number of subsurface layers.
 
@@ -70,8 +70,12 @@ def krc_evalN1(
 
     Returns
     -------
-    int
-        Number of layers N1
+    dict
+        Dictionary with keys:
+        - 'N1': Number of layers
+        - 'FLAY': Updated first layer thickness factor
+        - 'RLAY': Layer thickness ratio
+        - 'IC2': Layer index where properties change (999 if homogeneous)
 
     Notes
     -----
@@ -83,10 +87,13 @@ def krc_evalN1(
 
     Examples
     --------
-    >>> krc_evalN1(RLAY=1.08, FLAY=2.0, INERTIA=200, SPEC_HEAT=800,
-    ...            DENSITY=1500, DELJUL=1.9083, N5=1080, JDISK=721,
-    ...            MAXN1=100, PERIOD=1.0275)
+    >>> result = krc_evalN1(RLAY=1.08, FLAY=2.0, INERTIA=200, SPEC_HEAT=800,
+    ...                     DENSITY=1500, DELJUL=1.9083, N5=1080, JDISK=721,
+    ...                     MAXN1=100, PERIOD=1.0275)
+    >>> result['N1']
     50
+    >>> result.keys()
+    dict_keys(['N1', 'FLAY', 'RLAY', 'IC2'])
     """
     # Set defaults for homogeneous material (THICK == 0)
     if INERTIA2 is None:
@@ -129,38 +136,99 @@ def krc_evalN1(
         print(f"  NSKIN: {NSKIN:.2f}")
         print(f"  Required depth: {DEPTH_m:.3f} m")
 
-    # Build layer structure with geometric spacing (lines 1900-1952)
+    # Calculate IC2 and updated FLAY FIRST (Davinci krc.dvrc lines 1861-1894)
+    # This must happen before N1 loop so we know where to switch from DSD1 to DSD2
+    FLAY2 = FLAY  # Default: no modification
+    if THICK == 0.0:
+        # CASE 1: Homogeneous material
+        IC2 = 999
+    elif THICK <= (FLAY * DSD1_m * RLAY) and THICK > 0:
+        # CASE 2a: top mesh element is smaller than default element thickness
+        FLAY2 = THICK / (DSD1_m * RLAY)
+        IC2 = 3
+    elif THICK > (FLAY * DSD1_m * RLAY) and RLAY > 1.0:
+        # CASE 2b: top material thickness is larger, calculate number of elements
+        IC2 = int(np.log(1 - THICK * (1 - RLAY) / (DSD1_m * FLAY * RLAY)) / np.log(RLAY)) + 4
+
+        # Calculate optimized FLAY2 using linear fit (Davinci lines 1880-1890)
+        # Create table of FLAY values and corresponding bottom thickness
+        Res = 10
+        FLAY_Step = (FLAY - FLAY * 0.01) / (Res - 1)
+        FLAY_Table = np.linspace(FLAY * 0.01, FLAY, Res + 1)
+        Bot_Thick = np.zeros(Res + 1)
+
+        for idx in range(Res + 1):
+            # Calculate mesh thickness for IC2-2 layers with this FLAY value
+            mesh_thickness = FLAY_Table[idx]
+            total_thickness = 0.0
+            for layer in range(IC2 - 2):
+                if layer == 0:
+                    total_thickness += mesh_thickness
+                else:
+                    total_thickness += mesh_thickness * (RLAY ** layer)
+            Bot_Thick[idx] = total_thickness * DSD1_m
+
+        # Linear fit to find FLAY that gives exactly THICK
+        # fit(x=Bot_Thick-THICK, y=FLAY_Table, type="linear")
+        # This finds FLAY where Bot_Thick = THICK (i.e., where x=0)
+        from numpy.polynomial import Polynomial
+        p = Polynomial.fit(Bot_Thick - THICK, FLAY_Table, 1)
+        FLAY2 = p(0)  # Evaluate at x=0
+    else:
+        # Fallback
+        IC2 = 999
+
+    # Build layer structure with geometric spacing (Davinci krc.dvrc lines 1915-1943)
     # Start with first layer (virtual layer)
     N1 = MAXN1
-    THICKNESS_D_Scale = FLAY / RLAY  # First layer thickness in diurnal skin depths
-    CENTER_DEPTH_D_Scale = -0.5 * THICKNESS_D_Scale
-    CENTER_DEPTH_m = CENTER_DEPTH_D_Scale * DSD1_m
+    THICKNESS_D_Scale = FLAY2 / RLAY  # Use FLAY2 (potentially modified)
+
+    # Determine DSD for first layer
+    if 1 < IC2:
+        DSD = DSD1_m
+    else:
+        DSD = DSD2_m
+
+    THICKNESS_m = THICKNESS_D_Scale * DSD
+    CENTER_DEPTH_m = -0.5 * THICKNESS_m
+    prev_CENTER_DEPTH_m = CENTER_DEPTH_m  # Track previous layer depth
 
     # Build layers iteratively
     for i in range(2, MAXN1 + 1):
+        # Determine which DSD to use based on layer number vs IC2
+        if i < IC2:
+            DSD = DSD1_m
+        else:
+            DSD = DSD2_m
+
         # Update thickness with geometric spacing
         THICKNESS_D_Scale = THICKNESS_D_Scale * RLAY
 
-        # Update center depth (line 1926)
-        prev_THICKNESS_D_Scale = THICKNESS_D_Scale / RLAY  # Previous thickness
-        CENTER_DEPTH_D_Scale = CENTER_DEPTH_D_Scale + 0.5 * (THICKNESS_D_Scale + prev_THICKNESS_D_Scale)
+        # Store previous layer thickness before calculating new one
+        prev_THICKNESS_m = THICKNESS_m
 
-        # Convert to meters (line 1928)
-        # Use appropriate material properties based on layer
-        DSD = DSD1_m  # For simplicity, use top material (two-layer handled in full version)
-        CENTER_DEPTH_m_new = CENTER_DEPTH_m + 0.5 * (THICKNESS_D_Scale * DSD + prev_THICKNESS_D_Scale * DSD)
+        # Calculate thickness in meters for current layer
+        THICKNESS_m = THICKNESS_D_Scale * DSD
 
-        # Check if we've reached required depth (line 1937)
-        if ((CENTER_DEPTH_m > DEPTH_m) and (i >= Min_Num_Layer)) or (i >= MAXN1):
+        # Update center depth in meters (using current and previous THICKNESS_m)
+        prev_CENTER_DEPTH_m = CENTER_DEPTH_m
+        CENTER_DEPTH_m = CENTER_DEPTH_m + 0.5 * (THICKNESS_m + prev_THICKNESS_m)
+
+        # Check if PREVIOUS layer exceeded depth (Davinci line 1947)
+        # Davinci checks CENTER_DEPTH_m[i-1], not CENTER_DEPTH_m[i]
+        if ((prev_CENTER_DEPTH_m > DEPTH_m) and (i >= Min_Num_Layer)) or (i >= MAXN1):
             N1 = i
             break
-
-        CENTER_DEPTH_m = CENTER_DEPTH_m_new
 
     if verbose:
         print(f"  Calculated N1 = {N1} layers (final depth: {CENTER_DEPTH_m:.3f} m)")
 
-    return N1
+    return {
+        'N1': N1,
+        'FLAY': FLAY2,
+        'RLAY': RLAY,
+        'IC2': IC2
+    }
 
 
 def krc_evalN2(
@@ -446,3 +514,211 @@ def estimate_runtime(
     )
 
     return baseline_time * scale_factor
+
+
+def calculate_numerical_parameters(
+    auto_numerical: bool,
+    N1: Optional[int],
+    N2: Optional[int],
+    using_direct_props: bool,
+    DENSITY: Optional[float],
+    SPEC_HEAT: Optional[float],
+    INERTIA: float,
+    upper_props: Dict[str, Any],
+    lower_props: Dict[str, Any],
+    RLAY: float,
+    FLAY: float,
+    DELJUL: float,
+    N5: int,
+    JDISK: int,
+    MAXN1: int,
+    rot_per: float,
+    INERTIA2: float,
+    thick: float,
+    n24_from_porb: int,
+    MAXN2: int,
+    GGT: float,
+    TPREDICT: float,
+    N3: int,
+    DELLS: float,
+    master_params: Dict[str, Any],
+    verbose: bool
+) -> Tuple[int, int, int, int, float, float]:
+    """
+    Calculate or validate numerical parameters (N1, N2, N3, IC2, FLAY, RLAY).
+
+    This consolidates lines 946-1034 of the original krc() function,
+    implementing numerical parameter auto-calculation and stability checking.
+
+    Parameters
+    ----------
+    auto_numerical : bool
+        Auto-calculate N1, N2 if not provided
+    N1 : int, optional
+        Number of subsurface layers (calculated if None)
+    N2 : int, optional
+        Number of timesteps per day (calculated if None)
+    using_direct_props : bool
+        Using direct COND/DENSITY/SPEC_HEAT specification
+    DENSITY : float, optional
+        Material density (kg/m³)
+    SPEC_HEAT : float, optional
+        Specific heat (J/kg/K)
+    INERTIA : float
+        Thermal inertia (J m⁻² K⁻¹ s⁻½)
+    upper_props : dict
+        Upper layer thermal property coefficients
+    lower_props : dict
+        Lower layer thermal property coefficients
+    RLAY : float
+        Layer thickness ratio
+    FLAY : float
+        First layer thickness factor
+    DELJUL : float
+        Julian date increment
+    N5 : int
+        Number of seasons
+    JDISK : int
+        Output start season
+    MAXN1 : int
+        Maximum layers allowed
+    rot_per : float
+        Rotation period (Earth days)
+    INERTIA2 : float
+        Lower layer thermal inertia
+    thick : float
+        Two-layer thickness (m)
+    n24_from_porb : int
+        Hours per day from PORB
+    MAXN2 : int
+        Maximum timesteps allowed
+    GGT : float
+        Convergence parameter
+    TPREDICT : float
+        Temperature prediction mode
+    N3 : int
+        Convergence iteration count
+    DELLS : float
+        Solar longitude increment
+    master_params : dict
+        Master.inp defaults
+    verbose : bool
+        Print details
+
+    Returns
+    -------
+    N1 : int
+        Number of subsurface layers
+    N2 : int
+        Number of timesteps per day
+    N3 : int
+        Convergence parameter
+    IC2 : int
+        Layer index for property change
+    FLAY : float
+        Updated first layer thickness factor
+    RLAY : float
+        Layer thickness ratio
+
+    Notes
+    -----
+    Auto-calculation uses krc_evalN1() and krc_evalN2() from numerical.py.
+    Performs stability check using check_stability().
+    Updates N3 if auto_numerical and convergence mode enabled (GGT=1.0, TPREDICT=0.0).
+    """
+    # Import materials helper here to avoid circular import
+    from .materials import extract_material_properties_for_numerics
+
+    # Initialize IC2 to default (single layer)
+    IC2 = 999
+
+    # Auto-calculate N1, N2 if not provided and auto_numerical is True
+    if auto_numerical:
+        if N1 is None:
+            # For krc_evalN1, use actual material DENSITY and SPEC_HEAT (not derived)
+            # This ensures DSD calculations match davinci exactly
+            dens_for_N1 = upper_props.get("DENSITY")
+            cp_for_N1 = upper_props.get("SPEC_HEAT")
+
+            # Extract bottom layer properties for two-layer calculations
+            if thick != 0.0 and lower_props:
+                SPEC_HEAT2 = lower_props.get("SPEC_HEAT")
+                DENSITY2 = lower_props.get("DENSITY")
+            else:
+                SPEC_HEAT2 = None
+                DENSITY2 = None
+
+            N1_result = krc_evalN1(
+                RLAY=RLAY,
+                FLAY=FLAY,
+                INERTIA=INERTIA,
+                SPEC_HEAT=cp_for_N1,
+                DENSITY=dens_for_N1,
+                DELJUL=DELJUL,
+                N5=N5,
+                JDISK=JDISK,
+                MAXN1=MAXN1,
+                PERIOD=rot_per,
+                INERTIA2=INERTIA2 if thick != 0.0 else None,
+                SPEC_HEAT2=SPEC_HEAT2,
+                DENSITY2=DENSITY2,
+                THICK=thick,
+                verbose=verbose
+            )
+            # Extract results from krc_evalN1
+            N1 = N1_result['N1']
+            FLAY = N1_result['FLAY']  # Updated FLAY
+            RLAY = N1_result['RLAY']  # Typically unchanged
+            IC2 = N1_result['IC2']  # Set IC2 from evalN1
+            if verbose:
+                print(f"Auto-calculated N1={N1} layers, IC2={IC2}, FLAY={FLAY:.4f}")
+
+        if N2 is None:
+            # For krc_evalN2, use actual material DENSITY and SPEC_HEAT (not derived)
+            # This ensures DSD calculations match davinci exactly
+            dens_for_N2 = upper_props.get("DENSITY")
+            cp_for_N2 = upper_props.get("SPEC_HEAT")
+
+            N2 = krc_evalN2(
+                FLAY=FLAY,
+                INERTIA=INERTIA,
+                DENSITY=dens_for_N2,
+                SPEC_HEAT=cp_for_N2,
+                PERIOD=rot_per,
+                N24=n24_from_porb,
+                MAXN2=MAXN2,
+                verbose=verbose
+            )
+            if verbose:
+                print(f"Auto-calculated N2={N2} timesteps/day")
+    else:
+        # Use master.inp defaults if not auto-calculating
+        if N1 is None:
+            N1 = master_params.get("N1", 50)
+        if N2 is None:
+            N2 = master_params.get("N2", 288)
+
+    # Check numerical stability
+    if N1 is not None and N2 is not None:
+        # Get material properties for stability check
+        from .materials import extract_material_properties_for_numerics
+        dens_check, cp_check = extract_material_properties_for_numerics(
+            using_direct_props, DENSITY, SPEC_HEAT, INERTIA, upper_props
+        )
+
+        is_stable, stability_msg = check_stability(
+            N1, N2, INERTIA, rot_per, FLAY, dens_check, cp_check, warn=True
+        )
+        if verbose:
+            print(f"  {stability_msg}")
+
+    # Auto-calculate convergence parameters if not provided
+    if auto_numerical and (GGT == 1.0 and TPREDICT == 0.0):
+        conv_params = calculate_convergence_params(N1, N2, DELLS, fast_mode=False)
+        # Only override defaults if they weren't explicitly set
+        if N3 == 10:
+            N3 = conv_params["N3"]
+        if verbose:
+            print(f"Convergence parameters: N3={N3}, GGT={GGT}, TPREDICT={TPREDICT}")
+
+    return N1, N2, N3, IC2, FLAY, RLAY

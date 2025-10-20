@@ -1,6 +1,6 @@
 """Material property calculations for KRC."""
 
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional, Tuple, List
 import numpy as np
 from dataclasses import dataclass
 
@@ -286,10 +286,13 @@ def calculate_thermal_properties(
         # Increases with T, sqrt(T) trend (Morgan et al.)
         k_table = COND * np.sqrt(T_tab / T_user)
     elif k_style == "Bulk":
-        # Bulk conductivity - use material database polynomial directly (Davinci behavior)
-        # k_Table = Mat_Prop.ConB.ConB0 + Mat_Prop.ConB.ConB1*X + ...
+        # Bulk conductivity - use material database polynomial normalized by k(T_user)
+        # Davinci krc.dvrc lines 628-630
+        X_user = (T_user - 220.0) * 0.01
+        k_user = (coeffs.Con0 + coeffs.Con1*X_user +
+                  coeffs.Con2*X_user**2 + coeffs.Con3*X_user**3)
         k_table = (coeffs.Con0 + coeffs.Con1*X +
-                   coeffs.Con2*X**2 + coeffs.Con3*X**3)
+                   coeffs.Con2*X**2 + coeffs.Con3*X**3) / k_user
     else:
         raise ValueError(f"Unknown k_style: {k_style}")
 
@@ -317,3 +320,201 @@ def calculate_thermal_properties(
         "SphUp3": coeffs.Sph3,
         "composition": material,
     }
+
+
+def extract_material_properties_for_numerics(
+    using_direct_props: bool,
+    DENSITY: Optional[float],
+    SPEC_HEAT: Optional[float],
+    INERTIA: float,
+    upper_props: Dict[str, Any]
+) -> Tuple[float, float]:
+    """
+    Extract density and specific heat for numerical calculations.
+
+    When using direct property specification, returns DENSITY and SPEC_HEAT directly.
+    Otherwise derives density from INERTIA using: ρ = I²/(k·c)
+
+    Parameters
+    ----------
+    using_direct_props : bool
+        True if COND, DENSITY, SPEC_HEAT were directly specified
+    DENSITY : float or None
+        Direct density specification (kg/m³)
+    SPEC_HEAT : float or None
+        Direct specific heat specification (J/kg/K)
+    INERTIA : float
+        Thermal inertia (J m⁻² K⁻¹ s⁻½)
+    upper_props : dict
+        Calculated material properties with keys: 'SphUp0', 'ConUp0'
+
+    Returns
+    -------
+    density : float
+        Material density (kg/m³)
+    specific_heat : float
+        Specific heat (J/kg/K)
+
+    Notes
+    -----
+    This helper appears 3 times in the original krc() function:
+    - For N1 calculation (subsurface layers)
+    - For N2 calculation (timesteps per day)
+    - For stability check
+
+    Examples
+    --------
+    >>> # Direct specification
+    >>> dens, cp = extract_material_properties_for_numerics(
+    ...     True, 1600.0, 800.0, 200.0, {}
+    ... )
+    >>> dens, cp
+    (1600.0, 800.0)
+
+    >>> # Derived from INERTIA
+    >>> props = {"SphUp0": 647.0, "ConUp0": 0.025}
+    >>> dens, cp = extract_material_properties_for_numerics(
+    ...     False, None, None, 200.0, props
+    ... )
+    >>> # dens ≈ 2469.14 from I²/(k·c) = 200²/(0.025·647)
+    >>> cp
+    647.0
+    """
+    if using_direct_props:
+        return DENSITY, SPEC_HEAT
+    else:
+        cp = upper_props["SphUp0"]
+        k = upper_props["ConUp0"]
+        # From I² = k·ρ·c, we get ρ = I²/(k·c)
+        dens = (INERTIA**2) / (k * cp)
+        return dens, cp
+
+
+def calculate_material_properties(
+    COND: Optional[float],
+    DENSITY: Optional[float],
+    SPEC_HEAT: Optional[float],
+    INERTIA: Optional[float],
+    Mat1: str,
+    Mat2: str,
+    T_user: float,
+    k_style: str,
+    LKofT: bool,
+    INERTIA2: Optional[float],
+    thick: float,
+    master_params: Dict[str, Any],
+    verbose: bool
+) -> Tuple[bool, float, float, Dict[str, Any], Dict[str, Any]]:
+    """
+    Calculate thermal properties for upper and lower layers.
+
+    This consolidates lines 760-814 of the original krc() function,
+    implementing material property calculation logic.
+
+    Parameters
+    ----------
+    COND : float, optional
+        Direct thermal conductivity specification (W/m/K)
+    DENSITY : float, optional
+        Direct density specification (kg/m³)
+    SPEC_HEAT : float, optional
+        Direct specific heat specification (J/kg/K)
+    INERTIA : float, optional
+        Thermal inertia (J m⁻² K⁻¹ s⁻½)
+    Mat1 : str
+        Upper layer material name
+    Mat2 : str
+        Lower layer material name
+    T_user : float
+        Reference temperature (K)
+    k_style : str
+        Conductivity model ("Mars", "Moon", "Bulk")
+    LKofT : bool
+        Use temperature-dependent thermal properties
+    INERTIA2 : float, optional
+        Lower layer thermal inertia
+    thick : float
+        Layer thickness (m)
+    master_params : dict
+        Master.inp defaults
+    verbose : bool
+        Print details
+
+    Returns
+    -------
+    using_direct_props : bool
+        True if using direct COND/DENSITY/SPEC_HEAT specification
+    INERTIA : float
+        Thermal inertia (calculated if using direct props)
+    INERTIA2 : float
+        Lower layer thermal inertia (defaults to INERTIA)
+    upper_props : dict
+        Upper layer thermal property coefficients
+    lower_props : dict
+        Lower layer thermal property coefficients
+
+    Notes
+    -----
+    Two modes of operation:
+    1. Direct specification: COND, DENSITY, SPEC_HEAT all provided
+       - Calculates INERTIA from I = sqrt(k·ρ·c)
+       - Optionally generates T-dependent coefficients if LKofT=True
+    2. INERTIA-based: Standard approach using material database
+       - Calculates properties from Mat1, INERTIA, T_user, k_style
+    """
+    # Determine if using INERTIA or direct COND/DENSITY/SPEC_HEAT specification
+    using_direct_props = (COND is not None and DENSITY is not None and SPEC_HEAT is not None)
+
+    if using_direct_props:
+        if verbose:
+            print(f"Using direct material properties: COND={COND}, DENSITY={DENSITY}, SPEC_HEAT={SPEC_HEAT}")
+
+        # Calculate implied INERTIA for reference
+        INERTIA = np.sqrt(COND * DENSITY * SPEC_HEAT)
+
+        upper_props = {
+            "COND": COND,
+            "DENSITY": DENSITY,
+            "SPEC_HEAT": SPEC_HEAT,
+        }
+
+        # Generate T-dependent coefficients if requested
+        if LKofT:
+            # Use calculate_thermal_properties to get coefficients
+            temp_props = calculate_thermal_properties(Mat1, INERTIA, T_user, k_style)
+            upper_props.update({
+                "ConUp0": temp_props["ConUp0"],
+                "ConUp1": temp_props["ConUp1"],
+                "ConUp2": temp_props["ConUp2"],
+                "ConUp3": temp_props["ConUp3"],
+                "SphUp0": temp_props["SphUp0"],
+                "SphUp1": temp_props["SphUp1"],
+                "SphUp2": temp_props["SphUp2"],
+                "SphUp3": temp_props["SphUp3"],
+            })
+        else:
+            # Constant properties (no T-dependence)
+            upper_props.update({
+                "ConUp0": COND, "ConUp1": 0.0, "ConUp2": 0.0, "ConUp3": 0.0,
+                "SphUp0": SPEC_HEAT, "SphUp1": 0.0, "SphUp2": 0.0, "SphUp3": 0.0,
+            })
+    else:
+        # Standard INERTIA-based approach
+        if INERTIA is None:
+            INERTIA = master_params.get("INERTIA", 200.0)
+
+        if verbose:
+            print(f"Calculating material properties for {Mat1} with INERTIA={INERTIA}...")
+
+        upper_props = calculate_thermal_properties(Mat1, INERTIA, T_user, k_style)
+
+    # Handle lower layer (for two-layer regolith)
+    if INERTIA2 is None:
+        INERTIA2 = INERTIA
+
+    if verbose and thick != 0.0:
+        print(f"Two-layer regolith: thick={thick}m, upper TI={INERTIA}, lower TI={INERTIA2}")
+
+    lower_props = calculate_thermal_properties(Mat2, INERTIA2, T_user, k_style)
+
+    return using_direct_props, INERTIA, INERTIA2, upper_props, lower_props

@@ -1,12 +1,21 @@
 """
 Integration tests for PyKRC vs Davinci end-to-end validation.
 
-This test suite runs actual KRC simulations with both PyKRC and davinci krc.dvrc,
-then compares input files, binary outputs, and numerical results to verify
-complete parity.
+TESTING PHILOSOPHY (Two-Tier Hierarchy):
+1. PRIMARY METRIC: Identical input file generation
+   - Input files must match byte-for-byte or line-by-line
+   - This ensures Fortran KRC receives exactly the same instructions
+   - Test this FIRST before checking outputs
 
-These tests mirror the scenarios in test_davinci_parity.py but perform actual
-simulation runs rather than just checking internal logic.
+2. SECONDARY METRIC: Nearly identical temperature array outputs
+   - Temperature arrays must match in size
+   - Element-wise values must be nearly identical (tolerance ~0.01 K)
+   - Allow for minor precision/rounding differences
+
+Tests FAIL if either metric fails. Input file parity is the most critical.
+
+This test suite runs actual KRC simulations with both PyKRC and davinci krc.dvrc,
+then compares input files and temperature outputs using the two-tier validation.
 
 Usage:
     # Run all integration tests
@@ -58,22 +67,43 @@ def validator(krc_home):
 
 # Helper function for test assertions
 def assert_run_matches(result: Dict[str, Any], test_name: str):
-    """Assert that PyKRC and davinci runs match."""
-    # Check both runs succeeded
-    assert result["pykrc"]["success"], f"{test_name}: PyKRC failed - {result['pykrc']['error']}"
-    assert result["davinci"]["success"], f"{test_name}: Davinci failed - {result['davinci']['error']}"
+    """
+    Assert that PyKRC and davinci runs match using two-tier validation.
 
-    # Check output arrays match (primary validation metric)
-    float_comp = result["float_array_comparison"]
-    assert float_comp is not None, f"{test_name}: No float array comparison available"
-    assert float_comp["identical"], (
-        f"{test_name}: Output arrays differ - "
-        f"max_rel_diff={float_comp.get('max_relative_diff', 'N/A')}, "
-        f"mean_rel_diff={float_comp.get('mean_relative_diff', 'N/A')}"
+    PRIMARY: Input files must be identical (exact match)
+    SECONDARY: Temperature arrays must be nearly identical (with tolerance)
+    """
+    # Check both runs succeeded
+    assert result["pykrc"]["success"], \
+        f"{test_name}: PyKRC failed - {result['pykrc']['error']}"
+    assert result["davinci"]["success"], \
+        f"{test_name}: Davinci failed - {result['davinci']['error']}"
+
+    # PRIMARY TEST: Input file comparison (exact match required)
+    inp_comp = result["input_file_comparison"]
+    assert inp_comp is not None, \
+        f"{test_name}: No input file comparison available"
+    assert inp_comp["identical"], (
+        f"{test_name}: INPUT FILES DO NOT MATCH (PRIMARY FAILURE)\n"
+        f"Line count: {inp_comp.get('line_count_file1')} vs {inp_comp.get('line_count_file2')}\n"
+        f"First few differences:\n{inp_comp.get('diff_text', 'N/A')[:500]}"
     )
 
-    # Print summary
-    print(f"✓ {test_name}: max_rel_diff={float_comp['max_relative_diff']:.2e}")
+    # SECONDARY TEST: Temperature array comparison (tolerance-based)
+    float_comp = result["float_array_comparison"]
+    assert float_comp is not None, \
+        f"{test_name}: No float array comparison available"
+    assert float_comp["identical"], (
+        f"{test_name}: TEMPERATURE ARRAYS DIFFER (SECONDARY FAILURE)\n"
+        f"Max abs diff: {float_comp.get('max_absolute_diff', 'N/A')} K\n"
+        f"Max rel diff: {float_comp.get('max_relative_diff', 'N/A')}\n"
+        f"Mean abs diff: {float_comp.get('mean_absolute_diff', 'N/A')} K"
+    )
+
+    # Print success summary
+    print(f"✓ {test_name}:")
+    print(f"  • Input files: IDENTICAL")
+    print(f"  • Temp arrays: max_diff={float_comp['max_absolute_diff']:.4f} K")
 
 
 # ==============================================================================

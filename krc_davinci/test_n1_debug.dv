@@ -1,0 +1,47 @@
+#!/Applications/davinci.app/Contents/Resources/bin/davinci -f
+
+# Test script to debug N1 calculation
+# Call the krc_evalN1 function directly with the same parameters as the test case
+
+RLAY = 1.15
+FLAY = 0.1
+INERTIA = 200.0
+SPEC_HEAT = 609.906
+DENSITY = 1181.8182
+DELJUL = 1.9083
+N5 = 1080
+JDISK = 721
+MAXN1 = 100
+PERIOD = 1.0260
+INERTIA2 = 1200.0
+SPEC_HEAT2 = 609.906
+DENSITY2 = 1890.9091
+THICK = 0.3
+
+printf("Calling krc_evalN1 with:\n")
+printf("  INERTIA=%f, INERTIA2=%f\n", INERTIA, INERTIA2)
+printf("  DENSITY=%f, DENSITY2=%f\n", DENSITY, DENSITY2)
+printf("  SPEC_HEAT=%f, SPEC_HEAT2=%f\n", SPEC_HEAT, SPEC_HEAT2)
+printf("  THICK=%f, RLAY=%f, FLAY=%f\n", THICK, RLAY, FLAY)
+printf("  PERIOD=%f, DELJUL=%f\n", PERIOD, DELJUL)
+printf("\n")
+
+result = krc_evalN1(RLAY, FLAY, INERTIA, SPEC_HEAT, DENSITY, DELJUL, N5, JDISK, MAXN1, PERIOD, INERTIA2, SPEC_HEAT2, DENSITY2, THICK, "T")
+
+printf("\nResult:\n")
+printf("  N1 = %d\n", result.req.N1)
+printf("  IC2 = %d\n", result.req.IC2)
+printf("  FLAY = %f\n", result.req.FLAY)
+printf("  Depth required = %f m\n", result.Depth)
+
+# Print details about layers near the transition
+printf("\nLayer details around stopping point:\n")
+for(i=1; i<=min(cat(result.req.N1, 42, axis=x)); i+=1) {
+    if(i >= 35 || i <= 5) {
+        printf("  Layer %2d: CENTER_DEPTH=%8.3f m, THICKNESS=%8.3f m, DSD=%8.3f m\n",
+               i,
+               result.layer.m.center_depth[1,1,i],
+               result.layer.m.thickness[1,1,i],
+               result.thermal_scales[1,1,i])
+    }
+}

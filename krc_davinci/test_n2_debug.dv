@@ -1,0 +1,24 @@
+#!/Applications/davinci.app/Contents/Resources/bin/davinci -f
+
+# Test script to debug N2 calculation
+
+FLAY = 0.084873  # Updated FLAY from krc_evalN1
+INERTIA = 200.0
+DENSITY = 1181.8182
+SPEC_HEAT = 609.906
+PERIOD = 1.0260
+N24 = 96
+MAXN2 = 86400
+
+printf("Calling krc_evalN2 with:\n")
+printf("  FLAY=%f\n", FLAY)
+printf("  INERTIA=%f\n", INERTIA)
+printf("  DENSITY=%f\n", DENSITY)
+printf("  SPEC_HEAT=%f\n", SPEC_HEAT)
+printf("  PERIOD=%f\n", PERIOD)
+printf("  N24=%d\n", N24)
+printf("\n")
+
+N2 = krc_evalN2(FLAY, INERTIA, DENSITY, SPEC_HEAT, PERIOD, N24, MAXN2)
+
+printf("Result: N2 = %d\n", N2)

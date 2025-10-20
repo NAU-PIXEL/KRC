@@ -2,7 +2,7 @@
 
 import numpy as np
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union, List, Dict, Any
 from .data_loaders import read_vicar_image
 from .config import get_paths
 
@@ -189,3 +189,101 @@ def get_ancillary_data(lat: float, lon: float) -> dict:
         'albedo': lookup_albedo(lat, lon),
         'inertia': lookup_inertia(lat, lon)
     }
+
+
+def load_ancillary_data(
+    body: str,
+    lat: float,
+    lon: float,
+    ALBEDO: Optional[float],
+    ELEV: Optional[Union[float, List[float]]],
+    INERTIA: Optional[float],
+    master_params: Dict[str, Any],
+    verbose: bool
+) -> Tuple[float, Union[float, List[float]], Optional[float]]:
+    """
+    Load ancillary data (albedo, elevation, inertia) for Mars or apply defaults.
+
+    This consolidates lines 633-668 of the original krc() function,
+    implementing ancillary data lookup logic for Mars.
+
+    Parameters
+    ----------
+    body : str
+        Celestial body name
+    lat : float
+        Latitude (degrees)
+    lon : float
+        Longitude (degrees)
+    ALBEDO : float, optional
+        User-specified albedo (skips lookup)
+    ELEV : float or list, optional
+        User-specified elevation (skips lookup)
+    INERTIA : float, optional
+        User-specified thermal inertia (skips lookup)
+    master_params : dict
+        Master.inp defaults
+    verbose : bool
+        Print details
+
+    Returns
+    -------
+    ALBEDO : float
+        Surface albedo
+    ELEV : float or list
+        Surface elevation (km)
+    INERTIA : float or None
+        Thermal inertia (J m⁻² K⁻¹ s⁻½), None if not set
+
+    Notes
+    -----
+    For Mars, tries to load TES albedo, MOLA elevation, and TES thermal inertia
+    from ancillary data files. Falls back to master.inp defaults if unavailable.
+
+    For non-Mars bodies, uses master.inp defaults.
+    """
+    if body == "Mars":
+        # Import ancillary data functions
+        try:
+            # Use ancillary data lookups if not explicitly provided
+            if ALBEDO is None:
+                ALBEDO = lookup_albedo(lat, lon)
+                if verbose:
+                    print(f"Using TES albedo from ancillary data: {ALBEDO:.4f}")
+
+            if ELEV is None:
+                ELEV = lookup_elevation(lat, lon)
+                if verbose:
+                    print(f"Using MOLA elevation from ancillary data: {ELEV:.2f} km")
+
+            # Load INERTIA from TES map if not explicitly provided (matches Davinci)
+            if INERTIA is None:
+                INERTIA = lookup_inertia(lat, lon)
+                if verbose:
+                    print(f"Using TES thermal inertia from ancillary data: {INERTIA:.1f}")
+        except Exception as e:
+            # Fall back to defaults if ancillary data unavailable
+            if verbose:
+                print(f"Warning: Could not load ancillary data ({e}), using defaults")
+            if ALBEDO is None:
+                ALBEDO = master_params.get("ALBEDO", 0.25)
+            if ELEV is None:
+                ELEV = 0.0
+    elif body == "Europa":
+        # Europa-specific defaults (Davinci lines 548-568)
+        if INERTIA is None:
+            INERTIA = 100.0
+        if ALBEDO is None:
+            ALBEDO = 0.67
+        if ELEV is None:
+            ELEV = 0.0
+    else:
+        # For all other bodies (Phobos, Moon, etc.) - Davinci lines 573-600
+        if INERTIA is None:
+            INERTIA = 100.0
+        if ALBEDO is None:
+            ALBEDO = 0.67
+        if ELEV is None:
+            ELEV = 0.0
+
+    return ALBEDO, ELEV, INERTIA

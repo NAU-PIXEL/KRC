@@ -1,11 +1,20 @@
 """
 Validation framework for comparing PyKRC output with krc.dvrc (Davinci interface).
 
-This module provides tools to validate that PyKRC produces identical results to the
-reference krc.dvrc Davinci implementation by comparing:
-- Input files (.inp)
-- Binary output files (t52, bin52)
-- Parsed output data
+TESTING PHILOSOPHY:
+This module enforces a two-tier validation hierarchy:
+
+1. PRIMARY: Identical input file generation (test FIRST)
+   - Input .inp files must match exactly (line-by-line)
+   - This is the single most important success metric
+   - Ensures Fortran receives identical instructions
+
+2. SECONDARY: Nearly identical temperature outputs (test SECOND)
+   - Temperature arrays must match in size and values (with tolerance)
+   - Element-wise comparison allows minor precision/rounding differences
+   - Typical tolerance: 0.01 K absolute, 1e-5 relative
+
+Both metrics must pass for overall validation success.
 
 Usage:
     from pykrc.interface_validator import KRCValidator
@@ -21,10 +30,10 @@ Usage:
         davinci_cmd='krc(lat=12.,ls=23.,INERTIA=100.)'
     )
 
-    # Check results
-    assert result["input_files_match"]
-    assert result["binary_files_match"]
-    assert result["output_data_match"]
+    # Check results (two-tier validation)
+    assert result["summary"]["input_files_identical"]  # PRIMARY
+    assert result["summary"]["temperature_arrays_match"]  # SECONDARY
+    assert result["summary"]["overall_pass"]  # Both must pass
 """
 
 import subprocess
@@ -42,55 +51,49 @@ from .config import set_krc_home
 
 
 class InputFileComparator:
-    """Compare KRC input files (.inp) for equivalence."""
+    """
+    Compare KRC input files (.inp) for exact equivalence.
 
-    @staticmethod
-    def normalize_line(line: str) -> str:
-        """Normalize a line for comparison (handle floating point variations)."""
-        # Strip comments and whitespace
-        line = line.strip()
-        if not line or line.startswith('!'):
-            return ""
-
-        # Normalize floating point numbers to consistent precision
-        def replace_float(match):
-            try:
-                val = float(match.group(0))
-                return f"{val:.6e}"
-            except:
-                return match.group(0)
-
-        # Match floating point numbers
-        line = re.sub(r'[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?', replace_float, line)
-        return line
+    PRIMARY VALIDATION METRIC: Input files must match line-by-line.
+    This ensures Fortran KRC receives identical instructions.
+    """
 
     @staticmethod
     def compare_inp_files(file1: Path, file2: Path) -> Dict[str, Any]:
         """
-        Compare two KRC .inp files.
+        Compare two KRC .inp files with EXACT line-by-line matching.
+
+        This is the PRIMARY validation metric - input files must match exactly
+        to ensure Fortran receives identical instructions. No normalization
+        is performed; files must be byte-for-byte identical.
+
+        Args:
+            file1: First .inp file path
+            file2: Second .inp file path
 
         Returns:
             dict: Comparison results with:
-                - identical: bool
-                - differences: list of differences
-                - diff_text: unified diff
+                - identical: bool (True only if line-by-line identical)
+                - differences: list of line-by-line differences
+                - diff_text: unified diff showing exact mismatches
+                - line_count_file1: number of lines in file1
+                - line_count_file2: number of lines in file2
         """
         with open(file1) as f1, open(file2) as f2:
-            lines1 = [InputFileComparator.normalize_line(l) for l in f1]
-            lines2 = [InputFileComparator.normalize_line(l) for l in f2]
-
-        # Remove empty lines
-        lines1 = [l for l in lines1 if l]
-        lines2 = [l for l in lines2 if l]
+            lines1 = f1.readlines()
+            lines2 = f2.readlines()
 
         identical = lines1 == lines2
 
-        diff = list(difflib.unified_diff(
-            lines1, lines2,
-            fromfile=str(file1),
-            tofile=str(file2),
-            lineterm=''
-        ))
+        if not identical:
+            diff = list(difflib.unified_diff(
+                lines1, lines2,
+                fromfile=str(file1),
+                tofile=str(file2),
+                lineterm=''
+            ))
+        else:
+            diff = []
 
         return {
             "identical": identical,
@@ -206,12 +209,20 @@ class BinaryFileComparator:
         # Compare valid values
         valid_mask = valid1 & valid2
         diff = np.abs(data1[valid_mask] - data2[valid_mask])
-        rel_diff = diff / (np.abs(data1[valid_mask]) + 1e-10)
+
+        # Use the maximum of the two values as denominator to avoid division by near-zero
+        # This prevents huge relative differences when both values are tiny
+        denominator = np.maximum(np.abs(data1[valid_mask]), np.abs(data2[valid_mask]))
+        # Add epsilon only where denominator is actually zero
+        denominator = np.where(denominator > 0, denominator, 1e-10)
+        rel_diff = diff / denominator
 
         max_diff = np.max(diff) if len(diff) > 0 else 0
         max_rel_diff = np.max(rel_diff) if len(rel_diff) > 0 else 0
 
-        values_match = max_rel_diff < tolerance
+        # Use absolute difference for comparison (tolerance is in absolute units)
+        # For thermal models, absolute temperature/flux differences matter, not relative
+        values_match = max_diff < tolerance
 
         return {
             "identical": values_match,
@@ -225,12 +236,67 @@ class BinaryFileComparator:
 
 
 class OutputDataComparator:
-    """Compare parsed KRC output data structures."""
+    """
+    Compare parsed KRC output data structures.
+
+    SECONDARY VALIDATION METRIC: Temperature arrays must be nearly identical.
+    """
+
+    @staticmethod
+    def compare_temperature_arrays(arr1: np.ndarray, arr2: np.ndarray,
+                                   name: str = "surf_temp",
+                                   atol: float = 0.01,
+                                   rtol: float = 1e-5) -> Dict[str, Any]:
+        """
+        Compare temperature arrays with appropriate tolerances.
+
+        This is the SECONDARY validation metric - temperature arrays should be
+        nearly identical, allowing for minor precision/rounding differences.
+
+        Args:
+            arr1: First temperature array
+            arr2: Second temperature array
+            name: Array name (default: "surf_temp")
+            atol: Absolute tolerance in Kelvin (default: 0.01 K)
+            rtol: Relative tolerance (default: 1e-5)
+
+        Returns:
+            dict: Comparison results including match status and statistics
+        """
+        if arr1.shape != arr2.shape:
+            return {
+                "match": False,
+                "name": name,
+                "error": f"Array size mismatch: {arr1.shape} vs {arr2.shape}",
+                "size1": arr1.shape,
+                "size2": arr2.shape
+            }
+
+        # Element-wise comparison with tolerance
+        match = np.allclose(arr1, arr2, atol=atol, rtol=rtol)
+        diff = np.abs(arr1 - arr2)
+
+        return {
+            "match": match,
+            "name": name,
+            "shape": arr1.shape,
+            "max_abs_diff_K": float(np.max(diff)),
+            "mean_abs_diff_K": float(np.mean(diff)),
+            "median_abs_diff_K": float(np.median(diff)),
+            "num_elements": arr1.size,
+            "tolerance_atol_K": atol,
+            "tolerance_rtol": rtol
+        }
 
     @staticmethod
     def compare_arrays(arr1: np.ndarray, arr2: np.ndarray,
                       name: str, tolerance: float = 1e-6) -> Dict[str, Any]:
-        """Compare two numpy arrays."""
+        """
+        Compare two numpy arrays (generic comparison).
+
+        Note: For temperature arrays, prefer compare_temperature_arrays()
+        which uses appropriate tolerances and units.
+        """
         if arr1.shape != arr2.shape:
             return {
                 "match": False,
@@ -239,10 +305,14 @@ class OutputDataComparator:
             }
 
         diff = np.abs(arr1 - arr2)
-        rel_diff = diff / (np.abs(arr1) + 1e-10)
+
+        # Use maximum of the two values as denominator to avoid division by near-zero
+        denominator = np.maximum(np.abs(arr1), np.abs(arr2))
+        denominator = np.where(denominator > 0, denominator, 1e-10)
+        rel_diff = diff / denominator
 
         return {
-            "match": np.max(rel_diff) < tolerance,
+            "match": np.max(diff) < tolerance,  # Use absolute difference
             "name": name,
             "shape": arr1.shape,
             "max_abs_diff": float(np.max(diff)),
@@ -550,16 +620,25 @@ printf("Davinci KRC complete\\n")
             "binary_file_comparison": bin_comparison,
             "float_array_comparison": float_comparison,
             "summary": {
+                # Execution status
                 "both_succeeded": pykrc_success and davinci_success,
-                "input_files_match": inp_comparison["identical"] if inp_comparison else False,
+
+                # PRIMARY METRIC: Input file parity (must match exactly)
+                "input_files_identical": inp_comparison["identical"] if inp_comparison else False,
+
+                # SECONDARY METRIC: Temperature output parity (must match within tolerance)
+                "temperature_arrays_match": float_comparison["identical"] if float_comparison else False,
+
+                # Overall pass/fail based on BOTH metrics
+                "overall_pass": (
+                    pykrc_success and
+                    davinci_success and
+                    (inp_comparison["identical"] if inp_comparison else False) and  # PRIMARY must pass
+                    (float_comparison["identical"] if float_comparison else False)  # SECONDARY must pass
+                ),
+
+                # Additional metrics for detailed analysis
                 "binary_files_match": bin_comparison["identical"] if bin_comparison else False,
-                "float_arrays_match": float_comparison["identical"] if float_comparison else False,
-                "overall_match": (
-                    pykrc_success and davinci_success and
-                    # Only require output arrays to match, not input files
-                    # (PyKRC now properly filters changecards to only user-set params)
-                    (float_comparison["identical"] if float_comparison else False)
-                )
             }
         }
 
@@ -661,10 +740,12 @@ def run_validation_suite(validator: KRCValidator,
             tolerance=tolerance
         )
 
-        passed = result["summary"]["overall_match"]
+        passed = result["summary"]["overall_pass"]
         if passed:
             results["passed"] += 1
             print(f"  ✓ PASSED")
+            print(f"    • Input files: IDENTICAL")
+            print(f"    • Temp arrays: MATCH")
         else:
             results["failed"] += 1
             print(f"  ✗ FAILED")
@@ -672,6 +753,10 @@ def run_validation_suite(validator: KRCValidator,
                 print(f"    PyKRC error: {result['pykrc']['error']}")
             if result["davinci"]["error"]:
                 print(f"    Davinci error: {result['davinci']['error']}")
+            if not result["summary"]["input_files_identical"]:
+                print(f"    PRIMARY FAILURE: Input files do not match")
+            if not result["summary"]["temperature_arrays_match"]:
+                print(f"    SECONDARY FAILURE: Temperature arrays differ")
 
         results["tests"].append({
             "name": test["name"],

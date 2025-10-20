@@ -30,7 +30,7 @@ class TestKrcEvalN1:
 
     def test_standard_mars_run(self):
         """Test N1 for standard Mars parameters."""
-        N1 = krc_evalN1(
+        result = krc_evalN1(
             RLAY=MARS_RLAY,
             FLAY=MARS_FLAY,
             INERTIA=MARS_INERTIA,
@@ -42,6 +42,10 @@ class TestKrcEvalN1:
             MAXN1=MARS_MAXN1,
             PERIOD=MARS_PERIOD
         )
+        # Should return dict with N1, FLAY, RLAY, IC2
+        assert isinstance(result, dict)
+        assert 'N1' in result
+        N1 = result['N1']
         # Should be in reasonable range for Mars
         assert 25 <= N1 <= 100
         assert isinstance(N1, int)
@@ -53,13 +57,13 @@ class TestKrcEvalN1:
             SPEC_HEAT=MARS_SPEC_HEAT, DENSITY=MARS_DENSITY,
             DELJUL=MARS_DELJUL, N5=MARS_N5, JDISK=MARS_JDISK,
             MAXN1=MARS_MAXN1, PERIOD=MARS_PERIOD
-        )
+        )['N1']
         N1_low = krc_evalN1(
             RLAY=MARS_RLAY, FLAY=MARS_FLAY, INERTIA=50,
             SPEC_HEAT=MARS_SPEC_HEAT, DENSITY=MARS_DENSITY,
             DELJUL=MARS_DELJUL, N5=MARS_N5, JDISK=MARS_JDISK,
             MAXN1=MARS_MAXN1, PERIOD=MARS_PERIOD
-        )
+        )['N1']
 
         # Higher TI -> deeper skin depth -> more layers needed (or same if hitting minimum)
         assert N1_high >= N1_low
@@ -74,7 +78,7 @@ class TestKrcEvalN1:
             N5=108,  # 3 years at 10°/season
             JDISK=73,  # 2 years spinup
             MAXN1=MARS_MAXN1, PERIOD=MARS_PERIOD
-        )
+        )['N1']
 
         # Fine: 0.1° per season -> more seasons -> deeper penetration needed
         N1_fine = krc_evalN1(
@@ -84,7 +88,7 @@ class TestKrcEvalN1:
             N5=10800,  # 3 years at 0.1°/season
             JDISK=7201,  # 2 years spinup
             MAXN1=MARS_MAXN1, PERIOD=MARS_PERIOD
-        )
+        )['N1']
 
         # Fine resolution needs deeper model (more output time)
         assert N1_fine >= N1_coarse
@@ -97,14 +101,14 @@ class TestKrcEvalN1:
             DELJUL=1.0 * 1.0 / 360.0,  # 1 day period
             N5=1080, JDISK=721,
             MAXN1=100, PERIOD=1.0
-        )
+        )['N1']
         N1_slow = krc_evalN1(
             RLAY=MARS_RLAY, FLAY=MARS_FLAY, INERTIA=200,
             SPEC_HEAT=800, DENSITY=1500,
             DELJUL=100.0 * 1.0 / 360.0,  # 100 day period
             N5=1080, JDISK=721,
             MAXN1=100, PERIOD=100.0
-        )
+        )['N1']
 
         # Longer period -> deeper skin depth -> more layers (or same if hitting minimum)
         assert N1_slow >= N1_fast
@@ -117,7 +121,7 @@ class TestKrcEvalN1:
             DELJUL=100.0 * 0.01 / 360.0,
             N5=10800, JDISK=7201,
             MAXN1=50, PERIOD=100.0
-        )
+        )['N1']
         assert N1 <= 50
 
     def test_minn1_floor(self):
@@ -128,7 +132,7 @@ class TestKrcEvalN1:
             DELJUL=0.1 * 90.0 / 360.0,  # Short period, coarse resolution
             N5=12, JDISK=5,
             MAXN1=100, PERIOD=0.1
-        )
+        )['N1']
         assert N1 >= 25
 
 
@@ -240,7 +244,7 @@ class TestCheckStability:
         N1 = krc_evalN1(
             RLAY=1.08, FLAY=2.0, INERTIA=200, SPEC_HEAT=800, DENSITY=1500,
             DELJUL=1.9083, N5=1080, JDISK=721, MAXN1=100, PERIOD=1.0275
-        )
+        )['N1']
         N2 = krc_evalN2(
             FLAY=2.0, INERTIA=200, DENSITY=1500, SPEC_HEAT=800,
             PERIOD=1.0275, N24=24, MAXN2=10000
@@ -332,7 +336,7 @@ class TestIntegration:
             SPEC_HEAT=800, DENSITY=1500,
             DELJUL=DELJUL, N5=N5, JDISK=JDISK,
             MAXN1=100, PERIOD=PERIOD
-        )
+        )['N1']
 
         # Calculate N2
         N2 = krc_evalN2(
@@ -382,7 +386,7 @@ class TestIntegration:
                 N5=params["N5"],
                 JDISK=params["JDISK"],
                 PERIOD=params["PERIOD"]
-            )
+            )['N1']
 
             N2 = krc_evalN2(
                 FLAY=2.0,

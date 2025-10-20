@@ -1,6 +1,0 @@
-#!/Applications/davinci.app/Contents/Resources/bin/davinci -f
-
-# Auto-generated validation script
-# Note: KRC is loaded from ~/.dvrc which sources krc.dvrc
-result = krc(lat=0.,PTOTAL=0.5,TAUD=0.1,outdir="/tmp/krc_integration_test_ptotal_forces_taud_zero/davinci",KEEP="T")
-printf("Davinci KRC complete\n")

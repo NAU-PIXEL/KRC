@@ -63,7 +63,7 @@ USER_DEFAULTS: Dict[str, Any] = {
     'GGT': 1.0,             # Gradient timestep control
     'TPREDICT': 0.0,        # Temperature prediction (disabled)
     'MAXN1': 100,           # Max subsurface layers
-    'MAXN2': 1000,          # Max timesteps/day
+    'MAXN2': 86400,         # Max timesteps/day (86400 = seconds in a day, matches davinci)
     'auto_numerical': True, # Auto-calculate N1/N2
 
     # Atmosphere

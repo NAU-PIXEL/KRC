@@ -14,7 +14,7 @@ os.environ["KRC_HOME"] = str(KRC_HOME)
 sys.path.insert(0, str(KRC_HOME / "krc_python"))
 
 from pykrc.executor import KRCExecutor
-from pykrc.bin5_reader import load_bin5_with_metadata
+from pykrc.bin_parser import load_bin5_with_metadata
 
 
 def get_minimal_params():

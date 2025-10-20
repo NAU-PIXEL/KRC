@@ -464,9 +464,11 @@ class KRCExecutor:
                 else:
                     bool_val = bool(val)
 
-                # Write changecard if different from master.inp default OR touched by PORB
+                # Write changecard if different from master.inp default OR touched by PORB OR explicitly set by user
                 master_default = MASTER_INP_DEFAULTS.get(param_name, False)
-                if bool_val != master_default or param_name in porb_touched:
+                if (bool_val != master_default or
+                    param_name in porb_touched or
+                    (user_params and param_name in user_params)):
                     int_val = 1 if bool_val else 0
                     f.write(f"3 {i} {int_val} '{param_name}' /\n")
 
@@ -478,9 +480,11 @@ class KRCExecutor:
                 if param_name == "N4":
                     continue
                 val = int(params[param_name])
-                # Write if different from master.inp default OR touched by PORB
+                # Write if different from master.inp default OR touched by PORB OR explicitly set by user
                 if param_name in MASTER_INP_DEFAULTS:
-                    if val != MASTER_INP_DEFAULTS[param_name] or param_name in porb_touched:
+                    if (val != MASTER_INP_DEFAULTS[param_name] or
+                        param_name in porb_touched or
+                        (user_params and param_name in user_params)):
                         f.write(f"2 {i} {val} '{param_name}' /\n")
                 else:
                     # No default, always write
@@ -494,11 +498,13 @@ class KRCExecutor:
                 if params[param_name] is None:
                     continue
                 val = float(params[param_name])
-                # Write if different from master.inp default OR touched by PORB
+                # Write if different from master.inp default OR touched by PORB OR explicitly set by user
                 should_write = False
                 if param_name in MASTER_INP_DEFAULTS:
                     # Compare with small tolerance for floating point
-                    if abs(val - MASTER_INP_DEFAULTS[param_name]) > 1e-6 or param_name in porb_touched:
+                    if (abs(val - MASTER_INP_DEFAULTS[param_name]) > 1e-6 or
+                        param_name in porb_touched or
+                        (user_params and param_name in user_params)):
                         should_write = True
                 else:
                     # No default, always write
