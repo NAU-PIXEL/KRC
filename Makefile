@@ -329,15 +329,18 @@ ftnwrap64.so:	$(IDLOBJSALL)
 	$(SYSLIBS)
 #	 -lhk_fNumRec $(SYSLIBS)
 
-.PHONY : call cclean clean cleanall cleanidl
+# Build both KRC and PORB executables
+all: krc porbmn
+
+.PHONY : all call cclean clean cleanall cleanidl
 #
 # Make clean
 #
 clean:
-	- $(RM) $(KRCLIB)/*.o 
-cleanbin: 
+	- $(RM) $(KRCLIB)/*.o
+cleanbin:
 	- $(RM) krc
-	- $(RM) porb
+	- $(RM) porbmn
 
 cleanidl:
 	-unalias rm; cd idl/extern; rm -f *.o ftnwrap64.so

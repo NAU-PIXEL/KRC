@@ -163,16 +163,22 @@ def read_vicar_image(filepath: Path) -> np.ndarray:
 class KRCDataLoader:
     """Loader for KRC support data files with caching."""
 
-    def __init__(self, support_dir: Path):
+    def __init__(self, support_dir: Optional[Path] = None):
         """
         Initialize data loader.
 
         Parameters
         ----------
-        support_dir : Path
-            Path to the krc_support directory
+        support_dir : Path, optional
+            Path to the krc_support directory.
+            If None, automatically discovers path using config.get_paths().
         """
-        self.support_dir = Path(support_dir)
+        if support_dir is None:
+            # Auto-discover support directory using config
+            from .config import get_paths
+            self.support_dir = get_paths().support_dir
+        else:
+            self.support_dir = Path(support_dir)
         self.cache = DataCache()
 
     def load_standish_table(self) -> List[str]:

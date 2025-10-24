@@ -238,3 +238,29 @@ quit
 # Host: <UNKNOWN>   Cwd: /Users/chaberle/Documents/GitHab/KRC
 ###################################################
 quit
+###################################################
+# User: chaberle    Date:  Wed Oct 22 10:22:51 2025
+# Host: <UNKNOWN>   Cwd: /Users/chaberle/Documents/GitHab/KRC
+###################################################
+aa = krc(body="Mars", inertia=200)
+aa
+aa = krc(body="Mars", INERTIA=200)
+aa
+aa = krc(INERTIA=200.)
+aa = krc(lat=0.,INERTIA=200.)
+aa
+quit
+###################################################
+# User: chaberle    Date:  Thu Oct 23 10:28:36 2025
+# Host: <UNKNOWN>   Cwd: /Users/chaberle/Documents/GitHab/KRC
+###################################################
+krc(lat=0.,INERTIA=250.,material="Basalt",KEEP="T")
+krc()
+result = krc(lat=0.,INERTIA=250.,material="Basalt",KEEP="T")
+result = krc(lat=0.,INERTIA=250.,Mat1="Basalt",KEEP="T")
+###################################################
+# User: chaberle    Date:  Thu Oct 23 10:35:06 2025
+# Host: <UNKNOWN>   Cwd: /Users/chaberle/Documents/GitHab/KRC
+###################################################
+result = krc(lat=0.,INERTIA=250.,Mat1="basalt",KEEP="T")
+quit

@@ -1,0 +1,72 @@
+#!/Applications/davinci.app/Contents/Resources/bin/davinci -f
+
+# Test script to debug GD->JD conversion and DJUL calculation
+# This will help us understand the precision issues
+
+# Test case from test_integration_parity.py::test_gregorian_date
+GD = "1994-Feb-05"
+
+printf("Testing GD to JD conversion:\n")
+printf("  GD = %s\n", GD)
+
+# Convert GD to JD (per Davinci krc.dvrc line 330)
+JD = GD2JD(GD)
+printf("  JD = %.1f\n", JD)
+
+# Now calculate DJUL using the formula from line 409
+# DJUL=(JD-2451545)-DELJUL*(1+N5-JDISK)*(JDISK-1)/(N5-JDISK+1)
+
+# First, we need DELJUL from PORB
+# For Mars with DELLS=1.0, DELJUL should be calculated from orbital period
+# Per Davinci line 351: DELJUL=porb.krc.PERIOD/360.*DELLS
+
+# Load Mars PORB to get the correct DELJUL
+porb_data = porb("Mars")
+printf("\nPORB data for Mars:\n")
+printf("  DELJUL from PORB = %.6f\n", porb_data.krc.DELJUL)
+printf("  PERIOD from PORB = %.4f days\n", porb_data.krc.PERIOD)
+printf("  Orbital period = %.2f days\n", 687.0)
+
+# Calculate DELJUL from orbital period
+DELLS = 1.0
+orbital_period = 687.0
+DELJUL_calc = orbital_period / 360.0 * DELLS
+printf("  DELJUL calculated (orbital_period/360*DELLS) = %.6f\n", DELJUL_calc)
+
+# Use the PORB value for the calculation
+DELJUL = porb_data.krc.DELJUL
+N5 = 1080
+JDISK = 721
+J2000 = 2451545.0
+
+# Calculate DJUL using Davinci formula (line 409)
+DJUL = (JD - J2000) - DELJUL * (1 + N5 - JDISK) * (JDISK - 1) / (N5 - JDISK + 1)
+
+printf("\nDJUL calculation:\n")
+printf("  JD = %.1f\n", JD)
+printf("  J2000 = %.1f\n", J2000)
+printf("  JD - J2000 = %.1f\n", JD - J2000)
+printf("  N5 = %d\n", N5)
+printf("  JDISK = %d\n", JDISK)
+printf("  DELJUL = %.6f\n", DELJUL)
+printf("  (1 + N5 - JDISK) = %d\n", (1 + N5 - JDISK))
+printf("  (JDISK - 1) = %d\n", (JDISK - 1))
+printf("  (N5 - JDISK + 1) = %d\n", (N5 - JDISK + 1))
+printf("  DELJUL * (1+N5-JDISK) * (JDISK-1) / (N5-JDISK+1) = %.4f\n", DELJUL * (1 + N5 - JDISK) * (JDISK - 1) / (N5 - JDISK + 1))
+printf("  DJUL = %.4f\n", DJUL)
+
+printf("\nExpected from PyKRC:\n")
+printf("  DJUL = -3530.4830\n")
+printf("  Difference = %.4f days\n", DJUL - (-3530.4830))
+
+# Also test what krc() actually produces
+printf("\n" + "="*70 + "\n")
+printf("Now running full krc() to see what it actually writes:\n")
+printf("="*70 + "\n")
+
+result = krc(lat=12., GD="1994-Feb-05", KEEP="T", outdir="/tmp/test_gd_davinci")
+
+printf("\nChecking what was written to input file:\n")
+system("grep -A 1 'DJUL' /tmp/test_gd_davinci/krc.inp | head -2")
+system("grep -A 1 'DELJUL' /tmp/test_gd_davinci/krc.inp | head -2")
+system("grep -A 1 'LKEY' /tmp/test_gd_davinci/krc.inp | head -2")

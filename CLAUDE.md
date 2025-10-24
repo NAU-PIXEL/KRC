@@ -529,6 +529,9 @@ pytest krc_python/tests/test_davinci_parity.py -v
 # Run numerical tests
 pytest krc_python/tests/test_numerical.py -v
 
+# Run full suite of validation tests
+cd krc_python && python -m pytest tests/test_integration_parity.py -v --summary-report=test_summary.md
+
 # Check for broken imports (from cleanup analysis)
 python -c "from pykrc import bin5_reader"  # This will fail - module doesn't exist
 ```

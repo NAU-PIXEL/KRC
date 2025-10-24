@@ -58,10 +58,10 @@ USER_DEFAULTS: Dict[str, Any] = {
     'body': 'Mars',         # Default planet
 
     # Numerical control
-    'N3': 1,                # Convergence iterations (Davinci default)
-    'NRSET': 0,             # Reset counter
+    'N3': 15,               # Convergence iterations (Davinci default for normal operation)
+    'NRSET': 3,             # Reset counter (Davinci default)
     'GGT': 1.0,             # Gradient timestep control
-    'TPREDICT': 0.0,        # Temperature prediction (disabled)
+    'TPREDICT': 1.0,        # Temperature prediction (enabled by default per Davinci)
     'MAXN1': 100,           # Max subsurface layers
     'MAXN2': 86400,         # Max timesteps/day (86400 = seconds in a day, matches davinci)
     'auto_numerical': True, # Auto-calculate N1/N2
@@ -139,9 +139,13 @@ PORB_DEFAULTS: Dict[str, Any] = {
 # This ensures proper Davinci parity.
 
 PORB_TOUCHED_PARAMS: Set[str] = {
-    'EMISS', 'TDEEP', 'TAUD', 'DJUL', 'SLOPE', 'SLOAZI', 'TFROST',
-    'PhotoFunc', 'FLAY', 'RLAY', 'IIB', 'IC2', 'KPREF', 'JBARE',
+    'EMISS', 'TDEEP', 'TAUD', 'DJUL', 'SLOPE', 'SLOAZI',
+    'PhotoFunc', 'FLAY', 'RLAY', 'IIB', 'IC2', 'JBARE',
     'LVFT', 'LKofT', 'LZONE', 'K4OUT', 'TUN_Flx15'
+    # Note: KPREF is only PORB-touched for Mars (added dynamically in porb_handler.py)
+    # Note: TFROST is NOT in this global set - it's added body-specifically:
+    #   - Mars: TFROST=146.0 added to porb_touched in porb_handler.py
+    #   - Europa/generic: TFROST=0.0 added to logic_touched in core.py
 }
 
 
@@ -155,6 +159,28 @@ TPREDICT_STABILITY_OVERRIDES: Dict[str, Any] = {
     'GGT': 99.0,    # Disable gradient timestep control
     'N3': 1,        # Single iteration
     'NRSET': 999,   # Disable reset
+}
+
+
+# ============================================================================
+# POINT MODE (T→TI INVERSION) DEFAULTS
+# ============================================================================
+# When T parameter is provided, KRC enters "one-point simulation mode" for
+# temperature-to-thermal-inertia inversion (Davinci krc.dvrc lines 763-776)
+
+POINT_MODE_DEFAULTS: Dict[str, Any] = {
+    'DELLS': 8,      # Standard one-point Ls spacing (Davinci line 774)
+    'N24': 96,       # Point mode uses 96 outputs per day (15-minute intervals)
+    'TUN8': 0,       # Disable temperature-with-depth output (Davinci line 770)
+    'TUN_Flx15': 0,  # Disable flux output (Davinci line 771)
+}
+
+# TI lookup table generation parameters
+# Per Davinci krc.dvrc lines 1193-1208
+POINT_MODE_TI_TABLE: Dict[str, Any] = {
+    'start_value': 6,       # Starting TI value
+    'exponent': 0.6313,     # Exponential spacing factor
+    'steps': 41,            # Number of TI values to test
 }
 
 

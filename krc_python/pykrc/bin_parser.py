@@ -415,15 +415,28 @@ def parse_bin52(
     down_vis_list = []
     down_ir_list = []
 
-    for i in range(n_time):
-        # data_raw[i][field] gives (lat, season, case) array
-        # Extract season range [start_season:start_season+n_output_seasons]
-        # For single latitude: lat_idx=0, case_idx=0
-        surf_list.append(data_raw[i][0][0, start_season:start_season+n_output_seasons, 0])
-        bol_list.append(data_raw[i][1][0, start_season:start_season+n_output_seasons, 0])
-        tatm_list.append(data_raw[i][2][0, start_season:start_season+n_output_seasons, 0])
-        down_vis_list.append(data_raw[i][3][0, start_season:start_season+n_output_seasons, 0])
-        down_ir_list.append(data_raw[i][4][0, start_season:start_season+n_output_seasons, 0])
+    if one_point and n_cases > 1:
+        # Point mode with multiple cases: extract ALL cases
+        # Each case represents a different TI value
+        for i in range(n_time):
+            # Extract all cases for this hour
+            # Shape will be (n_output_seasons, n_cases)
+            surf_list.append(data_raw[i][0][0, start_season:start_season+n_output_seasons, :])
+            bol_list.append(data_raw[i][1][0, start_season:start_season+n_output_seasons, :])
+            tatm_list.append(data_raw[i][2][0, start_season:start_season+n_output_seasons, :])
+            down_vis_list.append(data_raw[i][3][0, start_season:start_season+n_output_seasons, :])
+            down_ir_list.append(data_raw[i][4][0, start_season:start_season+n_output_seasons, :])
+    else:
+        # Normal mode: extract only case 0
+        for i in range(n_time):
+            # data_raw[i][field] gives (lat, season, case) array
+            # Extract season range [start_season:start_season+n_output_seasons]
+            # For single latitude: lat_idx=0, case_idx=0
+            surf_list.append(data_raw[i][0][0, start_season:start_season+n_output_seasons, 0])
+            bol_list.append(data_raw[i][1][0, start_season:start_season+n_output_seasons, 0])
+            tatm_list.append(data_raw[i][2][0, start_season:start_season+n_output_seasons, 0])
+            down_vis_list.append(data_raw[i][3][0, start_season:start_season+n_output_seasons, 0])
+            down_ir_list.append(data_raw[i][4][0, start_season:start_season+n_output_seasons, 0])
 
     # Convert to numpy arrays
     out['surf'] = np.array(surf_list).squeeze()

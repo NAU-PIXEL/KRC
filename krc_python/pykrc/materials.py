@@ -42,7 +42,7 @@ class MaterialCoefficients:
 
 # Material database
 MATERIAL_DATABASE: Dict[str, MaterialCoefficients] = {
-    "H2O": MaterialCoefficients(
+    "h2o": MaterialCoefficients(
         # Specific heat (Giauque & Stout 1936)
         Sph0=1704.57, Sph1=713.339, Sph2=110.694, Sph3=75.7506,
         Cp_Tmin=15.0, Cp_Tmax=273.0,
@@ -76,7 +76,7 @@ MATERIAL_DATABASE: Dict[str, MaterialCoefficients] = {
         Dens_Ref="Heuze (1983) Int. J. Rock Mech. Mining Sci. 20, 3-10",
     ),
 
-    "CO2": MaterialCoefficients(
+    "co2": MaterialCoefficients(
         # Specific heat (Solar System Ices)
         Sph0=1399.88, Sph1=652.64, Sph2=432.015, Sph3=192.398,
         Cp_Tmin=50.0, Cp_Tmax=230.0,
@@ -103,6 +103,7 @@ def get_material_properties(material: str) -> MaterialCoefficients:
     ----------
     material : str
         Material name (e.g., "basalt", "H2O", "CO2")
+        Case-insensitive.
 
     Returns
     -------
@@ -114,12 +115,15 @@ def get_material_properties(material: str) -> MaterialCoefficients:
     ValueError
         If material is not in database
     """
-    if material not in MATERIAL_DATABASE:
+    # Normalize to lowercase for case-insensitive lookup
+    material_lower = material.lower()
+
+    if material_lower not in MATERIAL_DATABASE:
         raise ValueError(
             f"Unknown material: {material}. "
             f"Available: {list(MATERIAL_DATABASE.keys())}"
         )
-    return MATERIAL_DATABASE[material]
+    return MATERIAL_DATABASE[material_lower]
 
 
 def calculate_specific_heat(T: float, coeffs: MaterialCoefficients) -> float:
@@ -478,26 +482,20 @@ def calculate_material_properties(
             "SPEC_HEAT": SPEC_HEAT,
         }
 
-        # Generate T-dependent coefficients if requested
-        if LKofT:
-            # Use calculate_thermal_properties to get coefficients
-            temp_props = calculate_thermal_properties(Mat1, INERTIA, T_user, k_style)
-            upper_props.update({
-                "ConUp0": temp_props["ConUp0"],
-                "ConUp1": temp_props["ConUp1"],
-                "ConUp2": temp_props["ConUp2"],
-                "ConUp3": temp_props["ConUp3"],
-                "SphUp0": temp_props["SphUp0"],
-                "SphUp1": temp_props["SphUp1"],
-                "SphUp2": temp_props["SphUp2"],
-                "SphUp3": temp_props["SphUp3"],
-            })
-        else:
-            # Constant properties (no T-dependence)
-            upper_props.update({
-                "ConUp0": COND, "ConUp1": 0.0, "ConUp2": 0.0, "ConUp3": 0.0,
-                "SphUp0": SPEC_HEAT, "SphUp1": 0.0, "SphUp2": 0.0, "SphUp3": 0.0,
-            })
+        # ALWAYS generate T-dependent polynomial coefficients
+        # Per Davinci krc.dvrc lines 612-637, polynomial coefficients are ALWAYS calculated
+        # regardless of LKofT. The LKofT flag only tells Fortran whether to USE them.
+        temp_props = calculate_thermal_properties(Mat1, INERTIA, T_user, k_style)
+        upper_props.update({
+            "ConUp0": temp_props["ConUp0"],
+            "ConUp1": temp_props["ConUp1"],
+            "ConUp2": temp_props["ConUp2"],
+            "ConUp3": temp_props["ConUp3"],
+            "SphUp0": temp_props["SphUp0"],
+            "SphUp1": temp_props["SphUp1"],
+            "SphUp2": temp_props["SphUp2"],
+            "SphUp3": temp_props["SphUp3"],
+        })
     else:
         # Standard INERTIA-based approach
         if INERTIA is None:

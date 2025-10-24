@@ -648,9 +648,17 @@ def calculate_numerical_parameters(
                 SPEC_HEAT2 = None
                 DENSITY2 = None
 
+            # For exponential profiles (thick < 0), Davinci forces FLAY=0.15
+            # Per Davinci krc.dvrc line 1966
+            flay_for_calc = FLAY
+            if thick is not None and thick < 0:
+                flay_for_calc = 0.15
+                if verbose:
+                    print(f"  Exponential profile: forcing FLAY=0.15 for N1 calculation (per Davinci)")
+
             N1_result = krc_evalN1(
                 RLAY=RLAY,
-                FLAY=FLAY,
+                FLAY=flay_for_calc,
                 INERTIA=INERTIA,
                 SPEC_HEAT=cp_for_N1,
                 DENSITY=dens_for_N1,
