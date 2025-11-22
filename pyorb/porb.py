@@ -8,8 +8,38 @@ import numpy as np
 import spiceypy as spice
 import datetime
 import constants as const
+import defaults 
 
-def get_orbital_elements(metakernel, body_naifid, epoch_date):
+def get_orbital_naifid(metakernel, body_naifid, epoch_date):
+    '''
+    Use spice to determine if the specified body orbits the sun. If it does, return the 
+    body's naifid, and if not, return the naifid of whatever parent body does orbit the sun.
+    For KRC purposes, we only care about the orbit of the parent body (or, more precisely, the system barycenter).
+    Returns:
+    orbital_id (int) : The NAIF id to be used in calculating the specified body's orbit around the sun.
+    '''
+    spice.furnsh(metakernel)
+    et = spice.datetime2et(epoch_date)
+
+    handle, descr, ident = spice.spksfs(body_naifid, et, 40) 
+    dc, ic = spice.dafus(descr, 2, 6)
+    center_id = ic[1]
+
+    ### TODO: make this work for binary asteroids.
+    if center_id in (0, 10):
+        # body orbits sun
+        orbital_id = body_naifid
+    else:
+        # body does not orbit the sun
+        orbital_id = center_id
+
+    # comments = spice.dafec(handle,100, 100)[1]
+    # # is SPK source JPL Horizons?
+    # from_horizons = 'Horizons On-Line Ephemeris System' in '\t'.join(comments)
+
+    return orbital_id
+
+def get_orbital_elements(metakernel, orbital_naifid, epoch_date):
     '''
     Use spice to get the keplerian(?) orbital elements for a specified body.
     returns a tuple of floats:
@@ -26,27 +56,8 @@ def get_orbital_elements(metakernel, body_naifid, epoch_date):
     et = spice.datetime2et(epoch_date)
     epoch_JD = float(spice.et2utc(et,'J', 6).split(' ')[-1])
 
-    if body_naifid > 10000:
-        body_spk_num = body_naifid - 2000000 + 20000000 #JPL horizons spks use 20 million offset instead of 2 million. what the hell??
-    else: body_spk_num = body_naifid
-
-    handle, descr, ident = spice.spksfs(body_spk_num, et, 40) 
-    dc, ic = spice.dafus(descr, 2, 6)
-    center_id = ic[1]
-
-    if center_id in (0, 10):
-        # body orbits sun
-        orbital_id = body_spk_num
-    else:
-        # body does not orbit the sun
-        orbital_id = center_id
-
-    # comments = spice.dafec(handle,100, 100)[1]
-    # # is SPK source JPL Horizons?
-    # from_horizons = 'Horizons On-Line Ephemeris System' in '\t'.join(comments)
-
     # get the state vector of body (or its system barycenter) relative to sun.
-    state_vector = spice.spkezr(str(orbital_id), et, 'ECLIPJ2000', 'NONE', 'SUN')[0]
+    state_vector = spice.spkezr(str(orbital_naifid), et, 'ECLIPJ2000', 'NONE', 'SUN')[0]
 
     # get orbital elements of body relative to sun
     elts = spice.oscelt(state_vector, et, const.mu)
@@ -60,7 +71,7 @@ def get_orbital_elements(metakernel, body_naifid, epoch_date):
 
     return (long_of_asc_node, eccentricity, inclination, arg_of_peri, mean_anomaly, semimajor_axis, epoch_JD)
 
-def get_spin_axis(metakernel, body_naifid, epoch_date):
+def get_spin_axis(metakernel, body_naifid):
     '''
     Calculates the spin axis using spice kernels.
     returns tuple of floats:
@@ -70,21 +81,28 @@ def get_spin_axis(metakernel, body_naifid, epoch_date):
     pole_dec:               declination of spin axis in J2000 frame [radians]
     '''    
     spice.furnsh(metakernel)
-    et = spice.datetime2et(epoch_date)
+
+    ### This translates the new-style 8-9 digit asteroid naifIDs to the old-style 7-digit ones.
+    #   Currently, the latest PCK (pck00011.tpc) uses only 7-digit asteroid IDs.
+    if len(str(body_naifid))>=8:
+        pck_naifid=int("2"+str(body_naifid)[-6:])
+    else: pck_naifid = body_naifid
 
     #pm: prime meridian
-    body_pm = spice.bodvcd(body_naifid, 'PM', 3)[1]
+    body_pm = spice.bodvcd(pck_naifid, 'PM', 3)[1]
+
+    # WO    : rotational phase (angle of prime meridian) at J2000 epoch [degrees]
     phase_at_j2000  = body_pm[0]
+    # WDOT  : rotation rate in [degrees/24 hours]
     rotation_rate   = body_pm[1]
 
-    # SIDAY : Rotation period in Earth days.
+    # ZBAB  : right ascension of spin axis in J2000 frame [radians]
+    pole_ra  = spice.bodvcd(pck_naifid, 'POLE_RA',  3)[1][0]
+    # ZBAA  : declination of spin axis in J2000 frame [radians]
+    pole_dec = spice.bodvcd(pck_naifid, 'POLE_DEC', 3)[1][0]
+
+    # SIDAY : Rotation period in hours.
     rotation_period = (360.*24)/rotation_rate
-
-    body_frame_name = spice.cidfrm(body_naifid, 33)[1]
-    pole_axis_body = [0, 0, 1]
-    pole_axis_j2000 = np.matmul(spice.pxform(body_frame_name, 'J2000', et), pole_axis_body)
-
-    _, pole_ra, pole_dec = spice.recrad(pole_axis_j2000)
 
     return (rotation_period, phase_at_j2000, pole_ra, pole_dec)
 
@@ -220,55 +238,70 @@ def format_output(out: dict, verbose=False):
     '''
     out_str = ''
     if verbose:
-        out_str += f'<--VERSION---> <--generation date->           IPLAN      TC orbit:pole\n'
-        out_str += f'PORB:{out['porb_version']} {out['generation_date']} IPLAN,TC= {out['PLANUM']:5.4g} {out['TC']:7.5g} {out['NAME']}:{out['NAME']}\n'
-        out_str += f'     PLANUM             Tc           RODE           CLIN           ARGP\n'
-        out_str += f' {out['PLANUM']:10.7g}     {out['TC']:10.7g}     {out['RODE']:10.7g}      {out['CLIN']:.7E} {out['ARGP']:10.7f}\n'
-        out_str += f'       XECC            SJA           EOBL          SFLAG           ZBAA\n'
-        out_str += f'  {out['XECC']:.7E} {out['SJA']:10.7g}     {out['EOBL']:10.7g}     {out['SFLAG']:10.7g}     {out['ZBAA']:10.7g}\n'
-        out_str += f'       ZBAB           WDOT             WO        OPERIOD            TJP\n'
-        out_str += f' {out['ZBAB']:10.7g}     {out['WDOT']:10.7g}     {out['WO']:10.7g}     {out['OPERIOD']:10.7g}     {out['TJP']:10.7g}\n'
-        out_str += f'      SIDAY          spare            TAV           BLIP           PBUG\n'
-        out_str += f' {out['SIDAY']:10.7g}     {out['spar17']:10.7g}     {out['TAV']:10.7g}     {out['BLIP']:10.7g}     {out['PBUG']:10.7g}\n'
-        out_str += f'      spare         BFRM 1              2              3              4\n'
-        out_str += f' {out['spar21']:10.7g}     {out['BFRM 1']:10.7g}     {out['BFRM 2']:10.7g}     {out['BFRM 3']:10.7g}     {out['BFRM 4']:10.7g}\n'
-        out_str += f'          5              6              7              8         BFRM 9\n'
-        out_str += f' {out['BFRM 5']:10.7g}     {out['BFRM 6']:10.7g}     {out['BFRM 7']:10.7g}     {out['BFRM 8']:10.7g}     {out['BFRM 9']:10.7g}\n'
+        out_str += f"<--VERSION---> <--generation date->           IPLAN      TC orbit:pole\n"
+        out_str += f"PORB:{out['porb_version']} {out['generation_date']} IPLAN,TC= {out['PLANUM']:5d} {out['TC']:7.5g} {out['NAME']}:{out['NAME']}\n"
+        out_str += f"     PLANUM             Tc           RODE           CLIN           ARGP\n"
+        out_str += f" {out['PLANUM']:10d}     {out['TC']:10.7g}     {out['RODE']:10.7g}      {out['CLIN']:.7E} {out['ARGP']:10.7f}\n"
+        out_str += f"       XECC            SJA           EOBL          SFLAG           ZBAA\n"
+        out_str += f"  {out['XECC']:.7E} {out['SJA']:10.7g}     {out['EOBL']:10.7g}     {out['SFLAG']:10.7g}     {out['ZBAA']:10.7g}\n"
+        out_str += f"       ZBAB           WDOT             WO        OPERIOD            TJP\n"
+        out_str += f" {out['ZBAB']:10.7g}     {out['WDOT']:10.7g}     {out['WO']:10.7g}     {out['OPERIOD']:10.7g}     {out['TJP']:10.7g}\n"
+        out_str += f"      SIDAY          spare            TAV           BLIP           PBUG\n"
+        out_str += f" {out['SIDAY']:10.7g}     {out['spar17']:10.7g}     {out['TAV']:10.7g}     {out['BLIP']:10.7g}     {out['PBUG']:10.7g}\n"
+        out_str += f"      spare         BFRM 1              2              3              4\n"
+        out_str += f" {out['spar21']:10.7g}     {out['BFRM 1']:10.7f}     {out['BFRM 2']:10.7f}     {out['BFRM 3']:10.7f}     {out['BFRM 4']:10.7f}\n"
+        out_str += f"          5              6              7              8         BFRM 9\n"
+        out_str += f" {out['BFRM 5']:10.7f}     {out['BFRM 6']:10.7f}     {out['BFRM 7']:10.7f}     {out['BFRM 8']:10.7f}     {out['BFRM 9']:10.7f}\n"
 
     else:
-        out_str += f'PORB:{out['porb_version']} {out['generation_date']} IPLAN,TC= {out['PLANUM']:5.4g} {out['TC']:7.5g} {out['NAME']}:{out['NAME']}\n'
-        out_str += f' {out['PLANUM']:10.7g}     {out['TC']:10.7g}     {out['RODE']:10.7g}      {out['CLIN']:.7E} {out['ARGP']:10.7f}\n'
-        out_str += f'  {out['XECC']:.7E} {out['SJA']:10.7g}     {out['EOBL']:10.7g}     {out['SFLAG']:10.7g}     {out['ZBAA']:10.7g}\n'
-        out_str += f' {out['ZBAB']:10.7g}     {out['WDOT']:10.7g}     {out['WO']:10.7g}     {out['OPERIOD']:10.7g}     {out['TJP']:10.7g}\n'
-        out_str += f' {out['SIDAY']:10.7g}     {out['spar17']:10.7g}     {out['TAV']:10.7g}     {out['BLIP']:10.7g}     {out['PBUG']:10.7g}\n'
-        out_str += f' {out['spar21']:10.7g}     {out['BFRM 1']:10.7g}     {out['BFRM 2']:10.7g}     {out['BFRM 3']:10.7g}     {out['BFRM 4']:10.7g}\n'
-        out_str += f' {out['BFRM 5']:10.7g}     {out['BFRM 6']:10.7g}     {out['BFRM 7']:10.7g}     {out['BFRM 8']:10.7g}     {out['BFRM 9']:10.7g}\n'
+        out_str += f"PORB:{out['porb_version']} {out['generation_date']} IPLAN,TC= {out['PLANUM']:5.4g} {out['TC']:7.5g} {out['NAME']}:{out['NAME']}\n"
+        out_str += f" {out['PLANUM']:10.7g}     {out['TC']:10.7g}     {out['RODE']:10.7g}      {out['CLIN']:.7E} {out['ARGP']:10.7f}\n"
+        out_str += f"  {out['XECC']:.7E} {out['SJA']:10.7g}     {out['EOBL']:10.7g}     {out['SFLAG']:10.7g}     {out['ZBAA']:10.7g}\n"
+        out_str += f" {out['ZBAB']:10.7g}     {out['WDOT']:10.7g}     {out['WO']:10.7g}     {out['OPERIOD']:10.7g}     {out['TJP']:10.7g}\n"
+        out_str += f" {out['SIDAY']:10.7g}     {out['spar17']:10.7g}     {out['TAV']:10.7g}     {out['BLIP']:10.7g}     {out['PBUG']:10.7g}\n"
+        out_str += f" {out['spar21']:10.7g}     {out['BFRM 1']:10.7f}     {out['BFRM 2']:10.7f}     {out['BFRM 3']:10.7f}     {out['BFRM 4']:10.7f}\n"
+        out_str += f" {out['BFRM 5']:10.7f}     {out['BFRM 6']:10.7f}     {out['BFRM 7']:10.7f}     {out['BFRM 8']:10.7f}     {out['BFRM 9']:10.7f}\n"
 
     return out_str
 
-def main():
+def main(body_name, body_naifid, metakernel, epoch_date, verbose=True):
+    '''
+    Generate the standard PORB output for a specified body, at some epoch, using 
+    SPICE kernels. Return the formatted output using PORB's standard FORTRAN style formatting.
+    '''
+
+    # Determine orbital elements for either the specified body, or, if the 
+    # specified body is a satellite, its sun-orbiting parent.
+    orbital_naifid = get_orbital_naifid(metakernel, body_naifid, epoch_date)
+    orb_elems = get_orbital_elements(metakernel, orbital_naifid, epoch_date)
+
+    # Determine the parameters defining the specified body's spin axis.
+    try:
+        spin_axis = get_spin_axis(metakernel, body_naifid)
+    except spice.utils.exceptions.SpiceKERNELVARNOTFOUND:
+        print(f'WARNING!')
+        print(f'No spin axis info found for body: {body_name} in PCK from metakernel: {metakernel}')
+        print(f'Make sure PCK has data for this body, or specify spin axis directly. (not yet implemented!)')
+        print(f'Using default spin axis (24 period, aligned w/ ecliptic)')
+        print()
+        spin_axis = defaults.spin_axis
+
+    # Generate the parameters used for standard PORB output. 
+    out  = get_porb_params(body_name, body_naifid, orb_elems, spin_axis)
+
+    return format_output(out, verbose=verbose)
+
+if __name__ == '__main__':
     # Include headers in output?
     verbose = True
 
-    body_names      = ['Ceres', 'Mars', 'Deimos'] #, 'Chimaera')
-    body_naifids    = [2000001, 499, 402] #, 20000623)
+    body_names      = ['Ceres', 'Mars', 'Deimos', 'Didymos', 'Dimorphos', 'Chimaera']
+    body_naifids    = [20000001, 499, 402, 920065803, 120065803, 20000623]
 
     # epoch at which to calculate orbital params (must be covered by available kernels)
-    epoch_date = datetime.datetime(2025,1,1,0,0,0)
-    metakernel = '/home/nsmith/KRC/kernels/mk/krc_default.tm'
+    epoch_date = datetime.datetime(2024,11,1,0,0,0)
+    metakernel = '/home/nsmith/KRC/pyorb/kernels/mk/krc_default.tm'
     
     for i in range(len(body_names)):
-        body_name = body_names[i]
-        body_naifid = body_naifids[i]
-
-        orb_elems = get_orbital_elements(metakernel, body_naifid, epoch_date)
-        spin_axis = get_spin_axis(metakernel, body_naifid, epoch_date)
-        out  = get_porb_params(body_name, body_naifid, orb_elems, spin_axis)
-
         print()
-        print(format_output(out), verbose=verbose)
-
-    return
-
-if __name__ == '__main__':
-    main()
+        print(main(body_names[i], body_naifids[i], metakernel, epoch_date, verbose=verbose))
