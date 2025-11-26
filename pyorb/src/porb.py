@@ -8,6 +8,7 @@ import numpy as np
 import spiceypy as spice
 import datetime
 import constants as const
+from kernel_mgmt import kernels_dir
 import defaults 
 
 def get_orbital_naifid(metakernel, body_naifid, epoch_date):
@@ -84,6 +85,7 @@ def get_spin_axis(metakernel, body_naifid):
 
     ### This translates the new-style 8-9 digit asteroid naifIDs to the old-style 7-digit ones.
     #   Currently, the latest PCK (pck00011.tpc) uses only 7-digit asteroid IDs.
+    #   For more info, see: https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/req/naif_ids.html#Asteroids
     if len(str(body_naifid))>=8:
         pck_naifid=int("2"+str(body_naifid)[-6:])
     else: pck_naifid = body_naifid
@@ -300,7 +302,7 @@ if __name__ == '__main__':
 
     # epoch at which to calculate orbital params (must be covered by available kernels)
     epoch_date = datetime.datetime(2024,11,1,0,0,0)
-    metakernel = '/home/nsmith/KRC/pyorb/kernels/mk/krc_default.tm'
+    metakernel = f'{kernels_dir}/mk/krc_default.tm'
     
     for i in range(len(body_names)):
         print()
