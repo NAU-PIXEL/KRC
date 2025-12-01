@@ -27,14 +27,29 @@ FC=gfortran
 
 # gcc version is used to decide compiler flags
 GCC_VERSION=$(shell $(FC) -dumpversion)
+UNAME:=$(shell uname)
+
+ifeq ($(UNAME), Linux)
 # 8 needs some special flags
-ifeq ($(GCC_VERSION), 8)
-FFLAGS= -fno-automatic -fno-second-underscore -fd-lines-as-comments -Wall -cpp
+	ifeq ($(GCC_VERSION), 8)
+		FFLAGS= -fno-automatic -fno-second-underscore -fd-lines-as-comments -Wall -cpp
 
 # All of the default GCC versions included with LTS systems work with these flags
-else
-FFLAGS= -fno-automatic -fno-second-underscore -fd-lines-as-comments -fallow-argument-mismatch -Wall -cpp
+	else
+		FFLAGS= -fno-automatic -fno-second-underscore -fd-lines-as-comments -fallow-argument-mismatch -Wall -cpp
+	endif
 endif
+
+ifeq ($(UNAME), Darwin)
+# Github actions provides gfortran 13, 14, and 15 in all MacOS images through Homebrew, but not a unified gfortran link.
+# We assume that users will have a general gfortran link set up, so this next assignment should only occur on the Action runner.
+	ifeq (, $(shell which gfortran))
+	FC=gfortran-13
+	endif
+	FFLAGS= -fno-automatic -fno-second-underscore -fd-lines-as-comments 		-fallow-argument-mismatch -Wall -cpp
+
+endif
+
 # Use 2nd version below to allow debugger and enable most IDBG actions
 #FFLAGS= -fno-automatic -fno-second-underscore -fd-lines-as-code  -fbounds-check # -Wall   #  -O
 
