@@ -20,13 +20,22 @@
 # 2019dec04 HK Change from $(KRCLIB)/wraper.f to  $(KRCLIB)/wraper8.f
 ####################################################
 
-SHELL=/bin/csh
+SHELL=/bin/bash
 RM=/bin/rm -f
 
 FC=gfortran
 
-# Use 2nd version below to allow debugger and enable most IDBG actions
+# gcc version is used to decide compiler flags
+GCC_VERSION=$(shell $(FC) -dumpversion)
+# 8 needs some special flags
+ifeq ($(GCC_VERSION), 8)
+FFLAGS= -fno-automatic -fno-second-underscore -fd-lines-as-comments -Wall -cpp
+
+# All of the default GCC versions included with LTS systems work with these flags
+else
 FFLAGS= -fno-automatic -fno-second-underscore -fd-lines-as-comments -fallow-argument-mismatch -Wall -cpp
+endif
+# Use 2nd version below to allow debugger and enable most IDBG actions
 #FFLAGS= -fno-automatic -fno-second-underscore -fd-lines-as-code  -fbounds-check # -Wall   #  -O
 
 # next line for fortrancallgraph-master
@@ -254,7 +263,7 @@ cclean:
 #########################################################################
 
 # Set up some shell-level specific variables
-SHELL=/bin/csh 
+SHELL=/bin/bash 
 
 #  These are the GNU C compiler flags.
 IDLCC= gcc -pipe  
@@ -332,7 +341,7 @@ cleanidl:
 	-unalias rm; cd idl/extern; rm -f *.o ftnwrap64.so
 
 cleandocs:
-	-unalias rm; cd doc_build; rm -f *; cd ../doc_output; rm -f *.pdf
+	-unalias rm; mkdir doc_build; cd doc_build; rm -f *; cd ../doc_output; rm -f *.pdf
 
 cleanall: cclean clean cleanbin cleanidl cleandocs
 
