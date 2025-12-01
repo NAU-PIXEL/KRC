@@ -9,6 +9,9 @@ import datetime
 import os.path as path
 import glob
 import re
+import json
+import base64
+import requests
 
 from urllib.request import urlretrieve
 from bs4 import BeautifulSoup
@@ -88,7 +91,7 @@ def update_naif_kernel(source:str, regex:str) -> str:
     all_current = np.array(glob.glob(f"{kernels_dir}/{kernel_type}/*"))              
     is_a_match=[bool(re.fullmatch(regex, path.basename(i))) for i in all_current]
     
-    if len(all_current)>0:
+    if len(all_current[is_a_match])>0:
         current = path.basename(np.sort(all_current[is_a_match])[-1]) 
     else: current = 'None'
 
@@ -111,9 +114,9 @@ def update_default_kernels():
     kernel names.
     '''
 
-    kernel_names = {'lsk'            : 'naif\d{4}\.tls$', 
-                    'pck'            : 'pck\d{5}\.tpc$', 
-                    'spk/planets'    : 'de\d{3}\.bsp$'}
+    kernel_names = {'lsk'            : 'naif\\d{4}\\.tls$', 
+                    'pck'            : 'pck\\d{5}\\.tpc$', 
+                    'spk/planets'    : 'de\\d{3}\\.bsp$'}
     
     default_kernel_list=[]
     
@@ -214,7 +217,7 @@ def update_satellite_kernel(satellite:str) -> str:
     
     ### get the file size of each spk of interest.
     table = soup.find('pre')
-    bsps = table.find_all('a', string=re.compile('.*\.bsp$'))
+    bsps = table.find_all('a', string=re.compile('.*\\.bsp$'))
 
     file_sizes=[]
     for bsp in bsps:
@@ -254,13 +257,92 @@ def update_satellite_kernel(satellite:str) -> str:
 
     return newest
 
-def update_small_body_kernel():
+def update_small_body_kernel(sb_search_str: str) -> tuple[int, str]:
     '''
-    Downloads a fresh kernel from Horizons for a small body. 
+    Downloads a fresh kernel from Horizons for a small body. sb_search_str should be a
+    name, IAU number, or NAIF ID uniquely identifying the body of interest. 
+    However, the exact query term being used here can do more tricks than this function
+    assumes. For a full description of usage, see the JPL Horizons documentation:
+    https://ssd-api.jpl.nasa.gov/doc/horizons.html#command
+
+    Note that this function hard-codes the ";" in the query, forcing a search only over 
+    small bodies (i.r., excluding planets and moons).
+
+    When using a provisional designation (e.g., 1999 SG6), the search string is case-
+    sensitive (possibly because of the space?). Otherwise, 'ceres', 'Ceres', and 'CERES'
+    all match 1 Ceres.
+
+    :param sb_search_str: Name, IAU number, or NAIF ID of target body.
+    :type sb_search_str: str
+    :return: 
+            - exit code: 
+                - 0: SPK generated successfully.
+                - 1: valid request, error generating spk. 
+                - 2: Some other error.
+            - spk_filename: 
+                - filename of the generated spk, assuming it was produced successfully.
+    :rtype: tuple[int, str]
     '''
-    # TODO
-    
-    return
+
+    # Define API URL and SPK filename:
+    url = 'https://ssd.jpl.nasa.gov/api/horizons.api'
+    spk_path = f'{kernels_dir}/spk'
+    spk_filename = f'{spk_path}/default_horizons_spk.bsp'
+
+    # Define the time span:
+    start_time = '2024-06-01'
+    stop_time = '2025-06-01'
+
+    # Build the appropriate URL for this API request:
+    # IMPORTANT: You must encode the "=" as "%3D" and the ";" as "%3B" in the
+    #            Horizons COMMAND parameter specification.
+    url += "?format=json&EPHEM_TYPE=SPK&OBJ_DATA=NO"
+    url += f"&COMMAND='{sb_search_str}%3B'&START_TIME='{start_time}'&STOP_TIME='{stop_time}'"
+
+    # Submit the API request and decode the JSON-response:
+    response = requests.get(url)
+    try:
+        data = json.loads(response.text)
+    except ValueError:
+        print("Unable to decode JSON results")
+
+    # If the request was valid...
+    if (response.status_code == 200):
+        # If the SPK file was generated, decode it and write it to the output file:
+        if "spk" in data:
+            # If a suggested SPK file basename was provided, use it:
+            if "spk_file_id" in data:
+                spk_filename = f'{spk_path}/{data["spk_file_id"]}.bsp'
+            try:
+                f = open(spk_filename, "wb")
+            except OSError as err:
+                print(f"Unable to open SPK file '{spk_filename}': {err}")
+            # Decode and write the binary SPK file content:
+            f.write(base64.b64decode(data["spk"]))
+            f.close()
+            print(f"wrote SPK content to {spk_filename}")
+            return 0, spk_filename
+        
+        # Otherwise, the SPK file was not generated so output an error:
+        print("ERROR: SPK file not generated")
+        if "result" in data:
+            print(data["result"])
+        else:
+            print(response.text)
+        return 1, 'None'
+
+    # If the request was invalid, extract error content and display it:
+    if (response.status_code == 400):
+        data = json.loads(response.text)
+        if "message" in data:
+            print(f"MESSAGE: {data['message']}")
+        else:
+            print(json.dumps(data, indent=2))
+
+    # Otherwise, some other error occurred:
+    print("response code: {0}".format(response.status_code))
+    return 2, 'None'
+
 
 def update_all_kernels():
     '''
@@ -317,11 +399,17 @@ def main():
     Currently just in use for testing.
     '''
 
-    # update_default_kernels()
+    update_default_kernels()
     
     # satellites = ['phobos', 'Io', 'Europa']
     # for satellite in satellites:
     #     current = update_satellite_kernel(satellite)
+
+    small_bodies = ['Ceres', 'CERES', 'cErEs', '1', '269', 'europa', '1999 sg6', '1999sg6', '1999 SG6', 'mars']
+    for sb in small_bodies:
+        exitcode, spkname = update_small_body_kernel(sb)
+        # print(f'exitcode: {exitcode}')
+        # print(f'spkname: {spkname}')
 
     return
 
