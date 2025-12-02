@@ -257,7 +257,7 @@ def update_satellite_kernel(satellite:str) -> str:
 
     return newest
 
-def update_small_body_kernel(sb_search_str: str) -> tuple[int, str]:
+def update_small_body_kernel(sb_search_str: str) -> str:
     '''
     Downloads a fresh kernel from Horizons for a small body. sb_search_str should be a
     name, IAU number, or NAIF ID uniquely identifying the body of interest. 
@@ -274,14 +274,8 @@ def update_small_body_kernel(sb_search_str: str) -> tuple[int, str]:
 
     :param sb_search_str: Name, IAU number, or NAIF ID of target body.
     :type sb_search_str: str
-    :return: 
-            - exit code: 
-                - 0: SPK generated successfully.
-                - 1: valid request, error generating spk. 
-                - 2: Some other error.
-            - spk_filename: 
-                - filename of the generated spk, assuming it was produced successfully.
-    :rtype: tuple[int, str]
+    :return: filename of the generated spk
+    :rtype: str
     '''
 
     # Define API URL and SPK filename:
@@ -321,16 +315,17 @@ def update_small_body_kernel(sb_search_str: str) -> tuple[int, str]:
             f.write(base64.b64decode(data["spk"]))
             f.close()
             print(f"wrote SPK content to {spk_filename}")
-            return 0, spk_filename
+            return spk_filename
         
         # Otherwise, the SPK file was not generated so output an error:
-        print("ERROR: SPK file not generated")
-        if "result" in data:
-            print(data["result"])
-        else:
-            print(response.text)
-        return 1, 'None'
-
+        else:    
+            print("ERROR: SPK file not generated")
+            if "result" in data:
+                print(data["result"])
+            else:
+                print(response.text)
+            raise RuntimeError('"spk" not in decoded JSON. SPK file not generated.')
+        
     # If the request was invalid, extract error content and display it:
     if (response.status_code == 400):
         data = json.loads(response.text)
@@ -341,7 +336,7 @@ def update_small_body_kernel(sb_search_str: str) -> tuple[int, str]:
 
     # Otherwise, some other error occurred:
     print("response code: {0}".format(response.status_code))
-    return 2, 'None'
+    raise RuntimeError(f'Invalid request: {url} \nMaybe "{sb_search_str}" is a bad sb_search_str?')
 
 
 def update_all_kernels():
