@@ -399,7 +399,7 @@ def main():
     Currently just in use for testing.
     '''
 
-    update_default_kernels()
+    # update_default_kernels()
     
     # satellites = ['phobos', 'Io', 'Europa']
     # for satellite in satellites:
@@ -408,8 +408,6 @@ def main():
     small_bodies = ['Ceres', 'CERES', 'cErEs', '1', '269', 'europa', '1999 sg6', '1999sg6', '1999 SG6', 'mars']
     for sb in small_bodies:
         exitcode, spkname = update_small_body_kernel(sb)
-        # print(f'exitcode: {exitcode}')
-        # print(f'spkname: {spkname}')
 
     return
 
