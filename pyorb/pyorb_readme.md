@@ -60,6 +60,46 @@ The user can either copy the formatted string output into a KRC input file, or u
     - [ ] testing?
 - `porb.py`
     - [ ] generate formatted output as cacheable HDF (per body). 
+        - notes on planetary_params3.csv
+            - column labels are swapped for orbital and sidereal periods
+            - orbital period is in Earth Years, sidereal period is in hours.
+            - inconsistent use of 0 and -999 for undefined params.
+            - only defined for Mars: ARC2_G0 (ARC2_PHO), DUSTA, TAURAT
+                - weird mars atmosphere model stuff
+            - only defined for Venus, Earth, Mars, Pluto, Titan: PTOTAL 
+                - probably for surfaces with atmospheres?
+                - surface pressure in Pa?
+            - only planets: BT_Min, BT_max, BT_avg, Geom_Alb, Dis_AU
+                - maybe to do with planetshine on satellites?
+                - BT: Bolometric Temperature?
+            - only satellites: orb_radius, mut_period
+                - probably to do with planetshine on satellites?
+        - notes on porb_defaults/*.porb.hdf:
+            - body: name
+            - period: orbital period in Earth Days
+            - rot: the full PORB output table, as a string
+            - rot_per: sidereal rotation period in hours
+            - rot_per_flag: 1 if a rotation period is made up, 0 if it's real. 
+            - type:
+                - body_type: Planet, Satellite, Comet, or Minor
+                - id: 0 for planets and satellites. NAIFID for comets. IAU number for asteroids, called Minor.
+                - name: object name, same as body.
+                - parent_body: parent body name, blank for anything orbiting the Sun.
+            - planet_flux:
+                - all values are -999 for anything that's not a planet or satellite.
+                - see planetary_params3.csv "only planets" and "only satellites" notes above.
+            - krc: 
+                - see planetary_params3.csv "only atmospheres" and "only mars" notes above.
+                - ARC2_G0:  don't know. Mars atmosphere.
+                - DELJUL:   Orbit period / 360, in Earth Days. 
+                - DUSTA:    don't know. Mars atmosphere.
+                - GRAV:     surface gravity in m/s^2
+                - N24:      usually 96. larger for some of jupiter's moons in the examples, always a multiple of 24. Maybe things get weird if the diurnal division is too much real time? Io's 96, and that makes ~26.5 minute timesteps. The others seemed tuned to target ~15 minute timesteps. Weird that a default N24 is specified at all rather than just computing it directly from the rotational period somewhere else!!
+                - PERIOD:   sidereal rotation period in Earth Days. (why duplicate this so many places????)
+                - PTOTAL:   surface atmospheric pressure (atmospheres only)
+                - TAUD:     don't know. Mars atmosphere. (record only present for bennu???)
+                - TAURAT:   don't know. Mars atmosphere.
+                - TFROST:   don't know. Mars atmosphere. (record only present for bennu???)        
     - [ ] user interface: specify body, get a metakernel using `kernel_mgmt.py`, options to force params to user input values. 
     - [ ] function to derive spin pole from obliquity and true anomaly, set spin_axis and secondary_spin_params based on that method? (seems more user friendly to have that option)
     - [ ] generate formatted output as entry in `planetary_params3.csv`?
