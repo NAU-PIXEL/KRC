@@ -64,6 +64,9 @@ The user can either copy the formatted string output into a KRC input file, or u
             - column labels are swapped for orbital and sidereal periods
             - orbital period is in Earth Years, sidereal period is in hours.
             - inconsistent use of 0 and -999 for undefined params.
+                - surface pressure=0 for airless bodies makes sense. 
+                - surface pressure=-999 for surface-less bodies makes sense.
+                - I don't know what ARC2_PHO is or why it's -999 for titan when it's 0 for other non-mars atmospheres.
             - only defined for Mars: ARC2_G0 (ARC2_PHO), DUSTA, TAURAT
                 - weird mars atmosphere model stuff
             - only defined for Venus, Earth, Mars, Pluto, Titan: PTOTAL 
@@ -73,7 +76,7 @@ The user can either copy the formatted string output into a KRC input file, or u
                 - maybe to do with planetshine on satellites?
                 - BT: Bolometric Temperature?
             - only satellites: orb_radius, mut_period
-                - probably to do with planetshine on satellites?
+                - probably to do with planetshine on satellites? and/or eclipses.
         - notes on porb_defaults/*.porb.hdf:
             - body: name
             - period: orbital period in Earth Days
@@ -94,12 +97,13 @@ The user can either copy the formatted string output into a KRC input file, or u
                 - DELJUL:   Orbit period / 360, in Earth Days. 
                 - DUSTA:    don't know. Mars atmosphere.
                 - GRAV:     surface gravity in m/s^2
-                - N24:      usually 96. larger for some of jupiter's moons in the examples, always a multiple of 24. Maybe things get weird if the diurnal division is too much real time? Io's 96, and that makes ~26.5 minute timesteps. The others seemed tuned to target ~15 minute timesteps. Weird that a default N24 is specified at all rather than just computing it directly from the rotational period somewhere else!!
+                - N24:      usually 96. larger for some of jupiter's moons in the examples, always a multiple of 24. Maybe things get weird if the diurnal division is too much real time? Io's 96, and that makes ~26.5 minute timesteps. The others seemed tuned to target ~15 minute timesteps. Weird there's no Luna porb default to compare with. Weird that a default N24 is specified at all rather than just computing it directly from the rotational period somewhere else!!
                 - PERIOD:   sidereal rotation period in Earth Days. (why duplicate this so many places????)
                 - PTOTAL:   surface atmospheric pressure (atmospheres only)
                 - TAUD:     don't know. Mars atmosphere. (record only present for bennu???)
                 - TAURAT:   don't know. Mars atmosphere.
                 - TFROST:   don't know. Mars atmosphere. (record only present for bennu???)        
+        - I think I can break out non-orbital params from `planetary_params3.csv`, and just have a canonical table for dealing with atmospheres and planetshine, that then populates the HDFs. Hopefully that order of precedence makes sense.  
     - [ ] user interface: specify body, get a metakernel using `kernel_mgmt.py`, options to force params to user input values. 
     - [ ] function to derive spin pole from obliquity and true anomaly, set spin_axis and secondary_spin_params based on that method? (seems more user friendly to have that option)
     - [ ] generate formatted output as entry in `planetary_params3.csv`?
