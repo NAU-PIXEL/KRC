@@ -40,7 +40,7 @@ def get_orbital_naifid(metakernel, body_naifid, epoch_date):
 
     return orbital_id
 
-def get_orbital_elements(metakernel, orbital_naifid, epoch_date):
+def get_orbital_elements(metakernel, orbital_naifid, parent, epoch_date):
     '''
     Use spice to get the keplerian(?) orbital elements for a specified body.
     returns a tuple of floats:
@@ -58,7 +58,7 @@ def get_orbital_elements(metakernel, orbital_naifid, epoch_date):
     epoch_JD = float(spice.et2utc(et,'J', 6).split(' ')[-1])
 
     # get the state vector of body (or its system barycenter) relative to sun.
-    state_vector = spice.spkezr(str(orbital_naifid), et, 'ECLIPJ2000', 'NONE', 'SUN')[0]
+    state_vector = spice.spkezr(str(orbital_naifid), et, 'ECLIPJ2000', 'NONE', parent)[0]
 
     # get orbital elements of body relative to sun
     elts = spice.oscelt(state_vector, et, const.mu)
@@ -80,6 +80,9 @@ def get_spin_axis(metakernel, body_naifid):
     phase_at_j2000:         rotational phase (angle of prime meridian) at J2000 epoch [degrees]
     pole_ra:                right ascension of spin axis in J2000 frame [radians]
     pole_dec:               declination of spin axis in J2000 frame [radians]
+    default_spin_flag:  int     0: rotation period and pole orientation are both real.
+                                1: rotation period and pole orientation are both default.
+                                2: rotation period is real, pole orientation is default. (not implemented, but I imagine this could be done by searching the small body lightcurve database) 
     '''    
     spice.furnsh(metakernel)
 
@@ -106,7 +109,9 @@ def get_spin_axis(metakernel, body_naifid):
     # SIDAY : Rotation period in hours.
     rotation_period = (360.*24)/rotation_rate
 
-    return (rotation_period, phase_at_j2000, pole_ra, pole_dec)
+    default_spin_flag = 0
+
+    return (rotation_period, phase_at_j2000, pole_ra, pole_dec, default_spin_flag)
 
 def get_secondary_orb_params(orb_elems):
     '''
@@ -139,7 +144,7 @@ def get_secondary_spin_params(orb_elems, spin_axis):
     true_anomaly_at_vernal_equinox: True anomaly at vernal equinox [radians]
     '''    
     (long_of_asc_node, eccentricity, inclination, arg_of_peri, mean_anomaly, semimajor_axis, epoch_JD) = orb_elems
-    (rotation_period, phase_at_j2000, pole_ra, pole_dec) = spin_axis
+    (rotation_period, phase_at_j2000, pole_ra, pole_dec, default_spin_flag) = spin_axis
 
     # AFRM  : rotation matrix from orbital (F) to J2000 (A)
     ## First do rotation from orbital (F) to ecliptic (E)
@@ -182,7 +187,7 @@ def get_porb_params(body_name, body_naifid, orb_elems, spin_axis):
     (orbit_period, perihelion_date, centuries_from_j2000) = get_secondary_orb_params(orb_elems)
 
     # Unpack input spin axis parameters, derive secondary spin parameters
-    (rotation_period, phase_at_j2000, pole_ra, pole_dec) = spin_axis 
+    (rotation_period, phase_at_j2000, pole_ra, pole_dec, default_spin_flag) = spin_axis 
     (obliquity, rotation_matrix_FtoB, true_anomaly_at_vernal_equinox) = get_secondary_spin_params(orb_elems, spin_axis)
     ### Note: theoretically, I think you could input the spin axis as obliquity and true 
     ### anomaly at vernal equinox, and derive pole_ra and pole_dec and the rotation matrix.
@@ -190,6 +195,7 @@ def get_porb_params(body_name, body_naifid, orb_elems, spin_axis):
     
     ##### record variables in output dictionary #####
     out={}
+    out['default_spin']     = default_spin_flag
     out['porb_version']     = const.porb_version
     out['generation_date']  = datetime.datetime.now().strftime('%Y %b %d %H:%M:%S')
     out['NAME']             = body_name
@@ -275,7 +281,7 @@ def main(body_name, body_naifid, metakernel, epoch_date, verbose=True):
     # Determine orbital elements for either the specified body, or, if the 
     # specified body is a satellite, its sun-orbiting parent.
     orbital_naifid = get_orbital_naifid(metakernel, body_naifid, epoch_date)
-    orb_elems = get_orbital_elements(metakernel, orbital_naifid, epoch_date)
+    orb_elems = get_orbital_elements(metakernel, orbital_naifid, 'SUN', epoch_date)
 
     # Determine the parameters defining the specified body's spin axis.
     try:
@@ -284,14 +290,14 @@ def main(body_name, body_naifid, metakernel, epoch_date, verbose=True):
         print(f'WARNING!')
         print(f'No spin axis info found for body: {body_name} in PCK from metakernel: {metakernel}')
         print(f'Make sure PCK has data for this body, or specify spin axis directly. (not yet implemented!)')
-        print(f'Using default spin axis (24 period, aligned w/ ecliptic)')
+        print(f'Using default spin axis (24hr period, aligned w/ ecliptic)')
         print()
         spin_axis = defaults.spin_axis
 
     # Generate the parameters used for standard PORB output. 
     out  = get_porb_params(body_name, body_naifid, orb_elems, spin_axis)
 
-    return format_output(out, verbose=verbose)
+    return out
 
 if __name__ == '__main__':
     # Include headers in output?
@@ -301,9 +307,10 @@ if __name__ == '__main__':
     body_naifids    = [20000001, 499, 402, 920065803, 120065803, 20000623]
 
     # epoch at which to calculate orbital params (must be covered by available kernels)
-    epoch_date = datetime.datetime(2024,11,1,0,0,0)
+    epoch_date = defaults.epoch_date
     metakernel = f'{kernels_dir}/mk/krc_default.tm'
     
     for i in range(len(body_names)):
         print()
-        print(main(body_names[i], body_naifids[i], metakernel, epoch_date, verbose=verbose))
+        out = main(body_names[i], body_naifids[i], metakernel, epoch_date, verbose=verbose)
+        print(format_output(out))

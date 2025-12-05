@@ -96,7 +96,7 @@ The user can either copy the formatted string output into a KRC input file, or u
                 - ARC2_G0:  don't know. Mars atmosphere.
                 - DELJUL:   Orbit period / 360, in Earth Days. 
                 - DUSTA:    don't know. Mars atmosphere.
-                - GRAV:     surface gravity in m/s^2
+                - GRAV:     surface gravity in m/s^2. 0 for anything not in planetary_params3.csv
                 - N24:      usually 96. larger for some of jupiter's moons in the examples, always a multiple of 24. Maybe things get weird if the diurnal division is too much real time? Io's 96, and that makes ~26.5 minute timesteps. The others seemed tuned to target ~15 minute timesteps. Weird there's no Luna porb default to compare with. Weird that a default N24 is specified at all rather than just computing it directly from the rotational period somewhere else!!
                 - PERIOD:   sidereal rotation period in Earth Days. (why duplicate this so many places????)
                 - PTOTAL:   surface atmospheric pressure (atmospheres only)

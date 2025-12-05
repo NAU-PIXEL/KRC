@@ -16,6 +16,8 @@ j2000_JD = 2451545.0
 km_per_au = 149597870.6996262
 # solar mass parameter in km^3/s^2:
 mu = 1.32712440042 * 10**11
+# gravitational constant in N m^2 / kg^2
+G = 6.674e-11
 
 ##### Unused flags #####
 # SFLAG : Input system flag 0:default, +1: pole=ec +10:orb=eq
