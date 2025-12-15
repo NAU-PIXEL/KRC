@@ -58,7 +58,8 @@ In this example, half of our seasons would begin at midnight, and half would beg
 Resolving this in the general case, where a season can be any real number of sols long, would involve a lot of expensive interpolation to produce standardized output.
 Instead, KRC begins each season at midnight, and uses forecast temperatures to begin the following season, again starting at midnight, regardless of the length of a season in sols. 
 This means all diurnal timesteps remain consistent across all the seasons being computed.
-Note that when using flux tables the above scenario can be implemented, but special care must be taken to ensure it is logically consistent. 
+Note that when using flux tables the above scenario can be implemented, but special care must be taken to ensure it is logically consistent.
+Please review the below sections on `time index interpolation` and `continuous linear time` for more info on this.
 
 Starting each season at midnight is computationally quite useful, in that we can define the input fluxes as representing the diurnal curve, from midnight to midnight, for a theoretical instantaneous seasonal time step through the year. 
 When considering a single diurnal curve representing many seconds worth of physical time, the effective orbital position used to calculate that diurnal curve remains constant. 
