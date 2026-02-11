@@ -109,7 +109,7 @@ C_Pause
 
 
       SUBROUTINE ROTCOL (A,N, V)      ! Extract N'th column from [A]
-C_Title  ROTROW  Extract  N'th column from a 3x3 matrix.
+C_Title  ROTROW  Extract  Nth column from a 3x3 matrix.
       IMPLICIT NONE
 C_Arguments
       REAL*8 A(9)     ![I] Rotation (3x3) matrix.
@@ -390,7 +390,7 @@ C_Pause
       END
 
       SUBROUTINE ROTROW (A,N, V)      ! Extract N'th row from [A]
-C_Title  ROTROW  Extract  N'th row from a 3x3 matrix.
+C_Title  ROTROW  Extract  Nth row from a 3x3 matrix.
       IMPLICIT NONE
 C_Arguments
       REAL*8 A(9)     ![I] Rotation (3x3) matrix.

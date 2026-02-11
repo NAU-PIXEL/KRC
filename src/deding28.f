@@ -79,21 +79,21 @@ C       REAL*8 VLARGE/1.0D200/  ! large real number
         A0=     MIN(OMEGA,ONE-EPSILON) ! avoid 0 determinant at omega=1.
         TT=TWO/THREE            ! 2/3   
 C  Delta-Eddington transformation
-        F = GIN**2              !  JWW eq. 5 for f'
+        F = GIN**2              !  JWW eq. 5 for f-prime
         OMF=ONE-F
-        G = (GIN-F)/OMF         !  JWW eq. 2b for g'
+        G = (GIN-F)/OMF         !  JWW eq. 2b for g-prime
         OMFA0=one-F*A0
-        T1 = OMFA0*TAU          !  JWW eq. 13 for tau'
+        T1 = OMFA0*TAU          !  JWW eq. 13 for tau-prime
         X = T1/COSI             !
         IF (X.LT.EXPMAX) THEN
-          EMTC = DEXP(-X)       ! exp (- tau'/mu_0)
+          EMTC = DEXP(-X)       ! exp (- tau-prime/mu_0)
         ELSE
           EMTC = ZERO           ! outside machine range,  set=0 
         ENDIF
 
 !  Non-conservative case ----- [ conservative case coded in DEDING1 ]
 
-        A = OMF*A0/OMFA0        !  JWW eq. 14 for omega'
+        A = OMF*A0/OMFA0        !  JWW eq. 14 for omega-prime
         OMA = ONE-A             ! 1 - scaled albedo (used in 4 places)
 
 C  Eddington 2-stream single homogeneous layer

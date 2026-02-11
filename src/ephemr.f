@@ -26,7 +26,7 @@ C_END
       REAL*4 ORBPER,ORB0,DJU4, REV !  SPCREV args
       REAL*4 FDAY            !  CALDAT args.  
       INTEGER *4 IYEAR,IMON,IDAY,IDATE
-      CHARACTER*3  MONTH,WDAY ! " 4-byte Character
+      CHARACTER*3  MONTH,WDAY ! '' 4-byte Character
 
       CHARACTER*28 TITLE
 

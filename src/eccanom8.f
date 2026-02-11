@@ -1,5 +1,5 @@
       REAL*8 FUNCTION ECCANOM8 (ECC,ANOM)
-C_Title  ECCANOM iterative solution of  Kepler's equations for eccentric orbit.
+C_Title  ECCANOM iterative solution of  Keplers equations for eccentric orbit.
       IMPLICIT NONE
 C_Args
       REAL*8 ECC      !i. eccentricity of orbit
