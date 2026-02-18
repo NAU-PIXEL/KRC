@@ -11,3 +11,8 @@ porbmndb
 
 # various logs
 eLog*.*
+
+#pyorb stuff
+pyorb/__pycache__
+pyorb/src/__pycache__
+pyorb/kernels
