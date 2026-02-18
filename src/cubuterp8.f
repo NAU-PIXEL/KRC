@@ -48,7 +48,7 @@ C          CALL BACKTRACE
           PRINT *,'CUBUTERP: NZ/NY TOO LARGE',KIM,MMAX
           KIM=MMAX
         ENDIF
-        RIM=DBLE(KIM)            ! " AS REAL
+        RIM=DBLE(KIM)            ! '' AS REAL
         KIT=KIM-1             ! number of new interpolation points per interval
         DO I=1,KIT            ! no need for interval end points
           T1=DBLE(I)/RIM        ! fractional way into the interval
@@ -88,7 +88,7 @@ C     BB_i are factors for h_i_
           Y1=YY(K+1)           ! y1
           Y2=YY(K+2)           ! y2
           RM1=TENS*(YY(K+2)-YY(K)) !    m1=car*(yy[2]-yy[0]) 0-based
-          RM2=TENS*(YY(K+3)-YY(K+1)) !  m2=car*(yy[3]-yy[1]) " 
+          RM2=TENS*(YY(K+3)-YY(K+1)) !  m2=car*(yy[3]-yy[1]) '' 
           I0=(K-1)*KIM           ! base for each output interval
           DO I=1,KIT             ! out=HH_ij ## BB_i
             ZZ(I0+I)= HH1(I)*Y1 +HH2(I)*Y2 +HH3(I)*RM1 +HH4(I)*RM2
@@ -101,7 +101,7 @@ C     BB_i are factors for h_i_
             WRITE(*,34)'CUBUTERP: K,I0,y,m',K,I0,Y1,Y2,RM1,RM2
  34         FORMAT(A,2I6,((10F9.3)) )
             CALL SIGMA8 (YY(3),NY, Y1,Y2)   ! last 2 args are mean and std_dev
-            CALL SIGMA8 (ZZ   ,NZ, RM1,RM2) !  " " "
+            CALL SIGMA8 (ZZ   ,NZ, RM1,RM2) !  '' '' ''
             PRINT *,'CUBUTERP: Stats: input, output',Y1,Y2,RM1,RM2 
 C mean and stdDev of output should be close to those of input.
           ENDIF
