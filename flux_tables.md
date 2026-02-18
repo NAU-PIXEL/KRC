@@ -110,11 +110,24 @@ Though the interpolation allows for sparser sampling of the diurnal curve in cer
 If the rest of the flux table is formed as generally expected, this means a linear interpolation between two midnights, which means no illumination whatsoever in the skipped seasons.
 
 ## Fluxes
-Fluxes must be recorded in watts per square meter. 
-Visible flux is considered to include all direct solar illumination, while IR flux is considered to include all indirect illumination, such as from the atmosphere (if present), self-illumination, or other secondary illuminators. 
-> Note: As far as we can tell, these two fluxes are treated exactly the same (same albedo, etc.) and are simply added together at some point to get the total input flux. 
-> We have kept them separate and labelled them as they are for historical reasons, and because we haven't been able to fully verify that they aren't treated differently somehow deep in the guts of the model.
+All fluxes must be recorded in watts per square meter. 
 
+The first flux column is for visible-wavelength flux. 
+This is considered to include all direct solar illumination incident on the surface.
+In the current implementation, the fluxes in this column replace ASOL in tlats8, and so are scaled by a photometric function to determine the energy absorbed by the surface. 
+This photometric function is selected by the user using the PHOG input parameter, and is typically a function of the solar incidence angle. 
+This means that the first flux table column should only be used for direct solar illumination, and not visible flux from any other sources, such as diffuse illumination from the atmosphere or secondary illuminators. 
+This flux value is assumed to account for the slope of a surface and its corresponding impact on solar incidence angle. 
+
+The second flux column is for IR-wavelength flux.
+This IR flux is considered to include only indirect hemispherical illumination from the sky, such as from the atmosphere. 
+It should not be used for self-illumination, other secondary illuminators, nor for any non-IR flux. 
+In the current implementation, the fluxes in this column replace ATMRAD in tday8, and so are scaled by the fraction of exposure to the sky, SKYFAC, as well as the IR emissivity, EMIS, to determine the energy absorbed by the surface.
+The use of SKYFAC and EMIS in this way restricts the use of this column's fluxes to representing the all-sky indirect hemispherical IR downwelling flux. 
+Note also that this implementation means KRC must accurately know the slope of the surface in question, as SKYFAC is used to calculate both what fraction of the downwelling IR flux to absorb, as well as what portion of the hemisphere to radiate heat into (assuming the user is not using the Far-Field radiance system.)
+
+> Note that there is no way to input diffuse visible-wavelength flux under the current implementation. 
+> We're investigating options to implement this, and other flavors of flux, in a later release. 
 
 Special considerations
 ======================
@@ -145,8 +158,9 @@ Due to the use of flux tables entirely replacing KRC's internal logic for determ
 
 This includes nearly all parameters controlling the body's orbital motion, with the crucial exceptions of ```PERIOD``` and ```DELJUL```, which relate the time indices to physical units as discussed above. 
 
-Also unused are all parameters describing the relationship between the surface under consideration and the larger body. 
-A surface modeled using a flux table has no latitude nor longitude, and has no relative slope. 
+~~Also unused are all parameters describing the relationship between the surface under consideration and the larger body. 
+A surface modeled using a flux table has no latitude nor longitude, and has no relative slope.~~
+
 Nor does it have an atmosphere, nor any relationship to the luminosity of the Sun. 
 
 Such considerations are assumed to be relegated to whatever method is generating the flux table in the first place, and care should be taken to ensure all such factors are accounted for there.
