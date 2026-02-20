@@ -733,8 +733,8 @@ C 3 possible upper boundary conditions. 1) Atm with frost 2) Just Atm 3) No atm.
           II=0 !db newton iteration count
           IF (LFROST) THEN      !+-+-+-+ surface temperature is frost-buffered
             
-            IF (LFLUX) THEN ! new vis and ir flux tables
-              ATMRAD = f_get_jd_lt_ir(J5 - 1, (real(JJ, 8))/N2)
+            IF (LATMRADTAB) THEN ! new vis and ir flux tables
+              ATMRAD = f_get_jd_lt_atmrad(J5 - 1, (real(JJ, 8))/N2)
             ELSE
               ATMRAD= FAC9*TATMJ**4 ! hemispheric downwelling IR flux
             ENDIF
@@ -761,8 +761,8 @@ C If fff, add back-radiation=(1-skyfac)*femis*emis_x*sig*Tfar^4
           ELSE                  !+-+-+-+ if no frost
             ABRAD=FAC3*ASOL(JJ)+FAC3S*SOLDIF(JJ) ! surface absorbed radiation
             IF (LATM) THEN 
-              IF (LFLUX) THEN ! new vis and ir flux tables
-                ATMRAD = f_get_jd_lt_ir(J5 - 1, (real(JJ, 8))/N2)
+              IF (LATMRADTAB) THEN ! new vis and ir flux tables
+                ATMRAD = f_get_jd_lt_atmrad(J5 - 1, (real(JJ, 8))/N2)
               ELSE
                 ATMRAD=FAC9*TATMJ**4 ! hemispheric downwelling IR flux
               ENDIF

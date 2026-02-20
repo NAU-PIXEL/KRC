@@ -12,6 +12,18 @@ bool monotonic(double *x, int n) {
   return monotonic;
 }
 
+bool non_negative(double *x, int n) {
+  int i;
+  bool non_negative = true;
+  for (i = 1; i < n; i++) {
+    if (x[i] < 0) {
+      non_negative = false;
+      break;
+    }
+  }
+  return non_negative;
+}
+
 double interpolate(double t1, double t2, double val1, double val2,
   double t_target) {
 // this shouldn't ever happen, but saves us from a potential divide by zero if

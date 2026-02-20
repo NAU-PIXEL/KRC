@@ -542,8 +542,8 @@ C     Set direct surface insolation
 C     
          IF (LECL) SOLR=SOLAU*FINSOL(JJ) ! eclipse factor. Daily only
 
-        IF (LFLUX) THEN ! new vis and ir flux tables
-         QI = f_get_jd_lt_vis(J5 - 1, (real(JJ, 8))/N2)
+        IF (LASOLTAB) THEN ! new vis and ir flux tables
+         QI = f_get_jd_lt_asol(J5 - 1, (real(JJ, 8))/N2)
         ELSE 
           QI=DIRECT*SOLR         ! collimated solar onto slope surface
         ENDIF
