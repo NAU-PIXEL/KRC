@@ -836,8 +836,23 @@ C done only on the last day of a season
               TPFH(IH)=(FAC8*TSUR4+FAC82*TATM4)**0.25 ! planetary  
               TAF(IH,J4)=TATMJ  ! save Atm Temp.
             ENDIF               !^-^-^-^-^
+
+            ! ATMRAD is only the atmospheric heating, would be safe to overwrite here
             DOWNIR(IH,J4)=ATMRAD ! save downward IR flux, ensures 0 if no atm
-            DOWNVIS(IH,J4)=ASOL(JJ)+SOLDIF(JJ) ! downward coll.+diffu. solar flux
+            ! Does not include PLANH or PLANV
+            ! Plan to write a different value into DOWNVIS depending on what override variable is passed
+            IF (LWRITEASOL) THEN
+              DOWNVIS(IH, J4) = ASOL(JJ)
+            ELSE IF (LWRITESOLDIF) THEN
+              DOWNVIS(IH, J4) = SOLDIF(JJ)
+            ELSE IF (LWRITEPLANV) THEN
+              DOWNVIS(IH, J4) = PLANV(JJ)
+            ELSE IF (LWRITEPLANH) THEN
+              DOWNVIS(IH, J4) = PLANH(JJ)
+            ELSE 
+              DOWNVIS(IH,J4)=ASOL(JJ)+SOLDIF(JJ) ! downward coll.+diffu. solar flux
+            ENDIF
+
             DO J=1,N1           ! save extreme temperatures for each layer
 C..     th(j,ih)=t(j)   ! save depth-time solution [th(maxn1,MAXNH]
               IF (TTJ(J).LT.TMIN(J)) TMIN(J)=TTJ(J)

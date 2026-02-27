@@ -1,5 +1,5 @@
 C_Titl  krcc8m.f = KRCCOM common for input and transfer variables
-C_Limitations 
+C_Limitations
       IMPLICIT NONE             ! none-the-less, try to code with usage
       INTEGER*4 MAXN1,MAXN2,MAXN3,MAXN4,MAXN6,MAXNH,MAXBOT,MAXFF
      &,MAXN1P,NUMFD,NUMH4,NUMID,NUMLD,N4KRC,NWKRC,KOMMON,MAXN4E
@@ -18,7 +18,7 @@ C      PARAMETER (MAXN5 =2161)    ! dimension of saved seasons
       PARAMETER (NUMH4=MAXNH*MAXN4) ! Number of words in direct access record
       PARAMETER (NUMFD=96, NUMID=40, NUMLD=20) ! number of each type
       PARAMETER (N4KRC=NUMFD*2+NUMID+NUMLD+2*MAXN4*2+2+104/4) ! # of 4-byte words
-              ! above is size of common in 32-bit words. it  MUST  BE  EVEN
+      ! above is size of common in 32-bit words. it  MUST  BE  EVEN
       PARAMETER (NWKRC=N4KRC/2) ! number of 8-byte words in krccom. Used by tdisk
       PARAMETER (KOMMON=512000000) ! 80 MB,  Storage used by tdisk
 
@@ -40,7 +40,9 @@ C      PARAMETER (MAXN5 =2161)    ! dimension of saved seasons
       LOGICAL*4 LP1,LP2,LP3,LP4,LP5,  LP6,LPGLOB,LVFA,LVFT,LKOFT        !  1:10
      &,LPORB,LKEY,LSC,LZONE,LOCAL,   LD16,LD17,LD18,LD19,LONE ! 11:20
      &,LATM,LHEMISEMIS, LFLUX
-      LOGICAL*1 LASOLTAB, LSOLDIFTAB, LPLANVTAB, LATMRADTAB, LPLANHTAB, LRAWTAB
+     &,LWRITEASOL, LWRITESOLDIF, LWRITEPLANV,LWRITEPLANH
+
+     LOGICAL*1 LASOLTAB, LSOLDIFTAB, LPLANVTAB, LATMRADTAB, LPLANHTAB, LRAWTAB
 
       REAL*8 CCKU(4),CCKL(4),CCPU(4),CCPL(4) ! coef of K & Cp, Upper/Lower layers
 C      INTEGER*1  KITLE(84),DAYTIM(20) ! Sum= 104 bytes MUST be multiple of 8
@@ -52,7 +54,7 @@ C      INTEGER*1  KITLE(84),DAYTIM(20) ! Sum= 104 bytes MUST be multiple of 8
       INTEGER*4 ID(NUMID)
       LOGICAL*4 LD(NUMLD)
 
-C_Description.  
+C_Description.
 C  Cset -> routine which sets value.  seas=TSEAS  lat=TLAT
 C *= initially set as input, this routine may reset value.
 C lines 1-5 = real: input via  TCARD
@@ -86,10 +88,11 @@ Cset             ----card---
 Cset   ---day1- lat ----day1-    main -day2- lats  seas
      B,LP1,LP2,LP3,LP4,LP5,    LP6,LPGLOB,LVFA,LVFT,LKOFT               !  1:10
      C,LPORB,LKEY,LSC,LZONE,LOCAL,   LD16,LD17,LD18,LD19,LONE           ! 11:20
-     D, KITLE,DAYTIM,LATM,LHEMISEMIS, LFLUX  ! 
+     D, KITLE,DAYTIM,LATM,LHEMISEMIS, LFLUX  !
      E,LASOLTAB, LSOLDIFTAB, LPLANVTAB, LATMRADTAB, LPLANHTAB, LRAWTAB
+     F,LWRITEASOL, LWRITESOLDIF, LWRITEPLANV,LWRITEPLANH
 
-Cset   tcard tprint tcard tcard 
+Cset   tcard tprint tcard tcard
 C
       EQUIVALENCE (FD(1),ALB), (ID(1),N1), (LD(1),LP1) ! alignment
 
@@ -103,7 +106,7 @@ C 2002mar01 HK Make implict L logical*4
 C 2002mar07 HK LD20-->LONE.  move ALAT & ELEV from LATCOM, make id(21)=kold
 C 2002jul16 HK Add OPACITY to common
 C 2004jul07 HK Move dimension-defining parameters from other commons into KRCCOM
-C 2008oct02-15 HK Move MAXBOT from DAYCOM to here. Replace ID22 with KVALB & 
+C 2008oct02-15 HK Move MAXBOT from DAYCOM to here. Replace ID22 with KVALB &
 C    KVTAU and redefine ABRAMP to be AMW. New maximum dimensions.
 C 2008nov13 HK Add T-dependent conductivity parameters.
 C 2010jan12 HK Change to IMPLICIT NONE  Change  PI>>PIVAL  RAD>>RADC
@@ -115,10 +118,10 @@ C 2014may04 HK Increase N2 by factor of 256
 C 2016mar:may HK Move ALAT,ELEV from near end. Change IB to IIB,  IC to IC2
 C             LNOTIF to LZONE
 C 2016aug12 HK Add NBKRC to common
-C 2016sep09 HK Add KFARAC to common  Set by TCARD 
+C 2016sep09 HK Add KFARAC to common  Set by TCARD
 C 2017apr06 HK Move MAXFF here from  HATCOM
 C 2018feb01 HK Replace  DDT with PHOG. DDT now data statement in TDAY
 C 2018oct20 HK Use ID25 for integer version number, ID24 sets DA files bytes
 C              real(68) for year in days      Add two logical*4 to the end
 C_End _______________________________________________________________________
- 
+

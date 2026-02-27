@@ -77,7 +77,7 @@ C      INTEGER*4 MEMI(9)         ! tfar arg4
       PARAMETER(NLDR = 20)      ! # of  LOGICAL input variables
       CHARACTER*8 TITF(NFDR) 
       CHARACTER*6 TITI(NIDR+4)  ! extend to cover ID24 
-      CHARACTER*6 TITL(NLDR) 
+      CHARACTER*12 TITL(NLDR) 
       CHARACTER*30 SEPER /' ============================='/
       INTEGER*4 KOUNT           ! number of changes cards read for this call
 
@@ -101,7 +101,7 @@ C      INTEGER*4 MEMI(9)         ! tfar arg4
 
       DATA TITL /'LP1','LP2','LP3','LP4','LP5','LP6'
      & ,'LPGLOB','LVFA','LVFT','LKofT','LPORB','LKEY','LSC','LZONE'
-     & ,'LOCAL','LD16','LPTAVE','Prt.78','Prt.79','L_ONE'/
+     & ,'LOCAL','LD16','LPTAVE','Prt.78','Prt.79','L_ONE' /
 
 D     IF (IDB2.GE.5) WRITE(IOSP,*) 'TCARD-A',IQ
 C
@@ -311,7 +311,24 @@ C  IG=8  Read file name
         CALL f_flux_init(FFLUX, SUCCESS, LASOLTAB, LSOLDIFTAB, LPLANVTAB, LATMRADTAB, LPLANHTAB, LRAWTAB)
         WRITE(IOPM,*) 'FFLUX=',FFLUX
         WRITE(IOPM,*) 'Initialized Flux tables?',SUCCESS
-        
+      
+      ELSEIF (IREAD.EQ.27) THEN ! which override flag we should use for output table
+        LWRITEASOL = .FALSE.
+        LWRITESOLDIF = .FALSE.
+        LWRITEPLANV = .FALSE.
+        LWRITEPLANH = .FALSE.
+        IF (TEXT .EQ. "LWRITEASOL") THEN
+          LWRITEASOL = .TRUE.
+        ELSEIF (TEXT .EQ. "LWRITESOLDIF") THEN
+          LWRITESOLDIF = .TRUE.
+        ELSEIF (TEXT .EQ. "LWRITEPLANV") THEN
+          LWRITEPLANV = .TRUE.
+        ELSEIF (TEXT .EQ. "LWRITEPLANH") THEN
+          LWRITEPLANH = .TRUE.
+        ELSE 
+          WRITE (IOERR,*)'Tcard 8: invalid table flag: ',TEXT(1:ILEN)
+          GOTO 440
+        ENDIF
 
       ELSE 
         WRITE (IOERR,*)'Tcard 8: invalid file type= ',IREAD,' ',TEXT
@@ -450,6 +467,7 @@ C      ENDIF
 C
 C no more input data
 C
+ 440  JERR=JERR+1 ! EOF on internal buffer RBUF
  439  JERR=JERR+1 ! EOF on internal buffer RBUF
  438  JERR=JERR+1 ! format error reading 4 fields in RBUF
  437  JERR=JERR+1 ! format error reading IG in RBUF
