@@ -542,7 +542,12 @@ C     cumulative center-depth in units of local scale
       WRITE(IOSP,156) (N1K(K),K=1,KKK)
  156  FORMAT (' Lower layer of time doubling: ',15I3)
 
-      LRARE = (PARC(1).GE. 1.3) ! possible eclipse on last day
+      IF (LASOLTAB .OR. LSOLDIFTAB .OR. LATMRADTAB .OR. LPLANHTAB .OR. LPLANVTAB .OR. LRAWTAB) THEN
+        LRARE = .FALSE.
+      ELSE
+        LRARE = (PARC(1).GE. 1.3) ! possible eclipse on last day
+      ENDIF
+      
       IF (LRARE) THEN ! plan for  RARE eclipse
         IKK(1)=IK1 ! transfer T-dep layer limits
         IKK(2)=IK2

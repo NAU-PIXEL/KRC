@@ -141,7 +141,7 @@ D     IF (IDB2.NE.0) WRITE(IOSP,*)'TLATSa',N3,N4,J5,LATM,LQ1,LQ2
         LPH = PARW(1).GT.0.      ! doing planetary heat loads
       ENDIF
 
-      IF (LASOLTAB .OR. LSOLDIFTAB .OR. LATMRADTAB .OR. LPLANHTAB .OR. LPLANVTAB) THEN
+      IF (LASOLTAB .OR. LSOLDIFTAB .OR. LATMRADTAB .OR. LPLANHTAB .OR. LPLANVTAB .OR. LRAWTAB) THEN
         LECL = .FALSE.
       ELSE
         LECL= (ABS(PARC(1)-1.).LT. 0.2)       ! doing daily eclipses
