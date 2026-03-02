@@ -16,6 +16,7 @@ C                     2,3,4= error of same number in TDAY
 C                     5=no matching latitude in fff
 C                     6=number of timesteps not integral multiple of hours in fff
 C                     7=ECLIPSE failure here on in TDAY
+C                     8=mixing pits with Solar Diffuse Flux Tables.
 C_Calls  AVEDAY+  AVEYEAR+  GASPT+  CLIMTAU'   DEDING28  EPRED8  
 C        ROTV+  SIGMA  TDAY8  TPRINT8  TUN8  VDOT+  VLPRES'  VROTV+
 C xx8 = make and call R*8 routine
@@ -134,7 +135,11 @@ C      SAVE FAC5X,FFELP,LINT,NFFH,NHF,NLF
       LQ2=IDB2.GE.9             ! each time of day
 D     IF (IDB2.NE.0) WRITE(IOSP,*)'TLATSa',N3,N4,J5,LATM,LQ1,LQ2
       LPH = PARW(1).GT.0.      ! doing planetary heat loads
-      LECL= (ABS(PARC(1)-1.).LT. 0.2)       ! doing daily eclipses
+      IF (LASOLTAB .OR. LSOLDIFTAB .OR. LATMRADTAB .OR. LPLANHTAB .OR. LPLANVTAB) THEN
+        LECL = .FALSE.
+      ELSE
+        LECL= (ABS(PARC(1)-1.).LT. 0.2)       ! doing daily eclipses
+      ENDIF
 C
       IRET=1          ! set return code to normal
       I=IQ            ! simply to avoid compiler complaint that  IQ is not used
@@ -159,6 +164,10 @@ C============ factors that do not depend upon season ===================
          SKYFAC = (1.D0+ DCOS(SLOPE/RADC))/2.D0 ! effective isotropic radiation.
          COSZLIM=0.            ! zenith angle default limit is 90 degrees
       ELSE                  ! slope is of conical pit wall
+        IF (LSOLDIFTAB) THEN   ! Error, never use pits with soldif tables.
+          IRET=8
+          GOTO 9
+        ENDIF
          QA=(90.D0-SLOPE)/RADC ! zenith angle of slope, in radians
          QI=DSIN(QA)
          SKYFAC = QI**2          ! effective sky for isotropic radiation.
@@ -492,6 +501,7 @@ C As opacity goes to zero, COLL->1., topup-> cosi*ALB, botdown->0 atmheat->0
             TOPUP=0.
             COLL=0.      
           ENDIF
+
 C  ASOL = coll. flux onto (sloped) surface 
 C  DSOL = diffuse flux onto ?? surface
 C Get diffuse insolation, including twilight and first-order surface reflection 
@@ -557,11 +567,14 @@ D        IF (LQ2) WRITE(IOSP,*),'TLAT.c',JJ,COSI,COS3,DIRECT,DIFFUSE
          ASOL(JJ)=QI            ! collimated insolation onto slope surface
         ! write into ASOL(JJ) with value from table
          ALBJ(JJ)=MAX(MIN(HALB,1.D0),0.D0) ! current hemispheric albedo
-         IF (LFLUX) THEN ! LFLUX table total solar flux, including bounce and diffuse
-           SOLDIF(JJ) = 0
+
+         IF (LSOLDIFTAB) THEN ! LFLUX table total solar flux, including bounce and diffuse
+           DIFFUSE = f_get_jd_lt_soldif(J5 - 1, (real(JJ, 8))/N2)  ! reusing DIFFUSE
+           SOLDIF(JJ) = DIFFUSE*SKYFAC 
          ELSE
           SOLDIF(JJ)=(DIFFUSE+BOUNCE)*SOLR ! all diffuse, = all but the direct.
          ENDIF
+
          IF (LPH) THEN ! add planetary heat loads
            QA=ANGLE+PIVAL ! add 1/2 rev to convert from Hour to orbital phase
            PLANH(JJ)=COSP*(PARW(1)+PARW(2)*COS(QA-PARW(3)/RADC)) ! thermal
@@ -569,6 +582,7 @@ D        IF (LQ2) WRITE(IOSP,*),'TLAT.c',JJ,COSI,COS3,DIRECT,DIFFUSE
            SUMH=SUMH+PLANH(JJ)
            SUMV=SUMV+PLANV(JJ)
          ENDIF
+
          ADGR(JJ)=HUV            ! solar heating of atm. H_v
          AVEI=AVEI+(1.d0-ALBJ(JJ))*QI+(1.-SALB)*SOLDIF(JJ) ! sum energy into surf
          AVEH=AVEH+HUV           ! sum atm. heating
