@@ -848,7 +848,7 @@ C 551    FORMAT(I5,I3,I3,F9.3, 2G12.5,F8.5,3G12.5, f8.4,f10.4, G12.5) ! 2018jun3
 C
 C  store results of day, calculate rms change
 C
-        IF (LATM .and. (TATMJ.LT.TATMIN)) THEN ! Tatm is below saturation T
+        IF (LATM .and. (TATMJ.LT.TATMIN) .and. (.NOT. (LASOLTAB .OR. LSOLDIFTAB .OR. LATMRADTAB))) THEN ! Tatm is below saturation T
           SNOW= (TATMIN-TATMJ)*CPOG/CFROST ! | snow formation  Kg/m^2
           IF (LFROST) THEN                 ! | in this time step
             EFROST=EFROST + SNOW ! let it fall to surface
