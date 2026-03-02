@@ -109,7 +109,13 @@ C the conductivity variation.
       IF (IIB.LE.-1) JRSET=999    ! never reset the lower boundary
       IF (JRSET.LT.1) JRSET=2
       LWP=IQ.EQ.3                ! do the stage 1 prints
-      LPH = PARW(1).GT. 0. ! doing planetary heat loads
+            
+      IF (LPLANHTAB .OR. LPLANVTAB) THEN
+        LPH = .TRUE.
+      ELSE
+        LPH = PARW(1).GT.0.      ! doing planetary heat loads
+      ENDIF
+
 C insure day loop does not go past next season
       J=MIN(N3,IDINT(DELJUL/PERIOD),MAXN3-1) ! largest allowed
       IF (N5.GT.1 .AND. N3 .GT.J) THEN
@@ -748,7 +754,7 @@ C   unbalanced flux into surface
 C FEMIT=FAC6F*SIGSB*TFNOW**4 is [[skyfac]]*Femis*sig*Tf^4
             POWER= (1.D0-Q4)*ASOL(JJ) +(1.D0-Q4)*SOLDIF(JJ)
      &               + FAC6F*ATMRAD + SHEATF - FEMIT
-            IF (LPH) POWER=POWER+EMIS*PLANH(JJ)+(1.D0-Q4)*PLANV(JJ) ! planetary
+            IF (LPH) POWER=POWER+FEMIS*PLANH(JJ)+(1.D0-Q4)*PLANV(JJ) ! planetary
 C If fff, add back-radiation=(1-skyfac)*femis*emis_x*sig*Tfar^4
             IF (LOPN3) POWER=POWER+ FEFAC*FARAD(JJ)
             DFROST = -POWER/CFROST ! rate of frost formation or sublimation

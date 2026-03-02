@@ -134,7 +134,13 @@ C      SAVE FAC5X,FFELP,LINT,NFFH,NHF,NLF
       LQ1=IDB2.GE.5             ! once per season or latitude
       LQ2=IDB2.GE.9             ! each time of day
 D     IF (IDB2.NE.0) WRITE(IOSP,*)'TLATSa',N3,N4,J5,LATM,LQ1,LQ2
-      LPH = PARW(1).GT.0.      ! doing planetary heat loads
+      
+      IF (LPLANHTAB .OR. LPLANVTAB) THEN
+        LPH = .TRUE.
+      ELSE
+        LPH = PARW(1).GT.0.      ! doing planetary heat loads
+      ENDIF
+
       IF (LASOLTAB .OR. LSOLDIFTAB .OR. LATMRADTAB .OR. LPLANHTAB .OR. LPLANVTAB) THEN
         LECL = .FALSE.
       ELSE
@@ -577,8 +583,19 @@ D        IF (LQ2) WRITE(IOSP,*),'TLAT.c',JJ,COSI,COS3,DIRECT,DIFFUSE
 
          IF (LPH) THEN ! add planetary heat loads
            QA=ANGLE+PIVAL ! add 1/2 rev to convert from Hour to orbital phase
-           PLANH(JJ)=COSP*(PARW(1)+PARW(2)*COS(QA-PARW(3)/RADC)) ! thermal
-           PLANV(JJ)=COSP*(PARW(4)+PARW(5)*COS(QA-PARW(6)/RADC))
+           
+           IF (LPLANHTAB) THEN
+             PLANH(JJ) = f_get_jd_lt_planh(J5 - 1, (real(JJ, 8))/N2)
+           ELSE
+             PLANH(JJ)=COSP*(PARW(1)+PARW(2)*COS(QA-PARW(3)/RADC)) ! thermal
+           ENDIF
+
+           IF (LPLANVTAB) THEN
+             PLANV(JJ) = f_get_jd_lt_planv(J5 - 1, (real(JJ, 8))/N2)
+           ELSE
+             PLANV(JJ)=COSP*(PARW(4)+PARW(5)*COS(QA-PARW(6)/RADC))
+           ENDIF
+
            SUMH=SUMH+PLANH(JJ)
            SUMV=SUMV+PLANV(JJ)
          ENDIF
