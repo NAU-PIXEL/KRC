@@ -49,7 +49,7 @@ C
      &,DTAFAC,DTIM,DTIMI,DTM,EMTIR,FAC3,FAC3S,FAC4,FAC45,FAC5,FAC6
      &,FAC6F,FAC7,FAC8,FAC82,FAC9,FEFAC,FEMIT,FROEX,HEATA,HEATFM
      &,PERSEC,POWER,SHEATF,SNOW,TATM4,TBOTM,TGHF,TRSET
-     &,TSUR,TSURM,TS3,TSUR4,ZD,FCJ
+     &,TSUR,TSURM,TS3,TSUR4,ZD,FCJ,RAWHEAT
       REAL*8 TGLOB,DBOT, ZBOT
       REAL*8 QA,QB,QQ,Q3,Q4,Q5,Q6           ! temporary use
       LOGICAL LDAY              ! this will [normally] be the last iteration day
@@ -737,6 +737,13 @@ C     -^-^-^-^-^-^-^-^-^-^-^-^-^-^-^- end of layer loops ^-^-^-^-^-^-^-^-^-^-^
           IF (LATM.AND.LOPN3) TATMJ= HARTA(JJ) !f use the fff atm
 C 3 possible upper boundary conditions. 1) Atm with frost 2) Just Atm 3) No atm.
           II=0 !db newton iteration count
+          
+          IF (LRAWTAB) THEN ! raw heat flux table
+            RAWHEAT = f_get_jd_lt_raw(J5 - 1, (real(JJ, 8))/N2)
+          ELSE
+            RAWHEAT = 0. ! should never get used
+          ENDIF
+
           IF (LFROST) THEN      !+-+-+-+ surface temperature is frost-buffered
             
             IF (LATMRADTAB) THEN ! new vis and ir flux tables
@@ -757,6 +764,7 @@ C FEMIT=FAC6F*SIGSB*TFNOW**4 is [[skyfac]]*Femis*sig*Tf^4
             IF (LPH) POWER=POWER+FEMIS*PLANH(JJ)+(1.D0-Q4)*PLANV(JJ) ! planetary
 C If fff, add back-radiation=(1-skyfac)*femis*emis_x*sig*Tfar^4
             IF (LOPN3) POWER=POWER+ FEFAC*FARAD(JJ)
+            IF (LRAWTAB) POWER=POWER + RAWHEAT ! raw heat flux table
             DFROST = -POWER/CFROST ! rate of frost formation or sublimation
             EFROST=EFROST + DFROST*DTIM ! amount on ground; kg*m**-2
             IF (EFROST.LE.0.) THEN ! reset to bare ground
@@ -782,6 +790,7 @@ C If fff, add back-radiation=(1-skyfac)*femis*emis_x*sig*Tfar^4
             SHEATF= FAC7*(TTJ(2)-TSUR) ! upward heat flow to surface
             POWER = ABRAD + SHEATF - FAC5*TSUR*TS3 ! unbalanced flux
             IF (LOPN3) POWER=POWER+FARAD(JJ) ! fff only
+            IF (LRAWTAB) POWER = POWER + RAWHEAT ! raw heat flux table
             DELT = POWER / (FAC7+FAC45*TS3)
             TSUR=TSUR+DELT
             IF (MOD(II,10).EQ.0)WRITE(IOPM,*)J5,J4,JJJ,JJ,II,TSUR,DELT !db
