@@ -574,7 +574,7 @@ D        IF (LQ2) WRITE(IOSP,*),'TLAT.c',JJ,COSI,COS3,DIRECT,DIFFUSE
         ! write into ASOL(JJ) with value from table
          ALBJ(JJ)=MAX(MIN(HALB,1.D0),0.D0) ! current hemispheric albedo
 
-         IF (LSOLDIFTAB) THEN ! LFLUX table total solar flux, including bounce and diffuse
+         IF (LSOLDIFTAB) THEN ! Flux table total solar flux, including bounce and diffuse
            DIFFUSE = f_get_jd_lt_soldif(J5 - 1, (real(JJ, 8))/N2)  ! reusing DIFFUSE
            SOLDIF(JJ) = DIFFUSE*SKYFAC 
          ELSE

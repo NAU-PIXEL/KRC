@@ -603,7 +603,7 @@ C If self heating, as before v3.4, factors are to the open sky
 C If using fff, -- are hemisphere , --P are back-radiation from far ground
 C SKYFAC is fractional normalized irradiance from the sky; 1.0 for flat
 C SKYFAC is computed in TLATS and arrives thru KRCCOM
-      IF (LOPN3) THEN           !F using fff
+      IF (LOPN3 .OR. LHEMISEMIS) THEN           !F using fff
         FAC5  = EMIS*SIGSB      !F --X far (eXterior) factors are 0 for flat
         FAC45= 4.D0*FAC5        !F
       ENDIF                     !F
