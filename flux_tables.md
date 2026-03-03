@@ -138,6 +138,7 @@ All fluxes must be recorded in watts per square meter.
 This column includes all direct solar illumination incident on the surface.
 In the current implementation, the fluxes in this column replace ASOL in tlats8, and so are scaled by a photometric function to determine the energy absorbed by the surface. 
 This photometric function is selected by the user using the PHOG input parameter, and is typically a function of the solar incidence angle. 
+(When KRC thinks sun is behind the local horizon, this photometric function defaults to the Lambertian albedo, so solar flux defined during this condition is still absorbed more or less as expected.)
 This means that this column should only be used for direct illumination by the Sun, and not visible flux from any other sources, such as diffuse illumination from the atmosphere or secondary illuminators. 
 This flux value is assumed to account for the slope of a surface and the slope's corresponding impact on solar incidence angle. 
 
