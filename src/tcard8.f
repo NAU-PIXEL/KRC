@@ -312,6 +312,11 @@ C  IG=8  Read file name
         WRITE(IOPM,*) 'FFLUX=',FFLUX
         WRITE(IOPM,*) 'Initialized Flux tables?',SUCCESS
         
+      ELSEIF (IREAD.EQ.28) THEN ! setting logical flag for hemispheric emission
+        LHEMISEMIS = .FALSE.
+        IF (TEXT .EQ. "TRUE") THEN
+          LHEMISEMIS = .TRUE.
+          WRITE(IOPM,*) 'Using hemispherical emission.'
 
       ELSE 
         WRITE (IOERR,*)'Tcard 8: invalid file type= ',IREAD,' ',TEXT
