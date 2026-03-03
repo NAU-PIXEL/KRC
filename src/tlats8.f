@@ -16,7 +16,7 @@ C                     2,3,4= error of same number in TDAY
 C                     5=no matching latitude in fff
 C                     6=number of timesteps not integral multiple of hours in fff
 C                     7=ECLIPSE failure here on in TDAY
-C                     8=mixing pits with Solar Diffuse Flux Tables.
+C                     30=mixing pits with Solar Diffuse Flux Tables.
 C_Calls  AVEDAY+  AVEYEAR+  GASPT+  CLIMTAU'   DEDING28  EPRED8  
 C        ROTV+  SIGMA  TDAY8  TPRINT8  TUN8  VDOT+  VLPRES'  VROTV+
 C xx8 = make and call R*8 routine
@@ -171,7 +171,7 @@ C============ factors that do not depend upon season ===================
          COSZLIM=0.            ! zenith angle default limit is 90 degrees
       ELSE                  ! slope is of conical pit wall
         IF (LASOLTAB .OR. LSOLDIFTAB) THEN   ! Error, never use pits with ASOL or SOLDIF tables.
-          IRET=8
+          IRET=30
           GOTO 9
         ENDIF
          QA=(90.D0-SLOPE)/RADC ! zenith angle of slope, in radians
