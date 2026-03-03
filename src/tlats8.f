@@ -170,7 +170,7 @@ C============ factors that do not depend upon season ===================
          SKYFAC = (1.D0+ DCOS(SLOPE/RADC))/2.D0 ! effective isotropic radiation.
          COSZLIM=0.            ! zenith angle default limit is 90 degrees
       ELSE                  ! slope is of conical pit wall
-        IF (LSOLDIFTAB) THEN   ! Error, never use pits with soldif tables.
+        IF (LASOLTAB .OR. LSOLDIFTAB) THEN   ! Error, never use pits with ASOL or SOLDIF tables.
           IRET=8
           GOTO 9
         ENDIF
