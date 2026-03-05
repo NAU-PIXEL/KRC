@@ -329,6 +329,13 @@ C  IG=8  Read file name
           WRITE (IOERR,*)'Tcard 8: invalid table flag: ',TEXT(1:ILEN)
           GOTO 440
         ENDIF
+        
+      ELSEIF (IREAD.EQ.28) THEN ! setting logical flag for hemispheric emission
+        LHEMISEMIS = .FALSE.
+        IF (TEXT .EQ. "TRUE") THEN
+          LHEMISEMIS = .TRUE.
+          WRITE(IOPM,*) 'Using hemispherical emission.'
+        ENDIF
 
       ELSE 
         WRITE (IOERR,*)'Tcard 8: invalid file type= ',IREAD,' ',TEXT

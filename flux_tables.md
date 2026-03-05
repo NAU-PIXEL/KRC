@@ -219,6 +219,15 @@ Where possible, we suggest the following procedure for users needing to work in 
 
 This will avoid the need to interpolate fluxes selected by L_s into seasons spaced evenly in time.
 
+## Self-heating 
+By default, KRC assumes a surface is in thermal equilibrium with any other surface material it is exposed to.
+This is achieved simply by only allowing emission into the portion of the hemisphere exposed to sky (```SKYFAC```).
+When you wish to disable this behavior and instead allow emission into the full hemisphere, include the following input line to set ```LHEMISEMIS``` to True:
+
+`8 28 0 'TRUE' /` 
+
+This will allow you to use flux tables to specify incoming flux from neighboring terrain while correctly accounting for the net exchange of energy.
+
 <!-- ## Unused inputs
 Due to the use of flux tables entirely replacing KRC's internal logic for determining incident flux, many traditional KRC inputs needed for such calculations instead go unused. 
 

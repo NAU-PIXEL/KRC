@@ -103,6 +103,7 @@ C               set logical units. See   units.com   for description
       LFATM =.FALSE.   ! IODA: FFATM set to: no far-field atmosphere active
       LOPN4 =.FALSE.   ! ----: FDISK set to: no Type 52 active
       LONE  =.FALSE.   ! set to: Not one-point mode
+      LHEMISEMIS = .FALSE.  ! controls hemispheric emission.  
 C                       set constants
       I=LEN_TRIM(VERSIN)        ! and make decimal interger
       WRITE(CBUF,*) VERSIN(1:I) ! write string into temporary buffer
