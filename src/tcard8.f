@@ -317,7 +317,7 @@ C  IG=8  Read file name
         IF (TEXT .EQ. "TRUE") THEN
           LHEMISEMIS = .TRUE.
           WRITE(IOPM,*) 'Using hemispherical emission.'
-
+        ENDIF
       ELSE 
         WRITE (IOERR,*)'Tcard 8: invalid file type= ',IREAD,' ',TEXT
       ENDIF
