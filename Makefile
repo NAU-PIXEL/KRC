@@ -30,7 +30,7 @@ RM=/bin/rm -f
 FC=gfortran
 
 # Use 2nd version below to allow debugger and enable most IDBG actions
-FFLAGS= -fno-automatic -fno-second-underscore -fd-lines-as-comments -fallow-argument-mismatch -Wall -cpp -ffixed-line-length-none
+FFLAGS= -fno-automatic -fno-second-underscore -fd-lines-as-comments -fallow-argument-mismatch -Wall -cpp -ffixed-line-length-none -g
 
 FDBFLAGS = -fprofile-arcs -ftest-coverage -pg -O0 -lgcov --coverage -g 
 #FFLAGS= -fno-automatic -fno-second-underscore -fd-lines-as-code  -fbounds-check # -Wall   #  -O
@@ -110,9 +110,8 @@ OBJ8 = $(KRCLIB)/krc8.o $(KRCLIB)/tseas8.o $(KRCLIB)/tlats8.o $(KRCLIB)/tday8.o 
 # replace  nowhite  with code in krc
 
 # PORB double precision
-OBJP3 = $(KRCLIB)/porbmn.o $(KRCLIB)/porbio.o $(KRCLIB)/ephemr.o $(KRCLIB)/ymd2j2.o $(KRCLIB)/porbig.o $(KRCLIB)/porbit.o $(KRCLIB)/porbel.o \
- $(KRCLIB)/orbit8.o $(KRCLIB)/spcrev.o $(KRCLIB)/caldate.o $(KRCLIB)/caldat.o $(KRCLIB)/julday.o $(KRCLIB)/b2b.o $(KRCLIB)/upcase.o $(KRCLIB)/eccanom8.o \
- $(KRCLIB)/catime.o $(KRCLIB)/prtpcom.o $(KRCLIB)/rotmdp8.o $(KRCLIB)/cocodp8.o $(KRCLIB)/vadddp8.o
+OBJP3 = $(KRCLIB)/porbmn.o \
+ $(KRCLIB)/catime.o $(KRCLIB)/rotmdp8.o $(KRCLIB)/cocodp8.o $(KRCLIB)/vadddp8.o
 
 
 # normal link
@@ -156,12 +155,8 @@ $(KRCLIB)/climtau.o: $(KRCLIB)/climtau.f                            $(KRCLIB)/un
 $(KRCLIB)/albvar8.o: $(KRCLIB)/albvar8.f $(KRCLIB)/krcc8m.f
 $(KRCLIB)/gaspt8.o:   $(KRCLIB)/gaspt8.f $(KRCLIB)/krcc8m.f
 $(KRCLIB)/tint8.o:     $(KRCLIB)/tint8.f $(KRCLIB)/krcc8m.f 
-$(KRCLIB)/ephemr.o:   $(KRCLIB)/ephemr.f           $(KRCLIB)/porbc8m.f
 $(KRCLIB)/porb08.o:   $(KRCLIB)/porb08.f           $(KRCLIB)/porbc8m.f        $(KRCLIB)/unic8m.f
-$(KRCLIB)/porbig.o:   $(KRCLIB)/porbig.f           $(KRCLIB)/porbc8m.f
-$(KRCLIB)/porbio.o:   $(KRCLIB)/porbio.f           $(KRCLIB)/porbc8m.f
 $(KRCLIB)/porbit.o:   $(KRCLIB)/porbit.f           $(KRCLIB)/porbc8m.f  # this is DP   porbit4 is SP
-$(KRCLIB)/prtpcom.o: $(KRCLIB)/prtpcom.f           $(KRCLIB)/porbc8m.f
 $(KRCLIB)/testrou.o: $(KRCLIB)/testrou.f $(KRCLIB)/krcc8m.f                   $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f    # test main program
 $(KRCLIB)/wraper8.o: $(KRCLIB)/wraper8.f                            $(KRCLIB)/unic8m.f  # only if D lines
 $(KRCLIB)/glot.o: $(KRCLIB)/glot.f $(KRCLIB)/glotcom.f
@@ -183,10 +178,8 @@ $(KRCLIB)/finterp.o: $(KRCLIB)/finterp.f
 $(KRCLIB)/getpi4.o: $(KRCLIB)/getpi4.f
 $(KRCLIB)/getpr8.o: $(KRCLIB)/getpr8.f
 $(KRCLIB)/jdate.o:  $(KRCLIB)/jdate.f  
-$(KRCLIB)/julday.o:  $(KRCLIB)/julday.f 
 $(KRCLIB)/minvr4.o: $(KRCLIB)/minvr4.f
 $(KRCLIB)/orbit8.o: $(KRCLIB)/orbit8.f
-$(KRCLIB)/porbel.o: $(KRCLIB)/porbel.f 
 #$(KRCLIB)/porb1.o: $(KRCLIB)/porb1.f $(KRCLIB)/unic8m.f $(KRCLIB)/porbcom8.f
 $(KRCLIB)/readaie.o: $(KRCLIB)/readaie.f
 $(KRCLIB)/readtxt360.o: $(KRCLIB)/readtxt360.f
@@ -197,7 +190,6 @@ $(KRCLIB)/rotmdp8.o: $(KRCLIB)/rotmdp8.f  # Contains:  MEQUAL  MPROD3  ROTAX  RO
 #                      ROTROW  ROTSHO  ROTV  ROTVEC  ROTZXM  TRANS3  VROTV
 $(KRCLIB)/sigma.o: $(KRCLIB)/sigma.f  
 $(KRCLIB)/sigma8.o: $(KRCLIB)/sigma8.f   # used for debug of cubuterp
-$(KRCLIB)/spcrev.o: $(KRCLIB)/spcrev.f 
 $(KRCLIB)/st2real6.o: $(KRCLIB)/st2real6.f
 $(KRCLIB)/strumi.o: $(KRCLIB)/strumi.f
 $(KRCLIB)/strumr8.o: $(KRCLIB)/strumr8.f
@@ -205,12 +197,8 @@ $(KRCLIB)/tridag8.o: $(KRCLIB)/tridah8.f   # uses prior partial solution
 $(KRCLIB)/vlpres.o: $(KRCLIB)/vlpres.f
 $(KRCLIB)/vadddp8.o: $(KRCLIB)/vadddp8.f  # Contains:  VADD  VCROSS  VDOT  VEQUAL  VMAG  VNEG 
  #                       VNORM  VPRF  VPRINT  VSCALE  VSHOW  VSUB  VUNIT
-$(KRCLIB)/ymd2j2.o: $(KRCLIB)/ymd2j2.f
 
 #----------------------- added after remove use of all but C library
-$(KRCLIB)/b2b.o: $(KRCLIB)/b2b.f
-$(KRCLIB)/caldat.o: $(KRCLIB)/caldat.f
-$(KRCLIB)/caldate.o: $(KRCLIB)/caldate.f
 $(KRCLIB)/catime.o: $(KRCLIB)/catime.f
 $(KRCLIB)/datime.o: $(KRCLIB)/datime.f
 $(KRCLIB)/d2d.o: $(KRCLIB)/d2d.f
