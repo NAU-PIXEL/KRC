@@ -145,34 +145,19 @@ OBJ8 = $(OBJDIR)/krc8.o $(OBJDIR)/tseas8.o $(OBJDIR)/tlats8.o $(OBJDIR)/tday8.o 
  $(OBJDIR)/orlint8.o $(OBJDIR)/wraper8.o
 # replace  nowhite  with code in krc
 
-# PORB double precision
-OBJP3 = $(OBJDIR)/porbmn.o $(OBJDIR)/porbio.o $(OBJDIR)/ephemr.o $(OBJDIR)/ymd2j2.o $(OBJDIR)/porbig.o $(OBJDIR)/porbit.o $(OBJDIR)/porbel.o \
- $(OBJDIR)/orbit8.o $(OBJDIR)/spcrev.o $(OBJDIR)/caldate.o $(OBJDIR)/caldat.o $(OBJDIR)/julday.o $(OBJDIR)/upcase.o $(OBJDIR)/eccanom8.o \
- $(OBJDIR)/catime.o $(OBJDIR)/prtpcom.o $(OBJDIR)/rotmdp8.o $(OBJDIR)/cocodp8.o $(OBJDIR)/vadddp8.o
-
 $(BINDIR)/krc: $(OBJ8) call $(CMODOBJS)
 	@mkdir -p $(BINDIR)
 	$(FC) -o $@ $(OBJ8) \
 	    $(CISISLIB) $(SYSLIBS) $(CMODOBJS)
 
-$(BINDIR)/porbmn: $(OBJP3)
-	@mkdir -p $(BINDIR)
-	$(FC) -o $@ $(OBJP3) \
-	    $(SYSLIBS)
-
 # normal link
 krc: $(BINDIR)/krc
 
-porbmn: $(BINDIR)/porbmn
 # testing and development
 
 krcdb: $(OBJ8) call $(CMODOBJS)  # -  with debug
 	$(FC) $(LDBFLAGS) $(LIBDIRS) -o $@ $(OBJ8) \
 	$(CISISLIB) $(SYSLIBS) $(CMODOBJS) $(FDBFLAGS)
-
-porbmndb: $(OBJP3)
-	$(FC) $(LDBFLAGS) $(LIBDIRS) -o $@ $(OBJP3) \
-	$(SYSLIBS) $(FDBFLAGS)
 
 # make routines for program dependencies 
 #
@@ -188,18 +173,15 @@ $(OBJDIR)/tfar8.o:     $(KRCLIB)/tfar8.f $(KRCLIB)/krcc8m.f                   $(
 # above containss TFAREAD
 $(OBJDIR)/tun8.o:       $(KRCLIB)/tun8.f $(KRCLIB)/krcc8m.f          $(KRCLIB)/dayc8m.f                   $(KRCLIB)/hatc8m.f
 $(OBJDIR)/readzone.o: $(KRCLIB)/readzone.f $(KRCLIB)/krcc8m.f                 $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f
+$(OBJDIR)/tdif3.o:     $(KRCLIB)/tdif3.f $(KRCLIB)/krcc8m.f                   $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f
 $(OBJDIR)/seasalb.o: $(KRCLIB)/seasalb.f                            $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f
 $(OBJDIR)/seastau.o: $(KRCLIB)/seastau.f                            $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f
 $(OBJDIR)/climtau.o: $(KRCLIB)/climtau.f                            $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f
 $(OBJDIR)/albvar8.o: $(KRCLIB)/albvar8.f $(KRCLIB)/krcc8m.f
 $(OBJDIR)/gaspt8.o:   $(KRCLIB)/gaspt8.f $(KRCLIB)/krcc8m.f
 $(OBJDIR)/tint8.o:     $(KRCLIB)/tint8.f $(KRCLIB)/krcc8m.f 
-$(OBJDIR)/ephemr.o:   $(KRCLIB)/ephemr.f           $(KRCLIB)/porbc8m.f
 $(OBJDIR)/porb08.o:   $(KRCLIB)/porb08.f           $(KRCLIB)/porbc8m.f        $(KRCLIB)/unic8m.f
-$(OBJDIR)/porbig.o:   $(KRCLIB)/porbig.f           $(KRCLIB)/porbc8m.f
-$(OBJDIR)/porbio.o:   $(KRCLIB)/porbio.f           $(KRCLIB)/porbc8m.f
 $(OBJDIR)/porbit.o:   $(KRCLIB)/porbit.f           $(KRCLIB)/porbc8m.f  # this is DP   porbit4 is SP
-$(OBJDIR)/prtpcom.o: $(KRCLIB)/prtpcom.f           $(KRCLIB)/porbc8m.f
 $(OBJDIR)/wraper8.o: $(KRCLIB)/wraper8.f                            $(KRCLIB)/unic8m.f  # only if D lines
 #------------------  do not have includes
 $(OBJDIR)/bigend.o: $(KRCLIB)/bigend.f
@@ -213,54 +195,26 @@ $(OBJDIR)/eclipse.o: $(KRCLIB)/eclipse.f
 $(OBJDIR)/epred8.o: $(KRCLIB)/epred8.f
 $(OBJDIR)/evmono3d.o: $(KRCLIB)/evmono3d.f
 $(OBJDIR)/finterp.o: $(KRCLIB)/finterp.f
-$(OBJDIR)/julday.o:  $(KRCLIB)/julday.f 
 $(OBJDIR)/orbit8.o: $(KRCLIB)/orbit8.f
-$(OBJDIR)/porbel.o: $(KRCLIB)/porbel.f 
 $(OBJDIR)/readtxt360.o: $(KRCLIB)/readtxt360.f
 $(OBJDIR)/rotmdp8.o: $(KRCLIB)/rotmdp8.f  # Contains:  MEQUAL  MPROD3  ROTAX  ROTCOL  ROTDIA 
 #                      ROTEST  ROTEXM  ROTEXV  ROTMAT  ROTORB  ROTRIP  
 #                      ROTROW  ROTSHO  ROTV  ROTVEC  ROTZXM  TRANS3  VROTV
 $(OBJDIR)/sigma8.o: $(KRCLIB)/sigma8.f   # used for debug of cubuterp
 $(OBJDIR)/spcrev.o: $(KRCLIB)/spcrev.f 
-$(OBJDIR)/st2real6.o: $(KRCLIB)/st2real6.f
 $(OBJDIR)/strumi.o: $(KRCLIB)/strumi.f
 $(OBJDIR)/strumr8.o: $(KRCLIB)/strumr8.f
-$(OBJDIR)/tridag8.o: $(KRCLIB)/tridah8.f   # uses prior partial solution
 $(OBJDIR)/vlpres.o: $(KRCLIB)/vlpres.f
 $(OBJDIR)/vadddp8.o: $(KRCLIB)/vadddp8.f  # Contains:  VADD  VCROSS  VDOT  VEQUAL  VMAG  VNEG 
  #                       VNORM  VPRF  VPRINT  VSCALE  VSHOW  VSUB  VUNIT
-$(OBJDIR)/ymd2j2.o: $(KRCLIB)/ymd2j2.f
 
 #----------------------- added after remove use of all but C library
-$(OBJDIR)/caldat.o: $(KRCLIB)/caldat.f
-$(OBJDIR)/caldate.o: $(KRCLIB)/caldate.f
 $(OBJDIR)/catime.o: $(KRCLIB)/catime.f
 $(OBJDIR)/fillmv.o: $(KRCLIB)/fillmv.f  # has  FILLB FILLI FILLL FILLR FILLD MVB MVI MVL MVR MVD
 #                     MVDF MVDM MVD21
 $(OBJDIR)/ksubs8.o: $(KRCLIB)/ksubs8.f  # has  AVEDAY  AVEYEAR  CO2PT  SIGMA 
 $(OBJDIR)/nowhite.o: $(KRCLIB)/nowhite.f
 $(OBJDIR)/white1.o: $(KRCLIB)/white1.f
-$(OBJDIR)/vec2code.o: $(KRCLIB)/vec2code.f
-
-# ------------------used only for testing
-$(OBJDIR)/bigend1.o: $(KRCLIB)/bigend1.f
-catime:o /home/hkieffer/src/for/util/$(KRCLIB)/catime.f
-$(OBJDIR)/climtau.o: $(KRCLIB)/climtau.f
-$(OBJDIR)/deding2.o: $(KRCLIB)/deding2.f
-$(OBJDIR)/dpythag.o: $(KRCLIB)/dpythag.f # - /home/hkieffer/src/for/NumRec/$(KRCLIB)/dpythag.f
-$(OBJDIR)/dspline.o: $(KRCLIB)/dspline.f # -
-$(OBJDIR)/dsplint.o: $(KRCLIB)/dsplint.f # -
-$(OBJDIR)/dsvbksb.o: $(KRCLIB)/dsvbksb.f # -
-$(OBJDIR)/dsvdcmp.o: $(KRCLIB)/dsvdcmp.f # calls dpythag
-$(OBJDIR)/evrf4.o: $(KRCLIB)/evrf4.f
-$(OBJDIR)/hratlsq.o: $(KRCLIB)/hratlsq.f # calls ratval,dsvbksb,dsvdcmp spline splint
-$(OBJDIR)/kratlsq.o: $(KRCLIB)/kratlsq.f # calls ratval,dsvbksb,dsvdcmp dspline dsplint
-$(OBJDIR)/m2eul.o: $(KRCLIB)/m2eul.f
-$(OBJDIR)/qtlats.o: $(KRCLIB)/qtlats.f
-$(OBJDIR)/ratval.o: $(KRCLIB)/ratval.f
-$(OBJDIR)/spline.o: $(KRCLIB)/spline.f # -
-$(OBJDIR)/splint.o: $(KRCLIB)/splint.f # -
-$(OBJDIR)/test8.o: $(KRCLIB)/test8.f
 
 ### C Isis library make section
 # Set up some shell-level specific variables
