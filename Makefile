@@ -116,6 +116,7 @@ $(OBJDIR)/%.o: $(KRCLIB)/%.f
 
 
 .PHONY : call cclean clean cleanall cleanmods
+.PHONY : call cclean clean cleanall cleanmods
 #
 # Make clean
 #
