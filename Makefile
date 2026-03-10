@@ -86,7 +86,7 @@ cleanmods:
 #HLIB=-lhk_fmath -lhk_fgeom -lhk_futil -lhk_fchar  ##2-lhk_fNumRec # -lhk_rad
 
 
-.PHONY : call cclean clean cleanall cleanidl cleanmods
+.PHONY : call cclean clean cleanall cleanmods
 #
 # Make clean
 #
@@ -96,16 +96,13 @@ cleanbin:
 	- $(RM) krc
 	- $(RM) porb
 
-cleanidl:
-	-unalias rm; cd idl/extern; rm -f *.o ftnwrap64.so
-
-cleanall: cclean clean cleanbin cleanidl cleanmods
+cleanall: cclean clean cleanbin cleanmods
 
 #------------- system dependencies -------------
 
 OBJ8 = $(KRCLIB)/krc8.o $(KRCLIB)/tseas8.o $(KRCLIB)/tlats8.o $(KRCLIB)/tday8.o $(KRCLIB)/tcard8.o $(KRCLIB)/tprint8.o $(KRCLIB)/tdisk8.o $(KRCLIB)/tun8.o \
  $(KRCLIB)/epred8.o $(KRCLIB)/tint8.o $(KRCLIB)/albvar8.o $(KRCLIB)/vlpres.o $(KRCLIB)/porb08.o $(KRCLIB)/porbit.o $(KRCLIB)/orbit8.o $(KRCLIB)/eccanom8.o \
- $(KRCLIB)/alsubs.o $(KRCLIB)/deding28.o $(KRCLIB)/seasalb.o $(KRCLIB)/seastau.o $(KRCLIB)/readtxt360.o $(KRCLIB)/finterp.o $(KRCLIB)/evmono38.o \
+ $(KRCLIB)/deding28.o $(KRCLIB)/seasalb.o $(KRCLIB)/seastau.o $(KRCLIB)/readtxt360.o $(KRCLIB)/finterp.o \
  $(KRCLIB)/climtau.o $(KRCLIB)/binf5.o $(KRCLIB)/bigend.o $(KRCLIB)/rotmdp8.o $(KRCLIB)/vadddp8.o $(KRCLIB)/cocodp8.o $(KRCLIB)/readzone.o \
  $(KRCLIB)/catime.o $(KRCLIB)/white1.o $(KRCLIB)/ksubs8.o $(KRCLIB)/tfar8.o $(KRCLIB)/cubuterp8.o $(KRCLIB)/sigma8.o $(KRCLIB)/fillmv.o \
  $(KRCLIB)/eclipse.o $(KRCLIB)/tfine8.o $(KRCLIB)/dspline.o $(KRCLIB)/dsplint.o $(KRCLIB)/evmono3d.o $(KRCLIB)/strumi.o $(KRCLIB)/strumr8.o $(KRCLIB)/gaspt8.o \
@@ -170,7 +167,6 @@ $(KRCLIB)/wraper8.o: $(KRCLIB)/wraper8.f                            $(KRCLIB)/un
 $(KRCLIB)/glot.o: $(KRCLIB)/glot.f $(KRCLIB)/glotcom.f
 $(KRCLIB)/readkrcm1.o: $(KRCLIB)/readkrcm1.f $(KRCLIB)/glotcom.f 
 #------------------  do not have includes
-$(KRCLIB)/alsubs.o: $(KRCLIB)/alsubs.f 
 $(KRCLIB)/averag.o: $(KRCLIB)/averag.f  # test for function should be defined and called
 $(KRCLIB)/aveyear.o: $(KRCLIB)/aveyear.f
 $(KRCLIB)/bigend.o: $(KRCLIB)/bigend.f
@@ -182,7 +178,6 @@ $(KRCLIB)/deding28.o: $(KRCLIB)/deding28.f
 $(KRCLIB)/eccanom8.o: $(KRCLIB)/eccanom8.f
 $(KRCLIB)/eclipse.o: $(KRCLIB)/eclipse.f 
 $(KRCLIB)/epred8.o: $(KRCLIB)/epred8.f
-$(KRCLIB)/evmono38.o: $(KRCLIB)/evmono38.f
 $(KRCLIB)/evmono3d.o: $(KRCLIB)/evmono3d.f
 $(KRCLIB)/finterp.o: $(KRCLIB)/finterp.f
 $(KRCLIB)/getpi4.o: $(KRCLIB)/getpi4.f
@@ -297,79 +292,6 @@ $(CISISLIB): $(CISISOBJS)
 #  Clean up 
 cclean: 
 	- $(RM) $(CISISOBJS) $(CISISLIB)
-
-
-### IDL module make section
-# Makefile for IDL externals for KRC users
-#_Hist 2014feb28 HK Derive from Hugh's idl/externals/Makefile
-# Tried  -m32 on IDLCFLAGS IDLFFLAGS and LDFAGS; this caused errors
-# 2014may05 -lg2c >> -lgfortran
-#########################################################################
-
-# Set up some shell-level specific variables
-SHELL=/bin/csh 
-
-#  These are the GNU C compiler flags.
-IDLCC= gcc -pipe  
-IDLCFLAGS= -fPIC -Wall
-#  These are the FORTRAN compiler flags
-IDLFFLAGS= -fno-automatic -fno-second-underscore -fargument-alias -fd-lines-as-comments -fallow-argument-mismatch -fPIC 
-
-#  Special load flags, utilized in all builds, whether FORTRAN or C
-LD=gcc
-IDLLDFLAGS= -shared -fPIC # -Wall -Wl
-# whole archive only needed if refer to .a libs
-
-# Special library MACROS for .a libraries  There are none built here
-# AR=ar   # archinve.. moves .o into .a    No harm 
-# ARFLAGS=-rvs
-# RANLIB=/bin/echo  # nedded for .a lib
-
-#------------- Libraries and paths-------------------------
-# Include files paths
-INCLUDES=-I.   # in this directory
-
-# L are Library directores that always are searched in
-# l are libraries to include  -lc==libc.a  etc. 
-LIBDIRS=-L.  # -L/home/hkieffer/linux/lib  #<<< last is for NumRec
-#SYSLIBS = -lg2c -lc -lm   commented 2014may05
-SYSLIBS = -lgfortran -lc -lm  
-
-#------------------- target dependencies -------------------
-IDLOBJDIR = idl/objects
-IDLSRCDIR = idl/extern
-
-EXCW = exfuncw.c exfunctionw.c exroutinew.c
-
-# Find C and Fortran sources and make object targets
-IDLSRCW = $(shell find $(IDLSRCDIR) -type f -name "*.c")
-IDLSRCW_FILTER = $(filter-out $(addprefix $(IDLSRCDIR)/,$(EXCW)), $(IDLSRCW))
-IDLOBJSW = $(IDLSRCW_FILTER:.c=.o)
-
-IDLSRCF = $(shell find $(IDLSRCDIR) -type f -name "*.f")
-IDLOBJSF = $(IDLSRCF:.f=.o)
-
-IDLOBJSALL= $(IDLOBJSF) $(IDLOBJSW) # concatonate objects
-
-# Pattern rules to match files in source directory with object targets
-# Not needed for KRC C files 
-$(IDLOBJSW): %.o: %.c
-	$(IDLCC) $(IDLCFLAGS) $(INCLUDES) -c $< -o $@
-
-$(IDLOBJSF): %.o: %.f
-	$(FC) $(IDLFFLAGS) $(INCLUDES) -c $< -o $@
-
-%.o : $(IDLSRCDIR)/%.c 
-	$(IDLCC) $(IDLCFLAGS) $(INCLUDES) -c $<
-%.o : $(IDLSRCDIR)/%.f
-	$(FC) $(IDLFFLAGS) $(INCLUDES) -c $<
-#------------- Actions -----------------------------
-
-# machines running in 64-bit mode, IDL must be in same mode
-ftnwrap64.so:	$(IDLOBJSALL)    
-	$(LD) $(IDLLDFLAGS)   -o $(IDLSRCDIR)/$@ $(IDLOBJSALL) $(LIBDIRS) \
-	$(SYSLIBS)
-#	 -lhk_fNumRec $(SYSLIBS)
 
 ### Documentation build section
 
