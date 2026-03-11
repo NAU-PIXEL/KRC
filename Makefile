@@ -105,7 +105,7 @@ OBJ8 = $(KRCLIB)/krc8.o $(KRCLIB)/tseas8.o $(KRCLIB)/tlats8.o $(KRCLIB)/tday8.o 
  $(KRCLIB)/deding28.o $(KRCLIB)/seasalb.o $(KRCLIB)/seastau.o $(KRCLIB)/readtxt360.o $(KRCLIB)/finterp.o \
  $(KRCLIB)/climtau.o $(KRCLIB)/binf5.o $(KRCLIB)/bigend.o $(KRCLIB)/rotmdp8.o $(KRCLIB)/vadddp8.o $(KRCLIB)/cocodp8.o $(KRCLIB)/readzone.o \
  $(KRCLIB)/catime.o $(KRCLIB)/white1.o $(KRCLIB)/ksubs8.o $(KRCLIB)/tfar8.o $(KRCLIB)/cubuterp8.o $(KRCLIB)/sigma8.o $(KRCLIB)/fillmv.o \
- $(KRCLIB)/eclipse.o $(KRCLIB)/tfine8.o $(KRCLIB)/dspline.o $(KRCLIB)/dsplint.o $(KRCLIB)/evmono3d.o $(KRCLIB)/strumi.o $(KRCLIB)/strumr8.o $(KRCLIB)/gaspt8.o \
+ $(KRCLIB)/dspline.o $(KRCLIB)/dsplint.o $(KRCLIB)/evmono3d.o $(KRCLIB)/strumi.o $(KRCLIB)/strumr8.o $(KRCLIB)/gaspt8.o \
  $(KRCLIB)/orlint8.o $(KRCLIB)/wraper8.o
 # replace  nowhite  with code in krc
 
@@ -140,7 +140,6 @@ $(KRCLIB)/krc8.o:       $(KRCLIB)/krc8.f $(KRCLIB)/krcc8m.f $(KRCLIB)/latc8m.f $
 $(KRCLIB)/tseas8.o:   $(KRCLIB)/tseas8.f $(KRCLIB)/krcc8m.f $(KRCLIB)/latc8m.f          $(KRCLIB)/unic8m.f          $(KRCLIB)/hatc8m.f $(KRCLIB)/porbc8m.f
 $(KRCLIB)/tlats8.o:   $(KRCLIB)/tlats8.f $(KRCLIB)/krcc8m.f $(KRCLIB)/latc8m.f $(KRCLIB)/dayc8m.f $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f $(KRCLIB)/hatc8m.f $(KRCLIB)/porbc8m.f $(CMODOBJS) $(FMODOBJS)
 $(KRCLIB)/tday8.o:     $(KRCLIB)/tday8.f $(KRCLIB)/krcc8m.f          $(KRCLIB)/dayc8m.f $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f $(KRCLIB)/hatc8m.f $(KRCLIB)/porbc8m.f $(FMODDIR)/array_structs.mod
-$(KRCLIB)/tfine8.o:   $(KRCLIB)/tfine8.f $(KRCLIB)/krcc8m.f          $(KRCLIB)/dayc8m.f $(KRCLIB)/unic8m.f          $(KRCLIB)/hatc8m.f
 $(KRCLIB)/tcard8.o:   $(KRCLIB)/tcard8.f $(KRCLIB)/krcc8m.f $(KRCLIB)/latc8m.f $(KRCLIB)/dayc8m.f $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f $(KRCLIB)/hatc8m.f
 $(KRCLIB)/tprint8.o: $(KRCLIB)/tprint8.f $(KRCLIB)/krcc8m.f $(KRCLIB)/latc8m.f $(KRCLIB)/dayc8m.f $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f 
 $(KRCLIB)/tdisk8.o:   $(KRCLIB)/tdisk8.f $(KRCLIB)/krcc8m.f $(KRCLIB)/latc8m.f $(KRCLIB)/dayc8m.f $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f $(KRCLIB)/hatc8m.f
@@ -171,7 +170,6 @@ $(KRCLIB)/cocodp8.o: $(KRCLIB)/cocodp8.f  # Contains: COCOCM  COCOMC  COCOSC  CO
 $(KRCLIB)/cubuterp8.o: $(KRCLIB)/cubuterp8.f
 $(KRCLIB)/deding28.o: $(KRCLIB)/deding28.f
 $(KRCLIB)/eccanom8.o: $(KRCLIB)/eccanom8.f
-$(KRCLIB)/eclipse.o: $(KRCLIB)/eclipse.f 
 $(KRCLIB)/epred8.o: $(KRCLIB)/epred8.f
 $(KRCLIB)/evmono3d.o: $(KRCLIB)/evmono3d.f
 $(KRCLIB)/finterp.o: $(KRCLIB)/finterp.f

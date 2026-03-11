@@ -74,7 +74,7 @@ C
      &,BOTDOWN,BOUNCE,CC,CD,CL,COSAM,COSI,COSP,COSZLIM,COS2,COS3
      &,DIFFUSE,DIP,DIRECT,EFP,FACTOR,F23,FP,G0,G1,GHF,HUV   ! ,DIFAC
      &,OMEGA,PCAP,PFACTOR,RANG,RLAT,RSDEC,SAZ
-     &,SD,SL,SOLAU,SOLR,SS,TAEQ4,TATMAVE,TATMSIG
+     &,SD,SL,SOLR,SS,TAEQ4,TATMAVE,TATMSIG
      &,TAUICE,TAUVIS,TBOT,TOPUP,TSEQ4,TSUR,TWILFAC,TWILIM
       REAL*8 PGASG ! Partial pressure of condensible gas; current
       REAL*8 PGASM ! " " ; initial conditions
@@ -105,10 +105,8 @@ C dayc ADGR(MAXN2)    ! Atm. solar heating at each time of day
 C -------- 
       INTEGER*4 I,IH,IRL,J,JJ,JJH,JHOT,J3P1,KODE,NFFH
       INTEGER*4 KOP             ! photometric function index
-      INTEGER*4 JBE(4),PARI(2)          !  ECLIPSE range indices
       LOGICAL LINT,LQ1,LQ2,LQ3,LTW
       LOGICAL LPH               ! consider planetary heat load
-      LOGICAL LECL              ! have daily eclipses
 
       REAL VLPRES,CLIMTAU          ! Function names. Default precision
       REAL*8 AVEDAY,AVEYEAR,GASPT,EPRED8     ! Function names 
@@ -141,11 +139,6 @@ D     IF (IDB2.NE.0) WRITE(IOSP,*)'TLATSa',N3,N4,J5,LATM,LQ1,LQ2
         LPH = PARW(1).GT.0.      ! doing planetary heat loads
       ENDIF
 
-      IF (LASOLTAB .OR. LSOLDIFTAB .OR. LATMRADTAB .OR. LPLANHTAB .OR. LPLANVTAB .OR. LRAWTAB) THEN
-        LECL = .FALSE.
-      ELSE
-        LECL= (ABS(PARC(1)-1.).LT. 0.2)       ! doing daily eclipses
-      ENDIF
 C
       IRET=1          ! set return code to normal
       I=IQ            ! simply to avoid compiler complaint that  IQ is not used
@@ -209,7 +202,6 @@ C precision conversion
       SUBS4=SNGL(SUBS)
 C     
       SOLR=SOLCON/(DAU*DAU)     ! solar flux at this heliocentric range
-      SOLAU=SOLR                ! duplicate in case eclipse is active
       RSDEC=SDEC/RADC           ! current solar declination in radians
       SD=DSIN(RSDEC)
       CD=DCOS(RSDEC)
@@ -258,17 +250,7 @@ C
  100  J4=J4+1
       DLAT=ALAT(J4)            ! current latitude, degrees
       PARC(11)=DLAT             ! current latitude ( may need in TDAY
-      IF (LECL) THEN            !  Daily, call for each latitude
-        JBE(1)=1                ! need  FINSOL
-        PARI(1)=N2
-        PARI(2)=IOERR
-        CALL ECLIPSE(PARC,PARI, JBE, FINSOL)
-        IF (FINSOL(1) .LT. 0.) THEN !  ERROR
-          WRITE(IOERR,*)'TLATS: ECLIPSE returned error'
-          IRET=39
-          GOTO 9
-        ENDIF
-      ENDIF
+
 
       LQ3=LD19 .AND. (J5.EQ.JDISK) .AND. (J4.EQ.1) ! first recorded season
 
@@ -556,8 +538,6 @@ C     Set direct surface insolation
            HALB=ALB  ! but used only  *DIRECT, so value does not matter 
          ENDIF
 C     
-         IF (LECL) SOLR=SOLAU*FINSOL(JJ) ! eclipse factor. Daily only
-
         IF (LASOLTAB) THEN ! new vis and ir flux tables
          QI = f_get_jd_lt_asol(J5 - 1, (real(JJ, 8))/N2)
         ELSE 
@@ -818,7 +798,6 @@ C
       ENDIF
 
       IF (J4.LT.N4) GO TO 100   !^^^^^^^^^^^^^^^^^^^^ end of  Latitude loop
-      IF (J5.EQ.N5 .AND. PARC(1).GE. 1.3) CALL TFINE8(3) ! possible rare eclipse (omit 6 args)
 
 D     IF (LQ1 .AND.(.NOT. LONE) .AND. (J5.LE.1)) ! avoid line in  OnePoint output
 D    &  WRITE(IOSP,*)'TLATS: TEQQ',(TEQQ(I),I=1,N4) ! starting  Tequil 
