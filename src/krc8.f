@@ -197,7 +197,6 @@ D     write(*,*) 'TCARD:1 return=',IRC !<<< debug
 
 C VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV  BEGIN case  VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
  140  NCASE=NCASE+1 ! increment case
-      LATM=(PTOTAL .GT. 1.)     ! case has an atmosphere, into KRCCOM
       PARC(12)=PERIOD           ! sol in days for an eclipsed body
       IF (IRC.EQ.4) THEN        ! Switch to "one-point" mode
         CLOSE(IOIN)             ! close the card input file
@@ -263,7 +262,7 @@ C     CALL CATIME (DAYTIM)      ! reset the time at start of each model
 C - - - OPEN fff input surf [and atm]
       DUM8=MODULO (IDB6,4)      ! Set amount of reporting 
       LQ=(IDB6 .NE. 0)          ! local flag for fff debug print
-      IF (LQ) WRITE(IOPM,*) 'KRC:4L',LATM,LFATM,MINT,LFAME,LOPN3  !<<<< debug
+      IF (LQ) WRITE(IOPM,*) 'KRC:4L',LFATM,MINT,LFAME,LOPN3  !<<<< debug
       I= LNBLNK(FFAR)           ! length of far-field surface name
       IF (LQ) WRITE(IOPM,*)'KRC:FFAR>',FFAR(1:I),'<',I  !<<<< debug
       IF (I.GE.4 .AND. .NOT.LOPN3) THEN
@@ -297,13 +296,10 @@ C    Success mandatory to prevent possible long run with wrong fff
           WRITE(IOERR,*)'Case',NCASE,'fff Tsurf and Tatm N24 different'
           GOTO 9 ! next case would probably try to open the same file
         ENDIF
-        IF (VALS(4) .NE. 3)  GOTO 86 ! file was expected to provide atm. temp.
         IF (DUM8M(8).NE. 0.) WRITE(IOSP,*) ' Warning: far Tatm sloped'
       ENDIF                     ! opening FFATM
 
-      IF (LQ) WRITE(IOPM,*) 'KRC:5L',LATM,LFATM,MINT,LFAME,LOPN3 
-      LFAME=(LATM .AND. .NOT. LFATM .AND. MINT .EQ. 3) ! get atm from surface fff
-      IF (LATM .AND. LOPN3 .AND. .NOT.LFATM .AND. .NOT.LFAME) GOTO 86 ! no fff atm
+      IF (LQ) WRITE(IOPM,*) 'KRC:5L',LFATM,MINT,LFAME,LOPN3
 
 C======
 
@@ -377,7 +373,5 @@ C error section
       GOTO 9
  85   WRITE(IOPM,*)'KRC: failed opening error log file'  
       GOTO 9
- 86   WRITE(IOERR,*)'KRC: need fff atmosphere but none available',NCASE
-      GOTO 170                  ! try next case
 
       END

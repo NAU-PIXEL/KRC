@@ -271,7 +271,6 @@ C     write(*,*)'t1', subs
           K=I+5*MM1             ! first index of item 6
           FFF(K)=DFLOAT(NDJ4(J4)) ! # days to compute solution 
           FFF(K+1)=DTM4(J4)     ! rms temperature change on last day
-          FFF(K+2)=TTA4(J4) 
           CALL MVD (TIN(2,J4),FFF(K+3),MM4)
           K=K+MM1               ! first index of item 7
           FFF(K)=FROST4(J4)     ! Frost at midnight

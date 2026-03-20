@@ -65,12 +65,11 @@ C     Here, assume that N2 is an exact multiple of N24
       CASE(3)                   ! KODE=3 Print photmetric albedoes
 C     ASOL(JJ)=QI            ! collimated insolation onto slope surface dayc8m
 C     SOLDIF(JJ) ; all downward insolation except collimated            hatc8m
-C     ADGR(JJ)=HUV            ! solar heating of atm. H_v               dayc8m
 C     ARG4 must be COSJ; cos of incidence angle on horizontal    arg.
 C     ALBJ(JJ)=MIN(MAX(HALB,0.D0),1.D0) ! current hemispheric albedo    hatc8m 
         WRITE(77,700) NCASE, N2,J4,J5,-77,-77
         DO J=1,N2
-          WRITE(77,703) J,ASOL(J),SOLDIF(J),ADGR(J),ARG4(J),ALBJ(J)
+          WRITE(77,703) J,ASOL(J),SOLDIF(J),ARG4(J),ALBJ(J)
         ENDDO
  703    FORMAT(I6,3F9.3,2F9.5)
         

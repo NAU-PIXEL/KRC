@@ -22,7 +22,7 @@ C Nine IO error conditions; all print a message, call TPRINT(2) and STOP because
 C  can no longer be assured of registration with expected change line order.
 C_Desc  Reads all the  kinds of text input to KRC
 C  If an I/O (read) error occurs, will print an error message and STOP
-C_Calls  CLIMTAU  PORB08  PORBIT  SEASALB  SEASTAU  TDISK8  TPRINT8
+C_Calls   PORB08  PORBIT  SEASALB  TDISK8  TPRINT8
 C_Hist  85sep22  Hugh_H_Kieffer  First version was ~ 1971
 C 87nov22  HK  Put in report if any input item reset
 C 93mar93  ECisneros ported to unix
@@ -64,7 +64,7 @@ C 2018nov05 HK Prepend D to lines activated by IDBx
 C_End 789012345678901234567890123456789012345678901234567890123456789012_4567890
 
       INTEGER*4 LNBLNK          ! function
-      REAL*4 SEASALB,SEASTAU,CLIMTAU ! functions
+      REAL*4 SEASALB ! functions
 C      INTEGER*4 MEMI(9)         ! tfar arg4
       REAL*4 Q4,QF              ! temporary 
       REAL*8 Q8,XREAD           ! ,D8 temporary 
@@ -272,26 +272,6 @@ C  IG=8  Read file name
           WRITE(IOPM,*)'SEASALB had failure'
           GOTO 432              !        quit
         ENDIF
-      ELSEIF (IREAD.EQ.23) THEN ! seasonal opacity
-        FVTAU=TEXT              !         move file name into common
-        QF=SEASTAU(-999.)       !         read data file
-        IF (QF .GT. 1.) THEN    !         success
-          KVTAU=1               !            set variable opacity flag
-        ELSE                    !         Failure, should quit
-          KVTAU=0               !            set flag off
-          WRITE(IOPM,*)'SEASTAU had failure' !    print warning
-          GOTO 433              !            quit
-        ENDIF
-      ELSEIF (IREAD.EQ.24) THEN ! seasonal climate
-        FVTAU=TEXT              !         move file name into common
-        QF=CLIMTAU(-999.,0.,Q4) !         read data file  QF is BINF5 return
-        IF (QF .EQ. 0) then     !         Success:
-          KVTAU=2               !           set variable Climate flag
-        ELSE                    !         Failure, should quit
-          KVTAU=0               !           set flag off
-          WRITE(IOPM,*)'CLIMTAU had failure' !   print warning
-          GOTO 434              !           quit
-        ENDIF
       ELSEIF (IREAD.EQ.25) THEN ! zone table name
         FZONE=TEXT              !   move file name into common
         LZONE=.TRUE.            !   assume have a new zone table
@@ -305,10 +285,9 @@ C  IG=8  Read file name
         LASOLTAB = .FALSE.
         LSOLDIFTAB = .FALSE.
         LPLANVTAB = .FALSE.
-        LATMRADTAB = .FALSE.
         LPLANHTAB = .FALSE.
         LRAWTAB = .FALSE.
-        CALL f_flux_init(FFLUX, SUCCESS, LASOLTAB, LSOLDIFTAB, LPLANVTAB, LATMRADTAB, LPLANHTAB, LRAWTAB)
+        CALL f_flux_init(FFLUX, SUCCESS, LASOLTAB, LSOLDIFTAB, LPLANVTAB, LPLANHTAB, LRAWTAB)
         WRITE(IOPM,*) 'FFLUX=',FFLUX
         WRITE(IOPM,*) 'Initialized Flux tables?',SUCCESS
       

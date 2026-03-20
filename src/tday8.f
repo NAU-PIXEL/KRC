@@ -44,9 +44,9 @@ C
      & ,KM,N1P1,NZ
       INTEGER*4 IC3 ! First layer of properties different than surface
 C
-      REAL*8 ABRAD,AH,AP,ATMRAD,CPOG,DDZ,DELT,DFROST,DIFY,DSCAL
-     &,DTAFAC,DTIM,DTIMI,DTM,EMTIR,FAC3,FAC3S,FAC4,FAC45,FAC5,FAC6
-     &,FAC6F,FAC7,FAC8,FAC82,FAC9,FEFAC,FEMIT,FROEX,HEATA,HEATFM
+      REAL*8 ABRAD,AH,AP,DDZ,DELT,DFROST,DIFY,DSCAL
+     &,DTIM,DTIMI,DTM,FAC3,FAC3S,FAC4,FAC45,FAC5,FAC6
+     &,FAC7,FAC8,FAC82,FAC9,FEFAC,FEMIT,FROEX,HEATA,HEATFM
      &,PERSEC,POWER,SHEATF,SNOW,TATM4,TBOTM,TGHF,TRSET
      &,TSUR,TSURM,TS3,TSUR4,ZD,FCJ,RAWHEAT
       REAL*8 TGLOB,DBOT, ZBOT
@@ -77,7 +77,6 @@ C Zone depth table and its processing
       REAL*8 YCOND,YDEN,YDZ,YSPH ! values for one zone
 
       REAL*8 FLAYER,FLAD,FLAR ! statement function and its arguments
-      INTEGER ATMRAD_SELECT_VAL
 C function: Number of layers to reach arg1 if first is 1. and ratio is arg2  
       FLAYER(FLAD,FLAR)=DLOG(1.D0+FLAD*(FLAR-1.D0))/DLOG(FLAR) ! N LAYERS
 C Variables for far flat: indicated by  LOPN3 true
@@ -550,16 +549,8 @@ C
       FAC5  = SKYFAC*EMIS*SIGSB
       FAC45 = 4.D0*FAC5
       FAC6  = SKYFAC*EMIS
-      FAC6F = SKYFAC*FEMIS      ! if frost
       FAC7  = KTT(2)/XCEN(2)    ! will be redone if not LALCON
       FEFAC = FEMIS/EMIS        ! adjust FARAD is frost present
-C Following 5 used only with atmosphere.  EMTIR used only for fac8, and FAC8 
-C used only with atmosphere. Ensure divisor CPOG is not zero
-      FAC9=SIGSB*BETA           ! factor for downwelling hemispheric flux
-      CPOG=ATMCP*(DMAX1(PRES, 1.D0)/GRAV) ! atmosphere:  D_Energy / d_T
-      DTAFAC=DTIM/CPOG          ! dT=heat*dtafac
-      EMTIR = DEXP(-TAUIR)      ! Zenith Infrared transmission of atm
-      FAC82=1.D0-EMTIR          !  " absorption 
 C If self heating, as before v3.4, factors are to the open sky
 C If using fff, -- are hemisphere , --P are back-radiation from far ground
 C SKYFAC is fractional normalized irradiance from the sky; 1.0 for flat
@@ -576,19 +567,7 @@ C      LSELF=.NOT. LOPN3         !F self heating
 C  TATMJ and  EFROST enter via  KRCCOM  
       FROEX = MAX (FROEXT,0.01) ! scale-mass for insolation attenuation
       FRO(1) = EFROST
-      IF (.NOT. LATM) THEN   ! no atm and no frost
-        EFROST=0.
-        ATMRAD=0.
-      ENDIF
-      IF (EFROST.GT.0.) THEN    ! frost is present  kg/m^2
-        LFROST = .TRUE.
-        TSUR = TFNOW            ! current local frost temperature
-        FEMIT = FEMIS*SIGSB*TFNOW**4 ! upward frost radiation
-        FAC8=EMTIR*FEMIS        ! ground effective emissivity through atmosphere
-      ELSE                      ! bare ground
-        LFROST = .FALSE.
-        FAC8=EMTIR*EMIS
-      ENDIF
+      EFROST=0.
       FLOST=0.                  ! sum of lost frost
       LALCON = (IK2+IK4 .EQ. 0) ! all Tcon, not Tdep
 D     IF (IDB2.EQ.2) WRITE(IOSP,119) LZONE,LALCON,j5,IK1,IK2,IK3,IK4
@@ -669,7 +648,6 @@ C     - - - - - - - - - - - - -
 C     
 C     -^-^-^-^-^-^-^-^-^-^-^-^-^-^-^- end of layer loops ^-^-^-^-^-^-^-^-^-^-^
 
-          IF (LATM.AND.LOPN3) TATMJ= HARTA(JJ) !f use the fff atm
 C 3 possible upper boundary conditions. 1) Atm with frost 2) Just Atm 3) No atm.
           II=0 !db newton iteration count
           
@@ -681,11 +659,6 @@ C 3 possible upper boundary conditions. 1) Atm with frost 2) Just Atm 3) No atm.
 
           IF (LFROST) THEN      !+-+-+-+ surface temperature is frost-buffered
             
-            IF (LATMRADTAB) THEN ! new vis and ir flux tables
-              ATMRAD = f_get_jd_lt_atmrad(J5 - 1, (real(JJ, 8))/N2)
-            ELSE
-              ATMRAD= FAC9*TATMJ**4 ! hemispheric downwelling IR flux
-            ENDIF
             Q4 = AFNOW + (ALB-AFNOW)*DEXP(-EFROST/FROEX) ! albedo for frost layer
             
 D           IF (IDB4.EQ.4 .AND. MOD(JJ,NZ).EQ.0 )  ! N48 per day
@@ -695,7 +668,7 @@ D 741       FORMAT(i4,i3,i3,i6,G13.5,F8.5,F11.6) ! 2018jun22
 C   unbalanced flux into surface
 C FEMIT=FAC6F*SIGSB*TFNOW**4 is [[skyfac]]*Femis*sig*Tf^4
             POWER= (1.D0-Q4)*ASOL(JJ) +(1.D0-Q4)*SOLDIF(JJ)
-     &               + FAC6F*ATMRAD + SHEATF - FEMIT
+     &              + SHEATF - FEMIT
             IF (LPH) POWER=POWER+FEMIS*PLANH(JJ)+(1.D0-Q4)*PLANV(JJ) ! planetary
 C If fff, add back-radiation=(1-skyfac)*femis*emis_x*sig*Tfar^4
             IF (LOPN3) POWER=POWER+ FEFAC*FARAD(JJ)
@@ -705,19 +678,9 @@ C If fff, add back-radiation=(1-skyfac)*femis*emis_x*sig*Tfar^4
             IF (EFROST.LE.0.) THEN ! reset to bare ground
               LFROST = .FALSE.
               EFROST = 0.
-              FAC8=EMTIR*EMIS
             ENDIF
           ELSE                  !+-+-+-+ if no frost
             ABRAD=FAC3*ASOL(JJ)+FAC3S*SOLDIF(JJ) ! surface absorbed radiation
-            IF (LATM) THEN 
-              IF (LATMRADTAB) THEN ! new vis and ir flux tables
-                ATMRAD = f_get_jd_lt_atmrad(J5 - 1, (real(JJ, 8))/N2)
-              ELSE
-                ATMRAD=FAC9*TATMJ**4 ! hemispheric downwelling IR flux
-              ENDIF
-
-              ABRAD=ABRAD+FAC6*ATMRAD ! add absorbed amount
-            ENDIF 
             IF (LPH) ABRAD=ABRAD+EMIS*PLANH(JJ)+FAC3S*PLANV(JJ) ! planetary load
 
  230        TS3=TSUR**3         ! bare ground
@@ -736,7 +699,6 @@ C If fff, add back-radiation=(1-skyfac)*femis*emis_x*sig*Tfar^4
               LFROST = .TRUE.   ! turn frost flag on
               TSUR = TFNOW      ! set to local frost temperature
               FEMIT = FEMIS*SIGSB*TFNOW**4
-              FAC8=EMTIR*FEMIS
             ENDIF             
           ENDIF                 !+-+-+-+ end no frost
 C
@@ -750,25 +712,13 @@ C
           ENDIF
           TSUR4=TSUR**4
 C
-          IF (LATM .AND. .NOT. LOPN3) THEN  !v-v-v-  Adjust atmosphere temperature
-            TATM4=TATMJ**4
-C 2002jul12  ADGR was downwelling  IR flux; becomes solar heating of atm
-            HEATA=ADGR(JJ)+FAC9*(EMIS*TSUR4-2.*TATM4) ! net atm. heating flux
-            TATMJ=TATMJ+HEATA*DTAFAC ! delta Atm Temp in 1 time step
-          ENDIF                 !^-^-^-^-^
           IF (.NOT.LDAY) GOTO 270
 C done only on the last day of a season
           TOUT(JJ)=TSUR         ! save surface temperatures at each time
           IF (JJ.EQ.JJH) THEN   !  JJH is next saving hour
             TTJ(1)=TSUR
             TSFH(IH)=TSUR       ! save hourly temperatures on last iteration
-            IF (LATM) THEN      !v-v-v-v-v  with atmosphere
-              TPFH(IH)=(FAC8*TSUR4+FAC82*TATM4)**0.25 ! planetary  
-              TAF(IH,J4)=TATMJ  ! save Atm Temp.
-            ENDIF               !^-^-^-^-^
 
-            ! ATMRAD is only the atmospheric heating, would be safe to overwrite here
-            DOWNIR(IH,J4)=ATMRAD ! save downward IR flux, ensures 0 if no atm
             ! Does not include PLANH or PLANV
             ! Plan to write a different value into DOWNVIS depending on what override variable is passed
             IF (LWRITEASOL) THEN
@@ -808,23 +758,7 @@ C 551    FORMAT(I5,I3,I3,F9.3, 2G12.5,F8.5,3G12.5, f8.4,f10.4, G12.5) ! 2018jun3
 C
 C  store results of day, calculate rms change
 C
-        IF (LATM .and. (TATMJ.LT.TATMIN) .and. (.NOT. (LASOLTAB .OR. LSOLDIFTAB .OR. LATMRADTAB))) THEN ! Tatm is below saturation T
-          SNOW= (TATMIN-TATMJ)*CPOG/CFROST ! | snow formation  Kg/m^2
-          IF (LFROST) THEN                 ! | in this time step
-            EFROST=EFROST + SNOW ! let it fall to surface
-          ELSE                   ! or
-C v355            FLOST=FLOST+ SNOW    ! record mass "lost" from system ??
-            LFROST = .TRUE.     ! turn frost flag on
-            EFROST=SNOW         ! let the snow fall to the ground
-            TSUR = TFNOW        ! set surface to local frost temperature
-            FEMIT = FEMIS*SIGSB*TFNOW**4
-            FAC8=EMTIR*FEMIS
-          ENDIF
-D           IF (IDB4.EQ.4) WRITE(73,741)J5,J4,JJJ,-1,SNOW,EFROST,TATMJ ! 2018jun22
-          TATMJ=TATMIN           ! keep atm. no colder that saturation
-        ELSE
-          SNOW=0.  ! do for cleaness, not otherwise used when atm. warm
-        ENDIF
+        SNOW=0.  ! do for cleaness, not otherwise used when atm. warm
 C
         TTJ(1)=TSUR
         ZD=0.
@@ -838,10 +772,6 @@ C
         TTS(J3P1)=TSURM/QQ      ! average surface T
         TTB(J3P1)=TBOTM/QQ      ! average bottom T
         HEAT1M=HEATFM/QQ        ! average upward heatflow into the surface
-        IF (LATM) THEN          !v-v-v-v-v  with atmosphere
-          TTA(J3P1)=TATMJ       ! final atm. temperature
-          FRO(J3P1)=EFROST      ! final frost amount
-        ENDIF                   !^-^-^-^-^
 
 C
 C  are we done?
@@ -886,8 +816,7 @@ C
  340  IRET=2                  !  blow-up. force a stop; print current conditions
       WRITE(IOSP,*)'TDAY blowup: jj,jjj,j4,j5=',jj,jjj,j4,j5
       WRITE(IOSP,*)'LRESET,LDAY,LOPN3,Tsur=',LRESET,LDAY,LOPN3,TSUR
-      WRITE(IOSP,*)'LATM,LFROST,LALCON,ABRAD=',LATM,LFROST,LALCON,ABRAD
-      IF (LATM) WRITE(IOSP,*)'atm items=',ATMRAD,LFROST,EFROST
+      WRITE(IOSP,*)'LFROST,LALCON,ABRAD=',LFROST,LALCON,ABRAD
       WRITE(IOSP,*)'FARAD,SHEATF,POW,DT=',FARAD(JJ),SHEATF,POWER,DELT
       TTJ(1)=TSUR
       J2=JJ

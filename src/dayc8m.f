@@ -3,7 +3,7 @@ C_Titl  daycom8.f   common for layer and time items in  KRC
       PARAMETER (NWDAY = 5*MAXN1 + MAXN1P + (5+MAXN1)*MAXN3
      &  + 8*MAXN2 + 2*MAXNH + MAXBOT/2) ! size of this common in real words
 C_Desc
-C  ASOL &  ADGR are set in  TLATS, the rest are set in  TDAY
+C  ASOL set in  TLATS, the rest are set in  TDAY
       REAL*8, target :: XCEN(MAXN1)        ! Depth at layer centers [m]
      &, SCONVG(MAXN1)   ! Classical convergence factor for each layer
      &, BLAY(MAXN1P)    ! Layer thicknesses [m]

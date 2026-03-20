@@ -16,7 +16,7 @@ C_Desc
 C if IQ =3, then continuing from existing model, and adopt its last date
 C_Hist 97feb11  Hugh  Kieffer
 C
-C_Calls  PORBIT  SEASALB  SEASTAU  TCARD8  TDAY8  TDISK8  TINT8  TLATS8  TPRINT8 
+C_Calls  PORBIT  SEASALB  TCARD8  TDAY8  TDISK8  TLATS8  TPRINT8 
 C_Limits
 C Use of far-field file (fff): Assumes that fff is for the same body as current 
 C run. Expects that fff covers all of the seasons for current run;  if requested 
@@ -44,22 +44,15 @@ C 2018nov05 HK Prepend D to lines activated by IDBx
 C_End 789012345678901234567890123456789012345678901234567890123456789012_4567890
 C 
       INTEGER*4 I1,I2,IRL,KREC
-      INTEGER*4 MEMI(8), MEMA(8) ! integer information from fff surf/atm
+      INTEGER*4 MEMI(8) ! integer information from fff surf/atm
       REAL*8 DJONE              ! first date
       REAL*8 BUF(MAXN4)         ! fractional surface area in each latitude zone
       REAL*8 FFTOL /0.01d0/     ! Tolerance on fff season interpolation
       REAL*8 FFOLE              ! transfer tolerance to TFAR, return error code
-      REAL*8 DUM8               ! dummy scalar
       REAL*8 DU8H4(NUMH4)    ! MAXNH*MAXN4 dummy, OK for arrays up to this size
-      REAL SEASALB,SEASTAU      ! functions called
-      REAL*4 ALB4,SUBS4,TAUD4   ! for *4*8 conversion 
+      REAL SEASALB      ! functions called
+      REAL*4 ALB4,SUBS4   ! for *4*8 conversion 
       REAL*4 TIME1,TIME2,TIME3 
-
-      IF (LATMRADTAB) THEN
-        LATM=.TRUE.
-      ELSE
-        LATM=PTOTAL.GT.1.         ! atmosphere present flag
-      ENDIF
 
       IRET=1                    ! normal
 D     IF (IDB1.NE.0) WRITE(IOSP,*) 'TSEASa',IQ,J5,LSC,N5,LONE
@@ -120,10 +113,6 @@ C
         ALB4=SEASALB(SUBS4)     ! variable soil albedo
         ALB=ALB4                ! move into R*8
       ENDIF
-      IF (KVTAU .EQ. 1) THEN 
-        TAUD4=SEASTAU(SUBS4)    ! variable atm. opacity
-        TAUD=TAUD4
-      ENDIF
 
 Cvvvvvvvvvvvvvvvvvvvvvv start: Get date in fff vvvvvvvvvvvvvvvvvvvvvvvvvvv
       IF (LOPN3 ) THEN ! fetch far field temperatures for this season
@@ -139,17 +128,6 @@ D    &    ,FARTS(I1,I2,2)
           IRET=40+NINT(-FFOLE)              ! signal an error
           GOTO 9
         ENDIF
-        IF (LATM .AND. .NOT.LFAME) THEN ! still need Tatm
-          DUM8=FFTOL            ! set tolerance
-          CALL TFAR8(13,DJU5,DUM8,MEMA, DU8H4,DU8H4,FARTS(1,1,2)) ! Tatm
-          I1=MEMA(1)/2          ! near midday
-          I2=MEMA(2)/2          ! near the equator
-           IF (IDB6.GE.3) WRITE(IOSP,130)I1,I2,FARTS(I1,I2,2)
-          IF (DUM8 .LT. 0.D0) THEN 
-            IRET=40+NINT(-DUM8)  ! signal an error
-            GOTO 9
-          ENDIF
-        ENDIF                   ! if LATM
       ENDIF                     ! LOPN3 .AND. SLOPE .GT. 0
 C^^^^^^^^^^^^^^^^^^^^^^^^ end: Get date in fff^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -164,7 +142,6 @@ C======
         IRET=IRL             ! cannot continue this case
       ENDIF
 C If there was a blowup, IRL will be 2  and will exit the season loop 
-      IF (N4.GT.8 .AND. LATM) CALL TINT8 (FROST4, BUF, SUMF) !  MKS units  BUF = normalized area 
       IF (LP5) CALL TPRINT8 (5)  ! print latitude summary
       IF (LP6) CALL TPRINT8 (6)  !  & min and max layer temperature
       IF (J5.EQ.JDISK .AND. KOLD.EQ.0 .AND. LOPN2 ! write  KRCCOM record
