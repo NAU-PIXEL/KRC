@@ -8,7 +8,6 @@ typedef enum FLUX_TYPE {
   FLUX_ASOL,
   FLUX_SOLDIF,
   FLUX_PLANV,
-  FLUX_ATMRAD,
   FLUX_PLANH,
   FLUX_RAW
 } FLUX_TYPE;
@@ -18,13 +17,12 @@ typedef struct lt_fluxes
 {
   int n_rows;
   int n_cols;
-  double * ordered_columns[7];
-  double * unordered_columns[7];
+  double * ordered_columns[6];
+  double * unordered_columns[6];
   double *time;
   double *asol;
   double *soldif;
   double *planv;
-  double *atmrad;
   double *planh;
   double *raw;
 } lt_fluxes;
@@ -43,7 +41,6 @@ typedef struct flux_booleans
   bool * asol;
   bool * soldif;
   bool * planv;
-  bool * atmrad;
   bool * planh;
   bool * raw;
 } flux_booleans;

@@ -96,14 +96,12 @@ bool read_table(FILE *fp, flux_table *table, flux_booleans * bools) {
   building_table->asol[building_table->n_rows] = building_table->asol[0];
   building_table->soldif[building_table->n_rows] = building_table->soldif[0];
   building_table->planv[building_table->n_rows] = building_table->planv[0];
-  building_table->atmrad[building_table->n_rows] = building_table->atmrad[0];
   building_table->planh[building_table->n_rows] = building_table->planh[0];
   building_table->raw[building_table->n_rows] = building_table->raw[0];
 
   if (!success) {
     free(building_table->time);
     free(building_table->asol);
-    free(building_table->atmrad);
     free(building_table);
     return false;
   }
@@ -123,16 +121,14 @@ bool read_lt_header(FILE *fp, lt_fluxes *table) {
   table->asol = malloc(sizeof(double) * table->n_rows + 1);
   table->soldif = malloc(sizeof(double) * table->n_rows + 1);
   table->planv = malloc(sizeof(double) * table->n_rows + 1);
-  table->atmrad = malloc(sizeof(double) * table->n_rows + 1);
   table->planh = malloc(sizeof(double) * table->n_rows + 1);
   table->raw = malloc(sizeof(double) * table->n_rows + 1);
   table->unordered_columns[0] = (table->time);
   table->unordered_columns[1] = (table->asol);
   table->unordered_columns[2] = (table->soldif);
   table->unordered_columns[3] = (table->planv);
-  table->unordered_columns[4] = (table->atmrad);
-  table->unordered_columns[5] = (table->planh);
-  table->unordered_columns[6] = (table->raw);
+  table->unordered_columns[4] = (table->planh);
+  table->unordered_columns[5] = (table->raw);
 
   return true;
 }
@@ -203,9 +199,6 @@ void update_bools(flux_booleans * bools, char * found_column) {
   }
   if (strcmp(found_column, PLANV_STRING) == 0 ) {
     *(bools->planv) = true;
-  }
-  if (strcmp(found_column, ATMRAD_STRING) == 0 ) {
-    *(bools->atmrad) = true;
   }
   if (strcmp(found_column, PLANH_STRING) == 0 ) {
     *(bools->planh) = true;

@@ -13,11 +13,9 @@
         END TYPE INT_ARRAY
 
         INTERFACE 
-! CALL f_flux_init(FFLUX, SUCCESS, LASOLTAB, LSOLDIFTAB, LPLANVTAB, LATMRADTAB, LPLANHTAB, LRAWTAB)
-
-        SUBROUTINE f_flux_init(filename, success, lasol, lsoldif, lplanv, latmrad, lplanh, lraw) BIND(C)
+        SUBROUTINE f_flux_init(filename, success, lasol, lsoldif, lplanv, lplanh, lraw) BIND(C)
             USE iso_c_binding
-            LOGICAL(C_BOOL), INTENT(out) :: success, lasol, lsoldif, lplanv, latmrad, lplanh, lraw
+            LOGICAL(C_BOOL), INTENT(out) :: success, lasol, lsoldif, lplanv, lplanh, lraw
             CHARACTER(C_CHAR), INTENT(in) :: filename
           END SUBROUTINE f_flux_init
 
@@ -51,15 +49,6 @@
             REAL(C_DOUBLE) :: flux
           END FUNCTION f_get_jd_lt_planv
           
-          FUNCTION f_get_jd_lt_atmrad(jd, lt) RESULT (flux) BIND(C)
-            USE iso_c_binding
-            ! the way we use the "jd" is actually as a season index, 
-            ! because everywhere else day and L_s are floats, 
-            ! and trying to translate them into an index doesn't make sense
-            INTEGER(C_INT), INTENT(in), VALUE :: jd
-            REAL(C_DOUBLE), INTENT(in), VALUE :: lt
-            REAL(C_DOUBLE) :: flux
-          END FUNCTION f_get_jd_lt_atmrad
           
           FUNCTION f_get_jd_lt_planh(jd, lt) RESULT (flux) BIND(C)
             USE iso_c_binding

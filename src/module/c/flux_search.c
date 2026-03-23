@@ -33,12 +33,6 @@ double get_jd_lt_flux(lt_fluxes *flux_table, int search_jd, double search_lt,
                                 flux_table->planv[table_index], flux_table->planv[table_index + 1], 
                                 search_jd_lt);
       break;
-        
-    case FLUX_ATMRAD:
-      result_flux = interpolate(flux_table->time[table_index], flux_table->time[table_index + 1],
-                                flux_table->atmrad[table_index], flux_table->atmrad[table_index + 1], 
-                                search_jd_lt);
-      break;
     case FLUX_PLANH: 
       result_flux = interpolate(flux_table->time[table_index], flux_table->time[table_index + 1],
                                 flux_table->planh[table_index], flux_table->planh[table_index + 1], 
