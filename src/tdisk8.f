@@ -235,10 +235,10 @@ D     WRITE(IOSP,*)'TDISKb ',kode,krec,ncase,j5,' jd,jjj',jdisk,JJJ
 C     For hourly conditions:  revised 2004jul22  and 2004Oct06 and 2008oct15
 C [N24,7,Nlat,x+nseas,ncase]   First x "seasons" of each case contains: 
 C   Float of Front+KRCCOM, DJU5(nseas),SUBS(nseas)
-C   ,PZREF(nseas), TAUD(nseas), SUMF(nseas)
+C   ,PZREF(nseas), TAUD(nseas)
 C True seasons contain for every hour: TSF,TPF,TAF,DOWNVIS,DOWNIR
 C  and float(NDJ4)+ DTM4 + TTA4+ Tmin(Nlay-) Omitting virtual first layer
-C  and    FROST4+ AFRO4+ HEATMM+ Tmax(Nlay-) " " "
+C  and HEATMM+ Tmax(Nlay-) " " "
 C     the Nlay- are as many layers as fit within the number of Hours
         MM4 = MIN(N1-1,MM1-3)   ! compute # layers to store
         IF (JOUT.EQ.0) THEN     ! insurance done only once per case 
@@ -259,7 +259,6 @@ C     the Nlay- are as many layers as fit within the number of Hours
 C     write(*,*)'t1', subs
         FFF(J+NSOUT+NSOUT) =PZREF
         FFF(J+3*NSOUT) =TAUD
-        FFF(J+4*NSOUT) =SUMF
         J=I1+MM3*(NDX+JOUT)     ! first word of this case, season
         DO J4=1,N4              ! do each latitude
           I=J+(J4-1)*MM2        ! first word of this case, season, latitude
@@ -273,8 +272,6 @@ C     write(*,*)'t1', subs
           FFF(K+1)=DTM4(J4)     ! rms temperature change on last day
           CALL MVD (TIN(2,J4),FFF(K+3),MM4)
           K=K+MM1               ! first index of item 7
-          FFF(K)=FROST4(J4)     ! Frost at midnight
-          FFF(K+1)=AFRO4(J4)    ! frost albedo
           FFF(K+2)=HEATMM(J4)  
           CALL MVD (TAX(2,J4),FFF(K+3),MM4)
         ENDDO

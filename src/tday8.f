@@ -44,15 +44,14 @@ C
      & ,KM,N1P1,NZ
       INTEGER*4 IC3 ! First layer of properties different than surface
 C
-      REAL*8 ABRAD,AH,AP,DDZ,DELT,DFROST,DIFY,DSCAL
+      REAL*8 ABRAD,AH,AP,DDZ,DELT,DIFY,DSCAL
      &,DTIM,DTIMI,DTM,FAC3,FAC3S,FAC4,FAC45,FAC5,FAC6
-     &,FAC7,FAC8,FAC82,FAC9,FEFAC,FEMIT,FROEX,HEATA,HEATFM
+     &,FAC7,FAC8,FAC82,FAC9,FEFAC,FEMIT,HEATA,HEATFM
      &,PERSEC,POWER,SHEATF,SNOW,TATM4,TBOTM,TGHF,TRSET
      &,TSUR,TSURM,TS3,TSUR4,ZD,FCJ,RAWHEAT
       REAL*8 TGLOB,DBOT, ZBOT
       REAL*8 QA,QB,QQ,Q3,Q4,Q5,Q6           ! temporary use
       LOGICAL LDAY              ! this will [normally] be the last iteration day
-      LOGICAL LFROST            ! frost is present on the ground. 
       LOGICAL LRESET            ! it is permissable to do jump perturbation
       LOGICAL LGHF              ! continuous geothermal heat flow
       LOGICAL LWP               ! Print flag when IQ=3
@@ -564,11 +563,6 @@ C      LSELF=.NOT. LOPN3         !F self heating
       DO J=1,N1                 ! save  T each layer at start of first day
         TT1(J,1)=TTJ(J)
       ENDDO
-C  TATMJ and  EFROST enter via  KRCCOM  
-      FROEX = MAX (FROEXT,0.01) ! scale-mass for insolation attenuation
-      FRO(1) = EFROST
-      EFROST=0.
-      FLOST=0.                  ! sum of lost frost
       LALCON = (IK2+IK4 .EQ. 0) ! all Tcon, not Tdep
 D     IF (IDB2.EQ.2) WRITE(IOSP,119) LZONE,LALCON,j5,IK1,IK2,IK3,IK4
       AH = DFLOAT(N2)/DFLOAT(N24) ! time steps between saving results
@@ -657,51 +651,21 @@ C 3 possible upper boundary conditions. 1) Atm with frost 2) Just Atm 3) No atm.
             RAWHEAT = 0. ! should never get used
           ENDIF
 
-          IF (LFROST) THEN      !+-+-+-+ surface temperature is frost-buffered
-            
-            Q4 = AFNOW + (ALB-AFNOW)*DEXP(-EFROST/FROEX) ! albedo for frost layer
-            
-D           IF (IDB4.EQ.4 .AND. MOD(JJ,NZ).EQ.0 )  ! N48 per day
-D    &        WRITE(73,741)J5,J4,JJJ,JJ,EFROST,Q4,TFNOW  ! 2018jun22
-D 741       FORMAT(i4,i3,i3,i6,G13.5,F8.5,F11.6) ! 2018jun22
-            SHEATF= FAC7*(TTJ(2)-TSUR) ! upward heatflow into the surface
-C   unbalanced flux into surface
-C FEMIT=FAC6F*SIGSB*TFNOW**4 is [[skyfac]]*Femis*sig*Tf^4
-            POWER= (1.D0-Q4)*ASOL(JJ) +(1.D0-Q4)*SOLDIF(JJ)
-     &              + SHEATF - FEMIT
-            IF (LPH) POWER=POWER+FEMIS*PLANH(JJ)+(1.D0-Q4)*PLANV(JJ) ! planetary
-C If fff, add back-radiation=(1-skyfac)*femis*emis_x*sig*Tfar^4
-            IF (LOPN3) POWER=POWER+ FEFAC*FARAD(JJ)
-            IF (LRAWTAB) POWER=POWER + RAWHEAT ! raw heat flux table
-            DFROST = -POWER/CFROST ! rate of frost formation or sublimation
-            EFROST=EFROST + DFROST*DTIM ! amount on ground; kg*m**-2
-            IF (EFROST.LE.0.) THEN ! reset to bare ground
-              LFROST = .FALSE.
-              EFROST = 0.
-            ENDIF
-          ELSE                  !+-+-+-+ if no frost
-            ABRAD=FAC3*ASOL(JJ)+FAC3S*SOLDIF(JJ) ! surface absorbed radiation
-            IF (LPH) ABRAD=ABRAD+EMIS*PLANH(JJ)+FAC3S*PLANV(JJ) ! planetary load
+          ABRAD=FAC3*ASOL(JJ)+FAC3S*SOLDIF(JJ) ! surface absorbed radiation
+          IF (LPH) ABRAD=ABRAD+EMIS*PLANH(JJ)+FAC3S*PLANV(JJ) ! planetary load
 
- 230        TS3=TSUR**3         ! bare ground
-            II=II+1
-            SHEATF= FAC7*(TTJ(2)-TSUR) ! upward heat flow to surface
-            POWER = ABRAD + SHEATF - FAC5*TSUR*TS3 ! unbalanced flux
-            IF (LOPN3) POWER=POWER+FARAD(JJ) ! fff only
-            IF (LRAWTAB) POWER = POWER + RAWHEAT ! raw heat flux table
-            DELT = POWER / (FAC7+FAC45*TS3)
-            TSUR=TSUR+DELT
-            IF (MOD(II,10).EQ.0)WRITE(IOPM,*)J5,J4,JJJ,JJ,II,TSUR,DELT !db
-            IF (TSUR.LE. 0. .OR. TSUR.GT.TBLOW) GOTO 340 ! instability test
-            IF (ABS(DELT).GE.GGT) GOTO 230 ! fails convergence test
+230       TS3=TSUR**3         ! bare ground
+          II=II+1
+          SHEATF= FAC7*(TTJ(2)-TSUR) ! upward heat flow to surface
+          POWER = ABRAD + SHEATF - FAC5*TSUR*TS3 ! unbalanced flux
+          IF (LOPN3) POWER=POWER+FARAD(JJ) ! fff only
+          IF (LRAWTAB) POWER = POWER + RAWHEAT ! raw heat flux table
+          DELT = POWER / (FAC7+FAC45*TS3)
+          TSUR=TSUR+DELT
+          IF (MOD(II,10).EQ.0)WRITE(IOPM,*)J5,J4,JJJ,JJ,II,TSUR,DELT !db
+          IF (TSUR.LE. 0. .OR. TSUR.GT.TBLOW) GOTO 340 ! instability test
+          IF (ABS(DELT).GE.GGT) GOTO 230 ! fails convergence test
 
-            IF (TSUR.LT.TFNOW) THEN ! Frost will form.  Never unless atm.
-              LFROST = .TRUE.   ! turn frost flag on
-              TSUR = TFNOW      ! set to local frost temperature
-              FEMIT = FEMIS*SIGSB*TFNOW**4
-            ENDIF             
-          ENDIF                 !+-+-+-+ end no frost
-C
           TSURM=TSURM+TSUR      ! sum over the day
           TBOTM=TBOTM+TTJ(N1)   ! "
           HEATFM=HEATFM+SHEATF  ! "
@@ -745,15 +709,12 @@ cx 171        format(4i3,50f6.0)
             JJH = NINT(IH*AH)
           ENDIF
           IF (JJ.EQ.JJP) THEN   ! print "hourly" temperatures
-            IF (LP3) WRITE(IOSP,260)IP,EFROST,TTJ(1)
+            IF (LP3) WRITE(IOSP,260)IP,TTJ(1)
      &        ,(TTJ(I),I=2,N1M1,NLW),TTJ(N1),TATMJ
  260        FORMAT (I7,F8.3,(12F8.1))
             IP = IP+1
             JJP = NINT(IP*AP)      ! time step of next print
           ENDIF
-C        IF (JJ.EQ.1 .OR. JJ.EQ.N2/2) WRITE(55,551) J5,J4,J3,TATMJ ! 2018jun30
-C     &       ,ADGR(JJ),FAC9 ,EMIS,TSUR4,TATM4,HEATA,SNOW,EFROST,ABRAD ! 2018jun30
-C 551    FORMAT(I5,I3,I3,F9.3, 2G12.5,F8.5,3G12.5, f8.4,f10.4, G12.5) ! 2018jun30
  270    CONTINUE                !^+^+^+^+^+^+^+^+^+^+^+ end of time loop ^+^+^+^
 C
 C  store results of day, calculate rms change
@@ -816,7 +777,7 @@ C
  340  IRET=2                  !  blow-up. force a stop; print current conditions
       WRITE(IOSP,*)'TDAY blowup: jj,jjj,j4,j5=',jj,jjj,j4,j5
       WRITE(IOSP,*)'LRESET,LDAY,LOPN3,Tsur=',LRESET,LDAY,LOPN3,TSUR
-      WRITE(IOSP,*)'LFROST,LALCON,ABRAD=',LFROST,LALCON,ABRAD
+      WRITE(IOSP,*)'LALCON,ABRAD=',LALCON,ABRAD
       WRITE(IOSP,*)'FARAD,SHEATF,POW,DT=',FARAD(JJ),SHEATF,POWER,DELT
       TTJ(1)=TSUR
       J2=JJ

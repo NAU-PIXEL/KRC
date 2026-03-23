@@ -147,7 +147,7 @@ C
 C
 C print daily convergence summary  (IQ = 4)
 C
- 400  WRITE(IOSP,410)TTS4(J4),TTB4(J4),DTM4(J4),J3,FROST4(J4)
+ 400  WRITE(IOSP,410)TTS4(J4),TTB4(J4),DTM4(J4),J3
  410  FORMAT (' SURF AVE =',F6.1,'  BOTM AVE =',F6.1
      &,'  DELTA T =',F7.4,'  NUM DAYS =',I3,'  FROST =',F9.4)
       WRITE(IOSP,430) (I,I=2,N1M1,NLW),N1
@@ -169,8 +169,6 @@ C
  520    WRITE(IOSP,'(5X,I4,A,20F6.1)') I,'HR',(TSF(I,J),J=1,N4)
       WRITE(IOSP,'(A,20F6.1)') ' SURF AVE =',(TTS4(I),I=1,N4)
       WRITE(IOSP,'(A,20F6.1)') ' BOTM AVE =',(TTB4(I),I=1,N4)
-      WRITE(IOSP,'(A,20F6.1)') ' GM FROST =',(FROST4(I),I=1,N4)
-      WRITE(IOSP,'(A,20F6.3)') ' ALB/dayF =',(AFRO4(I),I=1,N4)
       WRITE(IOSP,'(A,20F6.1)') ' T. EQUIL =',(TST4(I),I=1,N4)
       WRITE(IOSP,'(A,20F6.2)') ' DELTA T. =',(DTM4(I),I=1,N4)
       WRITE(IOSP,'(A,20I6  )') ' NUM DAYS =',(NDJ4(I),I=1,N4)

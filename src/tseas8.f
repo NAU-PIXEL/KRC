@@ -63,7 +63,6 @@ C System_Clock is millisec or finer
 C DTIME is real seconds
 C CPU_TIME is real with resolution microseconds
         CALL CPU_TIME(TIME1)
-        SUMF=0.                 ! global seasons frost
       ENDIF
       BUF(1)=0.                 ! flag for  TINT to compute areas
 

@@ -71,7 +71,7 @@ C
 C
       REAL*8 ACOSLIM,AH,AINC,ANGLE,AVEE,AVEI
      &,BOTDOWN,BOUNCE,CC,CD,CL,COSAM,COSI,COSP,COSZLIM,COS2,COS3
-     &,DIFFUSE,DIP,DIRECT,EFP,F23,FP,G1,GHF   ! ,DIFAC
+     &,DIFFUSE,DIP,DIRECT,F23,FP,G1,GHF   ! ,DIFAC
      &,PCAP,RANG,RLAT,RSDEC,SAZ
      &,SD,SL,SOLR,SS
      &,TBOT,TOPUP,TSEQ4,TSUR,TWILFAC,TWILIM
@@ -143,7 +143,6 @@ C
 
       TWILFAC = 1.            ! twilight not allowed
       TWILIM = 0.             ! " 
-      TFNOW=1.                ! 1 Kelvin. No frost ever
       LTW=TWILFAC.LT.1.0        ! Twilight present flag
 
 C     
@@ -212,7 +211,7 @@ C       set blowup test to a factor larger than perpendicular black surface
 C      
 C     get current total pressure at 0 elevation
       IF (N4.GT.8) THEN         ! use global integrations
-        PCAP = SUMF*GRAV        ! cap_frost equivalent surface pressure
+        PCAP = 0
       ELSE
         PCAP=0.
       ENDIF
@@ -232,7 +231,6 @@ C     get current total pressure at 0 elevation
 C     
       IF (LPGLOB) THEN          ! print global properties
          CALL TPRINT8 (8)       ! print page heading
-         WRITE(IOSP,'(A,F10.4)')' GLOBAL AVERAGE FROST; kg/m^2 =',SUMF
       ENDIF
 C
 D     IF (LQ1) WRITE(IOPM,*)'TLATS.1 J5,TBLOW=',J5,TBLOW
@@ -345,11 +343,6 @@ C Photometric function in lat loop as  PHOG can depend upon frost
         PUS=2.D0 /(1.D0+PFAC1)
       ENDIF
       SALB=PUS*AVEA              ! spherical albedo, for diffuse irradiance
-C     - next few lines not needed until can have photometric surface under atm.
-C-      IF (EFROST.GT.0.) THEN    ! only if  LATM and frosty
-C-        PHOG=0.                 ! force to be Lambert
-C-        KOP=1                   !  Lambert flag
-C-      ENDIF
 
       ACOSLIM = AMAX1(OPACITY/EXPMIN,0.001D0) ! limit to avoid math checks
 D     IF (LQ1) WRITE(IOPM,*)'TLATS: J4+.',J4,SOLR,ACOSLIM,COSIAM(1)
@@ -381,24 +374,20 @@ Cvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 C     Get heating for horizontal surface
          IF (COSI.GT.ACOSLIM) THEN ! Day: Sun is above horizon
 C PhotFunc for horizontal surface
-           IF (EFROST .LE. 0.) THEN ! have a soil surface
-             SELECT CASE (KOP)  !vvvvvvvvvvvvvvvvvvvvvvvv
-             CASE(1)            !  Lambert
-               PUH=1.D0         ! default photometric factor
-             CASE(2)            !  Lomell-Seeliger 
-               PUH= (1.D0+COSI*DLOG(COSI/(1.D0+COSI)))/PFAC1 !  Lommel-Seeliger
-             CASE(3)            !  Minnaert
-               PUH= COSI**PFAC2 !  Minnaert
-             CASE DEFAULT       ! must be  Keihm or  Vasavada
-               THETA=ACOS(COSI) ! incidence angle in radians
-               PUH= 1.D0+PFAC1*THETA**3+PFAC2*THETA**8
+          SELECT CASE (KOP)  !vvvvvvvvvvvvvvvvvvvvvvvv
+          CASE(1)            !  Lambert
+            PUH=1.D0         ! default photometric factor
+          CASE(2)            !  Lomell-Seeliger 
+            PUH= (1.D0+COSI*DLOG(COSI/(1.D0+COSI)))/PFAC1 !  Lommel-Seeliger
+          CASE(3)            !  Minnaert
+            PUH= COSI**PFAC2 !  Minnaert
+          CASE DEFAULT       ! must be  Keihm or  Vasavada
+            THETA=ACOS(COSI) ! incidence angle in radians
+            PUH= 1.D0+PFAC1*THETA**3+PFAC2*THETA**8
 C     1.+0.25 *(theta/r45)**3+1.17*(theta/r90)**8  Keihm
 C     1.+0.375*(theta/r45)**3+1.17*(theta/r90)**8  Vasavada
-             END SELECT         !^^^^^^^^^^^^^^^^^^^^^^^^
-             AVET=MAX(MIN(ALB*PUH,1.D0),0.D0) ! ensure  1-A cannot be negative
-           ELSE
-             AVET=AFNOW
-            ENDIF
+          END SELECT         !^^^^^^^^^^^^^^^^^^^^^^^^
+          AVET=MAX(MIN(ALB*PUH,1.D0),0.D0) ! ensure  1-A cannot be negative
 C daytime up/down fluxes
 C As opacity goes to zero, COLL->1., topup-> cosi*ALB, botdown->0 atmheat->0
             TOPUP=COSI*AVET         ! upward solar 
@@ -409,7 +398,7 @@ C As opacity goes to zero, COLL->1., topup-> cosi*ALB, botdown->0 atmheat->0
             DIRFLAT=0.
             TOPUP=0.
             COLL=0.      
-          ENDIF
+        ENDIF
 
 C  ASOL = coll. flux onto (sloped) surface 
 C  DSOL = diffuse flux onto ?? surface
@@ -432,23 +421,19 @@ C Get diffuse insolation, including twilight and first-order surface reflection
 C     
 C     Set direct surface insolation
          IF (COS2.GT.COSZLIM .AND. COSI.GT. 0.) THEN ! target directly illumin.
-           IF (EFROST .LE. 0.) THEN ! have a soil surface
-             SELECT CASE (KOP)  !vvvvvvvvvvvvvvvvvvvvvvvv
-             CASE(1)            !  Lambert
-               PUH=1.D0         ! default photometric factor
-             CASE(2)            !  Lomell-Seeliger
-               PUH= (1.D0+COS2*DLOG(COS2/(1.D0+COS2)))/PFAC1 ! Lommel-Seeliger
-             CASE(3)            !  Minnaert coeff later 
-               PUH= COS2**PFAC2 !  Minnaert
-             CASE DEFAULT       ! must be  Keihm or  Vasavada
-               THETA=ACOS(COS2) ! incidence angle in radians
-               PUH= 1.D0+PFAC1*THETA**3+PFAC2*THETA**8
-             END SELECT         !^^^^^^^^^^^^^^^^^^^^^^^^
-             HALB=ALB*PUH       ! normalized hemispherical albedo
-           ELSE                 ! frost surface, assume lambertian
-             HALB=AFNOW
-           ENDIF
-           DIRECT=COS2*COLL     ! slope is in sunlight
+            SELECT CASE (KOP)  !vvvvvvvvvvvvvvvvvvvvvvvv
+            CASE(1)            !  Lambert
+              PUH=1.D0         ! default photometric factor
+            CASE(2)            !  Lomell-Seeliger
+              PUH= (1.D0+COS2*DLOG(COS2/(1.D0+COS2)))/PFAC1 ! Lommel-Seeliger
+            CASE(3)            !  Minnaert coeff later 
+              PUH= COS2**PFAC2 !  Minnaert
+            CASE DEFAULT       ! must be  Keihm or  Vasavada
+              THETA=ACOS(COS2) ! incidence angle in radians
+              PUH= 1.D0+PFAC1*THETA**3+PFAC2*THETA**8
+            END SELECT         !^^^^^^^^^^^^^^^^^^^^^^^^
+            HALB=ALB*PUH       ! normalized hemispherical albedo
+          DIRECT=COS2*COLL     ! slope is in sunlight
          ELSE
            DIRECT=0.            ! Target is in shadow
            HALB=ALB  ! but used only  *DIRECT, so value does not matter 
@@ -581,7 +566,7 @@ C       save results for current latitude
 C       
       J3P1=J3+1
 C       i=n24/2                  ! noonish
-D     write(71,344) j3,j4,j5,ncase,efrost,avea,taud,pres !dbw 44
+D     write(71,344) j3,j4,j5,ncase,avea,taud,pres !dbw 44
 D    & ,DTMJ(J3),DTMJ(J3P1),TMIN(2),TMAX(2) !dbw 44
 D 344       format(i3,i3,i4,i3,f12.6,f12.9,f12.9,f12.6,2f12.9,2f12.6) 
 C       
@@ -598,7 +583,6 @@ C
         TAX(I,J4)=TMAX(I)       !   temperatures.
         ENDDO
 C  
-      TTX4(J4)=FLOST*DELJUL/(J3*PERIOD)  ! linear extrap. of frost lost over this season     
       FP=DELJUL/PERIOD-J3      ! undone iterations to end of this season.
 C The 5 items predicted are stored for the end of the day prior to their index;
 C so they are defined up to J3P1.  DTMJ(1)==-1.
@@ -609,14 +593,14 @@ C  EPRED8 Assumes 3rd item in arg1 is the last valid, can handle any value of ar
 C  J3P1 here may be less than 3, but EPRED8 will ignore the undefined address space
       DO I=1,N1                 ! predict next season's layer temperatures
         CALL MV21D (TT1(I,1),MAXN1,WORK,J3P1) ! transfer all defined values for layer I
-        TMN4(I,J4)= EPRED8(WORK,FP,J3P1, TFNOW,TBLOW) ! forecast to end of season
+        TMN4(I,J4)= EPRED8(WORK,FP,J3P1, 1,TBLOW) ! forecast to end of season
 D       IF (I.EQ.2) WRITE(72,721) J5,J4,J3,-1  ! top physical layer ! HKX
 D    & ,WORK(J3-1),WORK(J3),WORK(J3P1),TMN4(2,J4) ! 2018jun22       ! HKX
       ENDDO
-        if (idb2 .ge. 6) WRITE(IOPM,*)'l721',j5,j4,fp,j3p1,tfnow,tblow ! HKX
+        if (idb2 .ge. 6) WRITE(IOPM,*)'l721',j5,j4,fp,j3p1,tblow ! HKX
 D 721  FORMAT(i4,i3,i3,i3,4F12.5) ! 2018jun22
-      TTS4(J4)    = EPRED8(TTS,FP,J3P1, TFNOW,TBLOW) ! surface average
-      TTB4(J4)    = EPRED8(TTB,FP,J3P1, TFNOW,TBLOW) ! bottom layer average
+      TTS4(J4)    = EPRED8(TTS,FP,J3P1, 1,TBLOW) ! surface average
+      TTB4(J4)    = EPRED8(TTB,FP,J3P1, 1,TBLOW) ! bottom layer average
 
       IF (IIB.LE.-1) TMN4(N1PIB,J4)=TTJ(N1PIB) ! reset bottom T
       TEXTRA(J4,1) = TTS4(J4)-TTS(J3P1) ! amount of extrapolation,Top
@@ -624,9 +608,6 @@ D 721  FORMAT(i4,i3,i3,i3,4F12.5) ! 2018jun22
 C       TAX(MAXN1,J4)= TEXTRA(J4,1) ! overload into tax
 C       TIN(MAXN1,J4)= TEXTRA(J4,2) ! overload 
       HEATMM(J4) = HEAT1M       ! daily average surface heat flow
-      AFRO4(J4) = AFNOW         ! current cap frost albedo  WHINA
-      IF (J5.EQ.JBARE) EFP=0.   ! remove any remaining frost  WHINA
-      FROST4(J4) = EFP          ! current cap frost amount  WHINA
 C       
       IF (LP4) CALL TPRINT8 (4) ! print daily convergence summary
       IF (LD16) THEN

@@ -101,11 +101,11 @@ cleanall: cclean clean cleanbin cleanmods
 #------------- system dependencies -------------
 
 OBJ8 = $(KRCLIB)/krc8.o $(KRCLIB)/tseas8.o $(KRCLIB)/tlats8.o $(KRCLIB)/tday8.o $(KRCLIB)/tcard8.o $(KRCLIB)/tprint8.o $(KRCLIB)/tdisk8.o $(KRCLIB)/tun8.o \
- $(KRCLIB)/epred8.o $(KRCLIB)/tint8.o $(KRCLIB)/albvar8.o $(KRCLIB)/vlpres.o $(KRCLIB)/porb08.o $(KRCLIB)/porbit.o $(KRCLIB)/orbit8.o $(KRCLIB)/eccanom8.o \
- $(KRCLIB)/deding28.o $(KRCLIB)/seasalb.o $(KRCLIB)/seastau.o $(KRCLIB)/readtxt360.o $(KRCLIB)/finterp.o \
- $(KRCLIB)/climtau.o $(KRCLIB)/binf5.o $(KRCLIB)/bigend.o $(KRCLIB)/rotmdp8.o $(KRCLIB)/vadddp8.o $(KRCLIB)/cocodp8.o $(KRCLIB)/readzone.o \
+ $(KRCLIB)/epred8.o $(KRCLIB)/vlpres.o $(KRCLIB)/porb08.o $(KRCLIB)/porbit.o $(KRCLIB)/orbit8.o $(KRCLIB)/eccanom8.o \
+ $(KRCLIB)/seasalb.o $(KRCLIB)/readtxt360.o $(KRCLIB)/finterp.o \
+ $(KRCLIB)/binf5.o $(KRCLIB)/bigend.o $(KRCLIB)/rotmdp8.o $(KRCLIB)/vadddp8.o $(KRCLIB)/cocodp8.o $(KRCLIB)/readzone.o \
  $(KRCLIB)/catime.o $(KRCLIB)/white1.o $(KRCLIB)/ksubs8.o $(KRCLIB)/tfar8.o $(KRCLIB)/cubuterp8.o $(KRCLIB)/sigma8.o $(KRCLIB)/fillmv.o \
- $(KRCLIB)/dspline.o $(KRCLIB)/dsplint.o $(KRCLIB)/evmono3d.o $(KRCLIB)/strumi.o $(KRCLIB)/strumr8.o $(KRCLIB)/gaspt8.o \
+ $(KRCLIB)/evmono3d.o $(KRCLIB)/strumi.o $(KRCLIB)/strumr8.o \
  $(KRCLIB)/orlint8.o $(KRCLIB)/wraper8.o
 # replace  nowhite  with code in krc
 
@@ -149,11 +149,6 @@ $(KRCLIB)/tun8.o:       $(KRCLIB)/tun8.f $(KRCLIB)/krcc8m.f          $(KRCLIB)/d
 $(KRCLIB)/readzone.o: $(KRCLIB)/readzone.f $(KRCLIB)/krcc8m.f                 $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f
 $(KRCLIB)/tdif3.o:     $(KRCLIB)/tdif3.f $(KRCLIB)/krcc8m.f                   $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f
 $(KRCLIB)/seasalb.o: $(KRCLIB)/seasalb.f                            $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f
-$(KRCLIB)/seastau.o: $(KRCLIB)/seastau.f                            $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f
-$(KRCLIB)/climtau.o: $(KRCLIB)/climtau.f                            $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f
-$(KRCLIB)/albvar8.o: $(KRCLIB)/albvar8.f $(KRCLIB)/krcc8m.f
-$(KRCLIB)/gaspt8.o:   $(KRCLIB)/gaspt8.f $(KRCLIB)/krcc8m.f
-$(KRCLIB)/tint8.o:     $(KRCLIB)/tint8.f $(KRCLIB)/krcc8m.f 
 $(KRCLIB)/porb08.o:   $(KRCLIB)/porb08.f           $(KRCLIB)/porbc8m.f        $(KRCLIB)/unic8m.f
 $(KRCLIB)/porbit.o:   $(KRCLIB)/porbit.f           $(KRCLIB)/porbc8m.f  # this is DP   porbit4 is SP
 $(KRCLIB)/testrou.o: $(KRCLIB)/testrou.f $(KRCLIB)/krcc8m.f                   $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f    # test main program
@@ -168,7 +163,6 @@ $(KRCLIB)/binf5.o: $(KRCLIB)/binf5.f  # uses  B2B  BIGEND  CATIME WHITE1  PIO_sy
 $(KRCLIB)/cocodp8.o: $(KRCLIB)/cocodp8.f  # Contains: COCOCM  COCOMC  COCOSC  COCOCS  
 #                       COCOSM  COCEMC  COCECM 
 $(KRCLIB)/cubuterp8.o: $(KRCLIB)/cubuterp8.f
-$(KRCLIB)/deding28.o: $(KRCLIB)/deding28.f
 $(KRCLIB)/eccanom8.o: $(KRCLIB)/eccanom8.f
 $(KRCLIB)/epred8.o: $(KRCLIB)/epred8.f
 $(KRCLIB)/evmono3d.o: $(KRCLIB)/evmono3d.f
@@ -216,11 +210,8 @@ $(KRCLIB)/vec2code.o: $(KRCLIB)/vec2code.f
 # ------------------used only for testing
 $(KRCLIB)/bigend1.o: $(KRCLIB)/bigend1.f
 catime:o /home/hkieffer/src/for/util/$(KRCLIB)/catime.f
-$(KRCLIB)/climtau.o: $(KRCLIB)/climtau.f
 $(KRCLIB)/deding2.o: $(KRCLIB)/deding2.f
 $(KRCLIB)/dpythag.o: $(KRCLIB)/dpythag.f # - /home/hkieffer/src/for/NumRec/$(KRCLIB)/dpythag.f
-$(KRCLIB)/dspline.o: $(KRCLIB)/dspline.f # -
-$(KRCLIB)/dsplint.o: $(KRCLIB)/dsplint.f # -
 $(KRCLIB)/dsvbksb.o: $(KRCLIB)/dsvbksb.f # -
 $(KRCLIB)/dsvdcmp.o: $(KRCLIB)/dsvdcmp.f # calls dpythag
 $(KRCLIB)/evrf4.o: $(KRCLIB)/evrf4.f

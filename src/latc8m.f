@@ -6,9 +6,6 @@ C_arg: all are set in  TLATS
      &,TST4(MAXN4)       ! predicted equilibrium temperature of ground
      &,TTS4(MAXN4)       ! predicted mean surface temperature for each latitude
      &,TTB4(MAXN4)       ! predicted mean bottom temperature
-     &,FROST4(MAXN4)     ! predicted frost amount kg/m^2.
-     &,AFRO4(MAXN4)      ! frost albedo.  
-     &,TTX4(MAXN4)       ! spare
      &,TMN4(MAXN1,MAXN4) ! predicted convergence midnight temperature
      &,TIN(MAXN1,MAXN4)  ! minimum hourly layer temperature
      &,TAX(MAXN1,MAXN4)  ! maximum hourly layer temperature
@@ -16,8 +13,7 @@ C_arg: all are set in  TLATS
      &,TPF(MAXNH,MAXN4)  ! final hourly planetary temperature
       INTEGER*4 NDJ4(MAXN4E) ! # days to compute solution for each latitude
 C_Var: all are set in  TLATS
-      COMMON /LATCOM/ DTM4,TST4,TTS4,TTB4,FROST4,AFRO4,TTX4
-     &,TMN4,TIN,TAX,TSF,TPF,NDJ4
+      COMMON /LATCOM/ DTM4,TST4,TTS4,TTB4,TMN4,TIN,TAX,TSF,TPF,NDJ4
 
 C_Desc
 C_Hist  85may12  Hugh_H_Kieffer    97feb11  HHK add  ELEV

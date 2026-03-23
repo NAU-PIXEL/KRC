@@ -15,7 +15,6 @@ C  ASOL set in  TLATS, the rest are set in  TDAY
      &, TTB(MAXN3)      ! Mean daily bottom temperatures                      
      &, TTA(MAXN3)      ! End-of-Day Atmospheric temperatures
      &, DTMJ(MAXN3)     ! RMS daily temperature change
-     &, FRO(MAXN3)      ! Daily frost amounts. [kg/m^2]                    
      &, ASOL(MAXN2)     ! Direct solar flux on sloped surface at each time of day
      &, ADGR(MAXN2)     ! Atm. solar heating at each time of day
      &, ALBJ(MAXN2)          ! hemispherical albedo at each time of day 

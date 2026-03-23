@@ -32,9 +32,9 @@ C      PARAMETER (MAXN5 =2161)    ! dimension of saved seasons
      3,ARC2,ARC3,SLOPE,SLOAZI,TFROST, CFROST,AFROST,FEMIS,AF1,AF2       !   :30
      4,FROEXT,FD32,RLAY,FLAY,CONVF, DEPTH,DRSET,PHOG,GGT,DTMAX          !   :40
      5,DJUL,DELJUL,SDEC,DAU,SUBS, SOLCON,GRAV,ATMCP                     ! :48
-     &,HUGE,TINY,EXPMIN,YRIDAY,FLOST,RGAS,TATMIN,PRES,OPACITY,TAUIR     ! :74
-     &,TAUEFF,TATMJ,SKYFAC,TFNOW,AFNOW,PZREF,SUMF,TEQUIL,TBLOW,HOURO    ! :84
-     &,SCALEH,BETA,DJU5,DAM,EFROST,DLAT,COND,DIFFU,SCALE                ! :93
+     &,HUGE,TINY,EXPMIN,YRIDAY,RGAS,TATMIN,PRES,OPACITY,TAUIR     ! :74
+     &,TAUEFF,TATMJ,SKYFAC,PZREF,TEQUIL,TBLOW,HOURO    ! :84
+     &,SCALEH,BETA,DJU5,DAM,DLAT,COND,DIFFU,SCALE                ! :93
      &,PIVAL,SIGSB,RADC                       ! :96
 
       LOGICAL*4 LP1,LP2,LP3,LP4,LP5,  LP6,LPGLOB,LVFA,LVFT,LKOFT        !  1:10
@@ -73,11 +73,11 @@ Cset                                      *day1
      5,DJUL,DELJUL,SDEC,DAU,SUBS, SOLCON,GRAV,ATMCP                     !8  :48
 Cset     4   4     4    4                            v
      5,CCKU,CCKL,CCPU,CCPL,   HUGE,TINY                         ! 4*4+2=18  :66
-     &,EXPMIN,YRIDAY,FLOST,RGAS,TATMIN,PRES,OPACITY,TAUIR,TAUEFF,TATMJ  !10 :76
+     &,EXPMIN,YRIDAY,RGAS,TATMIN,PRES,OPACITY,TAUIR,TAUEFF,TATMJ  !10 :76
 Cset   *seas       ----seas-------
-     6,SKYFAC,TFNOW,AFNOW,PZREF,SUMF, TEQUIL,TBLOW, HOURO,SCALEH,BETA  !10 :86
+     6,SKYFAC,PZREF, TEQUIL,TBLOW, HOURO,SCALEH,BETA  !10 :86
 Cset   -----------lats--------- tint ---lats-------      ---lats----
-     6,DJU5,DAM,EFROST,DLAT,COND,  DIFFU,SCALE,PIVAL,SIGSB,RADC        !10 :96
+     6,DJU5,DAM,DLAT,COND,  DIFFU,SCALE,PIVAL,SIGSB,RADC        !10 :96
      &,ALAT,ELEV                                       ! 2*maxn4=2*37=74 :170
 Cset   seas lat day2   lats -------day1------- --main------
      7,N1,N2,N3,N4,N5,  N24,IIB,IC2,NRSET,NMHA                          !  1:10
