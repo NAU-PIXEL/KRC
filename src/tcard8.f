@@ -103,14 +103,11 @@ C      INTEGER*4 MEMI(9)         ! tfar arg4
      & ,'LPGLOB','LVFA','LVFT','LKofT','LPORB','LKEY','LSC','LZONE'
      & ,'LOCAL','LD16','LPTAVE','Prt.78','Prt.79','L_ONE' /
 
-D     IF (IDB2.GE.5) WRITE(IOSP,*) 'TCARD-A',IQ
 C
       IRET=1                    ! normal return is a new case
       IF (J5.GT.1 .AND. J5.EQ.IDOWN) IRET=3 ! continue after changes
       KOUNT=0                   ! Number of change cards read
       JERR=0                    ! in case of IO error
-D       WRITE(IOPM,*)'TCARD entry  IQ,J5=',IQ,J5 !< dbug
-D       WRITE(IOSP,*)'TCARD entry  IQ,J5=',IQ,J5 !< dbug
       GO TO (100,160), IQ
 C
 C initiate commons from input file or from disk saved record  (IQ = 1)
@@ -156,9 +153,7 @@ C initiate commons from input file or from disk saved record  (IQ = 1)
       ENDIF
         
 C  GET orbital parameters if needed
-D     IF (IDB1.GE.1) WRITE(IOPM,*)'Before PORB0'
       IF (LPORB) CALL PORB08
-D     IF (IDB1.GE.1) WRITE(IOPM,*)'AFTER PORB0'
       LD18=.TRUE. ! Flag that at least one value has changed
 
 C  READ a set of parameter change cards  (IQ = 2)
@@ -475,6 +470,5 @@ C
       WRITE (IOSP,'(//5X,A)') 'END OF DATA ON INPUT UNIT'
       
  9    CONTINUE                  ! only exit from this routine
-D     IF (IDB1.NE.0) WRITE(IOSP,*)'TCARD Exit: IRET=',IRET,NFD,ID(1) !< dbug
       RETURN          
       END

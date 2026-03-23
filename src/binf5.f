@@ -109,7 +109,6 @@ C_End
         LOGICAL*4 DBG1          ! set to report sizes
         LOGICAL*4 DBG2          ! set to write as code locations are reached
 C****************************************************************************
-D       print *,'BINF5: input IRET=',IRET
         DBG1=MOD(IRET,2).EQ.1   ! set if  IRET odd   Report values
         DBG2=IRET.GE.2          ! set if  IRET >= 2  Report progress
         IF (DBG1.OR.DBG2) WRITE(*,*) 'BINF5 debug flags=',DBG1,DBG2

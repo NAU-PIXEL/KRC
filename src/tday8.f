@@ -86,7 +86,6 @@ C      SAVE IC3,IK1,IK2,IK3,IK4,LALCON,LPH,N1P1  ! ?? more
 C      SAVE FA1,FA2,FA3,FBI,FCI ! ?? more
 C
 
-D     IF (IDB2.GE.5) WRITE(IOSP,*) 'TDAY IQ,J4=',IQ,J4,JJO
       IRET=1
       IF (IQ.EQ.2.) GOTO 200 ! do day and time loops
 C
@@ -332,7 +331,6 @@ C   Fill in the substrate layer, same properties as lowest layer
           K=1
           IF (LOCAL) K=J
           BLAY(J)= FLAY * RLAY**(J-2) * DSQRT(DIFFI(K)*PERSEC/PIVAL) ! thickness
-D     write(*,*)'J,diffi,blay=',J,diffi(J),blay(J)
         ENDDO
 
       ENDIF                     ! ^^^^^^^^^^^^^^ zone / no zone
@@ -406,8 +404,6 @@ C 2016 dec08 ZDZ, ZDEN, ZCOND and ZSPH arrays are available for reuse here
           WRITE(IOSP,*)'Increased lower layers from safety of',QQ
         ENDIF
       ENDIF
-D     IF (IDB4.GE.2) WRITE(*,'(a,2I4,2f8.5,f10.3,e12.5)') 
-D    & 'KM,IC3,ARC3,CONVF,QQ,DTIM=',KM,IC3,ARC3,CONVF,QQ,DTIM
 C
       SCONVG(1)=0.
       DO J=2,N1                 ! LAYER LOOP 1: compute safety factor
@@ -424,7 +420,6 @@ C
           K=J
         ENDIF
         ZDZ(J) = QQ !  minimum safety factor at this layer or lower
-D       IF (IDB4.GE.2) WRITE(IOSP,'(i3,2f12.3)') J,SCONVG(J),ZDZ(J)
       ENDDO
       IF (QQ.LT. ARC3) THEN     ! Some layer unstable
         IRET=3                  ! error return if unstable
@@ -564,10 +559,8 @@ C      LSELF=.NOT. LOPN3         !F self heating
         TT1(J,1)=TTJ(J)
       ENDDO
       LALCON = (IK2+IK4 .EQ. 0) ! all Tcon, not Tdep
-D     IF (IDB2.EQ.2) WRITE(IOSP,119) LZONE,LALCON,j5,IK1,IK2,IK3,IK4
       AH = DFLOAT(N2)/DFLOAT(N24) ! time steps between saving results
       AP = DFLOAT(N2)/DFLOAT(NMHA) ! time steps between printing results
-D      NZ=NINT(AH)               ! time steps between fort.73 output 2018jun22
 C
 C  *v*v*v*v*v*v*v*v*v*v*v*v*v* new day loop v*v*v*v*v*v*v*v*v*v*v*v
 C
@@ -768,7 +761,6 @@ C may reset the lower layers on each successive day
           IF (J5.LE.1 .AND. JJJ.GE.JRSET) LRESET=.TRUE.
         ENDIF
  320  CONTINUE                  ! *^*^*^*^*^*^*^*^*^* end of day loop *^*^*^*^*
-D     IF (IDB2.EQ.2) WRITE(IOSP,119) LZONE,LALCON,j5,IK1,IK2,IK3,IK4
 C
       JJJ=N3                    ! if loop finished, index value not guarenteed
  330  J3=JJJ                    ! reset the counter kept in common
@@ -787,7 +779,6 @@ C
       CALL TPRINT8 (4)           ! print daily convergence
 C
  9    CONTINUE
-D     IF (IDB2.GE.6) WRITE(IOSP,*) 'TDAYx',J5,J4,J3
       RETURN
 C     
       END

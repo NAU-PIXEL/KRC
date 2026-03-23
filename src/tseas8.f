@@ -55,7 +55,6 @@ C
       REAL*4 TIME1,TIME2,TIME3 
 
       IRET=1                    ! normal
-D     IF (IDB1.NE.0) WRITE(IOSP,*) 'TSEASa',IQ,J5,LSC,N5,LONE
 
       IF (IQ .EQ. 1) THEN       ! if start of a model
         J5=0                    ! initialize season counter
@@ -87,7 +86,6 @@ C
           IF (IRL .GT. 5) IRET=10+IRL ! cannot continue this case
           GOTO 9             ! either 1-point or end-of-data
         ENDIF
-D     write (IOSP,*)'TSEAS: ',J5,N5,LOPN2,IDOWN,IRL !<< ,KVALB,alb
         CALL TDAY8 (1,IRL)        ! re-initialize day computations
         IF (IRL.NE.1) THEN
           WRITE (IOERR,*) 'TSEAS: TDAY(1 error=',IRL 
@@ -120,8 +118,6 @@ Cvvvvvvvvvvvvvvvvvvvvvv start: Get date in fff vvvvvvvvvvvvvvvvvvvvvvvvvvv
         I1=MEMI(1)/2 ! near midday
         I2=MEMI(2)/2 ! near the equator
  130    FORMAT ('Far near-noon near-equator [Ts and] Ta',2I4,2g11.4)
-D       IF (IDB6.GE.5) WRITE(IOSP,130) I1,I2,FARTS(I1,I2,1)
-D    &    ,FARTS(I1,I2,2)
 
         IF (FFOLE .LT. 0.D0) THEN 
           IRET=40+NINT(-FFOLE)              ! signal an error
@@ -130,7 +126,6 @@ D    &    ,FARTS(I1,I2,2)
       ENDIF                     ! LOPN3 .AND. SLOPE .GT. 0
 C^^^^^^^^^^^^^^^^^^^^^^^^ end: Get date in fff^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-D      write (IOSP,*)'TSEAS: ',J5,N5,LOPN2,IDOWN,SUBS ! ,KVALB,alb
 C======
 
       CALL TLATS8 (IQ,IRL)       ! execute latitude loop

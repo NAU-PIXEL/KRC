@@ -114,14 +114,10 @@ C Make arrays that overlay each of the major   Commons
       REAL*4 FFR4(NUMH4)        ! array to match file record
 
 C 2018oct20 debugging
-D     INTEGER*4 BUFF(13)        ! for file status
 
       SAVE IDX,NDX,JREC,MASE,MMM ! insure these 
       SAVE FRONT,NSOUT,ITOP           ! remain defined
 C
-D 31  FORMAT(A,6I7)             !<dbug
-D     IF (IDB3.GE.3) WRITE(IOSP,31)'TDISKa',KODE,KREC,J5,K4OUT,ITOP
-D     IF (IDB3.GE.4) WRITE(IOSP,31)'TDISKb',N3,N4,N5,J5,MASE !<dbug
 
       SELECT CASE (KODE)
 
@@ -155,19 +151,8 @@ C     recl may be bytes or longwords, depending upon  OS and compiler options.
         NWTOT=NWKRC+NWDAY       !  KRCCOM & DAYCOM
       ENDIF
       NRECL=8*NWTOT      ! bytes: or  NRECL=NWTOT  ! depends upon compiler <<<<
-D     IF (IDB3 .GE. 4) THEN
-D       CALL STAT(FDIRA, BUFF)   ! get file status
-D       write(iopm,*)'STAT=',buff
-D       CALL FSTAT(IOD2, BUFF)  ! get file status
-D       write(iopm,*)'FSTAT=',buff
-D       write(iopm,*)'iod2+',iod2,fdira,cstat,nrecl
-D     ENDIF
       OPEN (UNIT=IOD2,FILE=FDIRA,ACCESS='DIRECT',STATUS=CSTAT
      &     ,RECL=NRECL,ERR=191,IOSTAT=IOS)
-D     IF (IDB3 .GE. 4) THEN
-D       CALL FSTAT(IOD2, BUFF)  ! get file status
-D       write(iopm,*)'BUFF=',buff
-D     ENDIF
       LOPN2=.TRUE.
       JREC=0                    ! no records written yet
       I=LNBLNK(FDIRA)           ! last non-blank character in file name
@@ -218,7 +203,6 @@ C  record to write: 1{=header} +abs(ITOP)*JOUT +1{now} .
  210    FORMAT(' TDISK wrote: J5 rec Ls File ',2I4,F7.2,1X,A)
       ENDIF
       IF (LOPN4) THEN           !----- type 52 --------------------------------
-D     WRITE(IOSP,*)'TDISKb ',kode,krec,ncase,j5,' jd,jjj',jdisk,JJJ
         IF (NCASE.GT.MASE) GOTO 9 ! no room left for storage
         IF (JOUT.GE.NSOUT) GOTO 9 ! beyond allocated season range
         I1=(NCASE-1)*KASE+1     ! first word for this case
@@ -275,7 +259,6 @@ C     write(*,*)'t1', subs
           FFF(K+2)=HEATMM(J4)  
           CALL MVD (TAX(2,J4),FFF(K+3),MM4)
         ENDDO
-D     WRITE(IOSP,*)'JOUT,J,I,K',JOUT,J,I,K
       ENDIF                     !---------------------------------------------
       IF (.NOT. (LOPN2.OR.LOPN4))  ! no file active
      &     WRITE (IOERR,*) ' TDISK:2, WRITE, BUT NO FILE OPEN'
@@ -316,7 +299,6 @@ C
       CASE(5) ! output COMMON as first DA record          5  5  5  5  5  5  5  5
       IF (LOPN2 .AND. ITOP.LE.0) THEN
         I=1                  ! need room for NWKRC items
-D       IF (IDB3.GE.3) WRITE(IOSP,*)'TDISKc KREC=',KREC,IOD2,ITOP,I
         WRITE (IOD2,REC=I) COMKRC
       ELSE 
         WRITE(IOERR,*)'TDISK:5,wrong conditions: LOPN2,ITOP',LOPN2,ITOP
@@ -335,8 +317,6 @@ C
       JJJ(8) = 5                ! set type as  REAL*8
       JJJ(9) = HEADLEN          ! header length
       KHEAD   =5*NSOUT          !  Extra words in case header
-D     WRITE(IOSP,13)K4OUT,JJJ
-D 13      FORMAT ('Initiated custom output: K4OUT=',I3,/'JJJ=',10I6)
 C     at this point, jbb(2:n) contain the dimension needed for data.
 C Need to update next to last for NDX, and compute the number of cases possible
       IDX=JJJ(1)-1              ! dimension that has extra size
@@ -391,7 +371,6 @@ C
 
  9    CONTINUE
 C     write(iopm,*)'exit TDISK8  KREC=',KREC
-D     IF (IDB3.GE.7) WRITE(IOSP,*)'TDISKx  KREC,JREC=',KREC,JREC
       RETURN
 
 C ERROR section    

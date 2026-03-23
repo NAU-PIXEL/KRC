@@ -39,13 +39,11 @@ C local variables
         OUT=KK
         IF (KK.LT. 1)
      +          WRITE(IOERR,*)'SEASALB error opening input file =',FVALB
-D       IF (IDB5.NE.0) WRITE(*,*)'SEASALB',LSUB,kk,yyy(1),yyy(kk) 
 
         ELSE                    ! interpolate
 
           G=AMOD(LSUB,360.)     ! insure within 0. to 360..
           OUT=FINTERP(G,XXX,KK,YYY)   ! linear interpolation 
-D         IF (IDB5.GE.3) WRITE (*,*) 'SEASALB lsub,g,out=', LSUB,G,OUT
       ENDIF
 
       SEASALB=OUT

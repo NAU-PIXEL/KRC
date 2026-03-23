@@ -83,7 +83,6 @@ C Note: Direct write zero-fills unused part of record
 
       SAVE FFEL1,FFEL2,MEM1,MEM2 ! insure these remembered between calls
 C     
-D     IF (IDB6.GE.2) WRITE(IOSP,*)'TFAR:0 ',KODIN,FFATE,FFOLE
       KODE=MODULO(KODIN, 10)
       IF (KODIN .LT. 10) THEN  ! set to file 1 = for Tsurf ( +Tatm)
         FILEIN=FFAR             ! file name
@@ -100,7 +99,6 @@ D     IF (IDB6.GE.2) WRITE(IOSP,*)'TFAR:0 ',KODIN,FFATE,FFOLE
       ENDIF
       ILEN = LNBLNK(FILEIN)     ! how long is the file name
       LISS=(MEMI(8).EQ.4)       ! true if file is R*4
-D     IF (IDB6.GE.2) WRITE(IOSP,*)'TFARfile: ',FILEIN(1:ILEN),ILEN
       SELECT CASE(KODE)   !vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv 
    
       CASE(1)                   ! open file            1  1  1  1  1  1  1  1
@@ -297,8 +295,6 @@ C
         if (FFOLE .LT. 0.) FFOLE=FFOLE-3. ! becomes -4:-6
       ENDIF    
 C     WRITE(IOPM,*)'exit TFAR  FFATE=',FFATE
-D     IF (IDB6.GE.4) WRITE(IOSP,*)'TFARx:FFOLE+ ',FFOLE,IFUN,LOPF
-D    & ,FFTS(11)
       RETURN
 C---------------- error section
       END                       ! SUBROUTINE

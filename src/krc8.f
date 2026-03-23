@@ -186,10 +186,7 @@ C                       open input and print files
       FOUT=CBUF(1:IQ)//'.prt'   ! add extension 
       OPEN (UNIT=IOSP,FILE=FOUT,err=82)
 C                       read and check a complete set of input parameters
-D     write(iosp,*) 'before TCARD LP2=',LP2 !<<< debug
       CALL TCARD8 (1,IRC)
-D     write(iosp,*) 'after TCARD IR,LP2=',IRC, LP2 !<<< debug
-D     write(*,*) 'TCARD:1 return=',IRC !<<< debug
       IF (IRC.GT.4) GO TO 180 ! end-of-data or error
       CALL DTIME(TIMES,ELAPSED) ! Start clock, GNU recommended form 
       TOTIME=0.
@@ -200,22 +197,16 @@ C VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV  BEGIN case  VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
       PARC(12)=PERIOD           ! sol in days for an eclipsed body
       IF (IRC.EQ.4) THEN        ! Switch to "one-point" mode
         CLOSE(IOIN)             ! close the card input file
-D       write(*,*)'FINPUT=',finput !<<< debug
         OPEN (UNIT=IOIN,FILE=FINPUT,STATUS='OLD',iostat=iost,err=81)
-D       write(*,*)' IOSTAT=',iost !<<< debug
         READ (IOIN,'(A80)',ERR=83,END=84) CBUF ! read Users title
-D       write(*,*)' k2' !<<< debug
         WRITE(IOSP,*)'---- Start of one-point mode ----'
         WRITE(IOSP,*)CBUF       ! write users title
         READ (IOIN,'(A80)',ERR=83,END=84) CBUF ! skip the col header line
-D       write(*,*)' k3' !<<< debug
         LONE=.TRUE.
         KONE=NCASE              ! case when onePoint started
         CALL TCARD8 (2,IRC)     ! read first one-point case
-D       write(IOSP,*) 'KRC TCARD:2 return=',IRC !<<< debug
       ENDIF 
 
-D     write(IOSP,*)'KRC TDAY 1 return, LP2',IRD,LP2 !<<< debug
       I=1
       IF ((LP2 .AND. LD18) .OR. (IRD.NE.1)) THEN
         CALL TPRINT8 (2)        ! print input parameters
@@ -240,9 +231,7 @@ C Above changes some items used in TPRINT8 (2) 2016feb NOPE ?
       IF (LONE) IKON=1          ! set TSEAS to start fresh
 
       IF (N5.GE.JDISK) THEN     ! there may be some file output 
-D       WRITE(IOPM,*)'L3',LOPN2,LOPN3,LOPN4   !?Dbug
         I=LNBLNK(FDISK)
-D       WRITE(IOPM,*)'FDISK,I ',FDISK(1:I),I !?Dbug
         IF (.NOT.LOPN4 .AND. I.GE.4) THEN
           CALL TDISK8 (6,0)     ! open output type 5x
           NRUN=NRUN+1           ! increment run count
@@ -250,13 +239,9 @@ D       WRITE(IOPM,*)'FDISK,I ',FDISK(1:I),I !?Dbug
           IF (.NOT.LOPN4) WRITE(IOSP,*)'ERROR, Case too big  for KOMMON'
         ENDIF
         I=LNBLNK(FDIRA)
-D       WRITE(IOPM,*)'FDIRA,I ',FDIRA(1:I),I !?Dbug
         IF (.NOT.LOPN2 .AND. I.GE.4) CALL TDISK8 (1,0) ! open output DirAcc file 
         IF (I15.GT.100) CALL TUN8 (I15,1) ! Write case header 
-D       WRITE(IOPM,*)'LOPN2,3,4= ',LOPN2,LOPN3,LOPN4   !?Dbug
       ENDIF
-D     write(*,*) 'cond=',cond !<<< debug
-D     write(*,*)'KRC LP4=',LP4 !<<< debug
 C     CALL CATIME (DAYTIM)      ! reset the time at start of each model
 
 C - - - OPEN fff input surf [and atm]
@@ -313,7 +298,6 @@ C      If failure >5, then +10, terminate case
 C If TDAY  had failure >1, then IRL will be +20, terminate case 
 C If TLATS had failure >1, then IRL will be 31:39, terminate case
 C For details, see code or Helplist section 'Error Returns' 
-D      write(*,*)'TSEAS return IKON,IRL,N5,krec=',IKON,IRL,N5,krec !<<< debug
 
       IF (LONE) THEN
         IF (NCASE.EQ.KONE) WRITE(IOSP,'(A,A)')'C_END  Ls   Lat  Hour '
@@ -345,7 +329,6 @@ C
       ENDIF
       CALL TCARD8 (2,IRC)       ! read set of parameter changes
 C
-D     WRITE(IOSP,*)'TCARD:2 IR=',IRC,krec  !<<< Debug
       IF (IRC.LT.5) GOTO 140    ! 5 is END of data
 C AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA end case AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 C

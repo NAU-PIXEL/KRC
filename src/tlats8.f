@@ -129,7 +129,6 @@ C      SAVE FAC5X,FFELP,LINT,NFFH,NHF,NLF
    
       LQ1=IDB2.GE.5             ! once per season or latitude
       LQ2=IDB2.GE.9             ! each time of day
-D     IF (IDB2.NE.0) WRITE(IOSP,*)'TLATSa',N3,N4,J5,LQ1,LQ2
       
       IF (LPLANHTAB .OR. LPLANVTAB) THEN
         LPH = .TRUE.
@@ -181,9 +180,7 @@ C arg5 contains FFELP, so must be at least 10+MAXN4
         LINT=(NHF.GE.2) ! will need to interpolate hour
         NLF=MEMI(2)        ! number of latitudes  in fff
         FAC5X=(1.-SKYFAC)*EMIS*SIGSB*FFELP(7) ! last is fff surface emissivity
-D       IF (IDB6.GT.3) WRITE(IOPM,*)'TLATS: SKYFAC,FAC5X=',SKYFAC,FAC5X
         I=1
-D       IF (LQ1) I=3
         IF (LINT) CALL CUBUTERP8 (I, NHF, TENS,WORK,FARAD) ! set up interpolation
 C                                         ^ignore last 3 args
       ENDIF
@@ -202,10 +199,6 @@ C  Define all unit vectors in "Day" system.  Here, Sun at midnight
       MXX(3)=SD                 !|  Z axis toward planet north pole
       DIP=SLOPE/RADC            ! dip in radians
       SAZ=SLOAZI/RADC           ! azimuth of dip, east from north
-D     IF (LQ1) THEN
-D        WRITE(75,*) 'J5+',J5,SUBS,SDEC,DAU,SLOPE,SLOAZI
-D        WRITE(75,*) 'MXX+',MXX,SKYFAC,FAC5X
-D     ENDIF
 C       set blowup test to a factor larger than perpendicular black surface
       TBLOW = 2.0D0*(SOLR / (EMIS*SIGSB))**0.25D0
 C      
@@ -233,7 +226,6 @@ C
          CALL TPRINT8 (8)       ! print page heading
       ENDIF
 C
-D     IF (LQ1) WRITE(IOPM,*)'TLATS.1 J5,TBLOW=',J5,TBLOW
       J4=0
 C  ----------------new latitude loop loop loop--------------------------
 C
@@ -261,19 +253,8 @@ C
           WORK(1)=WORK(NFFH+1)  ! wrap last-1 to front
           WORK(2)=WORK(NFFH+2)  ! wrap last to next
           WORK(NFFH+3)=WORK(3)  ! wrap first to end
-D         IF (IDB2.GE. 5)  then
-D           WRITE(IOPM,*)'TLATS: WORK FOR FARTS(1,J,1)'
-D           WRITE(IOPM,'(10F8.2)') (WORK(I),I=1,NHF+2)
-D         ENDIF
           KODE=2
-D         IF (LQ1) KODE=4 ! do debug print in  CUBUTERP8
           CALL CUBUTERP8 (KODE,NFFH, TENS,WORK,FARAD) ! Interpolate  Ts radiance
-D           IF (IDB2 .EQ.-1 .AND. J4.EQ.3 .AND. J5.EQ.78) THEN 
-D           WRITE(29,*)'TLATS: WORK FOR FARTS(1,J,1)',NCASE,J5,NFFH
-D           WRITE(29,'(10F8.2)') (WORK(I),I=1,NFFH+3)
-D             WRITE(29,*) 'TLATS: FARAD FOR FARTS(1,J,1)',J,j4,N2
-D             WRITE(29,'(10F8.2)') (FARAD(I),I=1,N2)
-D           ENDIF
         ELSE
           CALL MVD( FARTS(1,J,1), FARAD, NFFH) ! no time-density increase
         ENDIF
@@ -312,12 +293,6 @@ C Vector algebra version 2012may31  !VAv
       CALL VDOT(PXX,TXX,COSP)   ! assume synchronous
       COSP=MAX(COSP,0.D0)       ! never negative
 
-D     IF (LQ1 .AND. J5.EQ.1) THEN
-D        WRITE(75,*)'FXX+',FXX,J4,DLAT
-D        WRITE(75,*)'QXX=',QXX 
-D        WRITE(75,*)'TXX=',TXX
-D        WRITE(75,*)'PXX+',PXX,LPH,PARW(7),COSP
-D     ENDIF
 C       
       AVEE=EMIS
       AVEA=ALB ! surface albedo; will be frost if frosty at end of prior day
@@ -345,8 +320,6 @@ C Photometric function in lat loop as  PHOG can depend upon frost
       SALB=PUS*AVEA              ! spherical albedo, for diffuse irradiance
 
       ACOSLIM = AMAX1(OPACITY/EXPMIN,0.001D0) ! limit to avoid math checks
-D     IF (LQ1) WRITE(IOPM,*)'TLATS: J4+.',J4,SOLR,ACOSLIM,COSIAM(1)
-D    & ,SALB
 C3      IF (LQ3) WRITE(IOSP,701)'LQ3',NCASE,J5,J4,TATMAVE,PRES,OPACITY
 C3 701  FORMAT(A4,I3,I5,I3,2F12.6,F12.8)
 C     
@@ -445,11 +418,6 @@ C
           QI=DIRECT*SOLR         ! collimated solar onto slope surface
         ENDIF
         
-D        IF (LQ2.AND.(MOD(JJ,24).EQ.1)) THEN
-D          WRITE(75,*)'HXX+',HXX,JJ
-D          WRITE(75,*)'ANG:',ANGLE,COSI,COS2,DIRECT,QI
-D        ENDIF
-D        IF (LQ2) WRITE(IOSP,*),'TLAT.c',JJ,COSI,COS3,DIRECT,DIFFUSE 
          ASOL(JJ)=QI            ! collimated insolation onto slope surface
         ! write into ASOL(JJ) with value from table
          ALBJ(JJ)=MAX(MIN(HALB,1.D0),0.D0) ! current hemispheric albedo
@@ -484,8 +452,6 @@ D        IF (LQ2) WRITE(IOSP,*),'TLAT.c',JJ,COSI,COS3,DIRECT,DIFFUSE
 C3         IF (LQ3) WRITE(88,777)JJ,COSI,COLL,HUV,QI,DIRECT,DIFFUSE,BOUNCE
 C3     & ,HALB,ALBJ(JJ)
 C3 777      FORMAT(I5,2f11.7,2f12.6,3f11.7,2f9.5)
-D          IF (LQ3) WRITE(88,777)JJ,COSI,COS2,AVET,HALB,DIRECT
-D 777      FORMAT(I5,2f9.5,2f10.5,2f11.5)
          IF (JJ.EQ.JJH) THEN       !  JJH is next saving hour
            TOFALB(IH,J4)=TOPUP  ! in  HATCOM, but never used
            IH = IH+1            ! increment to next hour
@@ -516,12 +482,7 @@ C       start by using annual average insolation
      & ,TEQUIL,AVEA,AVEI,GHF,SIGSB,AVEE !db
       ENDIF
       IF (J5.LE.1) TEQQ(J4)=TEQUIL ! save initial Tequilib.
-D     IF (LQ1) then
 C                          WRITE(IOPM,*)'TLATS: J5,J4,TEQUIL',J5,J4,TEQUIL
-D        WRITE(IOPM,*)'TLATS: CABR...',CABR,TAUD,TAUIR,TAUEFF
-D        WRITE(IOPM,*)'TLATS: BETA...',BETA,QS,SIGSB 
-D        WRITE(IOPM,*)'TLATS: TSEQ4,TEQUIL',TSEQ4,TEQUIL
-D     ENDIF
       JJO=1
 C       if at start, use linear profile, else  continuing from prior season
       IF (J5.LE.1) THEN      ! start with linear profile
@@ -531,8 +492,6 @@ C       if at start, use linear profile, else  continuing from prior season
         IF(IIB.LE.-1) TBOT=TDEEP  ! case for constant bottom  T
         IF(IIB.LT.-1) TSUR=TDEEP  ! case for isothermal initial condition
 C       
-D       IF (LQ1) WRITE(IOPM,*)'TLATS: Teq,sur,bot',TEQUIL,TSUR,TBOT 
-D       IF (LQ1) WRITE(IOPM,*)'TLATS: XCEN',XCEN 
         DO I=1,N1               ! initial linear profile
           TTJ(I)=TSUR+(TBOT-TSUR)*(XCEN(I)-XCEN(1))/(XCEN(N1)-XCEN(1))
         ENDDO
@@ -549,9 +508,6 @@ D       IF (LQ1) WRITE(IOPM,*)'TLATS: XCEN',XCEN
 C        write(iosp,*) asol
       if (idb2 .ge. 6) WRITE(IOPM,*)'l672',j5,j4,tt1(4,1) ! HKX
       IF (LP3) CALL TPRINT8 (3) ! print header for hourly summary
-D     IF (IDB2.EQ.4) WRITE(IOPM,*)'TLATS: J4,5 +',J4,J5,TEQUIL
-D     IF (LQ1) WRITE(IOPM,675)'TLATS: TTJ',TTJ(1:N1+1)
-D 675    format(A12,99f7.1)
 C====== 
 C       
       CALL TDAY8 (2,IRL)      ! execute day loop
@@ -566,9 +522,6 @@ C       save results for current latitude
 C       
       J3P1=J3+1
 C       i=n24/2                  ! noonish
-D     write(71,344) j3,j4,j5,ncase,avea,taud,pres !dbw 44
-D    & ,DTMJ(J3),DTMJ(J3P1),TMIN(2),TMAX(2) !dbw 44
-D 344       format(i3,i3,i4,i3,f12.6,f12.9,f12.9,f12.6,2f12.9,2f12.6) 
 C       
       if (idb2 .ge. 6) WRITE(IOPM,*)'post',j5,j4,tt1(4,j3),tt1(4,j3p1) ! HKX
       TST4(J4)=TEQUIL
@@ -594,11 +547,8 @@ C  J3P1 here may be less than 3, but EPRED8 will ignore the undefined address sp
       DO I=1,N1                 ! predict next season's layer temperatures
         CALL MV21D (TT1(I,1),MAXN1,WORK,J3P1) ! transfer all defined values for layer I
         TMN4(I,J4)= EPRED8(WORK,FP,J3P1, 1,TBLOW) ! forecast to end of season
-D       IF (I.EQ.2) WRITE(72,721) J5,J4,J3,-1  ! top physical layer ! HKX
-D    & ,WORK(J3-1),WORK(J3),WORK(J3P1),TMN4(2,J4) ! 2018jun22       ! HKX
       ENDDO
         if (idb2 .ge. 6) WRITE(IOPM,*)'l721',j5,j4,fp,j3p1,tblow ! HKX
-D 721  FORMAT(i4,i3,i3,i3,4F12.5) ! 2018jun22
       TTS4(J4)    = EPRED8(TTS,FP,J3P1, 1,TBLOW) ! surface average
       TTB4(J4)    = EPRED8(TTB,FP,J3P1, 1,TBLOW) ! bottom layer average
 
@@ -645,12 +595,9 @@ C
 
       IF (J4.LT.N4) GO TO 100   !^^^^^^^^^^^^^^^^^^^^ end of  Latitude loop
 
-D     IF (LQ1 .AND.(.NOT. LONE) .AND. (J5.LE.1)) ! avoid line in  OnePoint output
-D    &  WRITE(IOSP,*)'TLATS: TEQQ',(TEQQ(I),I=1,N4) ! starting  Tequil 
 C       
 C       ---------------------------------------------------------------------
 C       
  9    CONTINUE
-D     IF (IDB2.GE.3) WRITE(IOSP,*)'TLATSx',N1,N1PIB,N2,N24,J3
       RETURN
       END

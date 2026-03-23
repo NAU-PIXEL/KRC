@@ -32,12 +32,10 @@ C Local variables
 
       KK=-1                   ! possible error flag
       
-D      WRITE(*,*)'FNAME=',fname
       OPEN (UNIT=IOD,FILE=FNAME,STATUS='OLD',IOSTAT=IOST,ERR=81)
 C     Skip past the C_END line
       DO I=1, MSKIP
         READ (IOD,'(A80)',ERR=82,END=30) RBUF ! read into character buffer
-D        WRITE (*,*) I,RBUF
         J=INDEX(RBUF,'C_END')
         IF (J.GT.0 .AND. J.LT.5) GOTO 30
       ENDDO
@@ -45,7 +43,6 @@ D        WRITE (*,*) I,RBUF
 C read single lines until a negative season [ indicating all done]
  30   DO I=2, MROW-1
         READ (IOD,*,ERR=83,END=40), XIN,YIN 
-D       WRITE (*,*) I,XIN,YIN
         XXX(I)=XIN
         YYY(I)=YIN
         KK=I
@@ -60,7 +57,6 @@ C Fabricate first and last point to avoid wrap-araound later
       YYY(KK)=YYY(2)
 
  9    READTXT360=KK
-D      write (*,*)' READT kk=',kk
       CLOSE (IOD)
       RETURN
 

@@ -38,14 +38,11 @@ C 2019mar23 HK Revise and simplify logic.
       REAL*8 DUSE,X,Y
 
 C Step 1, check period
-D     WRITE (*,'(A,3f7.2,i5,f7.2,g12.5)'),'WRAPER8 Inputs:'
-D    &   ,DR,D1,DELD,NUMD,DPER,FTOL
       IRET=0                    !  Default is all  OK
       X=DPER/DELD               ! samples per period, expect integral
       NPY=NINT(X)               ! number of samples per period
       Y=ABS(X-NPY)
       IF (Y .GT. FTOL) IRET=IRET+1             ! warning       
-D        print *,',DperW',DPER,DELD,X,NPY,Y,ftol
 
 C Step 2  Offset by integral periods to be inside available time range
       DUSE=DR
@@ -81,8 +78,6 @@ C  Assume that NUMD +1 points would provide overlap
       j=ISHFT(IDB4,-2)
       k=MOD(j,2) 
 C     IF (MOD(ISHFT(IDB4,-2),2) .EQ. 1)   ! 4's bit true
-D     IF (k                     .EQ. 1)   ! 4's bit true
-D    & WRITE (*,'(A,3F8.3,I5)')'D1,DUSE,D2,IR', D1,DUSE,D2,IRET
 
       RETURN
       END
