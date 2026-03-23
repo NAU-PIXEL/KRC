@@ -105,7 +105,7 @@ OBJ8 = $(KRCLIB)/krc8.o $(KRCLIB)/tseas8.o $(KRCLIB)/tlats8.o $(KRCLIB)/tday8.o 
  $(KRCLIB)/seasalb.o $(KRCLIB)/readtxt360.o $(KRCLIB)/finterp.o \
  $(KRCLIB)/binf5.o $(KRCLIB)/bigend.o $(KRCLIB)/rotmdp8.o $(KRCLIB)/vadddp8.o $(KRCLIB)/cocodp8.o $(KRCLIB)/readzone.o \
  $(KRCLIB)/catime.o $(KRCLIB)/white1.o $(KRCLIB)/ksubs8.o $(KRCLIB)/tfar8.o $(KRCLIB)/cubuterp8.o $(KRCLIB)/sigma8.o $(KRCLIB)/fillmv.o \
- $(KRCLIB)/evmono3d.o $(KRCLIB)/strumi.o $(KRCLIB)/strumr8.o \
+ $(KRCLIB)/evmono3d.o \
  $(KRCLIB)/orlint8.o $(KRCLIB)/wraper8.o
 # replace  nowhite  with code in krc
 
@@ -183,8 +183,6 @@ $(KRCLIB)/rotmdp8.o: $(KRCLIB)/rotmdp8.f  # Contains:  MEQUAL  MPROD3  ROTAX  RO
 $(KRCLIB)/sigma.o: $(KRCLIB)/sigma.f  
 $(KRCLIB)/sigma8.o: $(KRCLIB)/sigma8.f   # used for debug of cubuterp
 $(KRCLIB)/st2real6.o: $(KRCLIB)/st2real6.f
-$(KRCLIB)/strumi.o: $(KRCLIB)/strumi.f
-$(KRCLIB)/strumr8.o: $(KRCLIB)/strumr8.f
 $(KRCLIB)/tridag8.o: $(KRCLIB)/tridah8.f   # uses prior partial solution
 $(KRCLIB)/vlpres.o: $(KRCLIB)/vlpres.f
 $(KRCLIB)/vadddp8.o: $(KRCLIB)/vadddp8.f  # Contains:  VADD  VCROSS  VDOT  VEQUAL  VMAG  VNEG 
