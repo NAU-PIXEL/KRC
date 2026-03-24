@@ -136,7 +136,7 @@ OBJ8 = $(KRCLIB)/krc8.o $(KRCLIB)/tseas8.o $(KRCLIB)/tlats8.o $(KRCLIB)/tday8.o 
 
 # PORB double precision
 OBJP3 = $(KRCLIB)/porbmn.o $(KRCLIB)/porbio.o $(KRCLIB)/ephemr.o $(KRCLIB)/ymd2j2.o $(KRCLIB)/porbig.o $(KRCLIB)/porbit.o $(KRCLIB)/porbel.o \
- $(KRCLIB)/orbit8.o $(KRCLIB)/spcrev.o $(KRCLIB)/caldate.o $(KRCLIB)/caldat.o $(KRCLIB)/julday.o $(KRCLIB)/b2b.o $(KRCLIB)/upcase.o $(KRCLIB)/eccanom8.o \
+ $(KRCLIB)/orbit8.o $(KRCLIB)/spcrev.o $(KRCLIB)/caldate.o $(KRCLIB)/caldat.o $(KRCLIB)/julday.o $(KRCLIB)/upcase.o $(KRCLIB)/eccanom8.o \
  $(KRCLIB)/catime.o $(KRCLIB)/prtpcom.o $(KRCLIB)/rotmdp8.o $(KRCLIB)/cocodp8.o $(KRCLIB)/vadddp8.o
 
 
@@ -161,7 +161,6 @@ porbmndb: $(OBJP3)
 
 # make routines for program dependencies 
 #
-$(KRCLIB)/krt8.o:       $(KRCLIB)/krt8.f $(KRCLIB)/krcc8m.f $(KRCLIB)/latc8m.f $(KRCLIB)/dayc8m.f $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f $(KRCLIB)/hatc8m.f
 $(KRCLIB)/krc8.o:       $(KRCLIB)/krc8.f $(KRCLIB)/krcc8m.f $(KRCLIB)/latc8m.f $(KRCLIB)/dayc8m.f $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f $(KRCLIB)/hatc8m.f
 $(KRCLIB)/tseas8.o:   $(KRCLIB)/tseas8.f $(KRCLIB)/krcc8m.f $(KRCLIB)/latc8m.f          $(KRCLIB)/unic8m.f          $(KRCLIB)/hatc8m.f $(KRCLIB)/porbc8m.f
 $(KRCLIB)/tlats8.o:   $(KRCLIB)/tlats8.f $(KRCLIB)/krcc8m.f $(KRCLIB)/latc8m.f $(KRCLIB)/dayc8m.f $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f $(KRCLIB)/hatc8m.f $(KRCLIB)/porbc8m.f $(CMODOBJS) $(FMODOBJS)
@@ -174,7 +173,6 @@ $(KRCLIB)/tfar8.o:     $(KRCLIB)/tfar8.f $(KRCLIB)/krcc8m.f                   $(
 # above containss TFAREAD
 $(KRCLIB)/tun8.o:       $(KRCLIB)/tun8.f $(KRCLIB)/krcc8m.f          $(KRCLIB)/dayc8m.f                   $(KRCLIB)/hatc8m.f
 $(KRCLIB)/readzone.o: $(KRCLIB)/readzone.f $(KRCLIB)/krcc8m.f                 $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f
-$(KRCLIB)/tdif3.o:     $(KRCLIB)/tdif3.f $(KRCLIB)/krcc8m.f                   $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f
 $(KRCLIB)/seasalb.o: $(KRCLIB)/seasalb.f                            $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f
 $(KRCLIB)/seastau.o: $(KRCLIB)/seastau.f                            $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f
 $(KRCLIB)/climtau.o: $(KRCLIB)/climtau.f                            $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f
@@ -187,13 +185,8 @@ $(KRCLIB)/porbig.o:   $(KRCLIB)/porbig.f           $(KRCLIB)/porbc8m.f
 $(KRCLIB)/porbio.o:   $(KRCLIB)/porbio.f           $(KRCLIB)/porbc8m.f
 $(KRCLIB)/porbit.o:   $(KRCLIB)/porbit.f           $(KRCLIB)/porbc8m.f  # this is DP   porbit4 is SP
 $(KRCLIB)/prtpcom.o: $(KRCLIB)/prtpcom.f           $(KRCLIB)/porbc8m.f
-$(KRCLIB)/testrou.o: $(KRCLIB)/testrou.f $(KRCLIB)/krcc8m.f                   $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f    # test main program
 $(KRCLIB)/wraper8.o: $(KRCLIB)/wraper8.f                            $(KRCLIB)/unic8m.f  # only if D lines
-$(KRCLIB)/glot.o: $(KRCLIB)/glot.f $(KRCLIB)/glotcom.f
-$(KRCLIB)/readkrcm1.o: $(KRCLIB)/readkrcm1.f $(KRCLIB)/glotcom.f 
 #------------------  do not have includes
-$(KRCLIB)/averag.o: $(KRCLIB)/averag.f  # test for function should be defined and called
-$(KRCLIB)/aveyear.o: $(KRCLIB)/aveyear.f
 $(KRCLIB)/bigend.o: $(KRCLIB)/bigend.f
 $(KRCLIB)/binf5.o: $(KRCLIB)/binf5.f  # uses  B2B  BIGEND  CATIME WHITE1  PIO_system
 $(KRCLIB)/cocodp8.o: $(KRCLIB)/cocodp8.f  # Contains: COCOCM  COCOMC  COCOSC  COCOCS  
@@ -205,22 +198,13 @@ $(KRCLIB)/eclipse.o: $(KRCLIB)/eclipse.f
 $(KRCLIB)/epred8.o: $(KRCLIB)/epred8.f
 $(KRCLIB)/evmono3d.o: $(KRCLIB)/evmono3d.f
 $(KRCLIB)/finterp.o: $(KRCLIB)/finterp.f
-$(KRCLIB)/getpi4.o: $(KRCLIB)/getpi4.f
-$(KRCLIB)/getpr8.o: $(KRCLIB)/getpr8.f
-$(KRCLIB)/jdate.o:  $(KRCLIB)/jdate.f  
 $(KRCLIB)/julday.o:  $(KRCLIB)/julday.f 
-$(KRCLIB)/minvr4.o: $(KRCLIB)/minvr4.f
 $(KRCLIB)/orbit8.o: $(KRCLIB)/orbit8.f
 $(KRCLIB)/porbel.o: $(KRCLIB)/porbel.f 
-#$(KRCLIB)/porb1.o: $(KRCLIB)/porb1.f $(KRCLIB)/unic8m.f $(KRCLIB)/porbcom8.f
-$(KRCLIB)/readaie.o: $(KRCLIB)/readaie.f
 $(KRCLIB)/readtxt360.o: $(KRCLIB)/readtxt360.f
-$(KRCLIB)/randomn.o: $(KRCLIB)/randomn.f # used to test sigma8 
-#$(KRCLIB)/r2i2s.o: $(KRCLIB)/r2i2s.f
 $(KRCLIB)/rotmdp8.o: $(KRCLIB)/rotmdp8.f  # Contains:  MEQUAL  MPROD3  ROTAX  ROTCOL  ROTDIA 
 #                      ROTEST  ROTEXM  ROTEXV  ROTMAT  ROTORB  ROTRIP  
 #                      ROTROW  ROTSHO  ROTV  ROTVEC  ROTZXM  TRANS3  VROTV
-$(KRCLIB)/sigma.o: $(KRCLIB)/sigma.f  
 $(KRCLIB)/sigma8.o: $(KRCLIB)/sigma8.f   # used for debug of cubuterp
 $(KRCLIB)/spcrev.o: $(KRCLIB)/spcrev.f 
 $(KRCLIB)/st2real6.o: $(KRCLIB)/st2real6.f
@@ -233,22 +217,12 @@ $(KRCLIB)/vadddp8.o: $(KRCLIB)/vadddp8.f  # Contains:  VADD  VCROSS  VDOT  VEQUA
 $(KRCLIB)/ymd2j2.o: $(KRCLIB)/ymd2j2.f
 
 #----------------------- added after remove use of all but C library
-$(KRCLIB)/b2b.o: $(KRCLIB)/b2b.f
-$(KRCLIB)/caldat.o: $(KRCLIB)/caldat.f
 $(KRCLIB)/caldate.o: $(KRCLIB)/caldate.f
 $(KRCLIB)/catime.o: $(KRCLIB)/catime.f
-$(KRCLIB)/datime.o: $(KRCLIB)/datime.f
-$(KRCLIB)/d2d.o: $(KRCLIB)/d2d.f
-$(KRCLIB)/dmd.o: $(KRCLIB)/dmd.f
-$(KRCLIB)/d2md.o: $(KRCLIB)/d2md.f
 $(KRCLIB)/fillmv.o: $(KRCLIB)/fillmv.f  # has  FILLB FILLI FILLL FILLR FILLD MVB MVI MVL MVR MVD
 #                     MVDF MVDM MVD21
 $(KRCLIB)/ksubs8.o: $(KRCLIB)/ksubs8.f  # has  AVEDAY  AVEYEAR  CO2PT  SIGMA 
 $(KRCLIB)/nowhite.o: $(KRCLIB)/nowhite.f
-$(KRCLIB)/otlint8.o: $(KRCLIB)/orlint8.f
-$(KRCLIB)/r2r.o: $(KRCLIB)/r2r.f
-$(KRCLIB)/upcase.o: $(KRCLIB)/upcase.f
-# $(KRCLIB)/white0.o: $(KRCLIB)/white0.f
 $(KRCLIB)/white1.o: $(KRCLIB)/white1.f
 $(KRCLIB)/vec2code.o: $(KRCLIB)/vec2code.f
 
