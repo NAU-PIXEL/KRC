@@ -1,6 +1,7 @@
       SUBROUTINE TLATS8 (IQ,IRET)
 C_Titl  TLATS8  latitude computations for the  KRC thermal model system DP
 C_Vars
+      USE array_structs
       INCLUDE 'krcc8m.f'  ! has  IMPLICIT NONE 
       INCLUDE 'latc8m.f'
       INCLUDE 'dayc8m.f'
@@ -15,6 +16,7 @@ C                     2,3,4= error of same number in TDAY
 C                     5=no matching latitude in fff
 C                     6=number of timesteps not integral multiple of hours in fff
 C                     7=ECLIPSE failure here on in TDAY
+C                     30=mixing pits with Solar Diffuse Flux Tables.
 C_Calls  AVEDAY+  AVEYEAR+  GASPT+  CLIMTAU'   DEDING28  EPRED8  
 C        ROTV+  SIGMA  TDAY8  TPRINT8  TUN8  VDOT+  VLPRES'  VROTV+
 C xx8 = make and call R*8 routine
@@ -132,8 +134,18 @@ C      SAVE FAC5X,FFELP,LINT,NFFH,NHF,NLF
       LQ1=IDB2.GE.5             ! once per season or latitude
       LQ2=IDB2.GE.9             ! each time of day
 D     IF (IDB2.NE.0) WRITE(IOSP,*)'TLATSa',N3,N4,J5,LATM,LQ1,LQ2
-      LPH = PARW(1).GT.0.      ! doing planetary heat loads
-      LECL= (ABS(PARC(1)-1.).LT. 0.2)       ! doing daily eclipses
+      
+      IF (LPLANHTAB .OR. LPLANVTAB) THEN
+        LPH = .TRUE.
+      ELSE
+        LPH = PARW(1).GT.0.      ! doing planetary heat loads
+      ENDIF
+
+      IF (LASOLTAB .OR. LSOLDIFTAB .OR. LATMRADTAB .OR. LPLANHTAB .OR. LPLANVTAB .OR. LRAWTAB) THEN
+        LECL = .FALSE.
+      ELSE
+        LECL= (ABS(PARC(1)-1.).LT. 0.2)       ! doing daily eclipses
+      ENDIF
 C
       IRET=1          ! set return code to normal
       I=IQ            ! simply to avoid compiler complaint that  IQ is not used
@@ -148,6 +160,7 @@ C
         TATMIN=1.               ! no cirrus
       ENDIF
       LTW=TWILFAC.LT.1.0        ! Twilight present flag
+
 C     
 C============ factors that do not depend upon season ===================
       RANG=2.0D0*PIVAL/N2      ! time step expressed in radians
@@ -157,6 +170,10 @@ C============ factors that do not depend upon season ===================
          SKYFAC = (1.D0+ DCOS(SLOPE/RADC))/2.D0 ! effective isotropic radiation.
          COSZLIM=0.            ! zenith angle default limit is 90 degrees
       ELSE                  ! slope is of conical pit wall
+        IF (LASOLTAB .OR. LSOLDIFTAB) THEN   ! Error, never use pits with ASOL or SOLDIF tables.
+          IRET=30
+          GOTO 9
+        ENDIF
          QA=(90.D0-SLOPE)/RADC ! zenith angle of slope, in radians
          QI=DSIN(QA)
          SKYFAC = QI**2          ! effective sky for isotropic radiation.
@@ -468,28 +485,29 @@ C     1.+0.375*(theta/r45)**3+1.17*(theta/r90)**8  Vasavada
              AVET=MAX(MIN(ALB*PUH,1.D0),0.D0) ! ensure  1-A cannot be negative
            ELSE
              AVET=AFNOW
-           ENDIF
+            ENDIF
 C daytime up/down fluxes
-           IF (LATM) THEN       !v-v-v-v-v  with atmosphere
-             CALL DEDING28 (OMEGA,G0,AVET,COSI,OPACITY, BOND,COLL,DERI)
-             TOPUP  =PIVAL*(DERI(1,1)-F23*DERI(2,1)) ! diffuse up at top atm.
-             BOTDOWN=PIVAL*(DERI(1,2)+F23*DERI(2,2)) ! diffuse down at surf.
-             ATMHEAT=COSI-TOPUP-(1.-AVET)*(BOTDOWN+COSI*COLL) ! atm. heating 
-             DIRFLAT=COSI*COLL  ! collimated onto regional flat plane
-           ELSE                 ! -+-+-+-+ day with no atmosphere
+            IF (LATM) THEN       !v-v-v-v-v  with atmosphere
+              CALL DEDING28 (OMEGA,G0,AVET,COSI,OPACITY, BOND,COLL,DERI)
+              TOPUP  =PIVAL*(DERI(1,1)-F23*DERI(2,1)) ! diffuse up at top atm.
+              BOTDOWN=PIVAL*(DERI(1,2)+F23*DERI(2,2)) ! diffuse down at surf.
+              ATMHEAT=COSI-TOPUP-(1.-AVET)*(BOTDOWN+COSI*COLL) ! atm. heating 
+              DIRFLAT=COSI*COLL  ! collimated onto regional flat plane
+            ELSE                 ! -+-+-+-+ day with no atmosphere
 C As opacity goes to zero, COLL->1., topup-> cosi*ALB, botdown->0 atmheat->0
-             TOPUP=COSI*AVET         ! upward solar 
-             BOTDOWN=0.         ! no atm scattering
-             ATMHEAT=0.         ! no atm absorbtion
-             COLL=1.D0          ! no atm attenuation of beam
-             DIRFLAT=COSI ! incident intensity on horizontal unit area
-           ENDIF
-         ELSE     ! night: set several values for dark
-           ATMHEAT=0.
-           DIRFLAT=0.
-           TOPUP=0.
-           COLL=0.      
-         ENDIF
+              TOPUP=COSI*AVET         ! upward solar 
+              BOTDOWN=0.         ! no atm scattering
+              ATMHEAT=0.         ! no atm absorbtion
+              COLL=1.D0          ! no atm attenuation of beam
+              DIRFLAT=COSI ! incident intensity on horizontal unit area
+            ENDIF
+          ELSE     ! night: set several values for dark
+            ATMHEAT=0.
+            DIRFLAT=0.
+            TOPUP=0.
+            COLL=0.      
+          ENDIF
+
 C  ASOL = coll. flux onto (sloped) surface 
 C  DSOL = diffuse flux onto ?? surface
 C Get diffuse insolation, including twilight and first-order surface reflection 
@@ -540,7 +558,12 @@ C     Set direct surface insolation
 C     
          IF (LECL) SOLR=SOLAU*FINSOL(JJ) ! eclipse factor. Daily only
 
-         QI=DIRECT*SOLR         ! collimated solar onto slope surface
+        IF (LASOLTAB) THEN ! new vis and ir flux tables
+         QI = f_get_jd_lt_asol(J5 - 1, (real(JJ, 8))/N2)
+        ELSE 
+          QI=DIRECT*SOLR         ! collimated solar onto slope surface
+        ENDIF
+        
 D        IF (LQ2.AND.(MOD(JJ,24).EQ.1)) THEN
 D          WRITE(75,*)'HXX+',HXX,JJ
 D          WRITE(75,*)'ANG:',ANGLE,COSI,COS2,DIRECT,QI
@@ -548,15 +571,35 @@ D        ENDIF
 D        IF (LQ2) WRITE(IOSP,*),'TLAT.c',JJ,COSI,COS3,DIRECT,DIFFUSE 
          HUV=ATMHEAT*SOLR        ! solar flux available for heating of atm.  H_v
          ASOL(JJ)=QI            ! collimated insolation onto slope surface
+        ! write into ASOL(JJ) with value from table
          ALBJ(JJ)=MAX(MIN(HALB,1.D0),0.D0) ! current hemispheric albedo
-         SOLDIF(JJ)=(DIFFUSE+BOUNCE)*SOLR ! all diffuse, = all but the direct.
+
+         IF (LSOLDIFTAB) THEN ! Flux table total solar flux, including bounce and diffuse
+           DIFFUSE = f_get_jd_lt_soldif(J5 - 1, (real(JJ, 8))/N2)  ! reusing DIFFUSE
+           SOLDIF(JJ) = DIFFUSE*SKYFAC 
+         ELSE
+          SOLDIF(JJ)=(DIFFUSE+BOUNCE)*SOLR ! all diffuse, = all but the direct.
+         ENDIF
+
          IF (LPH) THEN ! add planetary heat loads
            QA=ANGLE+PIVAL ! add 1/2 rev to convert from Hour to orbital phase
-           PLANH(JJ)=COSP*(PARW(1)+PARW(2)*COS(QA-PARW(3)/RADC)) ! thermal
-           PLANV(JJ)=COSP*(PARW(4)+PARW(5)*COS(QA-PARW(6)/RADC))
+           
+           IF (LPLANHTAB) THEN
+             PLANH(JJ) = f_get_jd_lt_planh(J5 - 1, (real(JJ, 8))/N2)
+           ELSE
+             PLANH(JJ)=COSP*(PARW(1)+PARW(2)*COS(QA-PARW(3)/RADC)) ! thermal
+           ENDIF
+
+           IF (LPLANVTAB) THEN
+             PLANV(JJ) = f_get_jd_lt_planv(J5 - 1, (real(JJ, 8))/N2)
+           ELSE
+             PLANV(JJ)=COSP*(PARW(4)+PARW(5)*COS(QA-PARW(6)/RADC))
+           ENDIF
+
            SUMH=SUMH+PLANH(JJ)
            SUMV=SUMV+PLANV(JJ)
          ENDIF
+
          ADGR(JJ)=HUV            ! solar heating of atm. H_v
          AVEI=AVEI+(1.d0-ALBJ(JJ))*QI+(1.-SALB)*SOLDIF(JJ) ! sum energy into surf
          AVEH=AVEH+HUV           ! sum atm. heating

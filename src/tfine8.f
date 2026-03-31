@@ -117,8 +117,13 @@ C several variables, but that having all but  T constant for a given case is
 C adequate.
 C  The convergence safety factor should be chosen to be adequate to cover 
 C the conductivity variation.
+            
+      IF (LPLANHTAB .OR. LPLANVTAB) THEN
+        LPH = .TRUE.
+      ELSE
+        LPH = PARW(1).GT.0.      ! doing planetary heat loads
+      ENDIF
 
-      LPH =(PARW(1).GT. 0.)     ! doing planetary heat loads
       QA=PARC(1)                ! layer factor. 
       KFL=NINT(QA)              ! integral fine layer factor. 
       KFT=KFL*KFL               ! fine time factor

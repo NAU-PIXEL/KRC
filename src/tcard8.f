@@ -1,6 +1,7 @@
       SUBROUTINE TCARD8 (IQ,IRET)
 C_Titl  TCARD8  Data input routine for  KRC system
 C_Vars
+      USE array_structs
       INCLUDE 'krcc8m.f'      ! has IMPLICIT NONE
       INCLUDE 'latc8m.f'
       INCLUDE 'dayc8m.f'
@@ -81,6 +82,8 @@ C      INTEGER*4 MEMI(9)         ! tfar arg4
       INTEGER*4 KOUNT           ! number of changes cards read for this call
 
       INTEGER*4 I,IG,IIIN,ILEN,IREAD,JERR,KEEP,NEW,KDB
+
+      LOGICAL*1 SUCCESS
       
       DATA TITF /'ALBEDO','EMISS','INERTIA','COND2','DENS2','PERIOD'     !6
      & ,'SPECHEAT','DENSITY','CABR','AMW','ABRPHA','PTOTAL','FANON'      !7
@@ -294,6 +297,27 @@ C  IG=8  Read file name
         LZONE=.TRUE.            !   assume have a new zone table
         IF (ILEN .LT. 4) LZONE=.FALSE. !   unless the name is too short
         WRITE(IOPM,*) 'LZONE,I=',LZONE, ILEN 
+      ! section for reading flux table
+      ELSEIF (IREAD.EQ.26) THEN ! read the flag for getting columns from C code
+        FFLUX=TEXT              !   move file name into common
+        FFLUX(ILEN+1:80)=CHAR(0)
+        ! TODO: Change all LFLUX values to switch on/default/zero based on what combination of these flags is set
+        LASOLTAB = .FALSE.
+        LSOLDIFTAB = .FALSE.
+        LPLANVTAB = .FALSE.
+        LATMRADTAB = .FALSE.
+        LPLANHTAB = .FALSE.
+        LRAWTAB = .FALSE.
+        CALL f_flux_init(FFLUX, SUCCESS, LASOLTAB, LSOLDIFTAB, LPLANVTAB, LATMRADTAB, LPLANHTAB, LRAWTAB)
+        WRITE(IOPM,*) 'FFLUX=',FFLUX
+        WRITE(IOPM,*) 'Initialized Flux tables?',SUCCESS
+        
+      ELSEIF (IREAD.EQ.28) THEN ! setting logical flag for hemispheric emission
+        LHEMISEMIS = .FALSE.
+        IF (TEXT .EQ. "TRUE") THEN
+          LHEMISEMIS = .TRUE.
+          WRITE(IOPM,*) 'Using hemispherical emission.'
+        ENDIF
       ELSE 
         WRITE (IOERR,*)'Tcard 8: invalid file type= ',IREAD,' ',TEXT
       ENDIF
