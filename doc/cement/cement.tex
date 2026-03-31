@@ -1,0 +1,632 @@
+\documentclass{article}  
+\usepackage{epsfig}
+\usepackage{../definc}  % Hughs conventions
+% see definc.sty for other page format settings
+\textheight=9.30in  \topmargin=-0.6in
+\textwidth=7.0in  \oddsidemargin=-0.3in \evensidemargin=-0.3in 
+
+% Used in place of  \qen for development to identify equation labels 
+\newcommand{\ql}[1]{\label{eq:#1} \hspace{1cm} \mathrm{eq:#1} \end{equation}}
+%\newcommand{\ql}[1]{\label{eq:#1} \end{equation} } % for final
+
+\title{Particulate thermal conduction}
+\author{Hugh H. Kieffer  \ \ File=~/xtex/themis/cement.tex 2010jul16}
+
+% local definitions
+
+\begin{document}
+\maketitle
+\tableofcontents
+%\pagebreak
+\subsubsection{History}
+First version 2009feb09, modified 2010mar15
+\qi 2010jul16 Add dependence on Knudsen Number and revise the numerical intergration section
+
+ \section{Introduction}
+
+This is an unsolicited attempt to look at the form of the variation of thermal
+conductivity of unconsolidated and consolidated ``soils'' (spherical grains in a
+lattice network) as a function of cement volume. It was instigated by a review
+of the manuscripts by Sylvain Piqueux, \cite{Piqueux09a} [Paper 1] and
+particularly \cite{Piqueux09b} [Paper 2], and was done largely in
+2008nov-2009feb.
+
+Many of the relations developed are coded in:
+\np{idl/themis/partcond.pro}. Reference to '@n' is to part n of the large
+case statement therein.
+
+The equation numbers are the normal \LaTeX~ dynamic way of doing things; the
+``eq:xxx'' to the right of some equations are additional static labels I use for
+convenience and keying to the code.
+
+\S \ref{sec:rad} develops the form for radiative conductivity, including fractional emissivity
+
+\S \ref{sec:vol} relates the volume of cement disk (cylindrical walls) to the central angle between the host sphere contact point and the edge of the cement disk
+
+\S \ref{sec:crd} Is a simple model of the cement as a flat plate of uniform
+thickness, but same volume as a meniscus
+
+\S \ref{sec:ana} Is the analytic solution [?] for a meniscus model. Although \S
+\ref{sec:sol} show a solution, the corresponding calculation has wild results,
+so there must be an error someplace. There are a couple changes of variables,
+which complicates things a bit. \S \ref{sec:num} shows the form I used for
+numerical integration, which is the basis for most of the Figures. \S
+\ref{sec:smx} shows small-angle-approximations (SMX) used for some testing
+(comparisons of full versus the much simpler SMX integrations); it is not used
+in the results shown.
+
+\S \ref{sec:code} Has a few random comments related to the IDL code.
+
+\S \ref{sec:results} Has some results for input values similar to those of \cite{Piqueux09b}
+
+2010jul14 Separate gas conductivity into two parts: between spheres $_g$ and across open cell $_G$, and each is dependant upon Knudsen number.
+
+\section{Radiative conductivity in uniform particulate medium \label{sec:rad}}
+
+Model as consistent heat flow across stack of radiative intervals. 
+
+For packed spheres, the normalized density $F$ ranges roughly from $\pi/6=
+0.5236$ to $\frac{\pi}{3\sqrt{2}} = .7405$ . A 1-m cube packed with spheres will
+contain $F/ (\frac{4}{3} \pi r^3) $ spheres, so the number of ``layers'' along
+one axis is $N= \sqrt{F/ (\frac{4}{3} \pi)}^3  \frac{1}{r} $
+
+ For each interval \qb H/A=\epsilon \sigma_B T_1^4 -\epsilon \sigma_B T_2^4=
+\epsilon \sigma_B\left(T_1^4-(T_1+\delta)^4 \right) \sim -\epsilon \sigma_B
+4\delta T^3 \qe where $A$ is the radiating area, $\sigma_B$ the Stephan-Boltzmann
+constant, and $\epsilon$ the emissivity (assumed to be near unity).
+
+Basic definition of $k$ is $-H= A k \frac{dT}{dz}$. Without loss of generality,
+assume a bulk volume of 1 m cube, with $\Delta T$ between upper and lower
+surface. Across the stack, $\Delta T = N \delta $.
+
+\qbn k=- \frac{H/A}{\Delta T} = \epsilon \sigma_B 4\delta T^3 \ / \ \Delta T = 4
+\sqrt{ (\frac{4}{3} \pi) / F)}^3 r \epsilon \sigma_B  T^3  \mc{thus} \hcm1  k= 
+ [ 3.564 : 4.0 ] D  \frac{\epsilon}{2-\epsilon} \sigma_B  T^3\qen
+ Where the values in brackets is $f_P$, the packing factor, $D$ is the grain diameter in meters and the values with brackets represent the range for various packed spheres, the result for non-unit emissivity from the next section is included.
+
+\subsection{Non-unit emissivity}
+
+Between two plane surfaces of the same emissivity,  heat transfer is $ H/A = F_\downarrow - F_\uparrow $ where 
+\qb      F_\downarrow = \epsilon \sigma T_2^4 + (1-\epsilon) F_\uparrow 
+\mc{and}   F_\uparrow = \epsilon \sigma T_1^4 + (1-\epsilon) F_\downarrow \qe
+Solve:  \qb  F_\downarrow = \epsilon \sigma T_2^4 + (1-\epsilon) \left(
+ \epsilon \sigma T_1^4 + (1-\epsilon) F_\downarrow \right)
+=\frac{(1-\epsilon)\epsilon \sigma T_1^4+\epsilon \sigma T_2^4}{1.-(1-\epsilon)^2} \qe
+
+similarly \qb F_\uparrow  = \frac{(1-\epsilon)\epsilon \sigma T_2^4+\epsilon \sigma T_1^4}{1.-(1-\epsilon)^2} \qe
+
+\qb H/A= \frac{\epsilon \sigma}{2\epsilon-\epsilon^2} \left[ (1-\epsilon)T_1^4+T_2^4 -\left( (1-\epsilon)T_2^4+T_1^4) \right) \right] =  \frac{\epsilon}{2-\epsilon} \sigma \left[ T_2^4-T_1^4  \right]  \simeq  \frac{\epsilon}{2-\epsilon} 4 \sigma T^3  \Delta T \qe 
+
+\section {Volume of cement versus contact angle \label{sec:vol}}
+Symbols 
+\qi $R =$ radius of conductive sphere
+\qi $x =$ central angle from contact point.  Unit cell has side of $2R$. 
+\qi $B =$ central angle to edge of cement cylinder
+\qi $V_1 =$ volume of one cement ring between two spheres
+\qi $V_c=$ volume of 3 orthogonal cylinders as fraction of unit cell  $= \frac{3V_1}{(2R)^3}$
+\qi $V_s=$ volume of 3 orthogonal cylinders as fraction of host sphere  $= \frac{3V_1}{\frac{4}{3} \pi R^3}$
+
+Model a face-centered lattice, wherein spheres are stacked directly on top of each other. Initial pore proportion is $1-\frac{4}{3*8} \pi = 0.4764$
+
+\qbn V_1 = \int_0^B 2 \pi R \sin x \cdot 2 R(1-\cos x) \cdot d \, (R \sin x) \qen
+
+for $B$=90\qd, this formulation should yield 
+ $ V_1 = \pi R^2 \cdot 2 R - \frac{4}{3} \pi R^3  \equiv \frac{2}{3} \pi R^3 $,
+although at 45\qd, cylinders begin to intersect and the formula is no longer correct.
+
+\qbn V_1 = 4 \pi R^3\int_0^B  \sin x \cdot (1-\cos x) \cdot d \sin x \ql{V_1} 
+
+\qbn Q \equiv \frac{V_1}{4 \pi R^3} =  \left( \int_0^B  \sin x  \cos x  \, dx 
+  - \int_0^B  \sin x  \cos^2 x  \, dx \right) \qen
+
+\qbn  Q = \left[ _0^B -\frac{\cos^2 x}{2}\right] -  \left[ _0^B 
+ - \frac{\cos^3 x}{3} \right] \qen
+
+\qbn Q = \left( -\frac{1}{2} (\cos^2 B -1) \right) - \left( -\frac{1}{3} (\cos^3 B -1) \right)  
+ \equiv  \frac{1}{2} (1- \cos^2 B ) -\frac{1}{3} (1- \cos^3 B ) \ql{B}
+
+For $B= \pi/2$, this yields $Q=1/2 -1/3 =1/6 $ , as expected.  Volume of 3-rings of cement, relative to the volume of sphere, is $V_s \equiv 3 V_1 / \frac{4}{3} \pi R^3 =9Q$ is only valid for $B<45^\circ$
+\subsection{ Small angle approximation} 
+For small angles, these involve small differences of large numbers, so use small-angle approximations: 
+\\ $\cos x \simeq 1 - \frac{x^2}{2} + \frac{x^4}{4!}  $
+ \  and $\left( 1.-\delta\right) ^ n \sim 1-n\delta.$ 
+
+Then  $\cos^2 x \sim 1.- x^2$ and  $ \cos^3 x \sim 1.- \frac{3}{2}x^2$
+ \ \ so \ \ $ 1- \cos^2 x=  \sim x^2$ and $1- \cos^3 x \sim  \frac{3}{2} x^2 $. \qr{B} becomes: 
+
+\qbn Q = \sim \left( \frac{B^2}{2} - \frac{B^2}{2} \right)
+\equiv 0 \qen 
+
+Thus, need to include higher-order terms. Including higher-order
+terms in the trig. functions after integration generates a lot of terms. Rather,
+try small-angle approximations before integration, and \qr{V_1} becomes:
+
+\qbn  Q  \simeq \int_0^B x \cdot \frac{x^2}{2} \cdot  \, dx 
+\equiv   \left[ _0^B \frac{x^4}{8} \right]
+  \mc{or}  V_1 \simeq \frac{\pi}{2}R^3 B^4  \ql{Vb}
+where the ignored terms are two or more degrees higher than those included.
+
+With this approximation, $ V_c \simeq \frac{3 \pi}{16} B^4 $ and  $ V_s \simeq \frac{9}{8} B^4 $ ; cement volume as fraction of solids is $V_s/(1+V_s)$ 
+ 
+\section {Gas conductivity \label{sec:gas}} % -----------------------
+Follow the development of \cite{Piqueux09a}, where the conductivity of a gas in
+a pore $k_\mathrm{gas}$ is a function of the bulk gas conductivity at the
+appropriate temperature, $k_0$ and the Knudsen number $Kn$.
+
+ $k_0$ is assumed to be known; Paper 1 Eq. 14 gives an emperical relation for \qcc.   Paper 1 Equations 30 to 32 give
+\qb  k_\mathrm{gas} = \frac{k_0}{1+e^\frac{2.15 -\mathrm{Log}_{10} \left(Kn^{-1}\right) }{0.55}} \qe
+
+The Knudsen number is the ratio of the mean free path to the pore size $L$, or (Paper 1, Eq. 7) 
+\qbn Kn = \frac{k_B}{\sqrt{2}\pi d_m^2} \cdot \frac{T}{LP} \qen
+where $k_B$ is the Boltzmann constant, and $d_m$ is the molecule collisional diameter;  the first term is a constant for a given molecule.
+
+Here, $L$ is taken to be $2R$ in the open corner region and the average
+separation of the spheres, $L_S$, in the region between the outer edge of the
+cement and the projected edge of the grain.
+
+\qb L_S = \mathrm{Volume / Area } = \int_B^{\pi/2} 2R \left( 1- \cos \theta \right) 2 \pi R \sin \theta  \: R \cos  \theta \: d \theta \ / \ \int_B^{\pi/2} 2 \pi R \sin \theta \: R \cos  \theta \: d \theta \qe
+
+\qb = 2R\left(  \int_B^{\pi/2} \left( \sin\theta \cos\theta -\sin\theta \cos^2\theta \right) d \theta
+  \ / \  \int_B^{\pi/2} \sin\theta \cos\theta d \theta \right) \qe
+
+\qb = 2R\left(  \bigg[_B^{\pi/2}  \frac{\sin^2 \theta}{2}  +  \frac{\cos^3 \theta}{3}  \bigg]
+  \ / \ \bigg[_B^{\pi/2} \frac{\sin^2 \theta}{2}   \right) \qe
+
+\qbn L_S= 2R\left( 1 - \sin^2 B -  \frac{2 \cos^3 B}{3}  \right) 
+ \ / \ \left( 1 - \sin^2 B  \right)  \qen
+
+Check limits: $B \rightarrow \frac{\pi}{2}, L_S \rightarrow 2R $, correct; 
+$B \rightarrow 0, L_S \rightarrow  \frac{2}{3}R $, correct. 
+
+To avoid complications in attempt at analytic solutions, the $B \rightarrow 0$
+limit has been used for all $B$ . This is within 10\% for $B<0.3$
+radian. However, the full $L_S$ will be used in the numerical integrations.
+%IDL> b=.01*findgen(157)
+%IDL> qq=(1.-sin(b)^2 -(2./3.)*cos(b)^3)/(1.-sin(b)^2)
+%IDL> plot,qq
+
+\section{Crude estimate of net effect of small amounts of cement \label{sec:crd}} %_____________
+
+Model is a stack of ``cement'' plate of radius $r_c$ that is $Y$ thick, in
+series with a cylinder of the sphere material of cross-section $\sigma_h$ that
+is $2R-Y$ thick. Treat heat flow as strictly parallel to axis, except for
+``magic'' lateral dispersal at the cement-host interface.
+
+ For this crude approximation, include only conduction through the solids,
+ ignoring the effect of gas conduction and radiation.
+
+ Let $r_c$ be the radius of the cement cylinder ($\sim BR$ above).
+ Let $Y$ be the average thickness of the cement in the heat-flow direction: 
+$Y \equiv V_1/\sigma_c $.
+
+ Let the thermal conductivity of the sphere (the ``host'' material) be $k_h$ and
+ that of the cement be $k_c$.
+
+Because of the relatively larger physical cross-sections of the host sphere than
+the cement ring, assume the effective cross-section of the host sphere
+$\sigma_h$ to be $G \sigma_c$; the minimum for G would be unity. One possibility
+for $\sigma_h$ would be the geometric mean between the cross-section of the
+cement ring and central cross-section of the sphere, 
+$ G\sigma_c=\sqrt{\sigma_c \cdot \pi R^2 }$ or $G=1/B$. 
+An alternate would be to assume the average: 
+$G \sigma_c=\frac{ \sigma_c +\pi R^2 }{ 2 }$ or $G=\frac{1/B^2+1}{2}$.
+
+Because cement and host are in series, heat-flow is the same in the cement and host portions. 
+
+\qbn H= \Delta T_c  k_c \sigma_c /Y = \Delta T_h k_h \sigma_h/(2R-Y) \qen
+
+where $\Delta T =  \Delta T_c + \Delta T_h$. Effective net conductivity is $k= H/(2R \Delta T) $
+
+\qbn  k= \frac{H / \, 2R}{ \frac{YH}{k_c\sigma_c} +  \frac{(2R-Y)H}{k_h G \sigma_c} } \qen
+
+
+With some manipulation; get effective thermal conductivity of the cell:
+\qbn \frac{k}{k_h}=\frac{ \sigma_c / ( 2RY)}{ \frac{k_h}{k_c}+ \frac{2R/Y \  -1}{G}  } \qen
+
+ Using \qr{Vb} and 
+with the small-angle approximation: $Y=\frac{1}{2}B^2R$ and $\sigma_c= \pi (BR)^2 $ and $\frac{\sigma_c}{2RY} =\pi $.
+
+
+\qbn \frac{k}{k_h}=\frac{\pi}{ \frac{k_h}{k_c} +  \frac{1}{G} \left( \frac{4}{B^2} -1 \right)  } \mc{and} B=\sqrt {\frac{16}{3 \pi} V_c}^4 \ql{kkh}
+
+Implemented @2. The results for several options for $G$ are shown in Figure \ref{fig:plate}. 
+ For very small cement fractions, the gas conductivity, and possibly radiation,
+ would be important.
+
+\begin{figure}[!h] 
+% \resizebox{!}{12cm}{\rotatebox{90}{\includegraphics*[0.86in,0.5in][7.75in,10.5in] {plate.eps}}}
+\caption{Normalized conduction through circular flat plate of cement between cylinders of host material for several options of $G=\sigma_h /\sigma_c$. Largest $B$ is 40\qd. }
+\label{fig:plate}
+\end{figure}
+
+\section {Attempt at analytic model for both non-cemented and cemented \label{sec:ana}}
+
+Try for face-centered (Paper 1, Fig. 5 left). Start with assumption that all
+heat flow is parallel to vertical axis. Thus, for any radial distance from
+contact point, up to end of cylindrical cement, $B'$, which may be zero, heat
+flow in host is equal to that in cement. Outside this and up to particle radius
+$R$, heat flow in solid is equal to sum of gas and radiation heat flow; for an
+infinitesimal area \qbn H_s = H_g+H_r \ql{H} Outside $R$, there is only gas and
+radiation heat flow across the full unit cell.
+
+% Consider a cubic unit cell of side length 2$R$. 
+
+Let temperature of lower side of cell (through center of particle) be $T_1$ and
+that of upper side be $T_4$, temperature at upper surface of lower particle is
+$T_2$, temperature at mid-line is $T_m$, by symmetry (ignoring the small change
+in $T^3$, $T_m=(T_1+T_2)/2$. For notation convenience, define $U \equiv T_m-T_1$
+and temperature change across 1/2 the gap is $\delta \equiv T_m-T_2$.  $R$ is
+the sphere radius (and 1/2 the unit cell side), $r=R \sin x$ is the radial
+coordinate, and $y$ is the vertical distance between the sphere surface and the
+mid-line; $ y=R(1-\cos x)$; for small angles $y\simeq R x^2/2 $.
+
+General form for heat flow: $\frac{dH}{dA} = k \bigtriangledown T $.  For
+notation simplicity, represent $\frac{dH}{dA}$ by $H$ for each component of heat
+flow.
+
+Total heat flow across the unit cell is $ \mathbf{H_t}=\int_0^R H_{(r)} 2 \pi r
+dr + \mathbf{H_o} $ where $ \mathbf{H_o}$ is the heat flow across the open
+corners of the cell where there is no particle. Beware: $H_{(r)}$ is total heat
+flow for infinitesimal area and $H_r$ is only the radiative portion.
+
+Effective net conductivity:
+\qbn k_t=\frac{\mathbf{H_t}}{A}\frac{\Delta z}{\Delta T} = \frac{\mathbf{H_t}}{4R^2} \frac{2R}{2 U}=  \frac{\mathbf{H_t}} {U 2 \pi R^2} \cdot \frac{ \pi R}{2} \qen
+
+Total heat flow:
+ \qbn \mathbf{H_t}= \int_0^{B'} H_c 2 \pi r  d r + \int_{B'}^R (H_g+H_r) 2 \pi r  d r  +\int_R^\mathrm{corner}  (H_G+H_r) dA \qen
+
+Sticking with $r$ as the independent variable leads to forms such as $\int \frac{r}{b+\sqrt{a^2-r^2}} dr$, for which I could not find a solution. Hence the formulation in terms of the central angle $x$ where $r=R \sin x $.
+
+\qb \int_A^B F_{(r)} r dr = R^2\int_{\arcsin \frac{A}{R}}^{\arcsin \frac{B}{R}} F_{(r\rightarrow x)}  \sin x d \sin x  \mc{And}  d \sin x = \cos x \ dx \qe
+
+Change coordinates from radial distance from the contact point to angle 
+from the contact point:
+\\ $ \mathbf{H_t-H_o}= 2 \pi R^2 \int_0^{\pi/2} H_{(x)} \sin x \ d \ \sin x $.
+Central angle of the edge of cement is $B$.
+ 
+For a possible cemented section, allow the effective cross-section in the host to be larger than strictly parallel heat flow by a factor $G_{(B)}$; if this causes significant complications, will drop this option.
+
+
+\qbn  \mathbf{H_t}= \int_0^{B} H_c 2 \pi R \sin x  d x + \int_{B}^{\pi/2} (H_g+H_r) 2 \pi R \sin x  d x   +\int_R^\mathrm{corner}  (H_G+H_r) dA \qen
+
+$H_c= k_c \frac{\delta_c}{y} $ and $H_g=k_g\frac{\delta_c}{y} $  and $H_r= \frac{\epsilon }{2-\epsilon }4 \sigma_B T^3 \cdot 2 \delta  \equiv C \delta $. Units of $C$ are  W m$^{-2}$ K$^{-1}$. 
+
+For $0 \leq x \leq B $, heat flow in the host is same as in the cement
+\qbn k_h G \frac{U-\delta_c}{R-y} = k_c \frac{\delta_c}{y} \mc{and}  \delta_c /U = \frac{G k_h}{R-y}  / \left[ \frac{ G k_h }{R-y} +\frac{k_c}{y} \right] 
+= \frac{1}{1+\frac{k_c}{k_h} \frac{R-y}{Gy} }
+= \frac{1}{1+\frac{k_c}{Gk_h} \frac{\cos x}{1-\cos x} }\ql{delcu}
+
+\qbn \frac{\delta_c}{Uy}=\frac{1}{y+ \frac{k_c}{k_h}\frac{R-y}{G} } 
+= \frac{1}{R(1-\cos x)+ \frac{k_c}{Gk_h} R \cos x }
+= \frac{1/R}{ 1+\left( \frac{k_c}{Gk_h} -1 \right)  \cos x }  \ql{delc}
+
+For $B < x \leq \pi/2 $, expand terms in \qr{H} (all units are W m$^{-2}$).
+\qbn k_h\frac{U-\delta}{R-y} = k_g\frac{\delta}{y}+C \delta  \mc{and} 
+\delta /U =   \frac{ k_h}{R-y} / \left[ \frac{k_h }{R-y} +\frac{k_g}{y} + C \right]  \ql{del} 
+
+%\pagebreak
+
+\qb \delta /U =  \frac{1} {1+\frac{k_g}{y} \frac{R-y}{k_h} + C\frac{R-y}{k_h} } 
+= \frac{1}{1+\frac{k_g}{k_h} \frac{\cos x}{ 1.-\cos x}  + \frac{CR}{k_h} \cos x}
+=\frac{1-\cos x}{1-\cos x + \frac{k_g}{k_h}\cos x +(1-\cos x) \frac{CR}{k_h} \cos x} \qe
+
+\qbn = \frac{1-\cos x}{1 +\left( \frac{k_g+CR}{k_h} -1 \right) \cos x -\frac{CR}{k_h} \cos^2 x} \ql{delU}
+
+\qbn \frac{\delta}{yU}=  \frac{\delta}{U} \frac{1}{R \left( 1-\cos x \right) } 
+= \frac{1/R}{1 +\left( \frac{k_g+CR}{k_h} -1 \right) \cos x -\frac{CR}{k_h} \cos^2 x} \ql{yU}
+
+\subsection{Solved integrals \label{sec:sol}} % -----------------------------
+
+\qbn \mathbf{H_t} =  2 \pi R^2 \int_0^B  k_c \frac{\delta_c}{y}  \sin x \ \ d \sin x 
++ 2 \pi R^2 \int_B^\frac{\pi}{2} \left( k_g\frac{\delta}{y}  + C \delta \right) \sin x \ d \sin x + (4-\pi)R^2 \left[k_G \frac{U}{R} + C U \right] \ql{Ht}
+Note that $k_g \frac{\delta}{y} +C\delta = \left( k_g+CR \right)\frac{\delta}{y} -CR \frac{\delta}{y} \cos x$ in order to separate integrals of similar form.
+
+\qb \frac{\mathbf{H_t}} {U 2 \pi R^2} 
+=  k_c\int_0^B  \frac{\delta_c}{Uy} \sin x  \ d \sin x  
++ \left( k_g+CR \right) \int_B^\frac{\pi}{2} \frac{\delta}{Uy}\sin x \ d \sin x
+- CR \int_B^\frac{\pi}{2} \frac{\delta \cos x}{Uy} \sin x \ d \sin x 
++ \frac{4-\pi}{2 \pi} \left[ \frac{ k_G}{R} + C \right] \qe
+
+\qb =  \frac{ k_c}{R} \underbrace{\int_0^B  \frac{1}{ 1+ \left(\frac{k_c}{Gk_h} -1 \right) \cos x }    \sin x  \ d \sin x }_{I1} 
++\left(\frac{k_g}{R}+C \right)  \underbrace{ \int_B^\frac{\pi}{2} \frac{1}{1+\left( \frac{k_g+CR}{k_h}-1 \right) \cos x - \frac{CR}{k_h} \cos^2 x } \sin x \ d  \sin x }_{I2}\qe
+
+\qbn -C \underbrace{\int_B^\frac{\pi}{2}  \frac{\cos x}{1+\left( \frac{k_g+CR}{k_h}-1 \right) \cos x - \frac{CR}{k_h} \cos^2 x }  \sin x \ d \sin x}_{I3} +  \left[ \frac{ k_G}{R} + C \right]  \underbrace{\frac{4-\pi}{2 \pi}}_{I4} \ql{HU}
+
+Integral I1 has the form: $ \int \frac{ \cos x \sin x}{a+b \cos x } dx $.  Use variable transform $z = \cos x$ to get  $ \int - \frac{ z }{a+b z } dz$, and the integration limits become 1. to $\cos B$.  Then use \cite{Dwight61} 91.1 for $X \equiv a+bx$ to get 
+ \qbn \int \frac{x \ dx}{X} = \frac{1}{b^2}\left[ X -a \ln \left| X \right| \ \right]\ql{i1} 
+
+
+Integral I2  has the form:
+$ \int \frac{ \cos x \sin x}{1+b \cos x + a \cos^2 x} dx $. Use variable transform $z = \cos x$ to get  $ \int - \frac{ z }{1+b z + a z^2} dz$, and the integration limits become $\cos B$ to 0.   Then use \cite{Dwight61} 160.11 for $X \equiv ax^2+bx+c$ to get 
+\qbn \int \frac{x \ dx}{X} = \frac{1}{2a} \ln \mid X \mid -\frac{b}{2a} \int \frac{dx}{X}\ql{i2} 
+The RHS integral has solution that depends upon sign of $b^2-4ac$, see \cite{Dwight61} 160.01. This looks promising, so get rough order of terms using typical values.  Using $\epsilon=0.9$ and $T=240.$ yields $ C= 5.13$;  using  $R=$100.E-6 and  $k_h=$ 2, yields  $a = -\frac{CR}{k_h}$=- 2.6E-4; using $k_g=$ 0.012, get $b= \frac{CR+k_g}{k_h}-1=$-.988 . $c=1$  and $b^2-4ac$=+.979 
+
+For $b^2 > 4ac $,  roots of $X=0$ are real; $p,q =\frac{-b \pm \sqrt{b^2-4ac} }{2a}$ and use  \cite{Dwight61} 160.01; \qbn \int \frac{dx}{X}=\frac{1}{a \left( p-q \right)} \ln \left| \frac{x-p}{x-q} \right| \ql{dxox}
+Integral I3; can be written: 
+\qbn I3 =   \int_{\cos B}^0 \frac{z^2}{a z^2 + b z +c} dz, \ql{i3} 
+where the three constants have the same values as in Integral I2; use  \cite{Dwight61} 160.21 
+\qbn \int \frac{x^2dx}{X} = \frac{x}{a}-\frac{b}{2a^2} \ln \left| X \right| + \frac{b^2-2ac}{2a^2} \int \frac{dx}{X} \ql{i32} 
+The last integral has the same form as \qr{dxox}. 
+
+Implemented @4.
+
+\subsection{Numerical Integration \label{sec:num}} %---------------
+
+The forms in \qr{HU} can be integrated by any of several means. Because this
+simple model does not have lateral heat flow, the cement part can be integrated
+outward once (for any set of fixed parameters excluding $B$) saving the results
+for increasing $B$ and the non-cement parts integrated inward once, also saving
+the results as a function of $B$. Then the results for any $B$ found by simply
+adding the results.
+   
+Numerical integration alternate to I2 and I3 is to retain form in \qr{Ht} and
+compute $ \int_B^\frac{\pi}{2} \left( k_g\frac{\delta}{Uy} + C \delta/U \right)
+\sin x \ d \sin x $ where the () term is $\frac{\left( \frac{k_g}{y} +C \right)
+\cdot \frac{k_h}{R-y}} {\left( \frac{k_g}{y} +C \right) + \frac{k_h}{R-y}}$. This is a check against some algebra or coding errors, and was found to yield the identical result.
+
+Expand \qr{Ht} in the fashion of \qr{HU}, but keeping gas and radiation separate:
+\qb \frac{\mathbf{H_t}} {U 2 \pi R^2} 
+=  k_c\int_0^B  \frac{\delta_c}{Uy} \sin x  \ d \sin x  
++\int_B^\frac{\pi}{2} \frac{ k_g \delta}{Uy}\sin x \ d \sin x
++ C \int_B^\frac{\pi}{2} \frac{\delta }{U} \sin x \ d \sin x 
++ \frac{4-\pi}{2 \pi} \left[ \frac{ k_G}{R} + C \right] \qe
+
+\qb =  \frac{ k_c \Delta x}{R}\sum_0^B   \underbrace{\frac{1}{ 1+ \left(\frac{k_c}{Gk_h} -1 \right) \cos x }    \sin x  \cos x }_{J1} 
++\frac{ \Delta x}{R} \sum_B^\frac{\pi}{2}  \underbrace{\frac{k_g}{1+\left( \frac{k_g+CR}{k_h}-1 \right) \cos x - \frac{CR}{k_h} \cos^2 x } \sin x  \cos x }_{J2}\qe
+
+\qbn +C \Delta x \sum_B^\frac{\pi}{2} \underbrace{\frac{1-\cos x}{1 +\left( \frac{k_g+CR}{k_h} -1 \right) \cos x -\frac{CR}{k_h} \cos^2 x} \sin x \cos x}_{Jr} 
++ \left[ \frac{ k_G}{R} +C \right] \underbrace{\frac{4-\pi}{2 \pi}}_{I4} \ql{HN}
+
+Implemented @43, with Small-angle-approximation (SMX) for $1-\cos x$ if single precision and $x<0.001$.
+\subsection{Small-angle-approximation integrals \label{sec:smx}} %---------------
+For each of the integrals in \qr{HU}, evaluate for $x \ll 1$: then
+ $\sin x \simeq x$ \ and \ $\cos x \simeq 1-x^2/2 $   
+
+Make $B$ small and replace $\pi/2$ with $q=2B$ as a test of coding the solved integrals.
+
+ I1, using $b= \frac{k_c}{Gk_h} -1  $ and  $X=g^2 \pm x^2$, \cite{Dwight61} 121.1 and 141.1 :  
+ 
+\qb \int \frac{x}{1 + b(1-x^2/2)} dx 
+= \int \frac{x \ dx}{1 + b - \frac{b}{2}x^2} \qe
+\qbn  \mathrm{I1} \stackrel{b>0}{\longrightarrow} \frac{2}{b}\int \frac{x \ dx}{g^2 - x^2} 
+\stackrel{141.1}{\longrightarrow}  \frac{2}{b} \left[ \frac{-1}{2} \ln \mid g^2-x^2 \mid \right] 
+\Longrightarrow \frac{-1}{b} \left[ \ln ( \mid g^2-\epsilon^2) \mid - \ln g^2 \right]  \ql{S1}
+
+ where $g^2=2\frac{1+b}{b}$. \ If $b<-1 $ then: \qbn  \mathrm{I1} 
+\stackrel{b<-1}{\longrightarrow} \frac{2}{b}\int \frac{x \ dx}{g^2 + x^2} 
+\stackrel{121.1}{\longrightarrow} \frac{2}{b} \left[ \frac{-1}{2} \ln  (g^2+x^2) \right] \Longrightarrow  \frac{-1}{b} \left[ \ln (  g^2+\epsilon^2) - \ln g^2 \right] \qen
+
+If $-1<b <0 $ need to define  $g^2=-2\frac{1+b}{b}$, then: 
+\qbn \stackrel{-1<b<0}{\longrightarrow} \frac{-2}{b}\int \frac{x \ dx}{g^2 + x^2} 
+\stackrel{121.1}{\longrightarrow}  \frac{-2}{b} \left[ \frac{-1}{2} \ln g^2+x^2 \right] 
+\Longrightarrow \frac{1}{b} \left[ \ln ( g^2+\epsilon^2) - \ln g^2  \right] \qen
+
+\subsubsection {Treating cos x as 1.}
+
+I1 becomes  $ \int_0^B  \frac{ \sin x }{ 1+ \left(\frac{k_c}{Gk_h} -1 \right) \cos x }    \ d \sin x  \rightarrow \int_0^B  \frac{ \sin x }{c_1 }  d \sin x  $ where $c_1=\frac{k_c}{Gk_h}$  yielding  $ = \left[_0^B  \ \frac{\sin^2 x}{2 c_1} \right] = \frac{\sin^2 B}{2c_1} $.
+
+I2 becomes $ \int_B^p \frac{1}{1+\left( \frac{k_g+CR}{k_h}-1 \right) \cos x - \frac{CR}{k_h} \cos^2 x } \sin x \ d  \sin x  \rightarrow  \int_B^p\frac{\sin x}{1+\left( \frac{k_g+CR}{k_h}-1 \right) - \frac{CR}{k_h} }  \ d  \sin x  $ where the denominator is now constant $c_2 =  \frac{k_g+CR}{k_h} - \frac{CR}{k_h} = \frac{k_g}{k_h} $ yielding $ = \left[_B^p  \ \frac{\sin^2 x}{2 c_2} \right] = \frac{\sin^2 p -\sin^2 B}{2c_2} $.
+
+Similarly, I3 becomes $ \int_B^p \frac{\cos x \sin x}{c_2 }  \ d  \sin x  = \frac{1}{c_2} \int_B^p \cos^2 x \sin x dx  = \frac{-1}{c_2} \left[ _B^p \  \frac{ \cos^3 x}{3} \right] $ and $\cos^3 \epsilon  \simeq 1.-\frac{3}{2} \epsilon^2$. 
+\\ Thus I3 $ = \frac{\cos^3 p - Cos^3 B}{3 c_2} 
+\simeq \frac{3 (p^2-B^2) /2}{3 c_2} = \frac{p^2-B^2}{2 c_2}  $
+\section {Comments on the IDL code \label{sec:code}} % -----------------------
+
+Code model in \np{partcond.pro}. Include both analytic and numerical
+integration. Also include test section with small-angle-approximation where
+replace $\pi/2$ limit with $2B$. Coded as a large case statement (as is my
+habit) so it is not very easy to follow.
+
+\subsection{Arguments} %-----------------------------------------
+\subsubsection{Parameters} %...................................
+Default values for input parameters:
+\begin{verbatim} 
+@16: Inputs: Float values
+       0      0.00000  edit: flag -=stop >1=help 
+       1      100.000  Rg: grain radius, mu m
+       2      250.000  T: temperature, K
+       3     0.937000  kh: grain thermal conductivity
+       4   0.00300000  k0: bulk gas cond.  J/m.s.K
+       5      2.00000  kc: cement cond.  =SI
+       6     0.980000  emis: grain emissivity
+       7     0.900000  G: host grain cond. factor -1=ave -2=geomean
+       8      500.000  P: Pressure in Pascal
+       9    0.0100000  B: Cement contact angle, radian
+      10  4.65000e-10  Dm: molecule collision diameter, m
+      11      77.7700  vvvv:--numerical parameters
+      12      0.00000  flag: test integrals
+      13     0.100000  beta: SMX limit radian
+      14      30.0000  nLo: steps along cement [Int]
+      15      100.000  nHi: steps along gap [Int]
+      16      0.00000  DP: Flag, double precision
+      17   0.00100000  B1: Initial B
+      18      1.10000  Brat: ratio for loop
+\end{verbatim}
+ For these values, the contributions to thermal conductivity from the corner
+ areas are: gas = 0.000643805, radiation = 0.000146148, and their sum =
+ 0.000789953.
+
+\subsubsection{Actions} %...................................
+Targets in the large case statement:
+\qi \at -4... return 43 [nB,2] 0]=volume fraction cement  1]=net conductivity
+\qi \at -2... 2: return,knet
+\qi \at 0.... Stop
+\qi \at 123.. start auto-script 
+\qi \at 125.. kons=[20,4,42,44,126,-3] Loop over set of Bval
+\qi \at 126.. loop sequence
+\qi \at 127.. kons=[20,43,128,-3] Loop kc  REQ 43 
+\qi \at 128.. loop sequence
+\qi \at 131.. kons=[20,2,43,-1,431,-1,432,-1,433,-1,434,-1,435,-1,436] std
+\qi \at 132.. kons=[4,42,44,51,-1,57,-1,577] Details for one Bval
+\qi \at 16... Modify parr
+\qi \at 20... Set limits and constants. Auto after 16
+\qi \at 2.... Crude cement only
+\qi \at 4.... Solved integrals 
+\qi \at 42... Simplest numerical integration
+\qi \at 425.. Simplest numerical integration 2010jul
+\qi \at 43... Numerical integration for all B
+\qi \at 4302. Test of 42 \& 43
+\qi \at 431.. CHART: vvv
+\qi \at 4312. vrs vol.
+\qi \at 432.. CHART www
+\qi \at 4322. vrs vol.
+\qi \at 433.. Plot k\_t
+\qi \at 434.. vrs vol.
+\qi \at 435.. Plot 5A1
+\qi \at 436.. 5B1
+\qi \at 437.. Plot 5A
+\qi \at 4372. 2nd set
+\qi \at 438.. 5B
+\qi \at 44... Sum parts REQ 4,42
+\qi \at 51... Plot del/U vrs B
+\qi \at 52... CHART,qqq
+\qi \at 53... CLOT,qqq
+\qi \at 54... CHART knet
+\qi \at 56... CHART qab
+\qi \at 561.. `` qb/qa
+\qi \at 562.. `` qb*qa
+\qi \at 57... CLOT qab
+\qi \at 577..  `` Log10
+\qi \at 58... Add parr 12:14 Subtitle 
+\qi \at 77... oldstuff:
+
+Standard actions of \np{kon91}: \begin{verbatim}
+0=Stop  121=kons=-3  122=Edit Kons      801/803 output to LP/.jpg
+Plots : 8=new  80=restart  85[x]=SETCOLOR  87=close  88=subtitle  9=plot
+MAKE99: 991=Expand current kons   992/995=1-line each   994=expand all \end{verbatim}
+\subsubsection{Arrays} %...................
+
+Contents of the \nv{vvv} [*,8] array (Figure \ref{fig:431}): 
+\qi 0] $B$ as independent variable
+\qi 1] $G$, the Grain conductivity factor
+\qi 2] Knudsen number
+\qi 3] gas conductivity 
+\qi 4] denominator in I2 and Ir
+\qi 5] J1 function; Normalized heat flow through cement
+\qi 6] J2 function; Normalized gas heat flow
+\qi 7] Jr function; Normalized radiative heat flow
+
+ Contents of the \nv{www} [*,4] array (Figure \ref{fig:432}): 
+\qi 0] outward summation of J1 = $q \frac{k_c}{R} \cdot \sum $ vvv[*,5] 
+\qi 1] inward summation of J2 = $q \frac{1}{R} \cdot \sum $ vvv[*,6]
+\qi 2] inward summation of Jr = $q C \cdot \sum $ vvv[*,7]
+\qi 3] total of above 3, plus the open corner conduction 
+\qii where $q= \frac{\Delta x}{ \frac{\pi}{2} R}$ 
+
+\subsubsection{Common Sequences} %...................................
+Input for $G$ = parr[7]. 
+\qi if $\leq -2$, uses  $G=1/B$
+\qi else if $\leq -1$, uses $G=\frac{1/B^2+1}{2}$.
+\qi else if $<1$ uses $G=1/B^x$
+\qi else if $\geq 1$ uses that fixed value
+
+@42 does one B in detail
+
+@43 does a larger range of B values at once.
+
+To generate results for 6 values of $k_c$ for 130 values of $B$ takes 8 millisec.
+
+Make Fig \ref{fig:5A} by defaults, 127,437, 16,: 7=G=.5, 127, 4372, 16: 7=G=.9, 127, 4372
+\qi Make  Fig \ref{fig:5B} as above; change only 437 to 438, leave 4372
+
+\section {Results \label{sec:results}} % -----------------------------
+
+NOTE: All in this sub-section used $k_g = k_G=$ constant. The routine is
+archived as partcond.2010may16
+
+The small value of $a$ in the analytic integrals leads to large values for some
+terms in I2 and I3, and I have not been able to get realistic results; must be
+an error in the algebra or code someplace.
+
+Analytic solution to integrals involves small differences of large numbers, but
+single versus double precision yields virtually same result, so numerical
+precision is not the source of the unrealistic results.
+
+Numerical integration of alternate form (last sentence of \S \ref{sec:sol}) had
+initially been run in double precision to avoid zero divide, so I added a
+small-angle approximation, single precision now agrees with numerical
+integration of \qr{HU} to six decimal places. The ratio of $\frac{\left(
+\frac{k_g}{y} +C \right)}{\frac{k_h}{R-y}}$ ranges over 6 orders of magnitude,
+whereas their product ranges over 3.5 orders of magnitude.
+
+Coded test cases for small-angle approximation and numeric integrations agree
+well.
+
+\begin{figure}[!h] 
+% \resizebox{!}{12cm}{\rotatebox{90}{\includegraphics*[0.86in,0.5in][7.75in,10.5in] {431gp9.eps}}}
+\caption{Chart of radial behavior, each scaled to the ranges listed, for the
+independent heat-flow elements; conditions are shown in the upper label. The top
+three curves are the heat flow due to cement conduction, gas conduction, and
+radiation, as a function of radius. del/U is the fractional temperature jump
+across the open gap; delc/U the corresponding temperature difference with
+cement in place; there would be a substantial lateral temperature discontinuity
+at the edge of the host sphere with this model when B is $~0.2$ radian.} 
+\label{fig:431} \end{figure}
+
+\begin{figure}[!h] 
+% \resizebox{!}{12cm}{\rotatebox{90}{\includegraphics*[0.86in,0.5in][7.75in,10.5in] {432gp9.eps}}}
+\caption{Chart of heat-flow magnitudes and net conductivity as a function of
+central angle to the edge of cement, same conditions as Figure \ref{fig:431}.
+See \S \ref{sec:code} for full list of curves for www}
+\label{fig:432}\end{figure}
+
+The ratio of Gas/radiation conduction ranges from 150 for small B to 20 for
+large.  The cement has greater conduction than gas for $B>0.085$ radian, or
+cement volume $>$ 5\xEm5, for the parameters shown in Figures \ref{fig:431} and
+\ref{fig:432}.
+
+\begin{figure}[!h] 
+% \resizebox{!}{12cm}{\rotatebox{90}{\includegraphics*[0.86in,0.5in][7.75in,10.5in] {5A.eps}}}
+\caption{Net thermal conductivity as function of cement fraction for several
+cement thermal conductivities and 3 options for $G=\sigma_h / \sigma_C$; similar
+to Fig 5A in Paper 2.  Values of $k_c$ shown in the legend. The lower set of 6
+curves is for $G=1$, then middle set for $G=1/\sqrt{B}$ and the upper set for
+$G=1/B^{0.9}$. }
+\label{fig:5A} \end{figure}
+% Make by defaults, 127,437, 16,: 7=G=.5, 127, 4372, 16: 7=G=.9, 127, 4372
+
+\begin{figure}[!h] 
+% \resizebox{!}{12cm}{\rotatebox{90}{\includegraphics*[0.86in,0.5in][7.75in,10.5in] {5B.eps}}}
+\caption{Same data as Figure \ref{fig:5A}, with logarithmic abscissa; similar to
+Fig 5B in Paper 2.}
+\label{fig:5B}
+\end{figure}
+% Make as 5A; change only 437 to 438, leave 4372
+%\pagebreak
+ The differences between the results here and in \cite{Piqueux09b} are probably from two main differences in the models: \begin{enumerate}
+\item Lateral expansion of heat flow away from the contact point. Crudely estimated here by the $G$ factor
+\item Heat flow through the four cement disks around the axes perpendicular to the main heat flow. Omitted entirely here. This should be significant only for large cement volume fractions.
+ \end{enumerate}
+
+\begin{verbatim}
+generate Fig 5A       to generate 5B, change only 437 to 438
+43  127  8  437   16,7 -2   127 4372  16,7 -1  127  4372  88 9
+
+@42 produces the numeric integration for one B value ggg =[I1,I2,I3] 
+IDL>  print,ggg
+   0.00238796      2.24765      1.80089
+\end{verbatim}
+\subsection{Using variable $k_g$: 2010jul14} %---------------------
+Figures \ref{fig:431b} and \ref{fig:432b} are the revised versions of Figs.  \ref{fig:431} and \ref{fig:432} respectively.
+
+\begin{figure}[!h] 
+% \resizebox{!}{12cm}{\rotatebox{90}{\includegraphics*[0.86in,0.5in][7.75in,10.5in] {431b.eps}}}
+\caption{Chart of radial behavior, each scaled to the ranges listed, for the
+independent heat-flow elements; conditions are shown in the upper label. The top
+three curves are the heat flow due to cement conduction, gas conduction, and
+radiation, as a function of radius. Third and 4th curve show the Knudsen Number
+and the resulting gas conductivity.  See \S \ref{sec:code} for full list of
+curves for vvv.}
+\label{fig:431b} \end{figure}
+
+\begin{figure}[!h] 
+% \resizebox{!}{12cm}{\rotatebox{90}{\includegraphics*[0.86in,0.5in][7.75in,10.5in] {432b.eps}}}
+\caption{Chart of heat-flow magnitudes and net conductivity as a function of
+central angle to the edge of cement, same conditions as Figure \ref{fig:431}.
+See \S \ref{sec:code} for full list of curves for www}
+\label{fig:432b} \end{figure}
+
+\bibliography{mars}   %>>>> bibliography data
+\bibliographystyle{plain}   % alpha  abbrev 
+\end{document} %===============================================================
+% ===================== stuff beyond here ignored =============================
