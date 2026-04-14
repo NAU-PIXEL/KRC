@@ -22,3 +22,6 @@ spin_axis = (rotation_period, phase_at_j2000, pole_ra, pole_dec, default_spin_fl
 
 # default epoch at which to calculate orbit
 epoch_date = datetime.datetime(2024,11,1,0,0,0)
+
+# PORB defaults directory for porb defaults hdfs
+porb_defaults_dir = '/nfs/software/davinci_install/share/davinci/library/script_files/krc_support/porb_defaults'

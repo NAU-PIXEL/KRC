@@ -8,8 +8,9 @@ import numpy as np
 import spiceypy as spice
 import datetime
 import constants as const
-from kernel_mgmt import kernels_dir
+from kernel_mgmt import kernels_dir, get_mk
 import defaults 
+import h5py
 
 def get_orbital_naifid(metakernel, body_naifid, epoch_date):
     '''
@@ -89,9 +90,17 @@ def get_spin_axis(metakernel, body_naifid):
     ### This translates the new-style 8-9 digit asteroid naifIDs to the old-style 7-digit ones.
     #   Currently, the latest PCK (pck00011.tpc) uses only 7-digit asteroid IDs.
     #   For more info, see: https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/req/naif_ids.html#Asteroids
-    if len(str(body_naifid))>=8:
-        pck_naifid=int("2"+str(body_naifid)[-6:])
-    else: pck_naifid = body_naifid
+    # if len(str(body_naifid))>=8:
+    #     pck_naifid=int("2"+str(body_naifid)[-6:])
+    # else: pck_naifid = body_naifid
+
+    try:
+        spice.bodvcd(body_naifid, 'PM', 3)
+        pck_naifid = body_naifid
+    except:
+        if len(str(body_naifid))>=8:
+            pck_naifid=int("2"+str(body_naifid)[-6:])
+        
 
     #pm: prime meridian
     body_pm = spice.bodvcd(pck_naifid, 'PM', 3)[1]
@@ -201,6 +210,11 @@ def get_porb_params(body_name, body_naifid, orb_elems, spin_axis):
     out['NAME']             = body_name
 
     out['PLANUM']           = body_naifid    
+    if   out['PLANUM']  >= 20000000:
+         out['PLANUM']  -= 20000000
+    elif out['PLANUM']  >=  2000000:
+         out['PLANUM']  -=  2000000
+
     out['TC']               = centuries_from_j2000
     out['RODE']             = long_of_asc_node
     out['CLIN']             = inclination
@@ -272,6 +286,154 @@ def format_output(out: dict, verbose=False):
 
     return out_str
 
+def add_str_dset(string, group, label):
+    '''
+    add a single-string dataset to an hdf with all the particular formatting requirements. 
+    '''
+    dt = h5py.string_dtype(encoding='ascii',length=len(string)+1)
+    dt_id = h5py.h5t.py_create(dt)
+    dt_id.set_strpad(h5py.h5t.STR_NULLTERM)
+    space = h5py.h5s.create_simple((1,))
+
+    dset_id = h5py.h5d.create(group.id, label.encode('ascii'), dt_id, space)
+    dset = h5py.Dataset(dset_id)
+    dset[0] = string.encode('ascii')
+    if label=='rot':
+        dset.attrs.create('lines',7, dtype=np.dtype('>i4'))
+    else:
+        dset.attrs.create('lines',1, dtype=np.dtype('>i4'))
+    
+    return
+
+def add_num_dset(value, group, label, d_type):
+    '''
+    add a single-value float/int dataset to an hdf with all the formatting weirdness.
+    '''
+    # ensure 32-bit float/int, big-endian. 
+    # put in a 1x1x1 array. 
+    # assign attr dv_std = 1, org=0, each 32-bit big-endian signed ints.
+    # compress w/ deflate.
+
+    # value_arr = np.array([[[value]]]).astype('>f')
+    # print(f'value_arr: {value_arr}')
+    # print(f'value_arr.shape: {value_arr.shape}')
+    dset = group.create_dataset(label, (1,1,1), dtype=d_type, chunks=True, compression='gzip', compression_opts=6)
+    dset[0,0,0] = value
+    group[f'{label}'].attrs.create('dv_std', 1, dtype=np.dtype('>i4'))
+    group[f'{label}'].attrs.create('org', 0, dtype=np.dtype('>i4'))
+
+    return
+
+def write_hdf(out: dict, out_dir: str, verbose=False):
+    '''
+    creates an output hdf 
+    '''
+    outfile = f'{out_dir}/{out["NAME"]}.porb.hdf'
+
+    dt = h5py.string_dtype(encoding='ascii',length=len(out['NAME']))
+
+    with h5py.File(outfile, 'w') as f:
+        # dt = h5py.string_dtype(encoding='ascii',length=len(out['NAME']))
+        # f['body']           = np.array([out['NAME'].encode('ascii')]).astype(dt)
+        # f['body'].attrs.create('lines',1, dtype=np.dtype('>i4'))
+        add_str_dset(out['NAME'], f, 'body')
+
+        # f['period']         = np.array([[[out['OPERIOD']]]])
+        add_num_dset(out['OPERIOD'], f, 'period', '>f')
+
+        rot = format_output(out,verbose=False) #.replace('\n', '')
+        add_str_dset(rot, f, 'rot')
+        # dt = h5py.string_dtype(encoding='ascii',length=len(rot))
+        # f['rot']            = np.array([rot.encode('ascii')]).astype(dt) 
+        # f['rot'].attrs.create('lines',7, dtype=np.dtype('>i4'))
+
+        # f['rot_per']        = np.array([[[out['SIDAY']]]])
+        add_num_dset(out['SIDAY'], f, 'rot_per', '>f')
+        
+        # f['rot_per_flag']   = np.array([[[out['default_spin']]]])
+        add_num_dset(out['default_spin'], f, 'rot_per_flag', '>i4')
+
+
+        type_grp = f.create_group('type')
+        krc_grp = f.create_group('krc')
+        planet_flux_grp = f.create_group('planet_flux')
+
+        print(f'Warning: using body_type=Minor. Atmospheres and moons not yet implemented.')
+        body_type = 'Minor' ### hardcoding this for now. TODO: maybe fix? if we stick with this hdf format long term
+        if body_type=='Minor':
+            
+            # dt = h5py.string_dtype(encoding='ascii',length=len(body_type)+1)
+            # dt_id = h5py.h5t.py_create(dt)
+            # dt_id.set_strpad(h5py.h5t.STR_NULLTERM)
+            # space = h5py.h5s.create_simple((1,))
+
+            # dset_id = h5py.h5d.create(type_grp.id, 'body_type'.encode('ascii'), dt_id, space)
+            # body_type_dset = h5py.Dataset(dset_id)
+            # body_type_dset[0] = body_type.encode('ascii')
+
+            # type_grp['body_type'].attrs.create('lines',1, dtype=np.dtype('>i4'))
+
+            # print(f'strpad: {type_grp['body_type'].id.get_type().get_strpad()}')
+
+            add_str_dset(body_type, type_grp, 'body_type')
+
+            # type_grp['id']          = np.array([out['PLANUM']])
+            add_num_dset(out['PLANUM'], type_grp, 'id', '>i4')
+
+            add_str_dset(out['NAME'], type_grp, 'name')
+            # dt = h5py.string_dtype(encoding='ascii',length=len(out['NAME']))
+            # type_grp['name']        = np.array([out['NAME'].encode('ascii')]).astype(dt)
+            # type_grp['name'].attrs.create('lines',1, dtype=np.dtype('>i4'))
+
+            add_str_dset('', type_grp, 'parent_body')
+            # dt = h5py.string_dtype(encoding='ascii',length=1)
+            # type_grp['parent_body'] = np.array([]).astype(dt)         
+            # type_grp['parent_body'].attrs.create('lines',1, dtype=np.dtype('>i4'))
+
+            add_num_dset(0.0, krc_grp, 'ARC2_G0', '>f')
+            add_num_dset(out['OPERIOD']/360., krc_grp, 'DELJUL', '>f')          # Default DELJUL, orbit period / 360
+            add_num_dset(0.0, krc_grp, 'DUSTA', '>f')
+            add_num_dset(0.0, krc_grp, 'GRAV', '>f')
+            add_num_dset(96, krc_grp, 'N24', '>i4')                             # Default number of "hour" divisions of a sol.
+            add_num_dset(out['SIDAY']/24., krc_grp, 'PERIOD', '>f')             # rotation period in Earth days
+            add_num_dset(0.0, krc_grp, 'PTOTAL', '>f')
+            add_num_dset(0.0, krc_grp, 'TAUD', '>f')
+            add_num_dset(0.0, krc_grp, 'TAURAT', '>f')
+            add_num_dset(0.0, krc_grp, 'TFROST', '>f')
+
+            # krc_grp['ARC2_G0']      = np.array([[[0]]])
+            # krc_grp['DELJUL']       = np.array([[[out['OPERIOD']/360.]]])       # Default DELJUL, orbit period / 360
+            # krc_grp['DUSTA']        = np.array([[[0]]])
+            # krc_grp['GRAV']         = np.array([[[0]]])
+            # krc_grp['N24']          = np.array([96])                        # Default number of "hour" divisions of a sol.
+            # krc_grp['PERIOD']       = np.array([out['SIDAY']/24.])          # rotation period in Earth days
+            # krc_grp['PTOTAL']       = np.array([[[0]]])
+            # krc_grp['TAUD']         = np.array([[[0]]])
+            # krc_grp['TAURAT']       = np.array([[[0]]])
+            # krc_grp['TFROST']       = np.array([[[0]]])
+
+            add_num_dset(-999, planet_flux_grp, 'BT_Avg', '>f')
+            add_num_dset(-999, planet_flux_grp, 'BT_Max', '>f')
+            add_num_dset(-999, planet_flux_grp, 'BT_Min', '>f')
+            add_num_dset(-999, planet_flux_grp, 'Dis_AU', '>f')
+            add_num_dset(-999, planet_flux_grp, 'Geom_alb', '>f')
+            add_num_dset(-999, planet_flux_grp, 'Mut_Period', '>f')
+            add_num_dset(-999, planet_flux_grp, 'Orb_Radius', '>f')
+            add_num_dset(-999, planet_flux_grp, 'Radius', '>f')
+
+            # planet_flux_grp['BT_Avg']       = np.array([[[-999]]])
+            # planet_flux_grp['BT_Max']       = np.array([[[-999]]])
+            # planet_flux_grp['BT_Min']       = np.array([[[-999]]])
+            # planet_flux_grp['Dis_AU']       = np.array([[[-999]]])
+            # planet_flux_grp['Geom_alb']     = np.array([[[-999]]])
+            # planet_flux_grp['Mut_Period']   = np.array([[[-999]]])
+            # planet_flux_grp['Orb_Radius']   = np.array([[[-999]]])
+            # planet_flux_grp['Radius']       = np.array([[[-999]]])
+
+    print(f'Wrote {outfile}')     
+
+    return
+
 def main(body_name, body_naifid, metakernel, epoch_date, verbose=True):
     '''
     Generate the standard PORB output for a specified body, at some epoch, using 
@@ -303,14 +465,24 @@ if __name__ == '__main__':
     # Include headers in output?
     verbose = True
 
-    body_names      = ['Ceres', 'Mars', 'Deimos', 'Didymos', 'Dimorphos', 'Chimaera']
-    body_naifids    = [20000001, 499, 402, 920065803, 120065803, 20000623]
+    # body_names      = [ 'Mars', 'Deimos', 'Ceres', 'Didymos', 'Dimorphos', 'Chimaera']
+    # body_naifids    = [ 499, 402, 20000001, 920065803, 120065803, 20000623]
+
+    body_names      = ['Justitia']
+    body_naifids    = [20000269]
 
     # epoch at which to calculate orbital params (must be covered by available kernels)
     epoch_date = defaults.epoch_date
-    metakernel = f'{kernels_dir}/mk/krc_default.tm'
+    # metakernel = f'{kernels_dir}/mk/krc_default.tm'
     
     for i in range(len(body_names)):
         print()
+        # metakernel = get_mk(f'{body_names[i]}')
+        metakernel = f'{kernels_dir}/mk/JUSTITIA.tm'
         out = main(body_names[i], body_naifids[i], metakernel, epoch_date, verbose=verbose)
         print(format_output(out))
+        # write_hdf(out, '/home/nsmith/KRC/pyorb/test')
+        write_hdf(out, defaults.porb_defaults_dir)
+
+
+#### ./krc_justitia.dv /work/nsmith/justitia/krc/tmp/260327_justitia_1 00599
