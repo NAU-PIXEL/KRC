@@ -243,6 +243,22 @@ def get_porb_params(body_name, body_naifid, orb_elems, spin_axis):
     (rotation_period, phase_at_j2000, pole_ra, pole_dec, default_spin_flag) = spin_axis 
     (obliquity, rotation_matrix_FtoB, true_anomaly_at_vernal_equinox) = get_secondary_spin_params(orb_elems, spin_axis)
 
+    # hacking in a test case for Justitia, 2026.04.28.
+    # Basically, just run everything as normal first, modify the values with inputs,
+    # then update the secondary values that flow from the first ones.
+    # I'll need to consider how to handle user inputs more appropriately later.
+    if body_name=='Justitia':
+    # if False:
+        semimajor_axis = 2.613
+        eccentricity = 0.
+        # need to repack orb_elems with updated values:
+        orb_elems = (long_of_asc_node, eccentricity, inclination, arg_of_peri, mean_anomaly, semimajor_axis, epoch_JD)
+        (orbit_period, perihelion_date, centuries_from_j2000) = get_secondary_orb_params(orb_elems)
+
+        obliquity = 0.
+        true_anomaly_at_vernal_equinox = 0.
+        pole_ra, pole_dec, rotation_matrix_FtoB = alt_get_secondary_spin_params(orb_elems, obliquity, true_anomaly_at_vernal_equinox)
+    
 
     ##### record variables in output dictionary #####
     out={}
@@ -465,7 +481,7 @@ if __name__ == '__main__':
         # metakernel = get_mk(f'{body_names[i]}')
         metakernel = f'{kernels_dir}/mk/JUSTITIA.tm'
         out = main(body_names[i], body_naifids[i], metakernel, epoch_date, verbose=verbose)
-        print(format_output(out))
+        print(format_output(out, verbose=True))
         # write_hdf(out, '/home/nsmith/KRC/pyorb/test')
         write_hdf(out, defaults.porb_defaults_dir)
 
