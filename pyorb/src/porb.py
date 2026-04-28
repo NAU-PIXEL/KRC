@@ -179,11 +179,55 @@ def get_secondary_spin_params(orb_elems, spin_axis):
     yaxis_season_orbital = np.cross(spin_axis_orbital, vernal_equinox_orbital)
     # BFRM  : rotation matrix from orbital frame (F) to seasonal frame (B)
     rotation_matrix_FtoB = np.vstack((vernal_equinox_orbital,yaxis_season_orbital,spin_axis_orbital))
-    # TAV   : True anomaly at vernal equinox [radians]
+    # TAV   : True anomaly at vernal equinox [radians] (prograde angle between perihelion and VE vectors)
     true_anomaly_at_vernal_equinox = np.arctan2(vernal_equinox_orbital[1], vernal_equinox_orbital[0])
 
     return (obliquity, rotation_matrix_FtoB, true_anomaly_at_vernal_equinox)
 
+def alt_get_secondary_spin_params(orb_elems, obliquity, true_anomaly_at_vernal_equinox):
+    '''
+    Uses obliquity and true anomaly at vernal equinox to get the pole ra and dec, 
+    then calculates the rotation matrix. 
+    this is potentially more in line with how people think about objects with unknown spins,
+    so it's probably more useful for manually inputting such a case.
+
+    inputs:
+    orb_elems:                      tuple containing keplerian(?) orbital elements (see get_orbital_elements())
+    obliquity:                      (BLIP) angle between spin axis and orbit pole [radians]
+    true_anomaly_at_vernal_equinox: (TAV) True anomaly at vernal equinox [radians]
+
+    '''
+    (long_of_asc_node, eccentricity, inclination, arg_of_peri, mean_anomaly, semimajor_axis, epoch_JD) = orb_elems
+
+    # AFRM  : rotation matrix from orbital (F) to J2000 (A)
+    ## First do rotation from orbital (F) to ecliptic (E)
+    #### the 3 Euler rotations required are:
+    #### A = (-node)Z * (-inclination)X * (-argument of periapsis)Z
+    rotation_matrix_FtoE = spice.eul2m(-1*long_of_asc_node, -1*inclination, -1*arg_of_peri, 3, 1, 3)
+    ## add rotation from ecliptic to A frame, equatorial (J2000)
+    rotation_matrix_FtoA = spice.rotmat(rotation_matrix_FtoE, -1*const.earth_obliquity, 1)
+    
+    # ZFAXU : orbit pole, Z unit vector, in J2000 (a 3-vector)
+    orbit_Z_axis_j2000 = rotation_matrix_FtoA[:,2].copy()
+
+    # to get spin axis vector, rotate orbit_Z_axis_j2000 around vernal equinox vector by obliquity.
+    # so I need vernal equinox vector in j2000. 
+    vernal_equinox_orbital = spice.rotvec([1,0,0], true_anomaly_at_vernal_equinox, 3)
+    vernal_equinox_j2000 = np.matmul(rotation_matrix_FtoA, vernal_equinox_orbital)
+
+    spin_axis_j2000 = spice.vrotv(orbit_Z_axis_j2000, vernal_equinox_j2000, obliquity)
+    # ZBAB  : right ascension of spin axis in J2000 frame [radians]
+    # ZBAA  : declination of spin axis in J2000 frame [radians]
+    _, pole_ra, pole_dec = spice.reclat(spin_axis_j2000)
+
+    # ZBFXU : spin axis, rotated from j2000 into orbital (F) reference frame
+    spin_axis_orbital = np.matmul(rotation_matrix_FtoA.T, spin_axis_j2000)
+    # YBFXU : Y-axis of Season system
+    yaxis_season_orbital = np.cross(spin_axis_orbital, vernal_equinox_orbital)
+    # BFRM  : rotation matrix from orbital frame (F) to seasonal frame (B)
+    rotation_matrix_FtoB = np.vstack((vernal_equinox_orbital,yaxis_season_orbital,spin_axis_orbital))
+
+    return (pole_ra, pole_dec, rotation_matrix_FtoB)
 
 def get_porb_params(body_name, body_naifid, orb_elems, spin_axis):
     '''
@@ -198,10 +242,8 @@ def get_porb_params(body_name, body_naifid, orb_elems, spin_axis):
     # Unpack input spin axis parameters, derive secondary spin parameters
     (rotation_period, phase_at_j2000, pole_ra, pole_dec, default_spin_flag) = spin_axis 
     (obliquity, rotation_matrix_FtoB, true_anomaly_at_vernal_equinox) = get_secondary_spin_params(orb_elems, spin_axis)
-    ### Note: theoretically, I think you could input the spin axis as obliquity and true 
-    ### anomaly at vernal equinox, and derive pole_ra and pole_dec and the rotation matrix.
-    ### this would potentially be more in line with how people think about objects with unknown spins.
-    
+
+
     ##### record variables in output dictionary #####
     out={}
     out['default_spin']     = default_spin_flag
