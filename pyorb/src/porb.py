@@ -375,26 +375,12 @@ def write_hdf(out: dict, out_dir: str, verbose=False):
     dt = h5py.string_dtype(encoding='ascii',length=len(out['NAME']))
 
     with h5py.File(outfile, 'w') as f:
-        # dt = h5py.string_dtype(encoding='ascii',length=len(out['NAME']))
-        # f['body']           = np.array([out['NAME'].encode('ascii')]).astype(dt)
-        # f['body'].attrs.create('lines',1, dtype=np.dtype('>i4'))
         add_str_dset(out['NAME'], f, 'body')
-
-        # f['period']         = np.array([[[out['OPERIOD']]]])
         add_num_dset(out['OPERIOD'], f, 'period', '>f')
-
-        rot = format_output(out,verbose=False) #.replace('\n', '')
+        rot = format_output(out,verbose=False) 
         add_str_dset(rot, f, 'rot')
-        # dt = h5py.string_dtype(encoding='ascii',length=len(rot))
-        # f['rot']            = np.array([rot.encode('ascii')]).astype(dt) 
-        # f['rot'].attrs.create('lines',7, dtype=np.dtype('>i4'))
-
-        # f['rot_per']        = np.array([[[out['SIDAY']]]])
         add_num_dset(out['SIDAY'], f, 'rot_per', '>f')
-        
-        # f['rot_per_flag']   = np.array([[[out['default_spin']]]])
         add_num_dset(out['default_spin'], f, 'rot_per_flag', '>i4')
-
 
         type_grp = f.create_group('type')
         krc_grp = f.create_group('krc')
@@ -404,33 +390,10 @@ def write_hdf(out: dict, out_dir: str, verbose=False):
         body_type = 'Minor' ### hardcoding this for now. TODO: maybe fix? if we stick with this hdf format long term
         if body_type=='Minor':
             
-            # dt = h5py.string_dtype(encoding='ascii',length=len(body_type)+1)
-            # dt_id = h5py.h5t.py_create(dt)
-            # dt_id.set_strpad(h5py.h5t.STR_NULLTERM)
-            # space = h5py.h5s.create_simple((1,))
-
-            # dset_id = h5py.h5d.create(type_grp.id, 'body_type'.encode('ascii'), dt_id, space)
-            # body_type_dset = h5py.Dataset(dset_id)
-            # body_type_dset[0] = body_type.encode('ascii')
-
-            # type_grp['body_type'].attrs.create('lines',1, dtype=np.dtype('>i4'))
-
-            # print(f'strpad: {type_grp['body_type'].id.get_type().get_strpad()}')
-
             add_str_dset(body_type, type_grp, 'body_type')
-
-            # type_grp['id']          = np.array([out['PLANUM']])
             add_num_dset(out['PLANUM'], type_grp, 'id', '>i4')
-
             add_str_dset(out['NAME'], type_grp, 'name')
-            # dt = h5py.string_dtype(encoding='ascii',length=len(out['NAME']))
-            # type_grp['name']        = np.array([out['NAME'].encode('ascii')]).astype(dt)
-            # type_grp['name'].attrs.create('lines',1, dtype=np.dtype('>i4'))
-
             add_str_dset('', type_grp, 'parent_body')
-            # dt = h5py.string_dtype(encoding='ascii',length=1)
-            # type_grp['parent_body'] = np.array([]).astype(dt)         
-            # type_grp['parent_body'].attrs.create('lines',1, dtype=np.dtype('>i4'))
 
             add_num_dset(0.0, krc_grp, 'ARC2_G0', '>f')
             add_num_dset(out['OPERIOD']/360., krc_grp, 'DELJUL', '>f')          # Default DELJUL, orbit period / 360
@@ -443,17 +406,6 @@ def write_hdf(out: dict, out_dir: str, verbose=False):
             add_num_dset(0.0, krc_grp, 'TAURAT', '>f')
             add_num_dset(0.0, krc_grp, 'TFROST', '>f')
 
-            # krc_grp['ARC2_G0']      = np.array([[[0]]])
-            # krc_grp['DELJUL']       = np.array([[[out['OPERIOD']/360.]]])       # Default DELJUL, orbit period / 360
-            # krc_grp['DUSTA']        = np.array([[[0]]])
-            # krc_grp['GRAV']         = np.array([[[0]]])
-            # krc_grp['N24']          = np.array([96])                        # Default number of "hour" divisions of a sol.
-            # krc_grp['PERIOD']       = np.array([out['SIDAY']/24.])          # rotation period in Earth days
-            # krc_grp['PTOTAL']       = np.array([[[0]]])
-            # krc_grp['TAUD']         = np.array([[[0]]])
-            # krc_grp['TAURAT']       = np.array([[[0]]])
-            # krc_grp['TFROST']       = np.array([[[0]]])
-
             add_num_dset(-999, planet_flux_grp, 'BT_Avg', '>f')
             add_num_dset(-999, planet_flux_grp, 'BT_Max', '>f')
             add_num_dset(-999, planet_flux_grp, 'BT_Min', '>f')
@@ -462,15 +414,6 @@ def write_hdf(out: dict, out_dir: str, verbose=False):
             add_num_dset(-999, planet_flux_grp, 'Mut_Period', '>f')
             add_num_dset(-999, planet_flux_grp, 'Orb_Radius', '>f')
             add_num_dset(-999, planet_flux_grp, 'Radius', '>f')
-
-            # planet_flux_grp['BT_Avg']       = np.array([[[-999]]])
-            # planet_flux_grp['BT_Max']       = np.array([[[-999]]])
-            # planet_flux_grp['BT_Min']       = np.array([[[-999]]])
-            # planet_flux_grp['Dis_AU']       = np.array([[[-999]]])
-            # planet_flux_grp['Geom_alb']     = np.array([[[-999]]])
-            # planet_flux_grp['Mut_Period']   = np.array([[[-999]]])
-            # planet_flux_grp['Orb_Radius']   = np.array([[[-999]]])
-            # planet_flux_grp['Radius']       = np.array([[[-999]]])
 
     print(f'Wrote {outfile}')     
 
