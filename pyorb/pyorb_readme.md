@@ -116,4 +116,97 @@ The user can either copy the formatted string output into a KRC input file, or u
 
 
 
+davinci tools notes:
+porb()
+    Run PORB to calculate an appropriate rotation matrix for use in krc
+        $1=body - planetary body name/Horizons id or generic_porb/exo_porb generated structure
+        Name Formatting:
+            For a major body (e.g. \"Mars\"), simply enter the body name
+            For a satellite (e.g. \"Phobos\"), simply enter the body name
+            For an asteroid (e.g. \"Bennu\"), either enter the body name or JPL Horizon id
+            For a comet, enter the full name (e.g. \"1P-Halley\") to avoid ambiguity or the JPL Horizon id
+    Options:
+        epoch=fraction of the century for start date (Default = 0.10 -> 2010)
+        force=force running of PORB (default=0)
 
+    if not UpdateDefaults:
+        get the body_type using porb_type()
+        if planet or satellite:
+            determine the parent body if any.
+            check for an existing default.porb.hdf.
+            if it's there, load that data, otherwise:
+            read in standard files with orbit data.
+            search for parent body in data files.
+            load relevant data into structs. 
+            write relevant data to temp files standish.tab, spinaxis.tab, and porb_[body].run
+        else if minor:
+            check for an existing default.porb.hdf
+            if it's there, load that data, otherwise:
+            use body name or number to grep smallbodies data file.
+            load relevant data into structs.
+            write relevant data to temp files minor.tab and porb_[body].run
+        else if comet:
+            check for an existing default.porb.hdf
+            if it's there, load that data, otherwise:
+            use body name or number to grep smallbodies data file.
+            load relevant data into structs.
+            write relevant data to temp files comet.tab and porb_[body].run
+        else if Generic:
+            use values in supplied struct to populate new struct.
+            write relevant data to temp files minor.tab and porb_[body].run
+        else if Exoplanet:
+            use values in supplied struct to populate new struct.
+            write relevant data to temp files exoplan.tab and porb_[body].run
+        else:
+            complain.
+        
+        Run porbmn on porb_[body].run
+
+    if UpdateDefaults:
+        use krc_porb_defaults as the list of what to update.
+        run this function(!!) for each item in the list, write a [body].porb.hdf file.
+
+
+krc_find_body()
+    > Note: never called.
+    Search for the KRC body name to use
+	$1=search string (Note: case sensitive)
+
+    grep krc_porb_master for input search string.
+    list the matching bodies, their names, types, and parent bodies.
+
+
+porb_type()
+    Return the Body type structure for use with porb functions
+	$1 = body - the name or JPL horizons ID # of the body of interet
+
+    grep krc_porb_master for the input body string or int.
+    return the name, id, body_type, and parent_body.
+    if there's more than one, print all matches.
+    if there's none, complain.
+
+    or, if called with make_master=True:
+        read all the data files
+        copy their names & types, etc into a struct, and return the struct.
+
+
+generic_porb()
+    Generate a generic PORB structure for use with the davinci porb function
+    This is formatted in the minor body style for porb and permits the following values described below
+        name = body name (Default=\"None\") will be truncated to 24 characters
+        epoch = epoch in Julian Date (Default = 2451545.0, year 2000)
+        a = Semi-Major Axis in AU (Default=1)
+        e = Eccentricity (Default=0)
+        i = Inclination of mean orbit to ecliptic in degrees  (Default=0)
+        node = Longitude of the asceding node in degrees (Default=0)
+        peri = Argument of perihelion in degrees (Default=0)
+        m = Mean Anomoly at epoch in degrees (Default=0)
+        polera = Right Ascention of the pole in degrees (Default=0)
+        poledec = Declination of the pole in degrees (Default=0)
+        merid = prime meridian at epoch in degrees (Default=0)
+        rot_per = siderial rotation period in hours (Default=23.9345)
+        period = siderial orbital period in days (Default=365.256)
+
+    populates a struct with default values
+    These values can be substituted with whatever kwargs are supplied.
+    returns the struct.
