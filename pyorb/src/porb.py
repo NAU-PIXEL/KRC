@@ -111,9 +111,9 @@ def get_spin_axis(metakernel, body_naifid):
     rotation_rate   = body_pm[1]
 
     # ZBAB  : right ascension of spin axis in J2000 frame [radians]
-    pole_ra  = spice.bodvcd(pck_naifid, 'POLE_RA',  3)[1][0]
+    pole_ra  = spice.bodvcd(pck_naifid, 'POLE_RA',  3)[1][0] * np.pi/180.
     # ZBAA  : declination of spin axis in J2000 frame [radians]
-    pole_dec = spice.bodvcd(pck_naifid, 'POLE_DEC', 3)[1][0]
+    pole_dec = spice.bodvcd(pck_naifid, 'POLE_DEC', 3)[1][0] * np.pi/180.
 
     # SIDAY : Rotation period in hours.
     rotation_period = (360.*24)/rotation_rate
@@ -247,8 +247,8 @@ def get_porb_params(body_name, body_naifid, orb_elems, spin_axis):
     # Basically, just run everything as normal first, modify the values with inputs,
     # then update the secondary values that flow from the first ones.
     # I'll need to consider how to handle user inputs more appropriately later.
-    if body_name=='Justitia':
-    # if False:
+    # if body_name=='Justitia':
+    if False:
         semimajor_axis = 2.613
         eccentricity = 0.
         # need to repack orb_elems with updated values:
