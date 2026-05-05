@@ -137,7 +137,7 @@ def get_secondary_orb_params(orb_elems):
     # PERIOD, OPERIOD   : Period of the orbit (Earth days)
     orbit_period = semimajor_axis**(1.5) * const.earth_year
     # TJP   : J2000 Date of previous perihelion
-    perihelion_date = epoch_JD - (mean_anomaly/360.)*orbit_period - const.j2000_JD
+    perihelion_date = epoch_JD - (mean_anomaly/(2*np.pi))*orbit_period - const.j2000_JD
     # TC    : time in centuries from reference date (2000.0)
     centuries_from_j2000 = (epoch_JD - const.j2000_JD) / (const.earth_year*100)
 
