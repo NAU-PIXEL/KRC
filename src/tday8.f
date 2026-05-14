@@ -599,7 +599,7 @@ C      LSELF=.NOT. LOPN3         !F self heating
         TT1(J,1)=TTJ(J)
       ENDDO
 C  TATMJ and  EFROST enter via  KRCCOM  
-      FROEX = MAX (FROEXT,0.01) ! scale-mass for insolation attenuation
+      FROEX = MAX (FROEXT,0.01D0) ! scale-mass for insolation attenuation
       FRO(1) = EFROST
       IF (.NOT. LATM) THEN   ! no atm and no frost
         EFROST=0.

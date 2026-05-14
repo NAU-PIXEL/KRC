@@ -163,7 +163,7 @@ C============ factors that do not depend upon season ===================
          COSZLIM=DCOS(QA)      ! tangent to the pit wall 
       ENDIF
       GHF=0.
-      IF (IIB.GT.0) GHF=0.001*DBLE(IIB) ! Geothermal Heat-flow  value
+      IF (IIB.GT.0) GHF=0.001D0*DBLE(IIB) ! Geothermal Heat-flow  value
       IF (J5.EQ.1 .AND. LOPN3) THEN ! prepare for fff each season 
 C arg5 contains FFELP, so must be at least 10+MAXN4
         CALL TFAR8(2,QA,QH,MEMI,  FFELP,DUM8,DUM8) ! Arg2,6,7 not used
@@ -381,7 +381,7 @@ C
         ELSE
           TFNOW = TFROST
         ENDIF
-        TATMIN = GASPT(1,PFACTOR*PGASG/2.71828) ! frost point for 1-layer atm
+        TATMIN = GASPT(1,PFACTOR*PGASG/EXP(1.0D0)) ! frost point for 1-layer atm
 C     WRITE(IOPM,*)'J5,J4,PGASG,TFNOW,TATMIN',J5,J4,PGASG,TFNOW,TATMIN
         IF (EFROST.GT.0.) THEN  ! use frost emissivity and albedo
           AVEE=FEMIS
@@ -406,7 +406,7 @@ C Photometric function in lat loop as  PHOG can depend upon frost
         KOP=4                   ! expect 0<  PHOG  <1
         PFAC1=PHOG*(4.D0/PIVAL)**3 ! x * f3  in Eq. 12
         PFAC2=(0.14D0/0.12D0)*(2.D0/PIVAL)**8 ! f8 in Eq. 12
-        PUS=1.05944+0.05944*PHOG  ! Eq. aak = 14
+        PUS=1.05944D0+0.05944D0*PHOG  ! Eq. aak = 14
       ELSE                      ! must be -, will use  Minnaert
         KOP=3
         PFAC1=-PHOG             !  exponent nu or k : expect 0< k  <1
@@ -649,7 +649,7 @@ D       IF (LQ1) WRITE(IOPM,*)'TLATS: XCEN',XCEN
 C       Approximate radiation time constant         
           QA=ATMCP*(PRES/GRAV)*TATMJ ! heat in the atm
      &         / (BETA*SIGSB* TAEQ4) !  / IR radiation rate 
-          QS=QA/(2.71828D0*86400.D0) ! 1/e about right for Mars, convert to days
+          QS=QA/(EXP(1.0D0)*86400.D0) ! 1/e about right for Mars, convert to days
 D         IF (IDB2.GE.1) WRITE(IOSP,*)'TLATS: Tatm,Beta=',TATMJ,BETA
 D    &         ,'  Relaxation time, days',QS
         ENDIF
