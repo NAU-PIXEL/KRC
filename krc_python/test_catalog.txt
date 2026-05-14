@@ -1,0 +1,616 @@
+========================================================================================================================
+PYKRC INTEGRATION TEST SUITE - COMPLETE CATALOG
+========================================================================================================================
+Total Tests: 72
+Passing: 56 (77.8%)
+Failing: 16 (22.2%)
+Generated: 2025-11-03
+========================================================================================================================
+
+TEST #01: PORB defaults (Mars)
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(lat=25.,KEEP="T")
+
+TEST #02: User defaults (Europa)
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(lat=0.,body="Europa",INERTIA=50.,ALBEDO=.55,LKofT="F",KEEP="T")
+
+TEST #03: Basalt INERTIA=250
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(lat=0.,INERTIA=250.,Mat1="basalt",KEEP="T")
+
+TEST #04: k_style=Moon
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(lat=12.,INERTIA=100.,k_style="Moon",KEEP="T")
+
+TEST #05: k_style=Bulk
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(lat=12.,INERTIA=100.,k_style="Bulk",KEEP="T")
+
+TEST #06: DELLS blocks DELJUL
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(lat=25.,DELLS=2.,KEEP="T")
+
+TEST #07: User overrides PORB
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(lat=25.,EMISS=0.95,KEEP="T")
+
+TEST #08: PTOTAL<1 forces TAUD=0
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(lat=0.,PTOTAL=0.5,TAUD=0.1,KEEP="T")
+
+TEST #09: TPREDICT=False stability
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(lat=25.,TPREDICT="F",KEEP="T")
+
+TEST #10: Two-layer regolith
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(lat=0.,lon=0.,thick=0.3,INERTIA=200.,INERTIA2=1200.,LKofT="F",KEEP="T")
+
+TEST #11: Eclipse Style 1.0 (daily)
+------------------------------------------------------------------------------------------------------------------------
+Status:       FAIL
+Input Files:  ⚠ PyKRC Failed
+Output Temps: ⚠ PyKRC Failed
+Davinci Cmd:  krc(lat=0.,INERTIA=045.,N1=32,body="Europa",Eclipse="T",Eclipser="Jupiter",Eclipse_Style=1.,KEEP="T")
+
+TEST #12: PFlux (Type 15)
+------------------------------------------------------------------------------------------------------------------------
+Status:       FAIL
+Input Files:  ✗ Different
+Output Temps: ✗ Different
+Davinci Cmd:  krc(lat=0.,INERTIA=50.,body="Europa",ALBEDO=0.55,PFlux="T",Lon_Hr=12.,LKofT="F",KEEP="T")
+
+TEST #13: Mars Ls + INERTIA
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(lat=12.,ls=123.,INERTIA=250.,KEEP="T")
+
+TEST #14: Phobos default
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(lat=12.,body="Phobos",KEEP="T")
+
+TEST #15: High INERTIA + low ALBEDO
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(lat=0.,INERTIA=1200.,ALBEDO=0.05,KEEP="T")
+
+TEST #16: Gregorian Date (GD)
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(lat=12.,GD="1994-Feb-05",KEEP="T")
+
+TEST #17: Julian Date (JD)
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(lat=12.,JD=2450075.5,KEEP="T")
+
+TEST #18: Delta Julian Date (DJUL)
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(lat=12.,DJUL=-1000.,LKEY="T",KEEP="T")
+
+TEST #19: Ls (solar longitude)
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(lat=12.,ls=123.,KEEP="T")
+
+TEST #20: JD to Ls conversion
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(lat=12.,JD=2451575.5,KEEP="T")
+
+TEST #21: GD to Ls conversion
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(lat=12.,GD="2000-Feb-01",KEEP="T")
+
+TEST #22: Europa lbound=0 (insulating)
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(N24=24,lbound=0,KEEP="T",lat=12.,ls=0.,body="Europa",INERTIA=150.,LKofT="F",TUN8=101)
+
+TEST #23: Europa lbound=-1//98 (fixed temp)
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(N24=24,lbound=-1//98,KEEP="T",lat=12.,ls=0.,body="Europa",INERTIA=150.,LKofT="F",TUN8=101)
+
+TEST #24: Europa lbound=-2//100 (all layers)
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(N24=24,lbound=-2//100,KEEP="T",lat=12.,ls=0.,body="Europa",INERTIA=150.,LKofT="F",TUN8=101)
+
+TEST #25: Europa lbound=0.5 (low heat flow)
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(N24=24,lbound=0.5,KEEP="T",lat=12.,ls=0.,body="Europa",INERTIA=150.,LKofT="F",TUN8=101)
+
+TEST #26: Europa lbound=50 (high heat flow)
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(N24=24,lbound=50,KEEP="T",lat=12.,ls=0.,body="Europa",INERTIA=150.,LKofT="F",TUN8=101)
+
+TEST #27: Mars lbound with two-layer
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(body="Mars",KEEP="T",lat=12.,ls=23.,LKofT="F",INERTIA=100,INERTIA2=150,T_user=178.,thick=-0.20)
+
+TEST #28: Mars T→TI (LKofT=F, TI~13)
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: N/A
+Davinci Cmd:  krc(WRITE="T",KEEP="T",lat=12.,hour=2.45,T=172.3,ls=23.,LKofT="F")
+
+TEST #29: Mars T→TI (LKofT=F, TI~100)
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: N/A
+Davinci Cmd:  krc(WRITE="T",KEEP="T",lat=12.,hour=2.45,T=198.5,ls=23.,LKofT="F")
+
+TEST #30: Mars T→TI (LKofT=T, TI~100)
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: N/A
+Davinci Cmd:  krc(WRITE="T",KEEP="T",lat=12.,hour=2.45,T=197.8,ls=23.,LKofT="T")
+
+TEST #31: Europa T→TI (LKofT=F)
+------------------------------------------------------------------------------------------------------------------------
+Status:       FAIL
+Input Files:  ✗ Different
+Output Temps: N/A
+Davinci Cmd:  krc(WRITE="T",KEEP="T",lat=12.,hour=2.45,T=82.3,ls=23.,body="Europa",LKofT="F",PTOTAL=0.0)
+
+TEST #32: Europa T→TI (LKofT=T)
+------------------------------------------------------------------------------------------------------------------------
+Status:       FAIL
+Input Files:  ✗ Different
+Output Temps: N/A
+Davinci Cmd:  krc(WRITE="T",KEEP="T",lat=12.,hour=2.45,T=110.3,ls=23.,body="Europa",LKofT="T")
+
+TEST #33: Phobos T→TI (LKofT=F, TI~100)
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: N/A
+Davinci Cmd:  krc(WRITE="T",KEEP="T",lat=12.,hour=2.45,T=195.2,ls=23.,LKofT="F",body="Phobos")
+
+TEST #34: Bennu T→TI (LKofT=F, TI~100)
+------------------------------------------------------------------------------------------------------------------------
+Status:       FAIL
+Input Files:  ✗ Different
+Output Temps: N/A
+Davinci Cmd:  krc(lbound=0,N1=33,ALBEDO=0.05,WRITE="T",KEEP="T",lat=12.,hour=2.45,T=385.0,ls=23.,LKofT="F",body="Bennu")
+
+TEST #35: Mars T→TI cross-LKofT (T→F)
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: N/A
+Davinci Cmd:  krc(WRITE="T",KEEP="T",lat=12.,hour=2.45,T=172.0,ls=23.,LKofT="F")
+
+TEST #36: Moon default
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(lat=0.,lon=0.,INERTIA=200.,body="Moon",bodyforce=1,KEEP="T")
+
+TEST #37: Moon low INERTIA=55
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(lat=0.,lon=0.,INERTIA=55.,body="Moon",bodyforce=1,KEEP="T")
+
+TEST #38: Bennu default
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(lbound=0,N1=33,ALBEDO=0.05,KEEP="T",lat=12.,ls=23.,INERTIA=13.,LKofT="F",body="Bennu",TUN8=101)
+
+TEST #39: Ceres default
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(lat=12.,body="Ceres",bodyforce=1,KEEP="T")
+
+TEST #40: 1P-Halley comet
+------------------------------------------------------------------------------------------------------------------------
+Status:       FAIL
+Input Files:  ✓ Identical
+Output Temps: ✗ Different
+Davinci Cmd:  krc(lat=25.,ls=90.,body="1P-Halley",N1=30,KEEP="T")
+
+TEST #41: Phobos with PFlux
+------------------------------------------------------------------------------------------------------------------------
+Status:       FAIL
+Input Files:  ✗ Different
+Output Temps: ✗ Different
+Davinci Cmd:  krc(lat=12.,body="Phobos",PFlux="T",KEEP="T")
+
+TEST #42: Phobos without PFlux
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(lat=0.,INERTIA=50.,body="Phobos",LKofT="T",PFlux="F",KEEP="T")
+
+TEST #43: Phobos with PFlux Lon_Hr=12
+------------------------------------------------------------------------------------------------------------------------
+Status:       FAIL
+Input Files:  ✗ Different
+Output Temps: ✗ Different
+Davinci Cmd:  krc(lat=0.,INERTIA=50.,body="Phobos",LKofT="T",PFlux="T",Lon_Hr=12.,KEEP="T")
+
+TEST #44: Jupiter with N1=40
+------------------------------------------------------------------------------------------------------------------------
+Status:       FAIL
+Input Files:  ✓ Identical
+Output Temps: ✗ Different
+Davinci Cmd:  krc(lat=0.,lon=0.,INERTIA=200.,body="Jupiter",bodyforce=1,N1=40,TUN8=101,KEEP="T")
+
+TEST #45: PORB Mars
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(lat=25.,body="Mars",KEEP="T")
+
+TEST #46: PORB Phobos
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(lat=12.,body="Phobos",bodyforce=1,KEEP="T")
+
+TEST #47: PORB Europa
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(lat=12.,body="Europa",bodyforce=1,KEEP="T")
+
+TEST #48: PORB Bennu
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(lat=12.,body="Bennu",bodyforce=1,KEEP="T")
+
+TEST #49: PORB Ceres
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(lat=12.,body="Ceres",bodyforce=1,KEEP="T")
+
+TEST #50: Europa N1=20
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(N24=24,N1=20,lbound=0,KEEP="T",lat=12.,ls=0.,body="Europa",INERTIA=150.,LKofT="F",TUN8=101,JDISK=1801,N5=2160)
+
+TEST #51: Europa N1=30
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(N24=24,N1=30,lbound=0,KEEP="T",lat=12.,ls=0.,body="Europa",INERTIA=150.,LKofT="F",TUN8=101,JDISK=1801,N5=2160)
+
+TEST #52: Bennu N1=25
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(lbound=0,N1=25,lat=12.,hour=2.45,ls=23.,INERTIA=2100.,LKofT="T",body="Bennu",KEEP="T")
+
+TEST #53: Bennu N1=33
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(lbound=0,N1=33,ALBEDO=0.05,KEEP="T",lat=12.,hour=2.45,ls=23.,INERTIA=13.,LKofT="F",body="Bennu")
+
+TEST #54: Europa N1=39
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(N24=24,N1=39,lbound=0,lat=0.,body="Europa",INERTIA=50.,LKofT="F",TUN8=101,KEEP="T")
+
+TEST #55: Mars N1=50 custom FLAY/RLAY
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(lat=0,lon=0,N1=50,FLAY=0.15,RLAY=1.05,KEEP="T")
+
+TEST #56: Europa N1=250 (high)
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(lat=0,lon=0,N1=250,INERTIA=200.,body="Europa",KEEP="T")
+
+TEST #57: Mars N1=999 (extreme)
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(lat=0,lon=0,N1=999,KEEP="T")
+
+TEST #58: Mars N1=20
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(lat=0,lon=0,N1=20,INERTIA=200.,KEEP="T")
+
+TEST #59: Mode 1: Standard constant properties
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(body="Mars", INERTIA=200, lat=12., ls=23., KEEP="T")
+
+TEST #60: Mode 2: Two-layer (thick=0.5)
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(body="Mars", INERTIA=100, INERTIA2=500, thick=0.5, lat=12., ls=23., KEEP="T")
+
+TEST #61: Mode 3: Exponential profile (thick=-0.20)
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(body="Mars", KEEP="T", lat=12., ls=23., LKofT="F", INERTIA=100, INERTIA2=150, T_user=178., thick=-0.20)
+
+TEST #62: Mode 3: Steep exponential (thick=-0.05)
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(body="Moon",GD="2009-Apr-20",ALBEDO=0.1,thick=-0.05,lat=0.,SLOPE=30.,SLOAZI=34.,KEEP="T")
+
+TEST #63: Mode 3: Very high inertia contrast on Bennu (50→600, H=0.02m, N2=30000)
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(KEEP="T",body="Bennu",lat=0.,INERTIA=50,INERTIA2=600,thick=-0.02,N2=30000)
+
+TEST #64: Mode 4: Basic zone table
+------------------------------------------------------------------------------------------------------------------------
+Status:       FAIL
+Input Files:  ⚠ PyKRC Failed
+Output Temps: ⚠ PyKRC Failed
+Davinci Cmd:  krc(body="Mars", lzone="T", zonefile="[ZONEFILE_PATH]", lat=12., ls=23., KEEP="T")
+
+TEST #65: Mode 4: Complex zone table
+------------------------------------------------------------------------------------------------------------------------
+Status:       FAIL
+Input Files:  ⚠ PyKRC Failed
+Output Temps: ⚠ PyKRC Failed
+Davinci Cmd:  krc(body="Mars", lzone="T", zonefile="[ZONEFILE_PATH]", lat=12., ls=23., INERTIA=150., ALBEDO=0.15, KEEP="T")
+
+TEST #66: Thick with dust over rock
+------------------------------------------------------------------------------------------------------------------------
+Status:       FAIL
+Input Files:  ⚠ PyKRC Failed
+Output Temps: ⚠ PyKRC Failed
+Davinci Cmd:  krc(body="Mars", material="dust", material2="rock", thick=0.1, lat=12., ls=23., KEEP="T")
+
+TEST #67: Europa ice layers (thick=2.0)
+------------------------------------------------------------------------------------------------------------------------
+Status:       FAIL
+Input Files:  ✗ Different
+Output Temps: ✗ Different
+Davinci Cmd:  krc(body="Europa", INERTIA=100, INERTIA2=2000, thick=2.0, lat=12., ls=23., KEEP="T")
+
+TEST #68: Thick with lbound heat flow
+------------------------------------------------------------------------------------------------------------------------
+Status:       FAIL
+Input Files:  ✗ Different
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(body="Europa", INERTIA=100, INERTIA2=500, thick=0.5, lbound=25.0, lat=12., ls=23., KEEP="T")
+
+TEST #69: Exponential with N1=50
+------------------------------------------------------------------------------------------------------------------------
+Status:       FAIL
+Input Files:  ⚠ PyKRC Failed
+Output Temps: ⚠ PyKRC Failed
+Davinci Cmd:  krc(body="Mars", INERTIA=100, INERTIA2=300, thick=-0.3, N1=50, lat=12., ls=23., KEEP="T")
+
+TEST #70: Very thin layer (thick=0.01)
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(body="Mars", INERTIA=100, INERTIA2=500, thick=0.01, lat=12., ls=23., KEEP="T")
+
+TEST #71: Very deep interface (thick=10.0)
+------------------------------------------------------------------------------------------------------------------------
+Status:       PASS
+Input Files:  ✓ Identical
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(body="Mars", INERTIA=100, INERTIA2=500, thick=10.0, lat=12., ls=23., KEEP="T")
+
+TEST #72: lzone with external file
+------------------------------------------------------------------------------------------------------------------------
+Status:       FAIL
+Input Files:  ⚠ PyKRC Failed
+Output Temps: ⚠ PyKRC Failed
+Davinci Cmd:  krc(body="Mars", lzone="T", zonefile="[ZONEFILE_PATH]", lat=0., lon=0., KEEP="T")
+
+
+========================================================================================================================
+FAILING TESTS SUMMARY
+========================================================================================================================
+Total Failing: 16
+========================================================================================================================
+
+TEST #11: Eclipse Style 1.0 (daily)
+------------------------------------------------------------------------------------------------------------------------
+Input Files:  ⚠ PyKRC Failed
+Output Temps: ⚠ PyKRC Failed
+Davinci Cmd:  krc(lat=0.,INERTIA=045.,N1=32,body="Europa",Eclipse="T",Eclipser="Jupiter",Eclipse_Style=1.,KEEP="T")
+
+TEST #12: PFlux (Type 15)
+------------------------------------------------------------------------------------------------------------------------
+Input Files:  ✗ Different
+Output Temps: ✗ Different
+Davinci Cmd:  krc(lat=0.,INERTIA=50.,body="Europa",ALBEDO=0.55,PFlux="T",Lon_Hr=12.,LKofT="F",KEEP="T")
+
+TEST #31: Europa T→TI (LKofT=F)
+------------------------------------------------------------------------------------------------------------------------
+Input Files:  ✗ Different
+Output Temps: N/A
+Davinci Cmd:  krc(WRITE="T",KEEP="T",lat=12.,hour=2.45,T=82.3,ls=23.,body="Europa",LKofT="F",PTOTAL=0.0)
+
+TEST #32: Europa T→TI (LKofT=T)
+------------------------------------------------------------------------------------------------------------------------
+Input Files:  ✗ Different
+Output Temps: N/A
+Davinci Cmd:  krc(WRITE="T",KEEP="T",lat=12.,hour=2.45,T=110.3,ls=23.,body="Europa",LKofT="T")
+
+TEST #34: Bennu T→TI (LKofT=F, TI~100)
+------------------------------------------------------------------------------------------------------------------------
+Input Files:  ✗ Different
+Output Temps: N/A
+Davinci Cmd:  krc(lbound=0,N1=33,ALBEDO=0.05,WRITE="T",KEEP="T",lat=12.,hour=2.45,T=385.0,ls=23.,LKofT="F",body="Bennu")
+
+TEST #40: 1P-Halley comet
+------------------------------------------------------------------------------------------------------------------------
+Input Files:  ✓ Identical
+Output Temps: ✗ Different
+Davinci Cmd:  krc(lat=25.,ls=90.,body="1P-Halley",N1=30,KEEP="T")
+
+TEST #41: Phobos with PFlux
+------------------------------------------------------------------------------------------------------------------------
+Input Files:  ✗ Different
+Output Temps: ✗ Different
+Davinci Cmd:  krc(lat=12.,body="Phobos",PFlux="T",KEEP="T")
+
+TEST #43: Phobos with PFlux Lon_Hr=12
+------------------------------------------------------------------------------------------------------------------------
+Input Files:  ✗ Different
+Output Temps: ✗ Different
+Davinci Cmd:  krc(lat=0.,INERTIA=50.,body="Phobos",LKofT="T",PFlux="T",Lon_Hr=12.,KEEP="T")
+
+TEST #44: Jupiter with N1=40
+------------------------------------------------------------------------------------------------------------------------
+Input Files:  ✓ Identical
+Output Temps: ✗ Different
+Davinci Cmd:  krc(lat=0.,lon=0.,INERTIA=200.,body="Jupiter",bodyforce=1,N1=40,TUN8=101,KEEP="T")
+
+TEST #64: Mode 4: Basic zone table
+------------------------------------------------------------------------------------------------------------------------
+Input Files:  ⚠ PyKRC Failed
+Output Temps: ⚠ PyKRC Failed
+Davinci Cmd:  krc(body="Mars", lzone="T", zonefile="[ZONEFILE_PATH]", lat=12., ls=23., KEEP="T")
+
+TEST #65: Mode 4: Complex zone table
+------------------------------------------------------------------------------------------------------------------------
+Input Files:  ⚠ PyKRC Failed
+Output Temps: ⚠ PyKRC Failed
+Davinci Cmd:  krc(body="Mars", lzone="T", zonefile="[ZONEFILE_PATH]", lat=12., ls=23., INERTIA=150., ALBEDO=0.15, KEEP="T")
+
+TEST #66: Thick with dust over rock
+------------------------------------------------------------------------------------------------------------------------
+Input Files:  ⚠ PyKRC Failed
+Output Temps: ⚠ PyKRC Failed
+Davinci Cmd:  krc(body="Mars", material="dust", material2="rock", thick=0.1, lat=12., ls=23., KEEP="T")
+
+TEST #67: Europa ice layers (thick=2.0)
+------------------------------------------------------------------------------------------------------------------------
+Input Files:  ✗ Different
+Output Temps: ✗ Different
+Davinci Cmd:  krc(body="Europa", INERTIA=100, INERTIA2=2000, thick=2.0, lat=12., ls=23., KEEP="T")
+
+TEST #68: Thick with lbound heat flow
+------------------------------------------------------------------------------------------------------------------------
+Input Files:  ✗ Different
+Output Temps: ✓ Identical
+Davinci Cmd:  krc(body="Europa", INERTIA=100, INERTIA2=500, thick=0.5, lbound=25.0, lat=12., ls=23., KEEP="T")
+
+TEST #69: Exponential with N1=50
+------------------------------------------------------------------------------------------------------------------------
+Input Files:  ⚠ PyKRC Failed
+Output Temps: ⚠ PyKRC Failed
+Davinci Cmd:  krc(body="Mars", INERTIA=100, INERTIA2=300, thick=-0.3, N1=50, lat=12., ls=23., KEEP="T")
+
+TEST #72: lzone with external file
+------------------------------------------------------------------------------------------------------------------------
+Input Files:  ⚠ PyKRC Failed
+Output Temps: ⚠ PyKRC Failed
+Davinci Cmd:  krc(body="Mars", lzone="T", zonefile="[ZONEFILE_PATH]", lat=0., lon=0., KEEP="T")
+

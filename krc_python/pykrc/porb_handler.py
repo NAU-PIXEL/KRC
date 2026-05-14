@@ -57,40 +57,26 @@ class OrbitalElements:
     orbital_period: Optional[float] = None  # days
 
 
-# Default body database (simplified - in real implementation, load from files)
-BODY_DEFAULTS = {
-    "Mars": {
-        "body_type": "Planet",
-        "rotation_period": 1.0275,
-        "radius": 3397.0,
-        "obliquity": 25.19,
-        "semi_major_axis": 1.524,
-    },
-    "Phobos": {
-        "body_type": "Satellite",
-        "parent_body": "Mars",
-        "rotation_period": 0.3189,
-        "radius": 11.1,
-        "orbital_radius": 9376.0,
-    },
-    "Earth": {
-        "body_type": "Planet",
-        "rotation_period": 1.0,
-        "radius": 6371.0,
-        "obliquity": 23.44,
-        "semi_major_axis": 1.0,
-    },
-    "Moon": {
-        "body_type": "Satellite",
-        "parent_body": "Earth",
-        "rotation_period": 27.32,  # Synchronous rotation (1 lunar day = ~27.32 Earth days)
-        "radius": 1737.4,  # km
-        "obliquity": 6.68,  # degrees
-        "mass": 7.342e22,  # kg
-        "orbital_radius": 384400.0,  # km from Earth
-        "semi_major_axis": 1.0,  # AU (Earth's orbit)
-    },
-}
+# Default body database - NO LONGER USED
+# Dynamic PORB generation is now required for bodies without .porb.hdf files
+# Keeping this commented for reference only - shows what parameters are needed
+# BODY_DEFAULTS = {
+#     "Mars": {
+#         "body_type": "Planet",
+#         "rotation_period": 1.0275,
+#         "radius": 3397.0,
+#         "obliquity": 25.19,
+#         "semi_major_axis": 1.524,
+#     },
+#     "Phobos": {
+#         "body_type": "Satellite",
+#         "parent_body": "Mars",
+#         "rotation_period": 0.3189,
+#         "radius": 11.1,
+#         "orbital_radius": 9376.0,
+#     },
+#     # Other bodies removed - must use dynamic PORB generation or .porb.hdf files
+# }
 
 
 # ============================================================================
@@ -133,6 +119,11 @@ def load_body_parameters(body_name: str, data_loader=None) -> Dict[str, Any]:
     """
     Load orbital parameters for a celestial body from HDF files.
 
+    IMPORTANT: This function only loads from cached .porb.hdf files.
+    If no cached file exists, it raises ValueError to trigger dynamic
+    PORB generation. This is intentional - we do NOT fallback to
+    hardcoded defaults because they lack PORB rotation matrices.
+
     Parameters
     ----------
     body_name : str
@@ -148,7 +139,7 @@ def load_body_parameters(body_name: str, data_loader=None) -> Dict[str, Any]:
     Raises
     ------
     ValueError
-        If body not found in database
+        If body not found in porb_defaults directory (triggers dynamic generation)
     """
     params = {}
 
@@ -212,11 +203,9 @@ def load_body_parameters(body_name: str, data_loader=None) -> Dict[str, Any]:
 
                 return params
 
-    # Fallback to hardcoded defaults
-    if body_name in BODY_DEFAULTS:
-        return BODY_DEFAULTS[body_name].copy()
-
-    raise ValueError(f"Body '{body_name}' not found in database")
+    # Don't fallback to BODY_DEFAULTS - instead raise error to trigger dynamic generation
+    # The BODY_DEFAULTS don't have PORB matrices, which causes wrong fallback behavior
+    raise ValueError(f"Body '{body_name}' not found in porb_defaults directory")
 
 
 def _parse_standish_table(standish_path: Path, parent_body: str) -> Optional[list]:
@@ -287,11 +276,20 @@ def _parse_spinaxis_table(spinaxis_path: Path, body: str) -> Optional[list]:
     return None
 
 
-def _parse_planetary_params(params_path: Path, body: str) -> Dict[str, Any]:
+def _parse_planetary_params(params_path: Path, body: str, body_type: str = "Planet") -> Dict[str, Any]:
     """
     Parse planetary_params3.csv to extract KRC-specific body parameters.
 
     Per Davinci krc.dvrc lines 2330-2351.
+
+    Parameters
+    ----------
+    params_path : Path
+        Path to planetary_params3.csv
+    body : str
+        Body name
+    body_type : str, optional
+        Body type ("Planet", "Satellite", etc.), default "Planet"
 
     Returns
     -------
@@ -307,14 +305,27 @@ def _parse_planetary_params(params_path: Path, body: str) -> Dict[str, Any]:
                 # Per Davinci: rot_per is orbit_period (in hours), convert to days
                 rot_per_hours = float(row['Orbit_Period'])
 
+                # For satellites, check if tidally locked (rotation = orbital period)
+                # The CSV has incorrect Sideral_Period for satellites (uses parent's orbital period)
+                # NOTE: PyKRC previously corrected this bug, but now matches Davinci's buggy behavior for parity
+                # Davinci uses Sideral_Period from CSV even though it's wrong for satellites
+                # For Moon: Sideral_Period=1 (Earth's year, WRONG!) instead of 27.32 days (Moon's rotation/orbit, CORRECT)
+                # For Phobos/Deimos: Sideral_Period=1.881 (Mars year, WRONG!) instead of rotation period (CORRECT)
+                orbital_period_days = float(row['Sideral_Period']) * 365.25636  # Convert years to days
+
+                # DISABLED for Davinci parity: Previously PyKRC corrected the satellite orbital period bug
+                # if body_type == "Satellite":
+                #     # Use rotation period as orbital period for tidally locked satellites (CORRECT behavior)
+                #     orbital_period_days = rot_per_hours / 24.0
+
                 return {
                     'GRAV': float(row['Gravity']),
                     'PTOTAL': float(row['PTOTAL']),
-                    'ARC2_G0': float(row['ARC2_PHO']) if row['ARC2_PHO'] != '-999' else 0.5,
-                    'DUSTA': float(row['DUSTA']) if row['DUSTA'] != '-999' else 0.9,
-                    'TAURAT': float(row['TAURAT']) if row['TAURAT'] != '-999' else 0.22,
+                    'ARC2_G0': float(row['ARC2_PHO']),
+                    'DUSTA': float(row['DUSTA']),
+                    'TAURAT': float(row['TAURAT']),
                     'rotation_period': rot_per_hours / 24.0,  # Convert hours to days
-                    'orbital_period': float(row['Sideral_Period']) * 365.25636,  # Convert years to days
+                    'orbital_period': orbital_period_days,
                     'radius': float(row['Radius']),
                 }
 
@@ -779,10 +790,14 @@ def porb(
     # Identify body type
     body_type = identify_body_type(body)
 
-    # Try to load from HDF (unless force=True)
+    # Universal behavior: Try to load from cached .porb.hdf file first
+    # If no cached file exists (or force=True), fall through to dynamic generation
+    # This applies to ALL bodies - Moon, Mars, asteroids, etc.
     if not force:
         try:
             params = load_body_parameters(body, data_loader)
+            # Note: load_body_parameters now raises ValueError if no .porb.hdf exists
+            # This ensures we fall through to dynamic generation for ALL uncached bodies
 
             # Extract PORB data (these don't go into OrbitalElements)
             porb_header = params.pop('PORB_HEADER', None)
@@ -830,7 +845,18 @@ def porb(
     else:
         print(f"Forcing PORB generation for {body}")
 
-    # Generate PORB data dynamically
+    # ========================================================================
+    # Dynamic PORB Generation Path - Universal fallback for ALL uncached bodies
+    # ========================================================================
+    # This path is taken when:
+    # 1. No .porb.hdf file exists for the body
+    # 2. force=True is specified
+    #
+    # For successful generation, the body needs:
+    # - For planets/satellites: entries in standish.tab, spinaxis.tab, planetary_params3.csv
+    # - For asteroids: entry in small_bodies.hdf
+    # - For comets: entry in comets.hdf
+    #
     # Per Davinci krc.dvrc lines 2265-2780
 
     import tempfile
@@ -880,7 +906,13 @@ def porb(
         )
 
         # Attach minimal KRC params
+        # Per Davinci krc.dvrc lines 2457-2462: Asteroids are AIRLESS
         orbital_elem.krc_params = {
+            'GRAV': 0.0,
+            'PTOTAL': 0.1,  # Trace atmosphere (essentially none)
+            'ARC2_G0': 0.0,
+            'DUSTA': 0.0,   # NOT -999!
+            'TAURAT': 0.0,  # NOT -999!
             'N24': derived['N24'],
             'PERIOD': derived['PERIOD'],
             'DELJUL': derived['DELJUL'],
@@ -920,7 +952,13 @@ def porb(
         )
 
         # Attach minimal KRC params
+        # Per Davinci krc.dvrc lines 2570-2577: Comets are AIRLESS
         orbital_elem.krc_params = {
+            'GRAV': 0.0,
+            'PTOTAL': 0.1,  # Trace atmosphere (essentially none)
+            'ARC2_G0': 0.0,
+            'DUSTA': 0.0,   # NOT -999!
+            'TAURAT': 0.0,  # NOT -999!
             'N24': derived['N24'],
             'PERIOD': derived['PERIOD'],
             'DELJUL': derived['DELJUL'],
@@ -929,7 +967,11 @@ def porb(
         return orbital_elem
 
     elif body_type not in ["Planet", "Satellite"]:
-        raise ValueError(f"Dynamic PORB generation not supported for body type: {body_type}")
+        raise ValueError(
+            f"Cannot generate PORB for {body}: Dynamic PORB generation not supported for body type '{body_type}'. "
+            f"Only Planet and Satellite bodies with entries in standish.tab and spinaxis.tab can generate PORB dynamically. "
+            f"For asteroids/comets, a pre-computed .porb.hdf file is required."
+        )
 
     # For Planet/Satellite: Use Fortran PORB program
     # Get paths to support files
@@ -948,14 +990,23 @@ def porb(
     # Parse tables
     parent_lines = _parse_standish_table(standish_path, parent_body)
     spin_lines = _parse_spinaxis_table(spinaxis_path, body)
-    body_params = _parse_planetary_params(params_path, body)
+    body_params = _parse_planetary_params(params_path, body, body_type)
 
     if parent_lines is None:
-        raise ValueError(f"Parent body {parent_body} not found in standish.tab")
+        raise ValueError(
+            f"Cannot generate PORB for {body}: Parent body '{parent_body}' not found in standish.tab. "
+            f"The body lacks sufficient orbital element data for dynamic PORB generation."
+        )
     if spin_lines is None:
-        raise ValueError(f"Body {body} not found in spinaxis.tab")
+        raise ValueError(
+            f"Cannot generate PORB for {body}: Body not found in spinaxis.tab. "
+            f"The body lacks rotation/spin axis parameters needed for PORB generation."
+        )
     if not body_params:
-        raise ValueError(f"Body {body} not found in planetary_params3.csv")
+        raise ValueError(
+            f"Cannot generate PORB for {body}: Body not found in planetary_params3.csv. "
+            f"The body lacks physical parameters (gravity, pressure, etc.) needed for KRC."
+        )
 
     # Create temporary working directory
     with tempfile.TemporaryDirectory(prefix="porb_") as workdir:
@@ -992,6 +1043,9 @@ def porb(
         )
 
         # Combine all KRC params
+        # Per Davinci krc.dvrc lines 2334-2340: For dynamic PORB generation (Planet/Satellite),
+        # use CSV values directly from planetary_params3.csv
+        # The "airless body" hardcoded values (lines 2636-2641) are only for Generic/Comet/Asteroid bodies!
         krc_params = {
             'GRAV': body_params['GRAV'],
             'PTOTAL': body_params['PTOTAL'],
@@ -1411,9 +1465,16 @@ def setup_orbital_parameters(
         if verbose:
             print(f"Warning: Using rotation period for DELJUL calculation (may be inaccurate)")
 
+    # NOTE: Davinci safety check (DELJUL < PERIOD) intentionally NOT applied here
+    # Per Davinci krc.dvrc, the safety check occurs at line 844, AFTER DJUL calculation at line 409
+    # This is a Davinci bug: DJUL is calculated with the wrong DELJUL, then DELJUL is corrected too late
+    # PyKRC matches this buggy behavior for parity. The safety check is applied in core.py after DJUL calc.
+    # See: https://github.com/nasa/krc/issues/XXX (to be filed)
+
     if verbose:
         print(f"Time control: DELLS={DELLS}°, N5={N5} seasons, JDISK={JDISK}")
         print(f"  Total run: {N5*DELLS/360:.1f} years, Output: {(N5-JDISK)*DELLS/360:.1f} years")
+        print(f"  DELJUL (before safety check): {DELJUL_calc:.4f} days")
 
     # Get canonical PORB defaults and touched parameters
     porb_params = get_porb_defaults()

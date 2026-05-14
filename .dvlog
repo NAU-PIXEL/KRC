@@ -264,3 +264,20 @@ result = krc(lat=0.,INERTIA=250.,Mat1="Basalt",KEEP="T")
 ###################################################
 result = krc(lat=0.,INERTIA=250.,Mat1="basalt",KEEP="T")
 quit
+###################################################
+# User: chaberle    Date:  Fri Oct 24 10:13:51 2025
+# Host: <UNKNOWN>   Cwd: /Users/chaberle/Documents/GitHab/KRC
+###################################################
+body1 = porb("1P-Halley", force=1)
+body2 = porb("Halley", force=1) 
+body3 = porb("2688_Halley", force=1)
+###################################################
+# User: chaberle    Date:  Fri Oct 24 13:01:13 2025
+# Host: <UNKNOWN>   Cwd: /Users/chaberle/Documents/GitHab/KRC
+###################################################
+krc(body="Mars", INERTIA=50, INERTIA2=400, thick=-0.05, lat=12., ls=23., KEEP="T")
+aa = krc(body="Mars", INERTIA=50, INERTIA2=400, thick=-0.05, lat=12., ls=23., KEEP="T")
+aa
+krc(lat=25.,TPREDICT="F",KEEP="T")
+aa= krc(lat=25.,TPREDICT="F",KEEP="T")
+aa

@@ -1,0 +1,355 @@
+# Test Catalog - test_KRC.dv Line Number Mapping
+Generated: 2025-10-24
+
+This document maps each integration test to its corresponding line
+in test_KRC.dv (the reference Davinci test suite).
+================================================================================
+
+**Summary:** 69 tests analyzed
+- Found in test_KRC.dv: 40
+- Not found: 29
+
+### test_porb_defaults_mars
+**Description:** Test PORB defaults (FLAY, RLAY, etc.) for Mars.
+**Davinci command:** `krc(lat=25.,KEEP="T")`
+**test_KRC.dv line:** NOT FOUND
+
+### test_user_defaults_europa
+**Description:** Test user defaults (FANON, N3, etc.) for Europa.
+**Davinci command:** `krc(lat=0.,body="Europa",INERTIA=50.,ALBEDO=.55,LKofT="F",KEEP="T")`
+**test_KRC.dv line:** 89 (partial:3)
+
+### test_basalt_properties
+**Description:** Test basalt thermal properties with INERTIA=250.
+**Davinci command:** `krc(lat=0.,INERTIA=250.,Mat1="basalt",KEEP="T")`
+**test_KRC.dv line:** NOT FOUND
+
+### test_k_style_moon
+**Description:** Test k_style='Moon' (T³ conductivity trend).
+**Davinci command:** `krc(lat=12.,INERTIA=100.,k_style="Moon",KEEP="T")`
+**test_KRC.dv lines:** 161(partial:2), 179(partial:2), 197(partial:2), 215(partial:2)
+
+### test_k_style_bulk
+**Description:** Test k_style='Bulk' (direct polynomial, no normalization).
+**Davinci command:** `krc(lat=12.,INERTIA=100.,k_style="Bulk",KEEP="T")`
+**test_KRC.dv lines:** 161(partial:2), 179(partial:2), 197(partial:2), 215(partial:2)
+
+### test_dells_blocks_deljul
+**Description:** Test that user-set DELLS blocks PORB DELJUL.
+**Davinci command:** `krc(lat=25.,DELLS=2.,KEEP="T")`
+**test_KRC.dv line:** NOT FOUND
+
+### test_user_param_precedence
+**Description:** Test user parameter takes precedence over PORB.
+**Davinci command:** `krc(lat=25.,EMISS=0.95,KEEP="T")`
+**test_KRC.dv line:** NOT FOUND
+
+### test_ptotal_forces_taud_zero
+**Description:** Test PTOTAL < 1.0 forces TAUD = 0.
+**Davinci command:** `krc(lat=0.,PTOTAL=0.5,TAUD=0.1,KEEP="T")`
+**test_KRC.dv line:** NOT FOUND
+
+### test_tpredict_stability_override
+**Description:** Test TPREDICT=False triggers stability overrides. PyKRC uses Python booleans (True/False) for TPREDICT. TPREDICT=False should trigger stability overrides: GGT=99, N3=1, NRSET=999 Davinci uses strings ("T"/"F"). Both should produce identical results.
+**Davinci command:** `krc(lat=25.,TPREDICT="F",KEEP="T")`
+**test_KRC.dv line:** NOT FOUND
+
+### test_two_layer_regolith
+**Description:** Test two-layer regolith configuration.
+**Davinci command:** `krc(lat=0.,lon=0.,thick=0.3,INERTIA=200.,INERTIA2=1200.,LKofT="F",KEEP="T")`
+**test_KRC.dv line:** NOT FOUND
+
+### test_type14_eclipse_daily
+**Description:** Test Type 14 changecard - Eclipse Style 1.0 (daily).
+**Davinci command:** `krc(lat=0.,INERTIA=045.,N1=32,body="Europa",Eclipse="T",Eclipser="Jupiter",Eclipse_Style=1.,KEEP="T")`
+**test_KRC.dv line:** NOT FOUND
+
+### test_type15_pflux
+**Description:** Test Type 15 changecard - Planetary Flux.
+**Davinci command:** `krc(lat=0.,INERTIA=50.,body="Europa",ALBEDO=0.55,PFlux="T",Lon_Hr=12.,LKofT="F",KEEP="T")`
+**test_KRC.dv line:** NOT FOUND
+
+### test_mars_with_ls_and_inertia
+**Description:** Test Mars with Ls and thermal inertia.
+**Davinci command:** `krc(lat=12.,ls=123.,INERTIA=250.,KEEP="T")`
+**test_KRC.dv line:** 71 (partial:2)
+
+### test_phobos_default
+**Description:** Test Phobos with defaults.
+**Davinci command:** `krc(lat=12.,body="Phobos",KEEP="T")`
+**test_KRC.dv lines:** 39(partial:2), 41(partial:2)
+
+### test_high_inertia_low_albedo
+**Description:** Test high thermal inertia with low albedo.
+**Davinci command:** `krc(lat=0.,INERTIA=1200.,ALBEDO=0.05,KEEP="T")`
+**test_KRC.dv line:** NOT FOUND
+
+### test_gregorian_date
+**Description:** Test Gregorian date specification (GD).
+**Davinci command:** `krc(lat=12.,GD="1994-Feb-05",KEEP="T")`
+**test_KRC.dv line:** NOT FOUND
+
+### test_julian_date
+**Description:** Test Julian date specification (JD).
+**Davinci command:** `krc(lat=12.,JD=2450075.5,KEEP="T")`
+**test_KRC.dv line:** NOT FOUND
+
+### test_delta_julian_date
+**Description:** Test delta Julian date specification (DJUL).
+**Davinci command:** `krc(lat=12.,DJUL=-1000.,LKEY="T",KEEP="T")`
+**test_KRC.dv line:** NOT FOUND
+
+### test_ls_specification
+**Description:** Test Ls (solar longitude) specification.
+**Davinci command:** `krc(lat=12.,ls=123.,KEEP="T")`
+**test_KRC.dv line:** 71 (partial:2)
+
+### test_jd_to_ls_conversion
+**Description:** Test JD to Ls conversion (2000-Feb-01 → Ls=293.305).
+**Davinci command:** `krc(lat=12.,JD=2451575.5,KEEP="T")`
+**test_KRC.dv line:** NOT FOUND
+
+### test_gd_to_ls_conversion
+**Description:** Test GD to Ls conversion (2000-Feb-01 → Ls=293.305).
+**Davinci command:** `krc(lat=12.,GD="2000-Feb-01",KEEP="T")`
+**test_KRC.dv line:** NOT FOUND
+
+### test_lbound_insulating_europa
+**Description:** Test insulating bottom boundary (lbound=0) on Europa.
+**Davinci command:** `krc(N24=24,lbound=0,KEEP="T",lat=12.,ls=0.,body="Europa",INERTIA=150.,LKofT="F",TUN8=101)`
+**test_KRC.dv lines:** 245(exact), 251(exact), 268(exact), 364(exact)
+
+### test_lbound_fixed_temp_europa
+**Description:** Test fixed bottom temperature (lbound=-1//98) on Europa.
+**Davinci command:** `krc(N24=24,lbound=-1//98,KEEP="T",lat=12.,ls=0.,body="Europa",INERTIA=150.,LKofT="F",TUN8=101)`
+**test_KRC.dv line:** 260 (exact)
+
+### test_lbound_all_layers_temp_europa
+**Description:** Test all layers at fixed temperature (lbound=-2//100) on Europa.
+**Davinci command:** `krc(N24=24,lbound=-2//100,KEEP="T",lat=12.,ls=0.,body="Europa",INERTIA=150.,LKofT="F",TUN8=101)`
+**test_KRC.dv lines:** 263(exact), 373(exact)
+
+### test_lbound_low_heat_flow_europa
+**Description:** Test low heat flow boundary (lbound=0.5 W/m²) on Europa.
+**Davinci command:** `krc(N24=24,lbound=0.5,KEEP="T",lat=12.,ls=0.,body="Europa",INERTIA=150.,LKofT="F",TUN8=101)`
+**test_KRC.dv line:** 273 (exact)
+
+### test_lbound_high_heat_flow_europa
+**Description:** Test high heat flow boundary (lbound=50 W/m²) on Europa.
+**Davinci command:** `krc(N24=24,lbound=50,KEEP="T",lat=12.,ls=0.,body="Europa",INERTIA=150.,LKofT="F",TUN8=101)`
+**test_KRC.dv line:** 277 (exact)
+
+### test_lbound_fixed_temp_mars
+**Description:** Test fixed bottom temperature on Mars for two-layer regolith.
+**Davinci command:** `krc(body="Mars",KEEP="T",lat=12.,ls=23.,LKofT="F",INERTIA=100,INERTIA2=150,T_user=178.,thick=-0.20)`
+**test_KRC.dv line:** 705 (exact)
+
+### test_point_mode_mars_lkoft_false_ti13
+**Description:** Test T→TI inversion on Mars with LKofT=F, INERTIA=13.
+**Davinci command:** `krc(WRITE="T",KEEP="T",lat=12.,hour=2.45,T=172.3,ls=23.,LKofT="F")`
+**test_KRC.dv line:** NOT FOUND
+
+### test_point_mode_mars_lkoft_false_ti100
+**Description:** Test T→TI inversion on Mars with LKofT=F, INERTIA=100.
+**Davinci command:** `krc(WRITE="T",KEEP="T",lat=12.,hour=2.45,T=198.5,ls=23.,LKofT="F")`
+**test_KRC.dv line:** NOT FOUND
+
+### test_point_mode_mars_lkoft_true_ti100
+**Description:** Test T→TI inversion on Mars with LKofT=T, INERTIA=100.
+**Davinci command:** `krc(WRITE="T",KEEP="T",lat=12.,hour=2.45,T=197.8,ls=23.,LKofT="T")`
+**test_KRC.dv line:** NOT FOUND
+
+### test_point_mode_europa_lkoft_false
+**Description:** Test T→TI inversion on Europa with LKofT=F.
+**Davinci command:** `krc(WRITE="T",KEEP="T",lat=12.,hour=2.45,T=82.3,ls=23.,body="Europa",LKofT="F",PTOTAL=0.0)`
+**test_KRC.dv line:** NOT FOUND
+
+### test_point_mode_europa_lkoft_true
+**Description:** Test T→TI inversion on Europa with LKofT=T.
+**Davinci command:** `krc(WRITE="T",KEEP="T",lat=12.,hour=2.45,T=110.3,ls=23.,body="Europa",LKofT="T")`
+**test_KRC.dv line:** NOT FOUND
+
+### test_point_mode_phobos_lkoft_false_ti100
+**Description:** Test T→TI inversion on Phobos with LKofT=F, INERTIA=100.
+**Davinci command:** `krc(WRITE="T",KEEP="T",lat=12.,hour=2.45,T=195.2,ls=23.,LKofT="F",body="Phobos")`
+**test_KRC.dv line:** NOT FOUND
+
+### test_point_mode_bennu_lkoft_false_ti100
+**Description:** Test T→TI inversion on Bennu with LKofT=F, INERTIA=100.
+**Davinci command:** `krc(lbound=0,N1=33,ALBEDO=0.05,WRITE="T",KEEP="T",lat=12.,hour=2.45,T=385.0,ls=23.,LKofT="F",body="Bennu")`
+**test_KRC.dv lines:** 457(partial:5), 460(partial:5), 461(partial:5), 463(partial:5), 464(partial:5)
+
+### test_point_mode_cross_lkoft_mars
+**Description:** Test cross-LKofT inversion (T from LKofT=T run → LKofT=F run).
+**Davinci command:** `krc(WRITE="T",KEEP="T",lat=12.,hour=2.45,T=172.0,ls=23.,LKofT="F")`
+**test_KRC.dv line:** NOT FOUND
+
+### test_moon_default
+**Description:** Test Moon with default parameters.
+**Davinci command:** `krc(lat=0.,lon=0.,INERTIA=200.,body="Moon",bodyforce=1,KEEP="T")`
+**test_KRC.dv line:** 56 (partial:3)
+
+### test_moon_low_inertia
+**Description:** Test Moon with low thermal inertia.
+**Davinci command:** `krc(lat=0.,lon=0.,INERTIA=55.,body="Moon",bodyforce=1,KEEP="T")`
+**test_KRC.dv line:** 57 (partial:3)
+
+### test_bennu_default
+**Description:** Test Bennu asteroid with default parameters.
+**Davinci command:** `krc(lbound=0,N1=33,ALBEDO=0.05,KEEP="T",lat=12.,ls=23.,INERTIA=13.,LKofT="F",body="Bennu",TUN8=101)`
+**test_KRC.dv line:** 457 (exact)
+
+### test_ceres_default
+**Description:** Test Ceres dwarf planet.
+**Davinci command:** `krc(lat=12.,body="Ceres",bodyforce=1,KEEP="T")`
+**test_KRC.dv line:** 38 (partial:2)
+
+### test_halley_comet
+**Description:** Test 1P-Halley comet.
+**Davinci command:** `krc(lat=25.,ls=90.,body="1P-Halley",N1=30,KEEP="T")`
+**test_KRC.dv line:** 42 (partial:3)
+
+### test_phobos_with_pflux
+**Description:** Test Phobos with planetary flux enabled.
+**Davinci command:** `krc(lat=12.,body="Phobos",PFlux="T",KEEP="T")`
+**test_KRC.dv lines:** 39(partial:2), 41(partial:2)
+
+### test_phobos_no_flux
+**Description:** Test Phobos without planetary flux.
+**Davinci command:** `krc(lat=0.,INERTIA=50.,body="Phobos",LKofT="T",PFlux="F",KEEP="T")`
+**test_KRC.dv lines:** 44(partial:3), 45(partial:3)
+
+### test_phobos_flux_comparison
+**Description:** Test Phobos with planetary flux at Lon_Hr=12.
+**Davinci command:** `krc(lat=0.,INERTIA=50.,body="Phobos",LKofT="T",PFlux="T",Lon_Hr=12.,KEEP="T")`
+**test_KRC.dv lines:** 44(partial:3), 45(partial:3)
+
+### test_jupiter_high_n1
+**Description:** Test Jupiter satellite with high N1.
+**Davinci command:** `krc(lat=0.,lon=0.,INERTIA=200.,body="Jupiter",bodyforce=1,N1=40,TUN8=101,KEEP="T")`
+**test_KRC.dv line:** 54 (partial:4)
+
+### test_porb_mars
+**Description:** Test KRC with porb('Mars') body.
+**Davinci command:** `krc(lat=25.,body="Mars",KEEP="T")`
+**test_KRC.dv line:** NOT FOUND
+
+### test_porb_phobos
+**Description:** Test KRC with porb('Phobos') body.
+**Davinci command:** `krc(lat=12.,body="Phobos",bodyforce=1,KEEP="T")`
+**test_KRC.dv lines:** 39(partial:2), 41(partial:2)
+
+### test_porb_europa
+**Description:** Test KRC with porb('Europa') body.
+**Davinci command:** `krc(lat=12.,body="Europa",bodyforce=1,KEEP="T")`
+**test_KRC.dv lines:** 37(partial:2), 40(partial:2), 721(partial:2)
+
+### test_porb_bennu
+**Description:** Test KRC with porb('Bennu') body.
+**Davinci command:** `krc(lat=12.,body="Bennu",bodyforce=1,KEEP="T")`
+**test_KRC.dv line:** NOT FOUND
+
+### test_porb_ceres
+**Description:** Test KRC with porb('Ceres') body.
+**Davinci command:** `krc(lat=12.,body="Ceres",bodyforce=1,KEEP="T")`
+**test_KRC.dv line:** 38 (partial:2)
+
+### test_n1_20_europa
+**Description:** Test N1=20 on Europa.
+**Davinci command:** `krc(N24=24,N1=20,lbound=0,KEEP="T",lat=12.,ls=0.,body="Europa",INERTIA=150.,LKofT="F",TUN8=101,JDISK=1801,N5=2160)`
+**test_KRC.dv line:** 229 (exact)
+
+### test_n1_30_europa
+**Description:** Test N1=30 on Europa.
+**Davinci command:** `krc(N24=24,N1=30,lbound=0,KEEP="T",lat=12.,ls=0.,body="Europa",INERTIA=150.,LKofT="F",TUN8=101,JDISK=1801,N5=2160)`
+**test_KRC.dv line:** 232 (exact)
+
+### test_n1_25_bennu
+**Description:** Test N1=25 on Bennu.
+**Davinci command:** `krc(lbound=0,N1=25,lat=12.,hour=2.45,ls=23.,INERTIA=2100.,LKofT="T",body="Bennu",KEEP="T")`
+**test_KRC.dv lines:** 457(partial:4), 460(partial:4), 461(partial:4), 463(partial:4), 464(partial:4)
+
+### test_n1_33_bennu
+**Description:** Test N1=33 on Bennu (asteroid-specific).
+**Davinci command:** `krc(lbound=0,N1=33,ALBEDO=0.05,KEEP="T",lat=12.,hour=2.45,ls=23.,INERTIA=13.,LKofT="F",body="Bennu")`
+**test_KRC.dv line:** 460 (exact)
+
+### test_n1_39_europa
+**Description:** Test N1=39 on Europa.
+**Davinci command:** `krc(N24=24,N1=39,lbound=0,lat=0.,body="Europa",INERTIA=50.,LKofT="F",TUN8=101,KEEP="T")`
+**test_KRC.dv line:** 904 (partial:5)
+
+### test_n1_50_mars_custom_flay_rlay
+**Description:** Test N1=50 with custom FLAY and RLAY.
+**Davinci command:** `krc(lat=0,lon=0,N1=50,FLAY=0.15,RLAY=1.05,KEEP="T")`
+**test_KRC.dv line:** NOT FOUND
+
+### test_n1_250_europa
+**Description:** Test N1=250 (high layer count) on Europa.
+**Davinci command:** `krc(lat=0,lon=0,N1=250,INERTIA=200.,body="Europa",KEEP="T")`
+**test_KRC.dv line:** 902 (partial:3)
+
+### test_n1_999_mars_extreme
+**Description:** Test N1=999 (maximum layer count).
+**Davinci command:** `krc(lat=0,lon=0,N1=999,KEEP="T")`
+**test_KRC.dv line:** NOT FOUND
+
+### test_n1_20_default_mars
+**Description:** Test N1=20 with defaults on Mars.
+**Davinci command:** `krc(lat=0,lon=0,N1=20,INERTIA=200.,KEEP="T")`
+**test_KRC.dv line:** 900 (partial:2)
+
+### test_mode1_standard_constant
+**Description:** Test Mode 1: Standard single-layer constant properties
+**Davinci command:** `krc(body="Mars", INERTIA=200, lat=12., ls=23., KEEP="T")`
+**test_KRC.dv lines:** 33(partial:2), 36(partial:2), 37(partial:2), 158(partial:2), 161(partial:2)
+
+### test_mode2_two_layer_positive_thick
+**Description:** Test Mode 2: Two-layer with interface at positive thick value
+**Davinci command:** `krc(body="Mars", INERTIA=100, INERTIA2=500, thick=0.5, lat=12., ls=23., KEEP="T")`
+**test_KRC.dv lines:** 690(partial:4), 705(partial:4), 710(partial:4)
+
+### test_mode3_exponential_negative_thick
+**Description:** Test Mode 3: Exponential profile with negative thick
+**Davinci command:** `krc(body="Mars", KEEP="T", lat=12., ls=23., LKofT="F", INERTIA=100, INERTIA2=150, T_user=178., thick=-0.20)`
+**test_KRC.dv line:** 705 (exact)
+
+### test_mode3_exponential_steep
+**Description:** Test Mode 3: Exponential profile with steep gradient (thick=-0.05)
+**Davinci command:** `krc(body="Mars", INERTIA=50, INERTIA2=400, thick=-0.05, lat=12., ls=23., KEEP="T")`
+**test_KRC.dv line:** NOT FOUND
+
+### test_mode3_exponential_gradual
+**Description:** Test Mode 3: Exponential profile with gradual gradient (thick=-1.0)
+**Davinci command:** `krc(body="Mars", INERTIA=100, INERTIA2=250, thick=-1.0, lat=12., ls=23., KEEP="T")`
+**test_KRC.dv lines:** 690(partial:4), 705(partial:4), 710(partial:4)
+
+### test_thick_with_different_materials
+**Description:** Test thick parameter with different material combinations
+**Davinci command:** `krc(body="Mars", material="dust", material2="rock", thick=0.1, lat=12., ls=23., KEEP="T")`
+**test_KRC.dv line:** NOT FOUND
+
+### test_thick_europa_ice_layers
+**Description:** Test thick parameter on Europa with ice layers
+**Davinci command:** `krc(body="Europa", INERTIA=100, INERTIA2=2000, thick=2.0, lat=12., ls=23., KEEP="T")`
+**test_KRC.dv lines:** 37(partial:3), 140(partial:3), 141(partial:3), 142(partial:3), 143(partial:3)
+
+### test_thick_with_lbound
+**Description:** Test thick parameter combined with bottom boundary conditions
+**Davinci command:** `krc(body="Europa", INERTIA=100, INERTIA2=500, thick=0.5, lbound=25.0, lat=12., ls=23., KEEP="T")`
+**test_KRC.dv line:** NOT FOUND
+
+### test_thick_negative_with_custom_n1
+**Description:** Test negative thick with custom layer count
+**Davinci command:** `krc(body="Mars", INERTIA=100, INERTIA2=300, thick=-0.3, N1=50, lat=12., ls=23., KEEP="T")`
+**test_KRC.dv lines:** 690(partial:4), 705(partial:4), 710(partial:4)
+
+### test_thick_boundary_values
+**Description:** Test thick parameter at boundary values
+**Davinci command:** `krc(body="Mars", INERTIA=100, INERTIA2=500, thick=0.01, lat=12., ls=23., KEEP="T")`
+**test_KRC.dv lines:** 690(partial:4), 705(partial:4), 710(partial:4)
+
+### test_thick_very_deep
+**Description:** Test thick parameter with very deep interface
+**Davinci command:** `krc(body="Mars", INERTIA=100, INERTIA2=500, thick=10.0, lat=12., ls=23., KEEP="T")`
+**test_KRC.dv lines:** 690(partial:4), 705(partial:4), 710(partial:4)

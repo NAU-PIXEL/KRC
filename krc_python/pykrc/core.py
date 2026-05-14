@@ -732,6 +732,23 @@ def krc(
                 print(f"LKEY forced to 'F': {'GD' if GD is not None else 'JD'} date specification requires Julian date mode")
                 print(f"DJUL calculated from JD: {DJUL:.4f} (JD={JD}, J2000 offset={(JD-J2000):.4f})")
 
+    # ========== DELJUL SAFETY CHECK ==========
+    # Per Davinci krc.dvrc lines 844-848: Apply safety check AFTER DJUL calculation
+    # This is a Davinci bug where DJUL is calculated with potentially wrong DELJUL,
+    # then DELJUL is corrected afterwards (too late to affect DJUL).
+    # PyKRC matches this buggy behavior for exact parity.
+    #
+    # The check prevents DELJUL < PERIOD, which would confound time-of-day and seasonal variations.
+    # Most commonly triggered for bodies without cached PORB files (e.g., Moon).
+    if DELJUL < rot_per:
+        if verbose:
+            print(f"WARNING: DELJUL ({DELJUL:.4f}) < PERIOD ({rot_per:.4f})")
+            print(f"  This would compound time of day and season into the output.")
+            print(f"  Resetting DELJUL = PERIOD = {rot_per:.4f} days")
+            print(f"  NOTE: DJUL was already calculated with old DELJUL (matching Davinci bug)")
+        DELJUL = rot_per
+        porb_touched_params.add('DELJUL')  # Ensure changecard written with corrected value
+
     # Track parameters set by internal logic (similar to porb_touched_params)
     # Per Davinci krc.dvrc lines 853-865, when TPREDICT logic sets N3/NRSET/GGT,
     # these params get changecards written even if they match master.inp defaults.
@@ -904,14 +921,37 @@ def krc(
 
     elif thick is not None and isinstance(thick, (list, np.ndarray)):
         # Mode 4 variant: Zone table array (multi-layer specification via thick parameter)
-        from .layers import process_zone_table
-        zone_config = process_zone_table(thick)
-        IC2 = zone_config['IC2']
-        LZONE = zone_config['LZONE']
-        N1 = zone_config.get('N1', N1)  # May override N1
-        zone_data = zone_config['zone_data']
-        if verbose:
-            print(f"Zone table mode: {len(zone_data)} layers specified, IC2={IC2}, LZONE={LZONE}")
+        # Per Davinci krc.dvrc lines 2089-2109: 4xN array triggers zone mode
+        thick_array = np.array(thick)
+
+        # Check if it's a 4xN array (4 columns for zone table)
+        if thick_array.ndim == 2 and thick_array.shape[0] == 4:
+            # This is a Davinci-style zone table
+            # Convert to zone_data format for internal use
+            zone_data = []
+            for i in range(thick_array.shape[1]):
+                zone_data.append([
+                    thick_array[0, i],  # thickness
+                    thick_array[1, i],  # density
+                    thick_array[2, i],  # conductivity
+                    thick_array[3, i]   # specific_heat
+                ])
+            IC2 = 999
+            LZONE = True
+            # Don't override N1 - let it be calculated normally
+            # Per Davinci, N1=50 is default but we'll use our calculated value
+            if verbose:
+                print(f"Mode 4: Zone table with {len(zone_data)} layers from thick array")
+        else:
+            # Fall back to old process_zone_table for other array formats
+            from .layers import process_zone_table
+            zone_config = process_zone_table(thick)
+            IC2 = zone_config['IC2']
+            LZONE = zone_config['LZONE']
+            N1 = zone_config.get('N1', N1)  # May override N1
+            zone_data = zone_config['zone_data']
+            if verbose:
+                print(f"Zone table mode: {len(zone_data)} layers specified, IC2={IC2}, LZONE={LZONE}")
 
     elif thick is not None and thick < 0.0:
         # Mode 3: Exponential profile (H-parameter)

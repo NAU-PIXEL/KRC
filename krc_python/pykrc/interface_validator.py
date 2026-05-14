@@ -220,11 +220,52 @@ class InputFileComparator:
                 }
             return None
 
-        def lines_match_with_tolerance(line1: str, line2: str) -> bool:
+        def compare_porb_matrix_line(line1: str, line2: str) -> bool:
+            """
+            Compare PORB rotation matrix lines with tolerance.
+
+            PORB matrix lines contain 5 floating-point values separated by spaces.
+            Tiny precision differences (< 1e-4 relative) can occur due to timestamp
+            differences affecting orbital ephemeris calculations.
+            """
+            try:
+                # Extract all floating-point numbers from both lines
+                import re
+                nums1 = [float(x) for x in re.findall(r'[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?', line1)]
+                nums2 = [float(x) for x in re.findall(r'[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?', line2)]
+
+                # Must have same number of values
+                if len(nums1) != len(nums2):
+                    return False
+
+                # Compare each value with tolerance
+                tolerance = 1e-6  # 0.0001% relative tolerance
+                for v1, v2 in zip(nums1, nums2):
+                    if v1 == v2:
+                        continue
+                    # Relative tolerance check
+                    denominator = max(abs(v1), abs(v2))
+                    if denominator == 0:
+                        # Both zero
+                        continue
+                    rel_diff = abs(v1 - v2) / denominator
+                    if rel_diff > tolerance:
+                        return False
+
+                return True
+            except (ValueError, AttributeError):
+                # Not a numeric line, require exact match
+                return False
+
+        def lines_match_with_tolerance(line1: str, line2: str, in_porb_block: bool = False) -> bool:
             """Check if two lines match exactly or within tolerance for known params."""
             # Exact match - fastest check
             if line1 == line2:
                 return True
+
+            # If we're in a PORB matrix block, use PORB-specific comparison
+            if in_porb_block:
+                return compare_porb_matrix_line(line1, line2)
 
             # Try parsing as changecards
             card1 = parse_changecard(line1)
@@ -284,18 +325,71 @@ class InputFileComparator:
             """Remove Type 8 changecards from lines."""
             return [line for line in lines if not line.strip().startswith("8 5 0")]
 
+        def normalize_porb_timestamp(line: str) -> str:
+            """
+            Normalize PORB header timestamps to enable comparison.
+
+            PORB headers have the format:
+            PORB:2014jun10 <TIMESTAMP> IPLAN,TC= 101.0 0.10000 Mars:Phobos
+
+            The timestamp (e.g., "2024 Jun 27 13:04:14") is just metadata about when
+            the PORB matrix was generated. It doesn't affect the physics.
+
+            We replace the timestamp with a fixed placeholder to enable comparison
+            of everything else: IPLAN value and body name.
+            """
+            # Match PORB header pattern: PORB:2014jun10 <TIMESTAMP> IPLAN,TC= ...
+            # Timestamp format: YYYY MMM DD HH:MM:SS (e.g., "2024 Jun 27 13:04:14")
+            porb_pattern = r'^(PORB:\w+)\s+(\d{4}\s+\w{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+(IPLAN,TC=.*)$'
+            match = re.match(porb_pattern, line)
+            if match:
+                # Replace timestamp with placeholder
+                return f"{match.group(1)} <TIMESTAMP> {match.group(3)}\n"
+            return line
+
         lines1_filtered = filter_type8_changecards(lines1)
         lines2_filtered = filter_type8_changecards(lines2)
+
+        # Normalize PORB timestamps for comparison
+        lines1_filtered = [normalize_porb_timestamp(line) for line in lines1_filtered]
+        lines2_filtered = [normalize_porb_timestamp(line) for line in lines2_filtered]
 
         # Compare line counts first
         if len(lines1_filtered) != len(lines2_filtered):
             identical = False
         else:
-            # Compare lines with tolerance
-            identical = all(
-                lines_match_with_tolerance(l1, l2)
-                for l1, l2 in zip(lines1_filtered, lines2_filtered)
-            )
+            # Compare lines with tolerance, tracking PORB blocks
+            identical = True
+            porb_pattern = r'^PORB:\w+\s+<TIMESTAMP>\s+IPLAN,TC='
+            i = 0
+            while i < len(lines1_filtered) and identical:
+                l1, l2 = lines1_filtered[i], lines2_filtered[i]
+
+                # Check if this is a PORB header (after timestamp normalization)
+                if re.match(porb_pattern, l1):
+                    # This is a PORB header - next 6 lines are the rotation matrix
+                    if not lines_match_with_tolerance(l1, l2, in_porb_block=False):
+                        identical = False
+                        break
+                    i += 1
+                    # Compare next 6 lines with PORB tolerance
+                    for j in range(6):
+                        if i + j >= len(lines1_filtered):
+                            identical = False
+                            break
+                        if not lines_match_with_tolerance(
+                            lines1_filtered[i + j],
+                            lines2_filtered[i + j],
+                            in_porb_block=True
+                        ):
+                            identical = False
+                            break
+                    i += 6  # Skip the 6 matrix lines we just compared
+                else:
+                    # Regular line
+                    if not lines_match_with_tolerance(l1, l2, in_porb_block=False):
+                        identical = False
+                    i += 1
 
         if not identical:
             # Show diff on filtered lines (excluding Type 8 changecards)

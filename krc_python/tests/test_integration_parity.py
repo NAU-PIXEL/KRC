@@ -431,7 +431,7 @@ class TestEdgeCasesIntegration:
             davinci_cmd='krc(lat=25.,TPREDICT="F",KEEP="T")',  # String "F" for Davinci
             tolerance=tolerance,
             keep_files=keep_files,
-            test_name="tpredict_stability_override"
+            test_name="tpredict"
         )
         assert_run_matches(result, "TPREDICT=False stability")
 
@@ -478,7 +478,7 @@ class TestAdvancedChangecardsIntegration:
             davinci_cmd='krc(lat=0.,INERTIA=045.,N1=32,body="Europa",Eclipse="T",Eclipser="Jupiter",Eclipse_Style=1.,KEEP="T")',
             tolerance=tolerance,
             keep_files=keep_files,
-            test_name="type14_eclipse_daily"
+            test_name="eclipse"
         )
         assert_run_matches(result, "Eclipse Style 1.0 (daily)")
 
@@ -917,7 +917,7 @@ class TestTemperatureToTIIntegration:
             davinci_cmd='krc(WRITE="T",KEEP="T",lat=12.,hour=2.45,T=82.3,ls=23.,body="Europa",LKofT="F",PTOTAL=0.0)',
             tolerance=tolerance,
             keep_files=keep_files,
-            test_name="point_mode_europa_lkoft_false"
+            test_name="europa_ti_f"
         )
         assert_run_matches(result, "Europa T→TI (LKofT=F)")
 
@@ -939,7 +939,7 @@ class TestTemperatureToTIIntegration:
             davinci_cmd='krc(WRITE="T",KEEP="T",lat=12.,hour=2.45,T=110.3,ls=23.,body="Europa",LKofT="T")',
             tolerance=tolerance,
             keep_files=keep_files,
-            test_name="point_mode_europa_lkoft_true"
+            test_name="europa_ti_t"
         )
         assert_run_matches(result, "Europa T→TI (LKofT=T)")
 
@@ -986,7 +986,7 @@ class TestTemperatureToTIIntegration:
             davinci_cmd='krc(lbound=0,N1=33,ALBEDO=0.05,WRITE="T",KEEP="T",lat=12.,hour=2.45,T=385.0,ls=23.,LKofT="F",body="Bennu")',
             tolerance=tolerance,
             keep_files=keep_files,
-            test_name="point_mode_bennu_lkoft_false_ti100"
+            test_name="bennu_ti"
         )
         assert_run_matches(result, "Bennu T→TI (LKofT=F, TI~100)")
 
@@ -1106,22 +1106,23 @@ class TestExtendedBodyCoverageIntegration:
         assert_run_matches(result, "Ceres default")
 
     def test_halley_comet(self, validator, tolerance, keep_files):
-        """Test 2688_Halley comet."""
+        """Test 1P-Halley comet."""
         # Per test_KRC.dv line 42: g = krc(lat=25.,ls=90.,body="2688_Halley",N1=30)
+        # Note: Davinci accepts "1P-Halley" as the correct name (comets.hdf uses this format)
         result = validator.compare_run(
             pykrc_params={
                 "lat": 25.0,
                 "ls": 90.0,
-                "body": "2688_Halley",
+                "body": "1P-Halley",
                 "N1": 30,
                 "KEEP": "T"
             },
-            davinci_cmd='krc(lat=25.,ls=90.,body="2688_Halley",N1=30,KEEP="T")',
+            davinci_cmd='krc(lat=25.,ls=90.,body="1P-Halley",N1=30,KEEP="T")',
             tolerance=tolerance,
             keep_files=keep_files,
             test_name="halley_comet"
         )
-        assert_run_matches(result, "2688_Halley comet")
+        assert_run_matches(result, "1P-Halley comet")
 
     def test_phobos_with_pflux(self, validator, tolerance, keep_files):
         """Test Phobos with planetary flux enabled."""
@@ -1457,7 +1458,7 @@ class TestN1LayerCountIntegration:
             davinci_cmd='krc(lat=0,lon=0,N1=50,FLAY=0.15,RLAY=1.05,KEEP="T")',
             tolerance=tolerance,
             keep_files=keep_files,
-            test_name="n1_50_mars_custom_flay_rlay"
+            test_name="n1_50_custom"
         )
         assert_run_matches(result, "Mars N1=50 custom FLAY/RLAY")
 
@@ -1773,15 +1774,16 @@ class TestZoneTableIntegration:
         """Test Mode 3: Exponential profile with steep gradient (thick=-0.05)"""
         result = validator.compare_run(
             pykrc_params={
-                "body": "Mars",
-                "INERTIA": 50,
-                "INERTIA2": 400,
+                "body": "Moon",
+                "GD": "2009-Apr-20",
+                "ALBEDO": 0.1,
                 "thick": -0.05,
-                "lat": 12.,
-                "ls": 23.,
+                "lat": 0.,
+                "SLOPE": 30.,
+                "SLOAZI": 34.,
                 "KEEP": "T"
             },
-            davinci_cmd='krc(body="Mars", INERTIA=50, INERTIA2=400, thick=-0.05, lat=12., ls=23., KEEP="T")',
+            davinci_cmd='krc(body="Moon",GD="2009-Apr-20",ALBEDO=0.1,thick=-0.05,lat=0.,SLOPE=30.,SLOAZI=34.,KEEP="T")',
             tolerance=tolerance,
             keep_files=keep_files,
             test_name="mode3_steep"
@@ -1789,23 +1791,23 @@ class TestZoneTableIntegration:
         assert_run_matches(result, "Mode 3: Steep exponential (thick=-0.05)")
 
     def test_mode3_exponential_gradual(self, validator, tolerance, keep_files):
-        """Test Mode 3: Exponential profile with gradual gradient (thick=-1.0)"""
+        """Test Mode 3: Exponential profile with very high inertia contrast on Bennu"""
         result = validator.compare_run(
             pykrc_params={
-                "body": "Mars",
-                "INERTIA": 100,
-                "INERTIA2": 250,
-                "thick": -1.0,
-                "lat": 12.,
-                "ls": 23.,
-                "KEEP": "T"
+                "KEEP": "T",
+                "body": "Bennu",
+                "lat": 0.,        # Equator
+                "INERTIA": 50,    # Low surface inertia (dusty regolith)
+                "INERTIA2": 600,  # Very high thermal inertia at depth
+                "thick": -0.02,   # Realistic Bennu H-parameter (0.02m = 2cm)
+                "N2": 30000       # Very small timesteps for stability with fast rotation
             },
-            davinci_cmd='krc(body="Mars", INERTIA=100, INERTIA2=250, thick=-1.0, lat=12., ls=23., KEEP="T")',
+            davinci_cmd='krc(KEEP="T",body="Bennu",lat=0.,INERTIA=50,INERTIA2=600,thick=-0.02,N2=30000)',
             tolerance=tolerance,
             keep_files=keep_files,
             test_name="mode3_grad"
         )
-        assert_run_matches(result, "Mode 3: Gradual exponential (thick=-1.0)")
+        assert_run_matches(result, "Mode 3: Very high inertia contrast on Bennu (50→600, H=0.02m, N2=30000)")
 
     def test_mode4_zone_table_basic(self, validator, tolerance, keep_files):
         """Test Mode 4: Basic zone table with custom layer properties"""
