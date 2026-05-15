@@ -68,7 +68,7 @@ C      CHARACTER*1 BBUF          ! temporary use
       REAL*8 DUMC  /773.d0/     ! " " 
       REAL*8 ZERO /0.0D0/       ! double precision zero  
 
-      VERSIN='KRCv3.6.5'        ! set version number   12 bytes in FILCOM
+      VERSIN='KRCv4.0.0'        ! set version number   12 bytes in FILCOM
       KREC=84+20  ! number of bytes in TITLE +DAYTIM. Values from def. in KRCCOM
       IF (MOD(KREC,8).NE.0 .OR. MOD(N4KRC,2).NE.0) THEN !possible alignment issue
         WRITE(*,*)'BAD lengths',KREC,N4KRC
@@ -103,6 +103,7 @@ C               set logical units. See   units.com   for description
       LFATM =.FALSE.   ! IODA: FFATM set to: no far-field atmosphere active
       LOPN4 =.FALSE.   ! ----: FDISK set to: no Type 52 active
       LONE  =.FALSE.   ! set to: Not one-point mode
+      LHEMISEMIS = .FALSE.  ! controls hemispheric emission.  
 C                       set constants
       I=LEN_TRIM(VERSIN)        ! and make decimal interger
       WRITE(CBUF,*) VERSIN(1:I) ! write string into temporary buffer

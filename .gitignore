@@ -2,8 +2,13 @@
 *.a
 *.so
 *.dvlog
+*.mod
 
 # Output binaries
 krc
 krcdb
-probmn
+porbmn
+porbmndb
+
+# various logs
+eLog*.*

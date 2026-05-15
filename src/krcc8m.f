@@ -20,9 +20,12 @@ C      PARAMETER (MAXN5 =2161)    ! dimension of saved seasons
       PARAMETER (N4KRC=NUMFD*2+NUMID+NUMLD+2*MAXN4*2+2+104/4) ! # of 4-byte words
               ! above is size of common in 32-bit words. it  MUST  BE  EVEN
       PARAMETER (NWKRC=N4KRC/2) ! number of 8-byte words in krccom. Used by tdisk
-C     PARAMETER (KOMMON=512000000) ! 80 MB,  Storage used by tdisk - ORIGINAL (4GB!)
-C     PARAMETER (KOMMON=10000000) ! TEST: Reduced to 80MB to fix Apple Silicon dyld issue
-      PARAMETER (KOMMON=50000000) ! Increased for full 96-hour output (400MB)
+C     PARAMETER (KOMMON=512000000) ! Hugh's original; ~4 GB BSS allocation.
+C                                  ! Will not load on Apple Silicon (dyld
+C                                  ! refuses to map a 4 GB segment).
+      PARAMETER (KOMMON=50000000)  ! ~400 MB; loads on Apple Silicon and is
+C                                  ! sized for full 96-hour output runs.
+C                                  ! Linux builds tolerate either value.
 
       INTEGER*4 N1,N2,N3,N4,N5,  N24,IIB,IC2,NRSET,NMHA                 !  1:10
      &,NRUN,JDISK,IDOWN,I14,I15,  KPREF,K4OUT,JBARE,NMOD,IDISK2         ! 11:20
@@ -41,7 +44,9 @@ C     PARAMETER (KOMMON=10000000) ! TEST: Reduced to 80MB to fix Apple Silicon d
 
       LOGICAL*4 LP1,LP2,LP3,LP4,LP5,  LP6,LPGLOB,LVFA,LVFT,LKOFT        !  1:10
      &,LPORB,LKEY,LSC,LZONE,LOCAL,   LD16,LD17,LD18,LD19,LONE ! 11:20
-     &,LATM,LSPARE
+     &,LATM,LHEMISEMIS
+      
+      LOGICAL*1 LASOLTAB, LSOLDIFTAB, LPLANVTAB, LATMRADTAB, LPLANHTAB, LRAWTAB
 
       REAL*8 CCKU(4),CCKL(4),CCPU(4),CCPL(4) ! coef of K & Cp, Upper/Lower layers
 C      INTEGER*1  KITLE(84),DAYTIM(20) ! Sum= 104 bytes MUST be multiple of 8
@@ -86,8 +91,10 @@ Cset             ----card---
      A,N1M1,NLW,JJO,KKK,N1PIB,  NCASE,J2,J3,J4,     J5                  ! 31:40
 Cset   ---day1- lat ----day1-    main -day2- lats  seas
      B,LP1,LP2,LP3,LP4,LP5,    LP6,LPGLOB,LVFA,LVFT,LKOFT               !  1:10
-     C,LPORB,LKEY,LSC,LZONE,LOCAL,   LD16,LD17,LD18,LD19,LONE           ! 11:20
-     D, KITLE,DAYTIM,LATM,LSPARE  ! 
+     C,LPORB,LKEY,LSC,LZONE,LOCAL,LD16,LD17,LD18,LD19,LONE           ! 11:20
+     D,KITLE,DAYTIM,LATM,LHEMISEMIS  ! 
+     E,LASOLTAB, LSOLDIFTAB, LPLANVTAB, LATMRADTAB, LPLANHTAB, LRAWTAB
+
 Cset   tcard tprint tcard tcard 
 C
       EQUIVALENCE (FD(1),ALB), (ID(1),N1), (LD(1),LP1) ! alignment

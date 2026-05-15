@@ -55,7 +55,12 @@ C
       REAL*4 ALB4,SUBS4,TAUD4   ! for *4*8 conversion 
       REAL*4 TIME1,TIME2,TIME3 
 
-      LATM=PTOTAL.GT.1.         ! atmosphere present flag
+      IF (LATMRADTAB) THEN
+        LATM=.TRUE.
+      ELSE
+        LATM=PTOTAL.GT.1.         ! atmosphere present flag
+      ENDIF
+
       IRET=1                    ! normal
 D     IF (IDB1.NE.0) WRITE(IOSP,*) 'TSEASa',IQ,J5,LSC,N5,LONE
 

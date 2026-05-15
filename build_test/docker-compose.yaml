@@ -1,0 +1,41 @@
+services:
+  krc_ubuntu26:
+    image: krc:ubuntu26
+    build:
+      context: ..
+      dockerfile: build_test/ubuntu_26.04.dockerfile
+  krc_ubuntu24:
+    image: krc:ubuntu24
+    build:
+      context: ..
+      dockerfile: build_test/ubuntu_24.04.dockerfile
+  krc_ubuntu22:
+    image: krc:ubuntu22
+    build:
+      context: ..
+      dockerfile: build_test/ubuntu_22.04.dockerfile
+  krc_debian12:
+    image: krc:debian12
+    build:
+      context: ..
+      dockerfile: build_test/debian_12.dockerfile
+  krc_debian13:
+    image: krc:debian13
+    build:
+      context: ..
+      dockerfile: build_test/debian_13.dockerfile
+  krc_redhat10:
+    image: krc:redhat10
+    build:
+      context: ..
+      dockerfile: build_test/rhel_10.dockerfile
+  krc_redhat9:
+    image: krc:redhat9
+    build:
+      context: ..
+      dockerfile: build_test/rhel_9.dockerfile
+  krc_redhat8:
+    image: krc:redhat8
+    build:
+      context: ..
+      dockerfile: build_test/rhel_8.dockerfile
