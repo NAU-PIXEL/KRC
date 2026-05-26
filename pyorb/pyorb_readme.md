@@ -46,7 +46,7 @@ All the relevant output parameters are collected, and passed to an output functi
 ## Output: to-do
 Currently, output can be returned as a formatted string, conforming to relevant portion of the standard KRC input file.
 
-Another option, not yet implemented, will be to output an HDF containing the relevant data, which will be cached and used by the Davinci (and python?) interface.
+Another option, currently only implemented for body type: "Minor", will be to output an HDF containing the relevant data, which will be cached and used by the Davinci (and python?) interface.
 This should conform to the existing HDF format used for this purpose. 
 
 The user can either copy the formatted string output into a KRC input file, or use an interface to pull the necessary data from the cached output. 
@@ -58,66 +58,74 @@ The user can either copy the formatted string output into a KRC input file, or u
     - [ ] Some logic to only call `update_default_kernels()` once a day max, and just pull from the default metakernel otherwise when building a per-body mk? (check the mod date on the default mk? read the comment line that has the date in it?)
     - [ ] function to force-update all kernels, or a list of kernels?
     - [ ] testing?
+
 - `porb.py`
     - [ ] generate formatted output as cacheable HDF (per body). 
-        - notes on planetary_params3.csv
-            - column labels are swapped for orbital and sidereal periods
-            - orbital period is in Earth Years, sidereal period is in hours.
-            - inconsistent use of 0 and -999 for undefined params.
-                - surface pressure=0 for airless bodies makes sense. 
-                - surface pressure=-999 for surface-less bodies makes sense.
-                - I don't know what ARC2_PHO is or why it's -999 for titan when it's 0 for other non-mars atmospheres.
-            - only defined for Mars: ARC2_G0 (ARC2_PHO), DUSTA, TAURAT
-                - weird mars atmosphere model stuff
-            - only defined for Venus, Earth, Mars, Pluto, Titan: PTOTAL 
-                - probably for surfaces with atmospheres?
-                - surface pressure in Pa?
-            - only planets: BT_Min, BT_max, BT_avg, Geom_Alb, Dis_AU
-                - maybe to do with planetshine on satellites?
-                - BT: Bolometric Temperature?
-            - only satellites: orb_radius, mut_period
-                - probably to do with planetshine on satellites? and/or eclipses.
-        - notes on porb_defaults/*.porb.hdf:
-            - body: name
-            - period: orbital period in Earth Days
-            - rot: the full PORB output table, as a string
-            - rot_per: sidereal rotation period in hours
-            - rot_per_flag: 1 if a rotation period is made up, 0 if it's real. 
-            - type:
-                - body_type: Planet, Satellite, Comet, or Minor
-                - id: 0 for planets and satellites. NAIFID for comets. IAU number for asteroids, called Minor.
-                - name: object name, same as body.
-                - parent_body: parent body name, blank for anything orbiting the Sun.
-            - planet_flux:
-                - all values are -999 for anything that's not a planet or satellite.
-                - see planetary_params3.csv "only planets" and "only satellites" notes above.
-            - krc: 
-                - see planetary_params3.csv "only atmospheres" and "only mars" notes above.
-                - ARC2_G0:  don't know. Mars atmosphere.
-                - DELJUL:   Orbit period / 360, in Earth Days. 
-                - DUSTA:    don't know. Mars atmosphere.
-                - GRAV:     surface gravity in m/s^2. 0 for anything not in planetary_params3.csv
-                - N24:      usually 96. larger for some of jupiter's moons in the examples, always a multiple of 24. Maybe things get weird if the diurnal division is too much real time? Io's 96, and that makes ~26.5 minute timesteps. The others seemed tuned to target ~15 minute timesteps. Weird there's no Luna porb default to compare with. Weird that a default N24 is specified at all rather than just computing it directly from the rotational period somewhere else!!
-                - PERIOD:   sidereal rotation period in Earth Days. (why duplicate this so many places????)
-                - PTOTAL:   surface atmospheric pressure (atmospheres only)
-                - TAUD:     don't know. Mars atmosphere. (record only present for bennu???)
-                - TAURAT:   don't know. Mars atmosphere.
-                - TFROST:   don't know. Mars atmosphere. (record only present for bennu???)        
-        - I think I can break out non-orbital params from `planetary_params3.csv`, and just have a canonical table for dealing with atmospheres and planetshine, that then populates the HDFs. Hopefully that order of precedence makes sense.  
+        - [x] for body type: "Minor"
+        - [ ] for body type: "Planet"
+            - I think I can break out non-orbital params from `planetary_params3.csv`, and just have a canonical table for dealing with atmospheres and planetshine, that then populates the HDFs. Hopefully that order of precedence makes sense. 
+        - [ ] for body type: "Satellite"
+        - [ ] for body type: "Comet"
+        - [ ] for body type: other/general??
     - [ ] user interface: specify body, get a metakernel using `kernel_mgmt.py`, options to force params to user input values. 
-    - [ ] function to derive spin pole from obliquity and true anomaly, set spin_axis and secondary_spin_params based on that method? (seems more user friendly to have that option)
+    - [x] function to derive spin pole from obliquity and true anomaly, set spin_axis and secondary_spin_params based on that method? (seems more user friendly to have that option)
     - [ ] generate formatted output as entry in `planetary_params3.csv`?
     - [ ] testing?
-- other
+
+- other (additional rotation info)
     - [ ] Find additional source for small-body periods and spin-poles. The standard PCK doesn't have nearly enough of those. 
     - [ ] Find additional info for satellite rotation periods and spin poles. Which ones are tidally locked and which aren't would be good enough, I don't care about precession & nutation.
     - [ ] If it makes sense to manage that info with `kernel_mgmt.py`, do that. Otherwise, figure out a way to manage updating that info separately.
     - [ ] Incorporate this additional spin info into `porb.py`.
 
+# Notes
+## `planetary_params3.csv`
+- column labels are swapped for orbital and sidereal periods
+- orbital period is in Earth Years, sidereal period is in hours.
+- inconsistent use of 0 and -999 for undefined params.
+    - surface pressure=0 for airless bodies makes sense. 
+    - surface pressure=-999 for surface-less bodies makes sense.
+    - I don't know what ARC2_PHO is or why it's -999 for titan when it's 0 for other non-mars atmospheres.
+- only defined for Mars: ARC2_G0 (ARC2_PHO), DUSTA, TAURAT
+    - weird mars atmosphere model stuff
+- only defined for Venus, Earth, Mars, Pluto, Titan: PTOTAL 
+    - probably for surfaces with atmospheres?
+    - surface pressure in Pa?
+- only planets: BT_Min, BT_max, BT_avg, Geom_Alb, Dis_AU
+    - maybe to do with planetshine on satellites?
+    - BT: Bolometric Temperature?
+- only satellites: orb_radius, mut_period
+    - probably to do with planetshine on satellites? and/or eclipses.
 
+## `porb_defaults/*.porb.hdf`
+- body: name
+- period: orbital period in Earth Days
+- rot: the full PORB output table, as a string
+- rot_per: sidereal rotation period in hours
+- rot_per_flag: 1 if a rotation period is made up, 0 if it's real. 
+- type:
+    - body_type: Planet, Satellite, Comet, or Minor
+    - id: 0 for planets and satellites. NAIFID for comets. IAU number for asteroids, called Minor.
+    - name: object name, same as body.
+    - parent_body: parent body name, blank for anything orbiting the Sun.
+- planet_flux:
+    - all values are -999 for anything that's not a planet or satellite.
+    - see planetary_params3.csv "only planets" and "only satellites" notes above.
+- krc: 
+    - see planetary_params3.csv "only atmospheres" and "only mars" notes above.
+    - ARC2_G0:  don't know. Mars atmosphere.
+    - DELJUL:   Orbit period / 360, in Earth Days. 
+    - DUSTA:    don't know. Mars atmosphere.
+    - GRAV:     surface gravity in m/s^2. 0 for anything not in planetary_params3.csv
+    - N24:      usually 96. larger for some of jupiter's moons in the examples, always a multiple of 24. Maybe things get weird if the diurnal division is too much real time? Io's 96, and that makes ~26.5 minute timesteps. The others seemed tuned to target ~15 minute timesteps. Weird there's no Luna porb default to compare with. Weird that a default N24 is specified at all rather than just computing it directly from the rotational period somewhere else!!
+    - PERIOD:   sidereal rotation period in Earth Days. (why duplicate this so many places????)
+    - PTOTAL:   surface atmospheric pressure (atmospheres only)
+    - TAUD:     don't know. Mars atmosphere. (record only present for bennu???)
+    - TAURAT:   don't know. Mars atmosphere.
+    - TFROST:   don't know. Mars atmosphere. (record only present for bennu???)       
 
-davinci tools notes:
-porb()
+## davinci porb tools
+### `porb()`
     Run PORB to calculate an appropriate rotation matrix for use in krc
         $1=body - planetary body name/Horizons id or generic_porb/exo_porb generated structure
         Name Formatting:
@@ -167,7 +175,7 @@ porb()
         run this function(!!) for each item in the list, write a [body].porb.hdf file.
 
 
-krc_find_body()
+### `krc_find_body()`
     > Note: never called.
     Search for the KRC body name to use
 	$1=search string (Note: case sensitive)
@@ -176,7 +184,7 @@ krc_find_body()
     list the matching bodies, their names, types, and parent bodies.
 
 
-porb_type()
+### `porb_type()`
     Return the Body type structure for use with porb functions
 	$1 = body - the name or JPL horizons ID # of the body of interet
 
@@ -190,22 +198,23 @@ porb_type()
         copy their names & types, etc into a struct, and return the struct.
 
 
-generic_porb()
+### `generic_porb()`
     Generate a generic PORB structure for use with the davinci porb function
     This is formatted in the minor body style for porb and permits the following values described below
-        name = body name (Default=\"None\") will be truncated to 24 characters
-        epoch = epoch in Julian Date (Default = 2451545.0, year 2000)
-        a = Semi-Major Axis in AU (Default=1)
-        e = Eccentricity (Default=0)
-        i = Inclination of mean orbit to ecliptic in degrees  (Default=0)
-        node = Longitude of the asceding node in degrees (Default=0)
-        peri = Argument of perihelion in degrees (Default=0)
-        m = Mean Anomoly at epoch in degrees (Default=0)
-        polera = Right Ascention of the pole in degrees (Default=0)
-        poledec = Declination of the pole in degrees (Default=0)
-        merid = prime meridian at epoch in degrees (Default=0)
-        rot_per = siderial rotation period in hours (Default=23.9345)
-        period = siderial orbital period in days (Default=365.256)
+
+    name    = body name (Default=\"None\") will be truncated to 24 characters
+    epoch   = epoch in Julian Date (Default = 2451545.0, year 2000)
+    a       = Semi-Major Axis in AU (Default=1)
+    e       = Eccentricity (Default=0)
+    i       = Inclination of mean orbit to ecliptic in degrees  (Default=0)
+    node    = Longitude of the asceding node in degrees (Default=0)
+    peri    = Argument of perihelion in degrees (Default=0)
+    m       = Mean Anomoly at epoch in degrees (Default=0)
+    polera  = Right Ascention of the pole in degrees (Default=0)
+    poledec = Declination of the pole in degrees (Default=0)
+    merid   = prime meridian at epoch in degrees (Default=0)
+    rot_per = siderial rotation period in hours (Default=23.9345)
+    period  = siderial orbital period in days (Default=365.256)
 
     populates a struct with default values
     These values can be substituted with whatever kwargs are supplied.
