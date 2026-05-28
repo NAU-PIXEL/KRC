@@ -7,11 +7,12 @@ import h5py
 import spiceypy as spice
 
 import defaults 
+import install
 import constants as const
 import porb
 
 
-planet_params_file = '/home/nsmith/KRC/pyorb/src/planet_params.csv'
+planet_params_file = install.planet_params_file
 
 def add_str_dset(string, group, label):
     '''
