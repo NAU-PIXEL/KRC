@@ -416,7 +416,7 @@ if __name__ == '__main__':
         out = main(body_names[i], body_naifids[i], metakernel, epoch_date, verbose=verbose)
         print(format_output(out, verbose=True))
         # write_hdf(out, '/home/nsmith/KRC/pyorb/test')
-        body_params = get_body_params(out)
+        body_params = get_body_params(out, metakernel)
         write_hdf(out, body_params, install.porb_defaults_dir)
 
 

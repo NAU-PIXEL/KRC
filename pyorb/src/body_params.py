@@ -5,6 +5,7 @@
 import numpy as np
 import h5py
 import spiceypy as spice
+from typing import TypedDict
 
 import defaults 
 import install
@@ -49,12 +50,37 @@ def add_num_dset(value, group, label, d_type):
 
     return
 
-def get_body_params(porb_output:dict):
+class type_params_dict(TypedDict):
+    body_name   :   str
+    body_type   :   str
+    naifid      :   int
+    parent_body :   int
+
+class planet_flux_dict(TypedDict):
+    BT_Avg      :   float   
+    BT_Max      :   float    
+    BT_Min      :   float    
+    Dis_AU      :   float    
+    Geom_alb    :   float
+    Mut_Period  :   float
+    Orb_Radius  :   float
+    Radius      :   float 
+
+class krc_params_dict(TypedDict):
+    ARC2_G0     :   float
+    DUSTA       :   float
+    TAURAT      :   float
+    PTOTAL      :   float
+    GRAV        :   float
+    PERIOD      :   float
+    DELJUL      :   float
+    N24         :   int
+
+def get_body_params(porb_output:dict, metakernel:str='None') -> tuple[type_params_dict, planet_flux_dict, krc_params_dict]:
     '''
-    write a cacheable hdf for the specified body, containing PORB output, plus other 
-    parameters used by various other davinci interface systems.
+    derive parameters (or extract them from the planetary parameters csv file) for writing a porb hdf.
     '''
-    type_dict = {
+    type_params = {
         'body_name'     :   porb_output['NAME'],
         'body_type'     :   porb_output['body_type'],
         'naifid'        :   porb_output['PLANUM'],
@@ -72,7 +98,7 @@ def get_body_params(porb_output:dict):
         'Radius'        :   -999.    
     }
 
-    krc_dict = {
+    krc_params = {
         'ARC2_G0'       : -999.,
         'DUSTA'         : -999.,
         'TAURAT'        : -999.,
@@ -84,53 +110,60 @@ def get_body_params(porb_output:dict):
     }
 
     # TODO: Make this work for binary asteroids 
-    if type_dict['body_type'] == 'Satellite':
-        parent_number = int(str(type_dict['naifid'])[0])
+    if type_params['body_type'] == 'Satellite':
+        parent_number = int(str(type_params['naifid'])[0])
         parents = ['', 'Mercury', 'Venus', 'Earth', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto']
-        type_dict['parent_body'] = parents[parent_number]
+        type_params['parent_body'] = parents[parent_number]
 
     planet_params = np.genfromtxt(planet_params_file, delimiter=',', names=True,
                                   dtype=[np.dtypes.StringDType,float,float,float,float,float,float])
 
-    if type_dict['body_type'] in ['Planet', 'Satellite']:
-        try:
-            planet_flux['Radius'] = spice.bodvcd(type_dict['naifid'], 'RADII', 3)[0] # Selecting equatorial radius
-        except spice.utils.exceptions.SpiceKERNELVARNOTFOUND:
-            planet_flux['Radius'] = 100.0 # can probably be arbitrarily small, but non-zero
-    
-    if type_dict['body_type'] == 'Satellite':
+    if type_params['body_type'] in ['Planet', 'Satellite']:
+        planet_flux['Radius'] = defaults.radius 
+        if metakernel != 'None':
+            spice.furnsh(metakernel)
+            try:
+                planet_flux['Radius'] = spice.bodvcd(type_params['naifid'], 'RADII', 1)[0] # Selecting equatorial radius
+            except spice.utils.exceptions.SpiceKERNELVARNOTFOUND:
+                # Using default Radius.
+                pass
+
+    if type_params['body_type'] == 'Satellite':
         semimajor_axis = porb_output['SJA']
-        if type_dict['body_name'] in planet_params['Name']:
-            satellite_mass = planet_params['mass'][planet_params['Name']==type_dict['body_name']]
+        if type_params['body_name'] in planet_params['Name']:
+            satellite_mass = planet_params['mass'][planet_params['Name']==type_params['body_name']]
         else: satellite_mass = 0.
-        krc_dict['GRAV'] = const.G * satellite_mass / (1000*planet_flux['Radius'])**2
-        planet_flux['Mut_Period'] = 2*np.pi * np.sqrt((1000*semimajor_axis)**3 / (const.G*(planet_params['mass'][planet_params['Name']==type_dict['parent_body']]+satellite_mass)))
+        krc_params['GRAV'] = const.G * satellite_mass / (1000*planet_flux['Radius'])**2
+        planet_flux['Mut_Period'] = 2*np.pi * np.sqrt((1000*semimajor_axis)**3 / (const.G*(planet_params['mass'][planet_params['Name']==type_params['parent_body']]+satellite_mass)))
         planet_flux['Orb_Radius'] = semimajor_axis
     
-    if type_dict['body_type'] == 'Planet':
+    if type_params['body_type'] == 'Planet':
         planet_flux['Dis_AU'] = porb_output['SJA']
-        planet_flux['BT_Avg'] = planet_params['BT_Avg'][planet_params['Name']==type_dict['body_name']][0]
-        planet_flux['BT_Min'] = planet_params['BT_Min'][planet_params['Name']==type_dict['body_name']][0]
-        planet_flux['BT_Max'] = planet_params['BT_Max'][planet_params['Name']==type_dict['body_name']][0]
-        planet_flux['Geom_alb'] = planet_params['Geom_alb'][planet_params['Name']==type_dict['body_name']][0]
-        krc_dict['GRAV'] = const.G * planet_params['mass'] / (1000*planet_flux['Radius'])**2
+        planet_flux['BT_Avg'] = planet_params['BT_Avg'][planet_params['Name']==type_params['body_name']][0]
+        planet_flux['BT_Min'] = planet_params['BT_Min'][planet_params['Name']==type_params['body_name']][0]
+        planet_flux['BT_Max'] = planet_params['BT_Max'][planet_params['Name']==type_params['body_name']][0]
+        planet_flux['Geom_alb'] = planet_params['Geom_alb'][planet_params['Name']==type_params['body_name']][0]
+        krc_params['GRAV'] = const.G * planet_params['mass'] / (1000*planet_flux['Radius'])**2
 
-    if type_dict['body_name'] == 'Mars':
-        krc_dict['ARC2_G0'] = 0.5
-        krc_dict['DUSTA']   = 0.9
-        krc_dict['TAURAT']  = 0.22
+    if type_params['body_name'] == 'Mars':
+        krc_params['ARC2_G0'] = 0.5
+        krc_params['DUSTA']   = 0.9
+        krc_params['TAURAT']  = 0.22
     
-    if type_dict['body_name'] in ['Venus', 'Earth', 'Mars', 'Pluto', 'Titan']:
-        krc_dict['PTOTAL'] = planet_params['PTOTAL'][planet_params['Name']==type_dict['body_name']][0]
-    elif type_dict['body_name'] in ['Jupiter', 'Saturn', 'Uranus', 'Neptune']:
-        krc_dict['PTOTAL'] = -999.
+    if type_params['body_name'] in ['Venus', 'Earth', 'Mars', 'Pluto', 'Titan']:
+        krc_params['PTOTAL'] = planet_params['PTOTAL'][planet_params['Name']==type_params['body_name']][0]
+    elif type_params['body_name'] in ['Jupiter', 'Saturn', 'Uranus', 'Neptune']:
+        krc_params['PTOTAL'] = -999.
 
-    if porb_output['SIDAY']/krc_dict['N24'] > 0.5:
+    if porb_output['SIDAY']/krc_params['N24'] > 0.5:
+        # if the default N24 produces timesteps that are longer than half an hour (ie, if siday > 48hrs)
         # factor of 3.8 means timesteps of about 16 minutes
+        # the additional term ensures N24 is a multiple of 24. 
+        # so this will produce timesteps between 16 and 30 minutes, approaching the lower bound as siday grows larger.
         factor = 3.8 
-        krc_dict['N24'] = int(porb_output['SIDAY']*factor - (porb_output['SIDAY']*factor)%24)
+        krc_params['N24'] = int(porb_output['SIDAY']*factor - (porb_output['SIDAY']*factor)%24)
     
-    return (type_dict, planet_flux, krc_dict)
+    return (type_params, planet_flux, krc_params)
 
 def write_hdf(porb_output:dict, body_params:tuple, out_dir: str):
     '''
@@ -170,15 +203,15 @@ def write_hdf(porb_output:dict, body_params:tuple, out_dir: str):
         GRAV:           float   surface gravity in m/s^2. Not defined for Minor and Comet types. Ceres is 0, Deimos is 0.003.
 
         PERIOD:         float   Sidereal rotation period in Earth days. (redundant with top-level record "rot_per")
-        DELJUL:         float   Orbit period / 360, in Earth Days. (basically redundant with top-level record "period")
-        N24:            int     number of diurnal timesteps for KRC to use. Usually 96. Examples have larger values for some Jovian moons, possibly to keep each time step under ~30 minutes of real time for bodies with longer rotation periods.
+        DELJUL:         float   Default DELJUL for KRC to use. Orbit period / 360, in Earth Days. (basically redundant with top-level record "period")
+        N24:            int     Default number of diurnal timesteps for KRC to use. Usually 96. Examples have larger values for some Jovian moons, possibly to keep each time step under ~30 minutes of real time for bodies with longer rotation periods.
             
     '''
-    type_dict, planet_flux, krc_dict = body_params
+    type_params, planet_flux, krc_params = body_params
 
     rot = porb.format_output(porb_output,verbose=False) 
 
-    # hdf_file = f'{type_dict['body_name'].upper()}.params.hdf'
+    # hdf_file = f'{type_params['body_name'].upper()}.params.hdf'
     hdf_file = f'{out_dir}/{porb_output["NAME"]}.porb.hdf'
 
     with h5py.File(hdf_file, 'w') as f:
@@ -193,19 +226,19 @@ def write_hdf(porb_output:dict, body_params:tuple, out_dir: str):
         krc_grp         = f.create_group('krc')
         planet_flux_grp = f.create_group('planet_flux')
 
-        add_str_dset(type_dict['body_type'],    type_grp, 'body_type')
-        add_num_dset(type_dict['naifid'],       type_grp, 'id', '>i4')
-        add_str_dset(type_dict['body_name'],    type_grp, 'name')
-        add_str_dset(type_dict['parent_body'],  type_grp, 'parent_body')
+        add_str_dset(type_params['body_type'],    type_grp, 'body_type')
+        add_num_dset(type_params['naifid'],       type_grp, 'id', '>i4')
+        add_str_dset(type_params['body_name'],    type_grp, 'name')
+        add_str_dset(type_params['parent_body'],  type_grp, 'parent_body')
 
-        add_num_dset(krc_dict['ARC2_G0'],       krc_grp, 'ARC2_G0', '>f')
-        add_num_dset(krc_dict['DELJUL'],        krc_grp, 'DELJUL', '>f')  # Default DELJUL, orbit period / 360
-        add_num_dset(krc_dict['DUSTA'],         krc_grp, 'DUSTA', '>f')
-        add_num_dset(krc_dict['GRAV'],          krc_grp, 'GRAV', '>f')
-        add_num_dset(krc_dict['N24'],           krc_grp, 'N24', '>i4')    # Default number of "hour" divisions of a sol.
-        add_num_dset(krc_dict['PERIOD'],        krc_grp, 'PERIOD', '>f')  # rotation period in Earth days
-        add_num_dset(krc_dict['PTOTAL'],        krc_grp, 'PTOTAL', '>f')
-        add_num_dset(krc_dict['TAURAT'],        krc_grp, 'TAURAT', '>f')
+        add_num_dset(krc_params['ARC2_G0'],       krc_grp, 'ARC2_G0', '>f')
+        add_num_dset(krc_params['DELJUL'],        krc_grp, 'DELJUL', '>f')  
+        add_num_dset(krc_params['DUSTA'],         krc_grp, 'DUSTA', '>f')
+        add_num_dset(krc_params['GRAV'],          krc_grp, 'GRAV', '>f')
+        add_num_dset(krc_params['N24'],           krc_grp, 'N24', '>i4')    
+        add_num_dset(krc_params['PERIOD'],        krc_grp, 'PERIOD', '>f')  
+        add_num_dset(krc_params['PTOTAL'],        krc_grp, 'PTOTAL', '>f')
+        add_num_dset(krc_params['TAURAT'],        krc_grp, 'TAURAT', '>f')
     
         add_num_dset(planet_flux['BT_Avg'],     planet_flux_grp, 'BT_Avg', '>f')
         add_num_dset(planet_flux['BT_Max'],     planet_flux_grp, 'BT_Max', '>f')

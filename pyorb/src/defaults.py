@@ -23,3 +23,7 @@ spin_axis = (rotation_period, phase_at_j2000, pole_ra, pole_dec, default_spin_fl
 # default epoch at which to calculate orbit
 epoch_date = datetime.datetime(2024,11,1,0,0,0)
 
+# default radius [km] when planet or satellite has no radius data in supplied kernels
+# can probably be arbitrarily small, but non-zero
+radius = 100.0
+
