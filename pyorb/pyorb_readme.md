@@ -60,17 +60,16 @@ The user can either copy the formatted string output into a KRC input file, or u
     - [ ] testing?
 
 - `porb.py`
-    - [ ] generate formatted output as cacheable HDF (per body). 
+    - [x] generate formatted output as cacheable HDF (per body). 
         - [x] for body type: "Minor"
-        - [ ] for body type: "Planet"
+        - [x] for body type: "Planet"
             - I think I can break out non-orbital params from `planetary_params3.csv`, and just have a canonical table for dealing with atmospheres and planetshine, that then populates the HDFs. Hopefully that order of precedence makes sense. 
-        - [ ] for body type: "Satellite"
-        - [ ] for body type: "Comet"
-        - [ ] for body type: other/general??
+        - [x] for body type: "Satellite"
+        - [x] for body type: "Comet"
+        - [x] for body type: other/general?? could I use negative naifids for stuff like that? 
     - [ ] user interface: specify body, get a metakernel using `kernel_mgmt.py`, options to force params to user input values. 
     - [x] function to derive spin pole from obliquity and true anomaly, set spin_axis and secondary_spin_params based on that method? (seems more user friendly to have that option)
-    - [ ] generate formatted output as entry in `planetary_params3.csv`?
-    - [ ] testing?
+    - [ ] testing
 
 - other (additional rotation info)
     - [ ] Find additional source for small-body periods and spin-poles. The standard PCK doesn't have nearly enough of those. 

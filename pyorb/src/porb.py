@@ -9,7 +9,7 @@ import spiceypy as spice
 import datetime
 import constants as const
 from kernel_mgmt import kernels_dir, get_mk
-from body_params import write_hdf
+from body_params import write_hdf, get_body_params
 import defaults 
 import install
 import h5py
@@ -416,7 +416,8 @@ if __name__ == '__main__':
         out = main(body_names[i], body_naifids[i], metakernel, epoch_date, verbose=verbose)
         print(format_output(out, verbose=True))
         # write_hdf(out, '/home/nsmith/KRC/pyorb/test')
-        write_hdf(out, install.porb_defaults_dir)
+        body_params = get_body_params(out)
+        write_hdf(out, body_params, install.porb_defaults_dir)
 
 
 #### ./krc_justitia.dv /work/nsmith/justitia/krc/tmp/260327_justitia_1 00599
