@@ -9,7 +9,9 @@ import spiceypy as spice
 import datetime
 import constants as const
 from kernel_mgmt import kernels_dir, get_mk
+from body_params import write_hdf
 import defaults 
+import install
 import h5py
 
 def get_orbital_naifid(metakernel, body_naifid, epoch_date):
@@ -229,7 +231,26 @@ def alt_get_secondary_spin_params(orb_elems, obliquity, true_anomaly_at_vernal_e
 
     return (pole_ra, pole_dec, rotation_matrix_FtoB)
 
-def get_porb_params(body_name, body_naifid, orb_elems, spin_axis):
+def get_body_type(metakernel, body_naifid):
+    '''
+    return the type of a body, given its naifid
+    '''
+    spice.furnsh(metakernel)
+
+    body_type = 'General'
+
+    if (body_naifid < 1000) and (body_naifid%100 == 99):
+        body_type = 'Planet'
+    elif (body_naifid > 10) and (body_naifid < 100000):
+        body_type = 'Satellite'
+    elif (body_naifid >= 1000000) and (body_naifid < 2000000):
+        body_type = 'Comet'
+    elif (body_naifid >= 2000000) and (body_naifid < 1000000000):
+        body_type = 'Minor'
+    
+    return body_type
+
+def get_porb_params(body_name, body_naifid, body_type, orb_elems, spin_axis):
     '''
     Determines the orbital parameters of a body based on spice kernels.
     Outputs a dictionary containing all the variables to include in the standard PORB
@@ -266,6 +287,7 @@ def get_porb_params(body_name, body_naifid, orb_elems, spin_axis):
     out['porb_version']     = const.porb_version
     out['generation_date']  = datetime.datetime.now().strftime('%Y %b %d %H:%M:%S')
     out['NAME']             = body_name
+    out['body_type']        = body_type
 
     out['PLANUM']           = body_naifid    
     if   out['PLANUM']  >= 20000000:
@@ -344,96 +366,6 @@ def format_output(out: dict, verbose=False):
 
     return out_str
 
-def add_str_dset(string, group, label):
-    '''
-    add a single-string dataset to an hdf with all the particular formatting requirements. 
-    '''
-    dt = h5py.string_dtype(encoding='ascii',length=len(string)+1)
-    dt_id = h5py.h5t.py_create(dt)
-    dt_id.set_strpad(h5py.h5t.STR_NULLTERM)
-    space = h5py.h5s.create_simple((1,))
-
-    dset_id = h5py.h5d.create(group.id, label.encode('ascii'), dt_id, space)
-    dset = h5py.Dataset(dset_id)
-    dset[0] = string.encode('ascii')
-    if label=='rot':
-        dset.attrs.create('lines',7, dtype=np.dtype('>i4'))
-    else:
-        dset.attrs.create('lines',1, dtype=np.dtype('>i4'))
-    
-    return
-
-def add_num_dset(value, group, label, d_type):
-    '''
-    add a single-value float/int dataset to an hdf with all the formatting weirdness.
-    '''
-    # ensure 32-bit float/int, big-endian. 
-    # put in a 1x1x1 array. 
-    # assign attr dv_std = 1, org=0, each 32-bit big-endian signed ints.
-    # compress w/ deflate.
-
-    # value_arr = np.array([[[value]]]).astype('>f')
-    # print(f'value_arr: {value_arr}')
-    # print(f'value_arr.shape: {value_arr.shape}')
-    dset = group.create_dataset(label, (1,1,1), dtype=d_type, chunks=True, compression='gzip', compression_opts=6)
-    dset[0,0,0] = value
-    group[f'{label}'].attrs.create('dv_std', 1, dtype=np.dtype('>i4'))
-    group[f'{label}'].attrs.create('org', 0, dtype=np.dtype('>i4'))
-
-    return
-
-def write_hdf(out: dict, out_dir: str, verbose=False):
-    '''
-    creates an output hdf 
-    '''
-    outfile = f'{out_dir}/{out["NAME"]}.porb.hdf'
-
-    dt = h5py.string_dtype(encoding='ascii',length=len(out['NAME']))
-
-    with h5py.File(outfile, 'w') as f:
-        add_str_dset(out['NAME'], f, 'body')
-        add_num_dset(out['OPERIOD'], f, 'period', '>f')
-        rot = format_output(out,verbose=False) 
-        add_str_dset(rot, f, 'rot')
-        add_num_dset(out['SIDAY'], f, 'rot_per', '>f')
-        add_num_dset(out['default_spin'], f, 'rot_per_flag', '>i4')
-
-        type_grp = f.create_group('type')
-        krc_grp = f.create_group('krc')
-        planet_flux_grp = f.create_group('planet_flux')
-
-        print(f'Warning: using body_type=Minor. Atmospheres and moons not yet implemented.')
-        body_type = 'Minor' ### hardcoding this for now. TODO: maybe fix? if we stick with this hdf format long term
-        if body_type=='Minor':
-            
-            add_str_dset(body_type, type_grp, 'body_type')
-            add_num_dset(out['PLANUM'], type_grp, 'id', '>i4')
-            add_str_dset(out['NAME'], type_grp, 'name')
-            add_str_dset('', type_grp, 'parent_body')
-
-            add_num_dset(0.0, krc_grp, 'ARC2_G0', '>f')
-            add_num_dset(out['OPERIOD']/360., krc_grp, 'DELJUL', '>f')          # Default DELJUL, orbit period / 360
-            add_num_dset(0.0, krc_grp, 'DUSTA', '>f')
-            add_num_dset(0.0, krc_grp, 'GRAV', '>f')
-            add_num_dset(96, krc_grp, 'N24', '>i4')                             # Default number of "hour" divisions of a sol.
-            add_num_dset(out['SIDAY']/24., krc_grp, 'PERIOD', '>f')             # rotation period in Earth days
-            add_num_dset(0.0, krc_grp, 'PTOTAL', '>f')
-            add_num_dset(0.0, krc_grp, 'TAUD', '>f')
-            add_num_dset(0.0, krc_grp, 'TAURAT', '>f')
-            add_num_dset(0.0, krc_grp, 'TFROST', '>f')
-
-            add_num_dset(-999, planet_flux_grp, 'BT_Avg', '>f')
-            add_num_dset(-999, planet_flux_grp, 'BT_Max', '>f')
-            add_num_dset(-999, planet_flux_grp, 'BT_Min', '>f')
-            add_num_dset(-999, planet_flux_grp, 'Dis_AU', '>f')
-            add_num_dset(-999, planet_flux_grp, 'Geom_alb', '>f')
-            add_num_dset(-999, planet_flux_grp, 'Mut_Period', '>f')
-            add_num_dset(-999, planet_flux_grp, 'Orb_Radius', '>f')
-            add_num_dset(-999, planet_flux_grp, 'Radius', '>f')
-
-    print(f'Wrote {outfile}')     
-
-    return
 
 def main(body_name, body_naifid, metakernel, epoch_date, verbose=True):
     '''
@@ -445,6 +377,7 @@ def main(body_name, body_naifid, metakernel, epoch_date, verbose=True):
     # specified body is a satellite, its sun-orbiting parent.
     orbital_naifid = get_orbital_naifid(metakernel, body_naifid, epoch_date)
     orb_elems = get_orbital_elements(metakernel, orbital_naifid, 'SUN', epoch_date)
+    body_type = get_body_type(metakernel, body_naifid)
 
     # Determine the parameters defining the specified body's spin axis.
     try:
@@ -458,7 +391,7 @@ def main(body_name, body_naifid, metakernel, epoch_date, verbose=True):
         spin_axis = defaults.spin_axis
 
     # Generate the parameters used for standard PORB output. 
-    out  = get_porb_params(body_name, body_naifid, orb_elems, spin_axis)
+    out  = get_porb_params(body_name, body_naifid, body_type, orb_elems, spin_axis)
 
     return out
 
@@ -483,7 +416,7 @@ if __name__ == '__main__':
         out = main(body_names[i], body_naifids[i], metakernel, epoch_date, verbose=verbose)
         print(format_output(out, verbose=True))
         # write_hdf(out, '/home/nsmith/KRC/pyorb/test')
-        write_hdf(out, defaults.porb_defaults_dir)
+        write_hdf(out, install.porb_defaults_dir)
 
 
 #### ./krc_justitia.dv /work/nsmith/justitia/krc/tmp/260327_justitia_1 00599
