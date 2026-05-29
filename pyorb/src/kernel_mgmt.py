@@ -17,8 +17,8 @@ import sys
 from urllib.request import urlretrieve
 from bs4 import BeautifulSoup
 
-import constants as const
-import defaults 
+from . import constants as const
+from . import defaults 
 
 # set some locations
 kernels_dir = '/home/nsmith/KRC/pyorb/kernels'

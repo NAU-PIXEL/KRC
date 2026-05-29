@@ -7,11 +7,11 @@
 import numpy as np
 import spiceypy as spice
 import datetime
-import constants as const
-from kernel_mgmt import kernels_dir, get_mk
-from body_params import write_hdf, get_body_params
-import defaults 
-import install
+from . import constants as const
+from .kernel_mgmt import kernels_dir, get_mk
+# from .body_params import write_hdf, get_body_params
+from . import defaults 
+from . import install
 import h5py
 
 def get_orbital_naifid(metakernel, body_naifid, epoch_date):
@@ -416,8 +416,8 @@ if __name__ == '__main__':
         out = main(body_names[i], body_naifids[i], metakernel, epoch_date, verbose=verbose)
         print(format_output(out, verbose=True))
         # write_hdf(out, '/home/nsmith/KRC/pyorb/test')
-        body_params = get_body_params(out, metakernel)
-        write_hdf(out, body_params, install.porb_defaults_dir)
+        # body_params = get_body_params(out, metakernel)
+        # write_hdf(out, body_params, install.porb_defaults_dir)
 
 
 #### ./krc_justitia.dv /work/nsmith/justitia/krc/tmp/260327_justitia_1 00599

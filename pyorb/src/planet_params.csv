@@ -1,4 +1,4 @@
-﻿Name,mass,PTOTAL,BT_Min,BT_Max,BT_Avg,Geom_Alb
+Name,mass,PTOTAL,BT_Min,BT_Max,BT_Avg,Geom_alb
 Mercury,3.30E+23,0,100,700,449,0.106
 Venus,4.87E+24,9.30E+09,328,328,328,0.65
 Earth,5.97E+24,1.01E+05,279,299,289,0.367

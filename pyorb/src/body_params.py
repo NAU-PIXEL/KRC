@@ -7,10 +7,10 @@ import h5py
 import spiceypy as spice
 from typing import TypedDict
 
-import defaults 
-import install
-import constants as const
-import porb
+from . import defaults 
+from . import install
+from . import constants as const
+from . import porb
 
 
 planet_params_file = install.planet_params_file
@@ -115,18 +115,18 @@ def get_body_params(porb_output:dict, metakernel:str='None') -> tuple[type_param
         parents = ['', 'Mercury', 'Venus', 'Earth', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto']
         type_params['parent_body'] = parents[parent_number]
 
-    planet_params = np.genfromtxt(planet_params_file, delimiter=',', names=True,
-                                  dtype=[np.dtypes.StringDType,float,float,float,float,float,float])
+    planet_params = np.genfromtxt(planet_params_file, delimiter=',', names=True, encoding='utf-8',
+                                  dtype=['U16',float,float,float,float,float,float])
 
     if type_params['body_type'] in ['Planet', 'Satellite']:
         planet_flux['Radius'] = defaults.radius 
         if metakernel != 'None':
-            spice.furnsh(metakernel)
-            try:
-                planet_flux['Radius'] = spice.bodvcd(type_params['naifid'], 'RADII', 1)[0] # Selecting equatorial radius
-            except spice.utils.exceptions.SpiceKERNELVARNOTFOUND:
-                # Using default Radius.
-                pass
+            with spice.KernelPool(metakernel):    
+                try:
+                    planet_flux['Radius'] = spice.bodvcd(type_params['naifid'], 'RADII', 3)[1][0] # Selecting equatorial radius
+                except spice.utils.exceptions.SpiceKERNELVARNOTFOUND:
+                    # Using default Radius.
+                    pass
 
     if type_params['body_type'] == 'Satellite':
         semimajor_axis = porb_output['SJA']
@@ -143,7 +143,7 @@ def get_body_params(porb_output:dict, metakernel:str='None') -> tuple[type_param
         planet_flux['BT_Min'] = planet_params['BT_Min'][planet_params['Name']==type_params['body_name']][0]
         planet_flux['BT_Max'] = planet_params['BT_Max'][planet_params['Name']==type_params['body_name']][0]
         planet_flux['Geom_alb'] = planet_params['Geom_alb'][planet_params['Name']==type_params['body_name']][0]
-        krc_params['GRAV'] = const.G * planet_params['mass'] / (1000*planet_flux['Radius'])**2
+        krc_params['GRAV'] = const.G * planet_params['mass'][planet_params['Name']==type_params['body_name']][0] / (1000*planet_flux['Radius'])**2
 
     if type_params['body_name'] == 'Mars':
         krc_params['ARC2_G0'] = 0.5
