@@ -108,7 +108,7 @@ cleanmods:
 #HLIB=-lhk_fmath -lhk_fgeom -lhk_futil -lhk_fchar  ##2-lhk_fNumRec # -lhk_rad
 
 
-.PHONY : call cclean clean cleanall cleanidl cleanmods
+.PHONY : call cclean clean cleanall cleanmods
 #
 # Make clean
 #
@@ -121,10 +121,7 @@ cleanbin:
 cleandocs:
 	-unalias rm; mkdir doc_build; cd doc_build; rm -f *; cd ../doc_output; rm -f *.pdf
 
-cleanidl:
-	-unalias rm; cd idl/extern; rm -f *.o ftnwrap64.so
-
-cleanall: cclean clean cleanbin cleanidl cleanmods
+cleanall: cclean clean cleanbin cleanmods
 
 #------------- system dependencies -------------
 
@@ -323,78 +320,6 @@ $(CISISLIB): $(CISISOBJS)
 cclean: 
 	- $(RM) $(CISISOBJS) $(CISISLIB)
 
-
-### IDL module make section
-# Makefile for IDL externals for KRC users
-#_Hist 2014feb28 HK Derive from Hugh's idl/externals/Makefile
-# Tried  -m32 on IDLCFLAGS IDLFFLAGS and LDFAGS; this caused errors
-# 2014may05 -lg2c >> -lgfortran
-#########################################################################
-
-# Set up some shell-level specific variables
-SHELL=/bin/bash 
-
-#  These are the GNU C compiler flags.
-IDLCC= gcc -pipe  
-IDLCFLAGS= -fPIC -Wall
-#  These are the FORTRAN compiler flags
-IDLFFLAGS= -fno-automatic -fno-second-underscore -fargument-alias -fd-lines-as-comments -fallow-argument-mismatch -fPIC 
-
-#  Special load flags, utilized in all builds, whether FORTRAN or C
-LD=gcc
-IDLLDFLAGS= -shared -fPIC # -Wall -Wl
-# whole archive only needed if refer to .a libs
-
-# Special library MACROS for .a libraries  There are none built here
-# AR=ar   # archinve.. moves .o into .a    No harm 
-# ARFLAGS=-rvs
-# RANLIB=/bin/echo  # nedded for .a lib
-
-#------------- Libraries and paths-------------------------
-# Include files paths
-INCLUDES=-I.   # in this directory
-
-# L are Library directores that always are searched in
-# l are libraries to include  -lc==libc.a  etc. 
-LIBDIRS=-L.  # -L/home/hkieffer/linux/lib  #<<< last is for NumRec
-#SYSLIBS = -lg2c -lc -lm   commented 2014may05
-SYSLIBS = -lgfortran -lc -lm  
-
-#------------------- target dependencies -------------------
-IDLOBJDIR = idl/objects
-IDLSRCDIR = idl/extern
-
-EXCW = exfuncw.c exfunctionw.c exroutinew.c
-
-# Find C and Fortran sources and make object targets
-IDLSRCW = $(shell find $(IDLSRCDIR) -type f -name "*.c")
-IDLSRCW_FILTER = $(filter-out $(addprefix $(IDLSRCDIR)/,$(EXCW)), $(IDLSRCW))
-IDLOBJSW = $(IDLSRCW_FILTER:.c=.o)
-
-IDLSRCF = $(shell find $(IDLSRCDIR) -type f -name "*.f")
-IDLOBJSF = $(IDLSRCF:.f=.o)
-
-IDLOBJSALL= $(IDLOBJSF) $(IDLOBJSW) # concatonate objects
-
-# Pattern rules to match files in source directory with object targets
-# Not needed for KRC C files 
-$(IDLOBJSW): %.o: %.c
-	$(IDLCC) $(IDLCFLAGS) $(INCLUDES) -c $< -o $@
-
-$(IDLOBJSF): %.o: %.f
-	$(FC) $(IDLFFLAGS) $(INCLUDES) -c $< -o $@
-
-%.o : $(IDLSRCDIR)/%.c 
-	$(IDLCC) $(IDLCFLAGS) $(INCLUDES) -c $<
-%.o : $(IDLSRCDIR)/%.f
-	$(FC) $(IDLFFLAGS) $(INCLUDES) -c $<
-#------------- Actions -----------------------------
-
-# machines running in 64-bit mode, IDL must be in same mode
-ftnwrap64.so:	$(IDLOBJSALL)    
-	$(LD) $(IDLLDFLAGS)   -o $(IDLSRCDIR)/$@ $(IDLOBJSALL) $(LIBDIRS) \
-	$(SYSLIBS)
-#	 -lhk_fNumRec $(SYSLIBS)
 
 ### Documentation build section
 
