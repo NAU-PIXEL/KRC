@@ -58,7 +58,6 @@ ifeq ($(UNAME), Darwin)
 	FFLAGS= -fno-automatic -fno-second-underscore -fd-lines-as-comments 		-fallow-argument-mismatch -ffixed-line-length-none  -Wall -cpp
 
 endif
-
 # Use 2nd version below to allow debugger and enable most IDBG actions
 #FFLAGS= -fno-automatic -fno-second-underscore -fd-lines-as-code  -fbounds-check # -Wall   #  -O
 
@@ -84,19 +83,21 @@ LIBDIRS=-L$(KRCLIB)              #<>D
 FMODDIR := $(KRCLIB)/module/fortran
 FMODSOURCES := $(wildcard $(FMODDIR)/*.f)
 FMODOBJS := $(subst .f,.o,$(FMODSOURCES))
+MODOBJDIR := $(OBJDIR)/module
+FFLAGS += -J$(MODOBJDIR)
+$(shell mkdir -p $(MODOBJDIR))
 
 CMOD_CC=gcc -pipe -O0  -Wall -fPIC -g -std=gnu17
 
 CMODDIR := $(KRCLIB)/module/c
 CMODSOURCES := $(wildcard $(CMODDIR)/*.c)
 CMODHEADERS := $(wildcard $(CMODDIR)/*.h)
-CMODOBJS := $(subst .c,.o,$(CMODSOURCES))
+CMODOBJS := \
+    $(patsubst $(CMODDIR)/%.c,$(OBJDIR)/%.o,$(CMODSOURCES))
 
-$(CMODOBJS): $(CMODDIR)/%.o: $(CMODDIR)/%.c $(CMODHEADERS)
+$(OBJDIR)/%.o: $(CMODDIR)/%.c $(CMODHEADERS)
+	@mkdir -p $(dir $@)
 	$(CMOD_CC) -g -c $< -o $@
-
-cleanmods:
-	$(RM) $(FMODOBJS) $(CMODOBJS)
 
 # ifneq ($(FMODDIR),)
 # 	$(shell test -d $(FMODDIR) || mkdir $(FMODDIR))
@@ -104,8 +105,8 @@ cleanmods:
 # 	FFLAGS+= $(MODOUT)
 # endif
 
-%.mod: %.f
-	$(COMPILE.f) -c $< $(FFLAGS)
+$(MODOBJDIR)/%.o: $(FMODDIR)/%.f
+	$(COMPILE.f) -c $< -o $@
 
 $(OBJDIR)/%.o: $(KRCLIB)/%.f
 	@mkdir -p $(dir $@)
@@ -126,6 +127,9 @@ cleanbin:
 
 cleandocs:
 	-unalias rm; mkdir doc_build; cd doc_build; rm -f *; cd ../doc_output; rm -f *.pdf
+
+cleanmods:
+	$(RM) -r $(OBJDIR)
 
 cleanall: cclean clean cleanbin cleanmods
 
@@ -173,8 +177,8 @@ porbmndb: $(OBJP3)
 #
 $(OBJDIR)/krc8.o:       $(KRCLIB)/krc8.f $(KRCLIB)/krcc8m.f $(KRCLIB)/latc8m.f $(KRCLIB)/dayc8m.f $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f $(KRCLIB)/hatc8m.f
 $(OBJDIR)/tseas8.o:   $(KRCLIB)/tseas8.f $(KRCLIB)/krcc8m.f $(KRCLIB)/latc8m.f          $(KRCLIB)/unic8m.f          $(KRCLIB)/hatc8m.f $(KRCLIB)/porbc8m.f
-$(OBJDIR)/tlats8.o:   $(KRCLIB)/tlats8.f $(KRCLIB)/krcc8m.f $(KRCLIB)/latc8m.f $(KRCLIB)/dayc8m.f $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f $(KRCLIB)/hatc8m.f $(KRCLIB)/porbc8m.f $(CMODOBJS) $(FMODOBJS)
-$(OBJDIR)/tday8.o:     $(KRCLIB)/tday8.f $(KRCLIB)/krcc8m.f          $(KRCLIB)/dayc8m.f $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f $(KRCLIB)/hatc8m.f $(KRCLIB)/porbc8m.f $(FMODDIR)/array_structs.mod
+$(OBJDIR)/tlats8.o:   $(KRCLIB)/tlats8.f $(KRCLIB)/krcc8m.f $(KRCLIB)/latc8m.f $(KRCLIB)/dayc8m.f $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f $(KRCLIB)/hatc8m.f $(KRCLIB)/porbc8m.f $(CMODOBJS) $(MODOBJDIR)/array_structs.o
+$(OBJDIR)/tday8.o:     $(KRCLIB)/tday8.f $(KRCLIB)/krcc8m.f          $(KRCLIB)/dayc8m.f $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f $(KRCLIB)/hatc8m.f $(KRCLIB)/porbc8m.f $(MODOBJDIR)/array_structs.o
 $(OBJDIR)/tfine8.o:   $(KRCLIB)/tfine8.f $(KRCLIB)/krcc8m.f          $(KRCLIB)/dayc8m.f $(KRCLIB)/unic8m.f          $(KRCLIB)/hatc8m.f
 $(OBJDIR)/tcard8.o:   $(KRCLIB)/tcard8.f $(KRCLIB)/krcc8m.f $(KRCLIB)/latc8m.f $(KRCLIB)/dayc8m.f $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f $(KRCLIB)/hatc8m.f
 $(OBJDIR)/tprint8.o: $(KRCLIB)/tprint8.f $(KRCLIB)/krcc8m.f $(KRCLIB)/latc8m.f $(KRCLIB)/dayc8m.f $(KRCLIB)/unic8m.f $(KRCLIB)/filc8m.f 
