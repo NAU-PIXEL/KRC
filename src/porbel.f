@@ -114,7 +114,6 @@ C open data file and skip to desired object
 C     skip past the header
  50   READ (IOD,'(a5)',END=82,ERR=83) BUF5 ! read one line of input file
       CALL UPCASE(BUF5,5)       ! change all to upper case
-D       print *,BUF5
       IF (BUF5 .NE. 'C_END') GOTO 50 ! loop until  C_END found
       print *,BUF5    
       IF (IPLAN.GT.1) THEN      ! skip past objects
@@ -131,10 +130,8 @@ C standish===========================================================
  100  EMJD=JULCEN*TCEN          ! MJD of elements returned
       READ (IOD,*,END=86,ERR=87) TITLE,FFF ! values at 2000.0
       J=1
-D       print *,'title,fff= ',TITLE,FFF 
       READ (IOD,*,END=86,ERR=87) BUF5,RRR ! rates per century
       J=2
-D       print *,'buf,rrr',buf5,rrr
 C argument of perihelion: w = wbar-Omega= [5]-[6]
 C mean anomaly: M= L-(Omega+wbar) =[4]-([6]+[5])
 C check TJ0 before adding huge L rate
@@ -173,8 +170,6 @@ C spin vector ===========================================================
       IF (TARGET(1:LIN) .NE. PNAME(1:LIN) ) GOTO 220 ! loop until match
       I=LEN_TRIM(TITLE)         ! planet
       TITLE=TITLE(1:I)//':'//PNAME(1:LIN) ! Planet:pole
-D       print *,'SP object=',target
-D       print *,'RRR=',rrr
       DPRA =RRR(1)+TCEN*RRR(2)  ! pole ra
       DPDEC=RRR(3)+TCEN*RRR(4)  ! pole dec
       XX   =RRR(6)              ! rotation: degrees per day
@@ -183,15 +178,11 @@ D       print *,'RRR=',rrr
 
 C Minor planet ===========================================================
  300  READ (IOD,*,END=84)       ! BUF5    ! skip blank line
-D       print *,'@300 ',BUF5
       J=1
       READ (IOD,*,END=86,ERR=87) TITLE ! get objects name
-D       print *,'303 ',title
       J=2
-D       print *,'TITLE=',title
       READ (IOD,*,END=86,ERR=87) EPOCH ! get epoch as Full Julian Date
       J=3
-D       print *,'EPOCH=',epoch
       DO I=1,10                 ! each numeric entry
         READ (IOD,*,END=86,ERR=87) XX8 !  read one value
         J=3+I
@@ -264,10 +255,8 @@ C Comets (spec. by q) ======================================================
       J=1
       READ (IOD,*,END=86,ERR=87) TITLE ! get objects name
       J=2
-D       print *,'TITLE=',title
       READ (IOD,*,END=86,ERR=87) IYEAR,IMON,RDAY ! get time of perihelion UTC
       J=3
-D       print *,'year,mon,day=',IYEAR,IMON,RDAY 
       IDAY = RDAY               ! get integer days (UTC noon)
       CALL YMD2J2 (IYEAR,IMON,IDAY, I) ! get julian day base J2000.0
       TJP = I + (RDAY-FLOAT(IDAY)-0.5) ! add back the fraction of a day
@@ -279,7 +268,6 @@ D       print *,'year,mon,day=',IYEAR,IMON,RDAY
       J=J+1
       READ (IOD,*,END=86,ERR=87) QP ! get perihelion in au
       J=J+1
-D       print *,'QP=',qp
       READ (IOD,*,END=86,ERR=87) DECC ! get eccentricity
       J=J+1
       DSJA = QP/(1.D0-DECC)     !  convert to semi-major axis
@@ -288,7 +276,6 @@ D       print *,'QP=',qp
       J=J+1
       READ (IOD,*,END=86,ERR=87) SIDAY ! get siderial day length
       J=J+1
-D       print *,'SIDAY',siday   
       GOTO 800
 
 C Exo-planets ======================================================
@@ -342,7 +329,6 @@ C =================================================================
       ENDIF
 
  9    CLOSE (UNIT=IOD)
-D       print *,'Exit PORBEL'
       RETURN
 C_____________________________________________________________________
 
