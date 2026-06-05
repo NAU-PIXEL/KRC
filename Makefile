@@ -286,10 +286,14 @@ AR=ar
 ARFLAGS=-rvs
 
 #  Set up source dependancies
-CISISSRC_DIR=$(KRCLIB)/cfiles/
-CISISLIB=$(CISISSRC_DIR)/libhk_cisis.a
-CISISSRCS = $(wildcard $(CISISSRC_DIR)*.c)
-CISISOBJS = $(addsuffix .o, $(basename $(CISISSRCS)))
+CISISSRC_DIR := $(KRCLIB)/cfiles/
+CISISOBJDIR := $(OBJDIR)/cisis/
+CISISLIB := $(CISISOBJDIR)/libhk_cisis.a
+CISISSRCS := $(wildcard $(CISISSRC_DIR)/*.c)
+CISISOBJS := $(patsubst \
+    $(CISISSRC_DIR)/%.c, \
+    $(CISISOBJDIR)/%.o, \
+    $(CISISSRCS))
 
 #  Define all required targets
 call: $(CISISLIB)
@@ -297,11 +301,13 @@ call: $(CISISLIB)
 # $(CMODOBJS): $(CMODDIR)/%.o: $(CMODDIR)/%.c $(CMODHEADERS)
 #   $(CMOD_CC) -g -c $< -o $@
 
-$(CISISOBJS): $(CISISSRC_DIR)%.o: $(CISISSRC_DIR)/%.c
+$(CISISOBJDIR)/%.o: $(CISISSRC_DIR)/%.c
+	@mkdir -p $(dir $@)
 	$(COMPILE.c) $(CISIS_LDFLAGS) -c $< -o $@
 
 $(CISISLIB): $(CISISOBJS)
-	$(AR) $(ARFLAGS) $(CISISLIB) $(CISISOBJS)
+	ls $(CSISISSRC_DIR)
+	$(AR) $(ARFLAGS) $@ $^
 
 #  Clean up 
 cclean: 
