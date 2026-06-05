@@ -293,10 +293,6 @@ C
             WORK(1)=WORK(NFFH+1) ! wrap last-1 to front
             WORK(2)=WORK(NFFH+2) ! wrap last to next
             WORK(NFFH+3)=WORK(3) ! wrap first to end
-D           IF (IDB2.GE. 5) THEN
-D             WRITE(IOSP,*)'TLATS: WORK FOR FARTS(1,J,2)',J
-D             WRITE(IOSP,'(10F8.2)') (WORK(I),I=1,NFFH+3)
-D           ENDIF
             CALL CUBUTERP8 (KODE,NFFH,  TENS,WORK, HARTA) ! Interpolate  Ta
           ELSE
             CALL MVD( FARTS(1,J,2), HARTA, NFFH)
@@ -605,7 +601,6 @@ C        AVEH=AMAX1(AVEH/DBLE(N2),0.) ! average atm. solar heating
         IF (TAUD.LT .01D0) THEN
           QA=QS
           QS=TAUD*SOLR/PIVAL    ! small tau limit
-D         IF (LQ1) WRITE (IOPM,*) 'QS, small tau=',QA,QS
         ENDIF 
         TAEQ4=(QS+AVEI+GHF)/(SIGSB*(2.D0-AVEE*BETA)) ! equilib  T_a^4  JGR eq 12'
         TSEQ4=BETA*TAEQ4+(AVEI+GHF+SUMH)/(SIGSB*AVEE) ! equili  T_s^4  JGR eq 11'
@@ -651,8 +646,6 @@ C       Approximate radiation time constant
           QA=ATMCP*(PRES/GRAV)*TATMJ ! heat in the atm
      &         / (BETA*SIGSB* TAEQ4) !  / IR radiation rate 
           QS=QA/(2.71828D0*86400.D0) ! 1/e about right for Mars, convert to days
-D         IF (IDB2.GE.1) WRITE(IOSP,*)'TLATS: Tatm,Beta=',TATMJ,BETA
-D    &         ,'  Relaxation time, days',QS
         ENDIF
       ELSE                      ! start with final value from previous season
         TTS(1)=TTS4(J4)

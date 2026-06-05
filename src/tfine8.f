@@ -484,8 +484,6 @@ C  upper boundary conditions.
           IF (IDB5.GE.6 .AND. (JJ.LT.(J7P+3)  .OR. ABS(JJ-J8).LT.3))
      &       WRITE(44,244) JFI,FINSJ,TSUR,ABRAD,SHEATF,POWER,FAC7,KN 
  244      FORMAT(I6,f7.4,F8.3,3f11.5,g12.5,i4)
-D         WRITE(44,245) JFI,FINSOL(JFI), (TTF(I),I=1,N1F)
-D 245     FORMAT(I6,F8.4,F8.3, 99F7.2)
 C BIN5 file: vvvvvvvvvvv store  vvvvvvvvvvvvvvvvvvvvvvv
 C  CCC is [2+depth, fine-time,latitude]
           IF (LATOK) THEN       ! store this eclipse latitude

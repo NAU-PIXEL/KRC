@@ -689,8 +689,6 @@ C     Last arg is number of good layers in TTF, must not change in time loop
      &             ,J4,JJ,KG,QA,QB
  33           FORMAT(A,I4,I5,I4,2G15.5)
               
-D 22          FORMAT(99F8.3)
-D             IF (IDB5.GE.4)WRITE(47,22)(TTJ(I),I=1,N1) ! coarse  T
               CALL MVD(TTF,TTJ,KG) ! transfer the layers
               TSUR=TTF(1) ! transfer  Tsurface
               JSW=1   ! no more  Rare eclipse action  But continue fort 46 output
@@ -751,9 +749,6 @@ C 3 possible upper boundary conditions. 1) Atm with frost 2) Just Atm 3) No atm.
             ENDIF
             Q4 = AFNOW + (ALB-AFNOW)*DEXP(-EFROST/FROEX) ! albedo for frost layer
             
-D           IF (IDB4.EQ.4 .AND. MOD(JJ,NZ).EQ.0 )  ! N48 per day
-D    &        WRITE(73,741)J5,J4,JJJ,JJ,EFROST,Q4,TFNOW  ! 2018jun22
-D 741       FORMAT(i4,i3,i3,i6,G13.5,F8.5,F11.6) ! 2018jun22
             SHEATF= FAC7*(TTJ(2)-TSUR) ! upward heatflow into the surface
 C   unbalanced flux into surface
 C FEMIT=FAC6F*SIGSB*TFNOW**4 is [[skyfac]]*Femis*sig*Tf^4
@@ -843,9 +838,6 @@ cx 171        format(4i3,50f6.0)
             JJH = NINT(IH*AH)
           ENDIF
 C NEXT 3 LINE DEBUG ONLY.  Only on last day of last season for Rare eclipse
-D         IF (JSW.GT.0 .AND. IDB5.GE.7) WRITE(46,244) 
-D    &             JJ,ATMRAD,TSUR,ABRAD,SHEATF,POWER,FAC7,KN
-D 244        FORMAT(I6,  F9.4,F8.3,2F10.4      ,F10.5,G12.5,I4)
 C
           IF (JJ.EQ.JJP) THEN   ! print "hourly" temperatures
             IF (LP3) WRITE(IOSP,260)IP,EFROST,TTJ(1)
@@ -873,7 +865,6 @@ C v355            FLOST=FLOST+ SNOW    ! record mass "lost" from system ??
             FEMIT = FEMIS*SIGSB*TFNOW**4
             FAC8=EMTIR*FEMIS
           ENDIF
-D           IF (IDB4.EQ.4) WRITE(73,741)J5,J4,JJJ,-1,SNOW,EFROST,TATMJ ! 2018jun22
           TATMJ=TATMIN           ! keep atm. no colder that saturation
         ELSE
           SNOW=0.  ! do for cleaness, not otherwise used when atm. warm
