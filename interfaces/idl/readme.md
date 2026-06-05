@@ -2,6 +2,9 @@
 This is an implementation of KRC adapted for use in IDL. 
 It adapts KRC 3.6.5, and is not generally compatible with any newer version, such as the since released KRC 4.0.0.
 
+> [!WARNING]
+> This module is not actively maintained and is provided for reference and preservation purposes only.
+
 ## Compilation
 The external Fortran and C libraries are compiled to a `ftnwrap64.so` shared object using the Make build system. As such, `make`, `gfortran`, and `gcc` are required for building this library.
 
