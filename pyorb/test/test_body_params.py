@@ -160,6 +160,10 @@ def test_get_body_params_has_good_radius_from_kernels():
     assert planet_flux['Radius'] == pytest.approx(3396.19)
 
 def test_get_body_params_N24_is_good():
+    '''
+    N24 should always be at least 96, be a multiple of 24, 
+    and produce a timestep between 0.25 and 0.5 hours when SIDAY > 48 hours.
+    '''
     # europa case
     (type_params, planet_flux, krc_params) = get_body_params(europa_porb, f'{kernelsdir}/pck00011.tpc')
     timestep = europa_porb['SIDAY']/krc_params['N24']
