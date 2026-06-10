@@ -13,6 +13,267 @@ from .kernel_mgmt import kernels_dir, get_mk
 from . import defaults 
 from . import install
 import h5py
+from typing import Self
+
+class OrbParams:
+    def __init__(self, 
+                 long_of_asc_node: float, 
+                 eccentricity: float, 
+                 inclination: float, 
+                 arg_of_peri: float, 
+                 mean_anomaly: float, 
+                 semimajor_axis: float, 
+                 epoch_JD: float, 
+                 orbit_period: float, 
+                 perihelion_date: float, 
+                 centuries_from_j2000: float):
+        self.long_of_asc_node = long_of_asc_node
+        self.eccentricity = eccentricity
+        self.inclination = inclination
+        self.arg_of_peri = arg_of_peri
+        self.mean_anomaly = mean_anomaly
+        self.semimajor_axis = semimajor_axis
+        self.epoch_JD = epoch_JD
+        self.orbit_period = orbit_period
+        self.perihelion_date = perihelion_date
+        self.centuries_from_j2000 = centuries_from_j2000
+
+    @classmethod
+    def from_elems(cls, orb_elems) -> Self:
+        '''
+        Constructs an OrbParams object from an orb_elems tuple, 
+        as would be output by get_orbital_elements().
+        '''
+        (long_of_asc_node, eccentricity, inclination, arg_of_peri, mean_anomaly, semimajor_axis, epoch_JD) = orb_elems
+        (orbit_period, perihelion_date, centuries_from_j2000) = get_secondary_orb_params(orb_elems)
+        return cls(long_of_asc_node, eccentricity, inclination, arg_of_peri, mean_anomaly, semimajor_axis, epoch_JD, orbit_period, perihelion_date, centuries_from_j2000)
+    
+    @classmethod
+    def from_elems_and_second_params(cls, orb_elems, orb_second_params) -> Self:
+        (long_of_asc_node, eccentricity, inclination, arg_of_peri, mean_anomaly, semimajor_axis, epoch_JD) = orb_elems
+        (orbit_period, perihelion_date, centuries_from_j2000) = orb_second_params
+        return cls(long_of_asc_node, eccentricity, inclination, arg_of_peri, mean_anomaly, semimajor_axis, epoch_JD, orbit_period, perihelion_date, centuries_from_j2000)
+
+class SpinParams:
+    def __init__(self,
+                 rotation_period: float, 
+                 phase_at_j2000: float, 
+                 pole_ra: float, 
+                 pole_dec: float, 
+                 default_spin_flag: int,
+                 obliquity: float, 
+                 rotation_matrix_FtoB: np.ndarray, 
+                 true_anomaly_at_vernal_equinox: float):
+        self.rotation_period = rotation_period
+        self.phase_at_j2000 = phase_at_j2000
+        self.pole_ra = pole_ra
+        self.pole_dec = pole_dec
+        self.default_spin_flag = default_spin_flag
+        self.obliquity = obliquity
+        self.rotation_matrix_FtoB = rotation_matrix_FtoB
+        self.true_anomaly_at_vernal_equinox = true_anomaly_at_vernal_equinox
+
+    @classmethod
+    def from_spin_axis(cls, spin_axis, orb_elems) -> Self:
+        '''
+        Constructs a SpinParams object from spin_axis and orb_elems tuples, 
+        as would be output by get_orbital_elements() and get_spin_axis().
+        '''
+        (rotation_period, phase_at_j2000, pole_ra, pole_dec, default_spin_flag) = spin_axis 
+        (obliquity, rotation_matrix_FtoB, true_anomaly_at_vernal_equinox) = get_secondary_spin_params(orb_elems, spin_axis) 
+        return cls(rotation_period, phase_at_j2000, pole_ra, pole_dec, default_spin_flag, obliquity, rotation_matrix_FtoB, true_anomaly_at_vernal_equinox)
+    
+    def set_obliq_and_true_anomaly(self, obliquity:float, true_anomaly_at_vernal_equinox:float, orb_elems) -> Self:
+        '''
+        updates the obliquity and true anomaly at vernal equinox, accounting for
+        the impacts on pole orientation and rotation matrix.
+        '''
+        self.obliquity = obliquity
+        self.true_anomaly_at_vernal_equinox = true_anomaly_at_vernal_equinox
+        self.pole_ra, self.pole_dec, self.rotation_matrix_FtoB = alt_get_secondary_spin_params(orb_elems, obliquity, true_anomaly_at_vernal_equinox)
+        return self
+
+class PorbParams:
+    def __init__(self,
+                 default_spin: int,
+                 porb_version: str,
+                 generation_date: str,
+                 NAME: str,
+                 body_type: str,
+                 PLANUM: int,
+                 TC: float,
+                 RODE: float,
+                 CLIN: float,
+                 ARGP: float,
+                 XECC: float,
+                 SJA: float,
+                 EOBL: float,
+                 SFLAG: int,
+                 ZBAA: float,
+                 ZBAB: float,
+                 WDOT: float,
+                 WO: float,
+                 OPERIOD: float,
+                 TJP: float,
+                 SIDAY: float,
+                 spar17: int,
+                 TAV: float,
+                 BLIP: float,
+                 PBUG: int,
+                 spar21: int,
+                 BFRM: np.ndarray,
+                 ):  
+        self.default_spin     = default_spin
+        self.porb_version     = porb_version
+        self.generation_date  = generation_date
+        self.NAME             = NAME
+        self.body_type        = body_type
+
+        self.PLANUM           = PLANUM
+        self.TC               = TC
+        self.RODE             = RODE
+        self.CLIN             = CLIN
+        self.ARGP             = ARGP
+
+        self.XECC             = XECC
+        self.SJA              = SJA 
+        self.EOBL             = EOBL
+        self.SFLAG            = SFLAG 
+        self.ZBAA             = ZBAA
+
+        self.ZBAB             = ZBAB
+        self.WDOT             = WDOT
+        self.WO               = WO
+        self.OPERIOD          = OPERIOD
+        self.TJP              = TJP
+
+        self.SIDAY            = SIDAY
+        self.spar17           = spar17
+        self.TAV              = TAV
+        self.BLIP             = BLIP
+        self.PBUG             = PBUG
+
+        self.spar21           = spar21
+        self.BFRM             = BFRM
+
+    @classmethod
+    def from_orb_and_spin_params(cls,
+                                 body_name: str, 
+                                 body_type: str, 
+                                 body_naifid: int, 
+                                 orb: OrbParams, 
+                                 spin: SpinParams) -> Self:
+        '''
+        Constructs a PorbParams object from OrbParams and SpinParams objects.
+        '''
+    
+        default_spin     = spin.default_spin_flag
+        porb_version     = const.porb_version
+        generation_date  = datetime.datetime.now().strftime('%Y %b %d %H:%M:%S')
+        NAME             = body_name
+        body_type        = body_type
+
+        PLANUM           = body_naifid    
+        if   PLANUM  >= 20000000:
+             PLANUM  -= 20000000
+        elif PLANUM  >=  2000000:
+             PLANUM  -=  2000000
+
+        TC               = orb.centuries_from_j2000
+        RODE             = orb.long_of_asc_node
+        CLIN             = orb.inclination
+        ARGP             = orb.arg_of_peri
+
+        XECC             = orb.eccentricity
+        SJA              = orb.semimajor_axis
+        EOBL             = const.earth_obliquity
+        SFLAG            = const.sflag
+        ZBAA             = spin.pole_dec
+
+        ZBAB             = spin.pole_ra
+        WDOT             = (360.*24)/spin.rotation_period
+        WO               = spin.phase_at_j2000
+        OPERIOD          = orb.orbit_period
+        TJP              = orb.perihelion_date
+
+        SIDAY            = spin.rotation_period
+        spar17           = const.spar17
+        TAV              = spin.true_anomaly_at_vernal_equinox
+        BLIP             = spin.obliquity
+        PBUG             = const.pbug
+
+        spar21           = const.spar21
+        BFRM             = spin.rotation_matrix_FtoB
+
+        return cls(default_spin, porb_version, generation_date, NAME, body_type, PLANUM, TC, RODE, CLIN, ARGP, XECC, SJA, EOBL, SFLAG, ZBAA, ZBAB, WDOT, WO, OPERIOD, TJP, SIDAY, spar17, TAV, BLIP, PBUG, spar21, BFRM)
+
+    def __str__(self) -> str:
+        '''
+        returns Fortran-style PORB output as a multiline string.  
+        '''
+        flat_bfrm = self.BFRM.T.flatten()
+
+        out_str = ''
+        out_str += f"PORB:{self.porb_version} {self.generation_date} IPLAN,TC= {self.PLANUM:5.4g} {self.TC:7.5g} {self.NAME}:{self.NAME}\n"
+        out_str += f" {self.PLANUM:10.7g}     {self.TC:10.7g}     {self.RODE:10.7g}      {self.CLIN:.7E} {self.ARGP:10.7f}\n"
+        out_str += f"  {self.XECC:.7E} {self.SJA:10.7g}     {self.EOBL:10.7g}     {self.SFLAG:10.7g}     {self.ZBAA:10.7g}\n"
+        out_str += f" {self.ZBAB:10.7g}     {self.WDOT:10.7g}     {self.WO:10.7g}     {self.OPERIOD:10.7g}     {self.TJP:10.7g}\n"
+        out_str += f" {self.SIDAY:10.7g}     {self.spar17:10.7g}     {self.TAV:10.7g}     {self.BLIP:10.7g}     {self.PBUG:10.7g}\n"
+        out_str += f" {self.spar21:10.7g}     {flat_bfrm[0]:10.7f}     {flat_bfrm[1]:10.7f}     {flat_bfrm[2]:10.7f}     {flat_bfrm[3]:10.7f}\n"
+        out_str += f" {flat_bfrm[4]:10.7f}     {flat_bfrm[5]:10.7f}     {flat_bfrm[6]:10.7f}     {flat_bfrm[7]:10.7f}     {flat_bfrm[8]:10.7f}\n"
+
+        return out_str
+    
+    def verbose_output(self) -> str:
+        '''
+        returns Fortran-style PORB output as a multiline string, including variable labels. 
+        '''
+
+        flat_bfrm = self.BFRM.T.flatten()
+
+        out_str = ''
+        out_str += f"<--VERSION---> <--generation date->           IPLAN      TC orbit:pole\n"
+        out_str += f"PORB:{self.porb_version} {self.generation_date} IPLAN,TC= {self.PLANUM:5.4g} {self.TC:7.5g} {self.NAME}:{self.NAME}\n"
+        out_str += f"     PLANUM             Tc           RODE           CLIN           ARGP\n"
+        out_str += f" {self.PLANUM:10.7g}     {self.TC:10.7g}     {self.RODE:10.7g}      {self.CLIN:.7E} {self.ARGP:10.7f}\n"
+        out_str += f"       XECC            SJA           EOBL          SFLAG           ZBAA\n"
+        out_str += f"  {self.XECC:.7E} {self.SJA:10.7g}     {self.EOBL:10.7g}     {self.SFLAG:10.7g}     {self.ZBAA:10.7g}\n"
+        out_str += f"       ZBAB           WDOT             WO        OPERIOD            TJP\n"
+        out_str += f" {self.ZBAB:10.7g}     {self.WDOT:10.7g}     {self.WO:10.7g}     {self.OPERIOD:10.7g}     {self.TJP:10.7g}\n"
+        out_str += f"      SIDAY          spare            TAV           BLIP           PBUG\n"
+        out_str += f" {self.SIDAY:10.7g}     {self.spar17:10.7g}     {self.TAV:10.7g}     {self.BLIP:10.7g}     {self.PBUG:10.7g}\n"
+        out_str += f"      spare         BFRM 1              2              3              4\n"
+        out_str += f" {self.spar21:10.7g}     {flat_bfrm[0]:10.7f}     {flat_bfrm[1]:10.7f}     {flat_bfrm[2]:10.7f}     {flat_bfrm[3]:10.7f}\n"
+        out_str += f"          5              6              7              8         BFRM 9\n"
+        out_str += f" {flat_bfrm[4]:10.7f}     {flat_bfrm[5]:10.7f}     {flat_bfrm[6]:10.7f}     {flat_bfrm[7]:10.7f}     {flat_bfrm[8]:10.7f}\n"
+
+        return out_str
+    
+    @classmethod
+    def from_str(cls, porb_str: str) -> Self:
+        '''
+        Constructs a PorbParams object from a Fortran-style PORB text table.
+        '''
+        flat_bfrm = np.zeros(9)
+
+        lines = porb_str.split('\n')
+        porb_version = lines[0].split(' ')[0][5:]
+        generation_date = lines[0].split(' ')[1]
+        NAME = lines[0].split(':')[-1]
+        
+        PLANUM, TC, RODE, CLIN, ARGP = lines[1].split(' ')
+        XECC, SJA, EOBL, SFLAG, ZBAA = lines[2].split(' ')
+        ZBAB, WDOT, WO, OPERIOD, TJP = lines[3].split(' ')
+        SIDAY, spar17, TAV, BLIP, PBUG = lines[4].split(' ')
+        spar21, flat_bfrm[0], flat_bfrm[1], flat_bfrm[2], flat_bfrm[3] = lines[5].split(' ')
+        flat_bfrm[4], flat_bfrm[5], flat_bfrm[6], flat_bfrm[7], flat_bfrm[8] = lines[6].split(' ')
+
+        BFRM = flat_bfrm.reshape(3,3).T
+
+        return cls(-1, porb_version, generation_date, NAME, 'unknown', PLANUM, TC, RODE, CLIN, ARGP, XECC, SJA, EOBL, SFLAG, ZBAA, ZBAB, WDOT, WO, OPERIOD, TJP, SIDAY, spar17, TAV, BLIP, PBUG, spar21, BFRM)
+
+
+
 
 def get_orbital_naifid(metakernel, body_naifid, epoch_date):
     '''
@@ -231,12 +492,10 @@ def alt_get_secondary_spin_params(orb_elems, obliquity, true_anomaly_at_vernal_e
 
     return (pole_ra, pole_dec, rotation_matrix_FtoB)
 
-def get_body_type(metakernel, body_naifid):
+def get_body_type(body_naifid):
     '''
     return the type of a body, given its naifid
     '''
-    spice.furnsh(metakernel)
-
     body_type = 'General'
 
     if (body_naifid < 1000) and (body_naifid%100 == 99):
@@ -250,7 +509,7 @@ def get_body_type(metakernel, body_naifid):
     
     return body_type
 
-def get_porb_params(body_name, body_naifid, body_type, orb_elems, spin_axis):
+def old_get_porb_params(body_name, body_naifid, body_type, orb_elems, spin_axis):
     '''
     Determines the orbital parameters of a body based on spice kernels.
     Outputs a dictionary containing all the variables to include in the standard PORB
@@ -332,7 +591,7 @@ def get_porb_params(body_name, body_naifid, body_type, orb_elems, spin_axis):
     
     return out
 
-def format_output(out: dict, verbose=False):
+def old_format_output(out: dict, verbose=False):
     '''
     Formats variables stored in out into a the Fortran style PORB output.
     Outputs a multiline string. 
@@ -367,17 +626,32 @@ def format_output(out: dict, verbose=False):
     return out_str
 
 
-def main(body_name, body_naifid, metakernel, epoch_date, verbose=True):
+def get_porb_params(
+        body_name: str, 
+        body_naifid: int, 
+        metakernel: str, 
+        epoch_date: datetime.datetime = defaults.epoch_date, 
+        verbose: bool = False):
     '''
     Generate the standard PORB output for a specified body, at some epoch, using 
-    SPICE kernels. Return the formatted output using PORB's standard FORTRAN style formatting.
+    SPICE kernels. Return a PorbParams object containing the standard PORB parameters.
+
+    args:
+    body_name: 
+    body_naifid: 
+    metakernel:
+
+    epoch_date:  epoch at which to calculate orbital params (must be covered by available kernels)
+
+    returns:
+    out:        PorbParams object
     '''
 
     # Determine orbital elements for either the specified body, or, if the 
     # specified body is a satellite, its sun-orbiting parent.
     orbital_naifid = get_orbital_naifid(metakernel, body_naifid, epoch_date)
     orb_elems = get_orbital_elements(metakernel, orbital_naifid, 'SUN', epoch_date)
-    body_type = get_body_type(metakernel, body_naifid)
+    body_type = get_body_type(body_naifid)
 
     # Determine the parameters defining the specified body's spin axis.
     try:
@@ -391,7 +665,11 @@ def main(body_name, body_naifid, metakernel, epoch_date, verbose=True):
         spin_axis = defaults.spin_axis
 
     # Generate the parameters used for standard PORB output. 
-    out  = get_porb_params(body_name, body_naifid, body_type, orb_elems, spin_axis)
+    # out  = get_porb_params(body_name, body_naifid, body_type, orb_elems, spin_axis)
+
+    orb  = OrbParams.from_elems(orb_elems)
+    spin = SpinParams.from_spin_axis(spin_axis)
+    out  = PorbParams.from_orb_and_spin_params(body_name, body_type, body_naifid, orb, spin)
 
     return out
 
@@ -406,18 +684,49 @@ if __name__ == '__main__':
     body_naifids    = [20000269]
 
     # epoch at which to calculate orbital params (must be covered by available kernels)
-    epoch_date = defaults.epoch_date
+    # epoch_date = defaults.epoch_date
     # metakernel = f'{kernels_dir}/mk/krc_default.tm'
     
     for i in range(len(body_names)):
         print()
         # metakernel = get_mk(f'{body_names[i]}')
         metakernel = f'{kernels_dir}/mk/JUSTITIA.tm'
-        out = main(body_names[i], body_naifids[i], metakernel, epoch_date, verbose=verbose)
-        print(format_output(out, verbose=True))
+        porb_params = get_porb_params(body_names[i], body_naifids[i], metakernel)
+        if verbose:
+            print(porb_params.verbose_output())
+        else:
+            print(str(porb_params))
+        
+        # print(format_output(out, verbose=True))
         # write_hdf(out, '/home/nsmith/KRC/pyorb/test')
         # body_params = get_body_params(out, metakernel)
         # write_hdf(out, body_params, install.porb_defaults_dir)
 
 
 #### ./krc_justitia.dv /work/nsmith/justitia/krc/tmp/260327_justitia_1 00599
+
+# function to take body name/ number as a string, get the naifid.
+
+# function to take... I guess the naifid? and see if there's a cached metakernel for it.
+
+# high-level function to take a body name, get the metakernel and naifid, (optionally updating kernels)
+# and manage any kwargs to modify default values, then return a porb_params object.
+
+# high-level function (in another file) to attach other params for writing
+# output to a defaults hdf.
+
+# high-level function to run the above function for a standard list of bodies? or maybe
+# every body already in the cache? while forcing a kernel update.
+
+# high-level function to read the defaults file, extract porb_params object and other objects.
+
+# values in those objects can then be modified. 
+# (not recommended to modify from cached defaults directly, as linked values will not
+# update automatically, eg semi-major axis & operiod.)
+# preferred behavior is to construct a fresh instance of the object directly?
+
+# objects can then:
+    # be passed as inputs to pykrc
+    # be used by a python based fortran krc interface (?)
+
+# the defaults HDFs can be read by the existing dv interface to work with fortran krc

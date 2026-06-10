@@ -54,6 +54,8 @@ The user can either copy the formatted string output into a KRC input file, or u
 # To-do
 - `kernel_mgmt.py`
     - [x] `update_small_body_kernel()`: change from exit-codes to raising exceptions for invalid responses (i.e., no spk generated)
+    - [ ] function to take body name/ number as a string, get the naifid.
+    - [ ] function to take... I guess the naifid? and see if there's a cached metakernel for it.
     - [ ] user interface: decide what input is needed (target string, is_smallbody flag?), generate a metakernel for that input. This does not independently assess if updates are needed.
     - [ ] Some logic to only call `update_default_kernels()` once a day max, and just pull from the default metakernel otherwise when building a per-body mk? (check the mod date on the default mk? read the comment line that has the date in it?)
     - [ ] function to force-update all kernels, or a list of kernels?
@@ -69,7 +71,21 @@ The user can either copy the formatted string output into a KRC input file, or u
         - [x] for body type: other/general?? could I use negative naifids for stuff like that? 
     - [ ] user interface: specify body, get a metakernel using `kernel_mgmt.py`, options to force params to user input values. 
     - [x] function to derive spin pole from obliquity and true anomaly, set spin_axis and secondary_spin_params based on that method? (seems more user friendly to have that option)
+    - [ ] high-level function to take a body name, get the metakernel and naifid, (optionally updating kernels) and manage any kwargs to modify default values, then return a porb_params object.
     - [ ] testing
+
+- `body_params.py`
+    - [ ] high-level function to attach other params for writing output to a defaults hdf.
+    - [ ] high-level function to run the above function for a standard list of bodies? or maybe every body already in the cache? while forcing a kernel update. 
+    - [ ] high-level function to read the defaults file, extract porb_params object and other objects.
+        values in those objects can then be modified. 
+            (not recommended to modify from cached defaults directly, as linked values will not update automatically, eg semi-major axis & operiod.) preferred behavior is to construct a fresh instance of the object directly?
+
+        objects can then:
+            1. be passed as inputs to pykrc
+            2. be used by a python based fortran krc interface (?)
+
+        the defaults HDFs can be read by the existing dv interface to work with fortran krc
 
 - other (additional rotation info)
     - [ ] Find additional source for small-body periods and spin-poles. The standard PCK doesn't have nearly enough of those. 
@@ -218,3 +234,22 @@ The user can either copy the formatted string output into a KRC input file, or u
     populates a struct with default values
     These values can be substituted with whatever kwargs are supplied.
     returns the struct.
+
+### `exo_porb()`
+    Generate an exoplanet PORB structure for use with the davinci porb function
+    This is formatted in the exoplanet style for porb and permits the following values described below
+
+    name = body name (Default="None") will be truncated to 24 characters
+    epoch = Time of periastron as full Julian date ; 2000 Jan 1 noon UTC= 2451545.0
+    Vismag = Visual Magnitude of host star (Default = 0.)
+    DisEarth = Distance from Earth to host star, in light years (Default = 0.)
+    a = Semi-Major Axis, in AU (Default=1)
+    period = siderial orbital period, in days (Default=365.256)
+    rot_per = siderial rotation period, in hours (Default=23.9345)
+    e = Eccentricity (Default=0)
+    Obliq = Obliquity of planet pole, in degree (Default=0)
+    Lsperi = Season (Ls) at periastron in degree (Default=0)
+
+    Populates a struct with default values.
+    These values can be substituted with whatever kwargs are supplied.
+    Returns the struct.
