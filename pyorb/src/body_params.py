@@ -76,14 +76,14 @@ class krc_params_dict(TypedDict):
     DELJUL      :   float
     N24         :   int
 
-def get_body_params(porb_output:dict, metakernel:str='None') -> tuple[type_params_dict, planet_flux_dict, krc_params_dict]:
+def get_body_params(porb_output:porb.PorbParams, metakernel:str='None') -> tuple[type_params_dict, planet_flux_dict, krc_params_dict]:
     '''
     derive parameters (or extract them from the planetary parameters csv file) for writing a porb hdf.
     '''
     type_params = {
-        'body_name'     :   porb_output['NAME'],
-        'body_type'     :   porb_output['body_type'],
-        'naifid'        :   porb_output['PLANUM'],
+        'body_name'     :   porb_output.NAME,
+        'body_type'     :   porb_output.body_type,
+        'naifid'        :   porb_output.PLANUM,
         'parent_body'   :   0
     }
 
@@ -104,8 +104,8 @@ def get_body_params(porb_output:dict, metakernel:str='None') -> tuple[type_param
         'TAURAT'        : -999.,
         'PTOTAL'        : 0.,
         'GRAV'          : 0.,
-        'PERIOD'        : porb_output['SIDAY']/24.,
-        'DELJUL'        : porb_output['OPERIOD']/360.,
+        'PERIOD'        : porb_output.SIDAY/24.,
+        'DELJUL'        : porb_output.OPERIOD/360.,
         'N24'           : 96
     }
 
@@ -129,7 +129,7 @@ def get_body_params(porb_output:dict, metakernel:str='None') -> tuple[type_param
                     pass
 
     if type_params['body_type'] == 'Satellite':
-        semimajor_axis = porb_output['SJA']
+        semimajor_axis = porb_output.SJA
         if type_params['body_name'] in planet_params['Name']:
             satellite_mass = planet_params['mass'][planet_params['Name']==type_params['body_name']]
         else: satellite_mass = 0.
@@ -138,7 +138,7 @@ def get_body_params(porb_output:dict, metakernel:str='None') -> tuple[type_param
         planet_flux['Orb_Radius'] = semimajor_axis
     
     if type_params['body_type'] == 'Planet':
-        planet_flux['Dis_AU'] = porb_output['SJA']
+        planet_flux['Dis_AU'] = porb_output.SJA
         planet_flux['BT_Avg'] = planet_params['BT_Avg'][planet_params['Name']==type_params['body_name']][0]
         planet_flux['BT_Min'] = planet_params['BT_Min'][planet_params['Name']==type_params['body_name']][0]
         planet_flux['BT_Max'] = planet_params['BT_Max'][planet_params['Name']==type_params['body_name']][0]
@@ -155,17 +155,17 @@ def get_body_params(porb_output:dict, metakernel:str='None') -> tuple[type_param
     elif type_params['body_name'] in ['Jupiter', 'Saturn', 'Uranus', 'Neptune']:
         krc_params['PTOTAL'] = -999.
 
-    if porb_output['SIDAY']/krc_params['N24'] > 0.5:
+    if porb_output.SIDAY/krc_params['N24'] > 0.5:
         # if the default N24 produces timesteps that are longer than half an hour (ie, if siday > 48hrs)
         # factor of 3.8 means timesteps of about 16 minutes
         # the additional term ensures N24 is a multiple of 24. 
         # so this will produce timesteps between 16 and 30 minutes, approaching the lower bound as siday grows larger.
         factor = 3.8 
-        krc_params['N24'] = int(porb_output['SIDAY']*factor - (porb_output['SIDAY']*factor)%24)
+        krc_params['N24'] = int(porb_output.SIDAY*factor - (porb_output.SIDAY*factor)%24)
     
     return (type_params, planet_flux, krc_params)
 
-def write_hdf(porb_output:dict, body_params:tuple, out_dir: str):
+def write_hdf(porb_output:porb.PorbParams, body_params:tuple, out_dir: str):
     '''
     write a cacheable hdf for the specified body, containing PORB output, plus other 
     parameters used by various other davinci interface systems.
@@ -209,18 +209,18 @@ def write_hdf(porb_output:dict, body_params:tuple, out_dir: str):
     '''
     type_params, planet_flux, krc_params = body_params
 
-    rot = porb.format_output(porb_output,verbose=False) 
+    rot = str(porb_output) 
 
     # hdf_file = f'{type_params['body_name'].upper()}.params.hdf'
-    hdf_file = f'{out_dir}/{porb_output["NAME"]}.porb.hdf'
+    hdf_file = f'{out_dir}/{porb_output.NAME}.porb.hdf'
 
     with h5py.File(hdf_file, 'w') as f:
 
-        add_str_dset(porb_output['NAME'],           f, 'body')
-        add_num_dset(porb_output['OPERIOD'],        f, 'period', '>f')
+        add_str_dset(porb_output.NAME,           f, 'body')
+        add_num_dset(porb_output.OPERIOD,        f, 'period', '>f')
         add_str_dset(rot,                           f, 'rot')
-        add_num_dset(porb_output['SIDAY'],          f, 'rot_per', '>f')
-        add_num_dset(porb_output['default_spin'],   f, 'rot_per_flag', '>i4')
+        add_num_dset(porb_output.SIDAY,          f, 'rot_per', '>f')
+        add_num_dset(porb_output.default_spin,   f, 'rot_per_flag', '>i4')
 
         type_grp        = f.create_group('type')
         krc_grp         = f.create_group('krc')
@@ -250,3 +250,4 @@ def write_hdf(porb_output:dict, body_params:tuple, out_dir: str):
         add_num_dset(planet_flux['Radius'],     planet_flux_grp, 'Radius', '>f')
 
     return hdf_file
+
