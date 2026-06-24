@@ -54,8 +54,10 @@ The user can either copy the formatted string output into a KRC input file, or u
 # To-do
 - `kernel_mgmt.py`
     - [x] `update_small_body_kernel()`: change from exit-codes to raising exceptions for invalid responses (i.e., no spk generated)
-    - [ ] function to take body name/ number as a string, get the naifid.
-    - [ ] function to take... I guess the naifid? and see if there's a cached metakernel for it.
+    - [x] function to take body name/ number as a string, get the naifid. 
+            https://naif.jpl.nasa.gov/pub/naif/misc/toolkit_docs_N0067/C/cspice/bods2c_c.html
+            if that fails, use the small body database API?
+    - [x] function to take... I guess the naifid? and see if there's a cached metakernel for it.
     - [ ] user interface: decide what input is needed (target string, is_smallbody flag?), generate a metakernel for that input. This does not independently assess if updates are needed.
     - [ ] Some logic to only call `update_default_kernels()` once a day max, and just pull from the default metakernel otherwise when building a per-body mk? (check the mod date on the default mk? read the comment line that has the date in it?)
     - [ ] function to force-update all kernels, or a list of kernels?
