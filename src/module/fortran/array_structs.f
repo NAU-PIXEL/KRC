@@ -13,22 +13,15 @@
         END TYPE INT_ARRAY
 
         INTERFACE 
-          FUNCTION f_flux_init(filename) RESULT (status) BIND(C)
-            USE iso_c_binding
-            LOGICAL(C_BOOL) :: status
-            CHARACTER(C_CHAR), INTENT(in) :: filename
-          END FUNCTION f_flux_init
-          FUNCTION f_get_jd_lt_vis(jd, lt) RESULT (flux) BIND(C)
-            USE iso_c_binding
-            ! the way we use the "jd" is actually as a season index, 
-            ! because everywhere else day and L_s are floats, 
-            ! and trying to translate them into an index doesn't make sense
-            INTEGER(C_INT), INTENT(in), VALUE :: jd
-            REAL(C_DOUBLE), INTENT(in), VALUE :: lt
-            REAL(C_DOUBLE) :: flux
-          END FUNCTION f_get_jd_lt_vis
+! CALL f_flux_init(FFLUX, SUCCESS, LASOLTAB, LSOLDIFTAB, LPLANVTAB, LATMRADTAB, LPLANHTAB, LRAWTAB)
 
-          FUNCTION f_get_jd_lt_ir(jd, lt) RESULT (flux) BIND(C)
+        SUBROUTINE f_flux_init(filename, success, lasol, lsoldif, lplanv, latmrad, lplanh, lraw) BIND(C)
+            USE iso_c_binding
+            LOGICAL(C_BOOL), INTENT(out) :: success, lasol, lsoldif, lplanv, latmrad, lplanh, lraw
+            CHARACTER(C_CHAR), INTENT(in) :: filename
+          END SUBROUTINE f_flux_init
+
+          FUNCTION f_get_jd_lt_asol(jd, lt) RESULT (flux) BIND(C)
             USE iso_c_binding
             ! the way we use the "jd" is actually as a season index, 
             ! because everywhere else day and L_s are floats, 
@@ -36,6 +29,56 @@
             INTEGER(C_INT), INTENT(in), VALUE :: jd
             REAL(C_DOUBLE), INTENT(in), VALUE :: lt
             REAL(C_DOUBLE) :: flux
-          END FUNCTION f_get_jd_lt_ir
+          END FUNCTION f_get_jd_lt_asol
+
+          FUNCTION f_get_jd_lt_soldif(jd, lt) RESULT (flux) BIND(C)
+            USE iso_c_binding
+            ! the way we use the "jd" is actually as a season index, 
+            ! because everywhere else day and L_s are floats, 
+            ! and trying to translate them into an index doesn't make sense
+            INTEGER(C_INT), INTENT(in), VALUE :: jd
+            REAL(C_DOUBLE), INTENT(in), VALUE :: lt
+            REAL(C_DOUBLE) :: flux
+          END FUNCTION f_get_jd_lt_soldif
+
+          FUNCTION f_get_jd_lt_planv(jd, lt) RESULT (flux) BIND(C)
+            USE iso_c_binding
+            ! the way we use the "jd" is actually as a season index, 
+            ! because everywhere else day and L_s are floats, 
+            ! and trying to translate them into an index doesn't make sense
+            INTEGER(C_INT), INTENT(in), VALUE :: jd
+            REAL(C_DOUBLE), INTENT(in), VALUE :: lt
+            REAL(C_DOUBLE) :: flux
+          END FUNCTION f_get_jd_lt_planv
+          
+          FUNCTION f_get_jd_lt_atmrad(jd, lt) RESULT (flux) BIND(C)
+            USE iso_c_binding
+            ! the way we use the "jd" is actually as a season index, 
+            ! because everywhere else day and L_s are floats, 
+            ! and trying to translate them into an index doesn't make sense
+            INTEGER(C_INT), INTENT(in), VALUE :: jd
+            REAL(C_DOUBLE), INTENT(in), VALUE :: lt
+            REAL(C_DOUBLE) :: flux
+          END FUNCTION f_get_jd_lt_atmrad
+          
+          FUNCTION f_get_jd_lt_planh(jd, lt) RESULT (flux) BIND(C)
+            USE iso_c_binding
+            ! the way we use the "jd" is actually as a season index, 
+            ! because everywhere else day and L_s are floats, 
+            ! and trying to translate them into an index doesn't make sense
+            INTEGER(C_INT), INTENT(in), VALUE :: jd
+            REAL(C_DOUBLE), INTENT(in), VALUE :: lt
+            REAL(C_DOUBLE) :: flux
+          END FUNCTION f_get_jd_lt_planh
+          
+          FUNCTION f_get_jd_lt_raw(jd, lt) RESULT (flux) BIND(C)
+            USE iso_c_binding
+            ! the way we use the "jd" is actually as a season index, 
+            ! because everywhere else day and L_s are floats, 
+            ! and trying to translate them into an index doesn't make sense
+            INTEGER(C_INT), INTENT(in), VALUE :: jd
+            REAL(C_DOUBLE), INTENT(in), VALUE :: lt
+            REAL(C_DOUBLE) :: flux
+          END FUNCTION f_get_jd_lt_raw
           END INTERFACE
       END MODULE array_structs

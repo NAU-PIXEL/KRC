@@ -14,6 +14,4 @@ bool read_delimiter(FILE *fp, char delimiter);
 
 bool read_double_row(FILE *fp, double *row, int n);
 
-JD_TABLE_FORMAT read_table_format(FILE *fp);
-
 #endif

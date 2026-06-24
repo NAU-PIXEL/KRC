@@ -55,25 +55,5 @@ bool read_double_row(FILE *fp, double *row, int n) {
   return read_delimiter(fp, '\n');
 }
 
-JD_TABLE_FORMAT read_table_format(FILE *fp) {
-  JD_TABLE_FORMAT format = JD_TABLE_UNKNOWN;
-  // scan to end of line into string buffer
-  char buffer[64];
-  if (fgets(buffer, 64, fp) == NULL) {
-    fprintf(stderr, "Error: Could not read table format from file.\n");
-    exit(1);
-  }
-  // null terminate string to remove '\n'
-  else {
-    buffer[strlen(buffer) - 1] = '\0';
-  }
-
-  for (int i = 0; i < JD_TABLE_FORMAT_COUNTS; i++) {
-    if (strcmp(buffer, JD_TABLE_FORMAT_STRINGS[i]) == 0) {
-      format = (JD_TABLE_FORMAT)JD_TABLE_UNKNOWN + 1 + i;
-    }
-  }
-  return format;
-}
 
 bool verify_table(flux_table *table) { return true; }

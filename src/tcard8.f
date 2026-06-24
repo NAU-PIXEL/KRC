@@ -83,7 +83,7 @@ C      INTEGER*4 MEMI(9)         ! tfar arg4
 
       INTEGER*4 I,IG,IIIN,ILEN,IREAD,JERR,KEEP,NEW,KDB
 
-      LOGICAL SUCCESS
+      LOGICAL*1 SUCCESS
       
       DATA TITF /'ALBEDO','EMISS','INERTIA','COND2','DENS2','PERIOD'     !6
      & ,'SPECHEAT','DENSITY','CABR','AMW','ABRPHA','PTOTAL','FANON'      !7
@@ -103,14 +103,11 @@ C      INTEGER*4 MEMI(9)         ! tfar arg4
      & ,'LPGLOB','LVFA','LVFT','LKofT','LPORB','LKEY','LSC','LZONE'
      & ,'LOCAL','LD16','LPTAVE','Prt.78','Prt.79','L_ONE'/
 
-D     IF (IDB2.GE.5) WRITE(IOSP,*) 'TCARD-A',IQ
 C
       IRET=1                    ! normal return is a new case
       IF (J5.GT.1 .AND. J5.EQ.IDOWN) IRET=3 ! continue after changes
       KOUNT=0                   ! Number of change cards read
       JERR=0                    ! in case of IO error
-D       WRITE(IOPM,*)'TCARD entry  IQ,J5=',IQ,J5 !< dbug
-D       WRITE(IOSP,*)'TCARD entry  IQ,J5=',IQ,J5 !< dbug
       GO TO (100,160), IQ
 C
 C initiate commons from input file or from disk saved record  (IQ = 1)
@@ -156,9 +153,7 @@ C initiate commons from input file or from disk saved record  (IQ = 1)
       ENDIF
         
 C  GET orbital parameters if needed
-D     IF (IDB1.GE.1) WRITE(IOPM,*)'Before PORB0'
       IF (LPORB) CALL PORB08
-D     IF (IDB1.GE.1) WRITE(IOPM,*)'AFTER PORB0'
       LD18=.TRUE. ! Flag that at least one value has changed
 
 C  READ a set of parameter change cards  (IQ = 2)
@@ -299,13 +294,27 @@ C  IG=8  Read file name
         LZONE=.TRUE.            !   assume have a new zone table
         IF (ILEN .LT. 4) LZONE=.FALSE. !   unless the name is too short
         WRITE(IOPM,*) 'LZONE,I=',LZONE, ILEN 
-      ELSEIF (IREAD.EQ.26) THEN ! new vis and ir flux tables
+      ! section for reading flux table
+      ELSEIF (IREAD.EQ.26) THEN ! read the flag for getting columns from C code
         FFLUX=TEXT              !   move file name into common
-        LFLUX=.TRUE.            !   using new flux table
         FFLUX(ILEN+1:80)=CHAR(0)
-        SUCCESS = f_flux_init(FFLUX)
-        WRITE(IOPM,*) 'LFLUX=',LFLUX
-
+        ! TODO: Change all LFLUX values to switch on/default/zero based on what combination of these flags is set
+        LASOLTAB = .FALSE.
+        LSOLDIFTAB = .FALSE.
+        LPLANVTAB = .FALSE.
+        LATMRADTAB = .FALSE.
+        LPLANHTAB = .FALSE.
+        LRAWTAB = .FALSE.
+        CALL f_flux_init(FFLUX, SUCCESS, LASOLTAB, LSOLDIFTAB, LPLANVTAB, LATMRADTAB, LPLANHTAB, LRAWTAB)
+        WRITE(IOPM,*) 'FFLUX=',FFLUX
+        WRITE(IOPM,*) 'Initialized Flux tables?',SUCCESS
+        
+      ELSEIF (IREAD.EQ.28) THEN ! setting logical flag for hemispheric emission
+        LHEMISEMIS = .FALSE.
+        IF (TEXT .EQ. "TRUE") THEN
+          LHEMISEMIS = .TRUE.
+          WRITE(IOPM,*) 'Using hemispherical emission.'
+        ENDIF
       ELSE 
         WRITE (IOERR,*)'Tcard 8: invalid file type= ',IREAD,' ',TEXT
       ENDIF
@@ -507,6 +516,5 @@ C
       WRITE (IOSP,'(//5X,A)') 'END OF DATA ON INPUT UNIT'
       
  9    CONTINUE                  ! only exit from this routine
-D     IF (IDB1.NE.0) WRITE(IOSP,*)'TCARD Exit: IRET=',IRET,NFD,ID(1) !< dbug
       RETURN          
       END

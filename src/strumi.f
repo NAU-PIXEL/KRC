@@ -18,18 +18,15 @@ C_End
       CHARACTER(LEN=10) BUFF,BUF2 ! local strings
 C                   ^^
 
-D      PRINT*,'Pari=',PARI
       SSS=S1//S1                ! initial pair of separators
       K=2                       ! non-blank length
       DO J=1,NIN                ! each input item
         WRITE(BUFF,'(i10)') PARI(J)
 C                   ^^^^^
-D        PRINT *,'buff=',BUFF
         BUF2=ADJUSTL(BUFF)      ! shift left past any leading spaces
         I=LEN_TRIM(BUF2)        ! index of last non-blank character 
         SSS=SSS(1:K)//BUF2(1:I)//S1 ! append to output string
         K=K+I+1                 ! current expected length
-D        PRINT *,J,I,K,SSS(1:K)
       ENDDO
       SSS=SSS(1:K)//S1          ! final separator to make a pair
       LOUT=K+1                  ! number of defined characters

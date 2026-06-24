@@ -6,8 +6,8 @@ double get_jd_lt_flux(lt_fluxes *flux_table, int search_jd, double search_lt,
   // since the indexes should only increase this saves a linear search
   static int table_index = 0;
   double result_flux;
-  // jd is integer component, lt is float from 0 to 1
-  double search_jd_lt = (search_jd % (int)(flux_table->lt[flux_table->n_lt])) + search_lt;
+  // jd is integer component, time is float from 0 to 1
+  double search_jd_lt = (search_jd % (int)(flux_table->time[flux_table->n_rows])) + search_lt;
 
   table_index = search_for_time(search_jd_lt, flux_table, &table_index);
 
@@ -16,21 +16,43 @@ double get_jd_lt_flux(lt_fluxes *flux_table, int search_jd, double search_lt,
   }
 
   switch (flux_type) {
-  case FLUX_VIS:
-    result_flux = interpolate(flux_table->lt[table_index], flux_table->lt[table_index + 1],
-                              flux_table->vis[table_index], flux_table->vis[table_index + 1], 
-                              search_jd_lt);
-    break;
+    case FLUX_ASOL:
+      result_flux = interpolate(flux_table->time[table_index], flux_table->time[table_index + 1],
+                                flux_table->asol[table_index], flux_table->asol[table_index + 1], 
+                                search_jd_lt);
+      break;
+      
+    case FLUX_SOLDIF:
+      result_flux = interpolate(flux_table->time[table_index], flux_table->time[table_index + 1],
+                                flux_table->soldif[table_index], flux_table->soldif[table_index + 1], 
+                                search_jd_lt);
+      break;
+      
+      case FLUX_PLANV: 
+      result_flux = interpolate(flux_table->time[table_index], flux_table->time[table_index + 1],
+                                flux_table->planv[table_index], flux_table->planv[table_index + 1], 
+                                search_jd_lt);
+      break;
+        
+    case FLUX_ATMRAD:
+      result_flux = interpolate(flux_table->time[table_index], flux_table->time[table_index + 1],
+                                flux_table->atmrad[table_index], flux_table->atmrad[table_index + 1], 
+                                search_jd_lt);
+      break;
+    case FLUX_PLANH: 
+      result_flux = interpolate(flux_table->time[table_index], flux_table->time[table_index + 1],
+                                flux_table->planh[table_index], flux_table->planh[table_index + 1], 
+                                search_jd_lt);
+      break;
+    case FLUX_RAW: 
+      result_flux = interpolate(flux_table->time[table_index], flux_table->time[table_index + 1],
+                                flux_table->raw[table_index], flux_table->raw[table_index + 1], 
+                                search_jd_lt);
+      break;
 
-  case FLUX_IR:
-    result_flux = interpolate(flux_table->lt[table_index], flux_table->lt[table_index + 1],
-                              flux_table->ir[table_index], flux_table->ir[table_index + 1], 
-                              search_jd_lt);
-    break;
-
-  default:
-    result_flux = -1;
-    break;
+    default:
+      result_flux = -1;
+      break;
   }
   return result_flux;
 }
@@ -38,15 +60,15 @@ double get_jd_lt_flux(lt_fluxes *flux_table, int search_jd, double search_lt,
 int search_for_time(double search_jd_lt, lt_fluxes *flux_table, int *table_index) {
   int start_index = *table_index;
   bool looped = false;
-  for (int working_index = start_index; (working_index != start_index) || !looped; working_index = (working_index + 1) % flux_table->n_lt) {
-    // lt must start with 0
-    // because the search lt will be 0.xxx > 0, says no that's greater than 0
+  for (int working_index = start_index; (working_index != start_index) || !looped; working_index = (working_index + 1) % flux_table->n_rows) {
+    // time must start with 0
+    // because the search time will be 0.xxx > 0, says no that's greater than 0
     // returns 1, then does linear interpolation between i - 1 and i, i.e. 0 and
     // 1
-    if (search_jd_lt <= flux_table->lt[working_index + 1] && search_jd_lt >= flux_table->lt[working_index]) {
+    if (search_jd_lt <= flux_table->time[working_index + 1] && search_jd_lt >= flux_table->time[working_index]) {
       return working_index;
     }
-    if (working_index == flux_table->n_lt - 1) {
+    if (working_index == flux_table->n_rows - 1) {
       looped = true;
     }
   }

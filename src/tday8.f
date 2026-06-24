@@ -49,7 +49,7 @@ C
      &,DTAFAC,DTIM,DTIMI,DTM,EMTIR,FAC3,FAC3S,FAC4,FAC45,FAC5,FAC6
      &,FAC6F,FAC7,FAC8,FAC82,FAC9,FEFAC,FEMIT,FROEX,HEATA,HEATFM
      &,PERSEC,POWER,SHEATF,SNOW,TATM4,TBOTM,TGHF,TRSET
-     &,TSUR,TSURM,TS3,TSUR4,ZD,FCJ
+     &,TSUR,TSURM,TS3,TSUR4,ZD,FCJ,RAWHEAT
       REAL*8 TGLOB,DBOT, ZBOT
       REAL*8 QA,QB,QQ,Q3,Q4,Q5,Q6           ! temporary use
       LOGICAL LDAY              ! this will [normally] be the last iteration day
@@ -93,7 +93,6 @@ C      SAVE IC3,IK1,IK2,IK3,IK4,LALCON,LPH,LRARE,N1P1  ! ?? more
 C      SAVE FA1,FA2,FA3,FBI,FCI ! ?? more
 C
 
-D     IF (IDB2.GE.5) WRITE(IOSP,*) 'TDAY IQ,J4=',IQ,J4,JJO
       IRET=1
       IF (IQ.EQ.2.) GOTO 200 ! do day and time loops
 C
@@ -109,7 +108,13 @@ C the conductivity variation.
       IF (IIB.LE.-1) JRSET=999    ! never reset the lower boundary
       IF (JRSET.LT.1) JRSET=2
       LWP=IQ.EQ.3                ! do the stage 1 prints
-      LPH = PARW(1).GT. 0. ! doing planetary heat loads
+            
+      IF (LPLANHTAB .OR. LPLANVTAB) THEN
+        LPH = .TRUE.
+      ELSE
+        LPH = PARW(1).GT.0.      ! doing planetary heat loads
+      ENDIF
+
 C insure day loop does not go past next season
       J=MIN(N3,IDINT(DELJUL/PERIOD),MAXN3-1) ! largest allowed
       IF (N5.GT.1 .AND. N3 .GT.J) THEN
@@ -358,7 +363,6 @@ C   Fill in the substrate layer, same properties as lowest layer
           K=1
           IF (LOCAL) K=J
           BLAY(J)= FLAY * RLAY**(J-2) * DSQRT(DIFFI(K)*PERSEC/PIVAL) ! thickness
-D     write(*,*)'J,diffi,blay=',J,diffi(J),blay(J)
         ENDDO
 
       ENDIF                     ! ^^^^^^^^^^^^^^ zone / no zone
@@ -432,8 +436,6 @@ C 2016 dec08 ZDZ, ZDEN, ZCOND and ZSPH arrays are available for reuse here
           WRITE(IOSP,*)'Increased lower layers from safety of',QQ
         ENDIF
       ENDIF
-D     IF (IDB4.GE.2) WRITE(*,'(a,2I4,2f8.5,f10.3,e12.5)') 
-D    & 'KM,IC3,ARC3,CONVF,QQ,DTIM=',KM,IC3,ARC3,CONVF,QQ,DTIM
 C
       SCONVG(1)=0.
       DO J=2,N1                 ! LAYER LOOP 1: compute safety factor
@@ -450,7 +452,6 @@ C
           K=J
         ENDIF
         ZDZ(J) = QQ !  minimum safety factor at this layer or lower
-D       IF (IDB4.GE.2) WRITE(IOSP,'(i3,2f12.3)') J,SCONVG(J),ZDZ(J)
       ENDDO
       IF (QQ.LT. ARC3) THEN     ! Some layer unstable
         IRET=3                  ! error return if unstable
@@ -561,7 +562,12 @@ C     cumulative center-depth in units of local scale
       WRITE(IOSP,156) (N1K(K),K=1,KKK)
  156  FORMAT (' Lower layer of time doubling: ',15I3)
 
-      LRARE = (PARC(1).GE. 1.3) ! possible eclipse on last day
+      IF (LASOLTAB .OR. LSOLDIFTAB .OR. LATMRADTAB .OR. LPLANHTAB .OR. LPLANVTAB .OR. LRAWTAB) THEN
+        LRARE = .FALSE.
+      ELSE
+        LRARE = (PARC(1).GE. 1.3) ! possible eclipse on last day
+      ENDIF
+      
       IF (LRARE) THEN ! plan for  RARE eclipse
         IKK(1)=IK1 ! transfer T-dep layer limits
         IKK(2)=IK2
@@ -617,7 +623,7 @@ C If self heating, as before v3.4, factors are to the open sky
 C If using fff, -- are hemisphere , --P are back-radiation from far ground
 C SKYFAC is fractional normalized irradiance from the sky; 1.0 for flat
 C SKYFAC is computed in TLATS and arrives thru KRCCOM
-      IF (LOPN3) THEN           !F using fff
+      IF (LOPN3 .OR. LHEMISEMIS) THEN           !F using fff
         FAC5  = EMIS*SIGSB      !F --X far (eXterior) factors are 0 for flat
         FAC45= 4.D0*FAC5        !F
       ENDIF                     !F
@@ -652,10 +658,8 @@ C  TATMJ and  EFROST enter via  KRCCOM
       ENDIF
       FLOST=0.                  ! sum of lost frost
       LALCON = (IK2+IK4 .EQ. 0) ! all Tcon, not Tdep
-D     IF (IDB2.EQ.2) WRITE(IOSP,119) LZONE,LALCON,j5,IK1,IK2,IK3,IK4
       AH = DFLOAT(N2)/DFLOAT(N24) ! time steps between saving results
       AP = DFLOAT(N2)/DFLOAT(NMHA) ! time steps between printing results
-D      NZ=NINT(AH)               ! time steps between fort.73 output 2018jun22
 C
 C  *v*v*v*v*v*v*v*v*v*v*v*v*v* new day loop v*v*v*v*v*v*v*v*v*v*v*v
 C
@@ -718,8 +722,6 @@ C     Last arg is number of good layers in TTF, must not change in time loop
      &             ,J4,JJ,KG,QA,QB
  33           FORMAT(A,I4,I5,I4,2G15.5)
               
-D 22          FORMAT(99F8.3)
-D             IF (IDB5.GE.4)WRITE(47,22)(TTJ(I),I=1,N1) ! coarse  T
               CALL MVD(TTF,TTJ,KG) ! transfer the layers
               TSUR=TTF(1) ! transfer  Tsurface
               JSW=1   ! no more  Rare eclipse action  But continue fort 46 output
@@ -784,26 +786,31 @@ C     -^-^-^-^-^-^-^-^-^-^-^-^-^-^-^- end of layer loops ^-^-^-^-^-^-^-^-^-^-^
           IF (LATM.AND.LOPN3) TATMJ= HARTA(JJ) !f use the fff atm
 C 3 possible upper boundary conditions. 1) Atm with frost 2) Just Atm 3) No atm.
           II=0 !db newton iteration count
+          
+          IF (LRAWTAB) THEN ! raw heat flux table
+            RAWHEAT = f_get_jd_lt_raw(J5 - 1, (real(JJ, 8))/N2)
+          ELSE
+            RAWHEAT = 0. ! should never get used
+          ENDIF
+
           IF (LFROST) THEN      !+-+-+-+ surface temperature is frost-buffered
             
-            IF (LFLUX) THEN ! new vis and ir flux tables
-              ATMRAD = f_get_jd_lt_ir(J5 - 1, (real(JJ, 8))/N2)
+            IF (LATMRADTAB) THEN ! new vis and ir flux tables
+              ATMRAD = f_get_jd_lt_atmrad(J5 - 1, (real(JJ, 8))/N2)
             ELSE
               ATMRAD= FAC9*TATMJ**4 ! hemispheric downwelling IR flux
             ENDIF
             Q4 = AFNOW + (ALB-AFNOW)*DEXP(-EFROST/FROEX) ! albedo for frost layer
             
-D           IF (IDB4.EQ.4 .AND. MOD(JJ,NZ).EQ.0 )  ! N48 per day
-D    &        WRITE(73,741)J5,J4,JJJ,JJ,EFROST,Q4,TFNOW  ! 2018jun22
-D 741       FORMAT(i4,i3,i3,i6,G13.5,F8.5,F11.6) ! 2018jun22
             SHEATF= FAC7*(TTJ(2)-TSUR) ! upward heatflow into the surface
 C   unbalanced flux into surface
 C FEMIT=FAC6F*SIGSB*TFNOW**4 is [[skyfac]]*Femis*sig*Tf^4
             POWER= (1.D0-Q4)*ASOL(JJ) +(1.D0-Q4)*SOLDIF(JJ)
      &               + FAC6F*ATMRAD + SHEATF - FEMIT
-            IF (LPH) POWER=POWER+EMIS*PLANH(JJ)+(1.D0-Q4)*PLANV(JJ) ! planetary
+            IF (LPH) POWER=POWER+FEMIS*PLANH(JJ)+(1.D0-Q4)*PLANV(JJ) ! planetary
 C If fff, add back-radiation=(1-skyfac)*femis*emis_x*sig*Tfar^4
             IF (LOPN3) POWER=POWER+ FEFAC*FARAD(JJ)
+            IF (LRAWTAB) POWER=POWER + RAWHEAT ! raw heat flux table
             DFROST = -POWER/CFROST ! rate of frost formation or sublimation
             EFROST=EFROST + DFROST*DTIM ! amount on ground; kg*m**-2
             IF (EFROST.LE.0.) THEN ! reset to bare ground
@@ -814,8 +821,8 @@ C If fff, add back-radiation=(1-skyfac)*femis*emis_x*sig*Tfar^4
           ELSE                  !+-+-+-+ if no frost
             ABRAD=FAC3*ASOL(JJ)+FAC3S*SOLDIF(JJ) ! surface absorbed radiation
             IF (LATM) THEN 
-              IF (LFLUX) THEN ! new vis and ir flux tables
-                ATMRAD = f_get_jd_lt_ir(J5 - 1, (real(JJ, 8))/N2)
+              IF (LATMRADTAB) THEN ! new vis and ir flux tables
+                ATMRAD = f_get_jd_lt_atmrad(J5 - 1, (real(JJ, 8))/N2)
               ELSE
                 ATMRAD=FAC9*TATMJ**4 ! hemispheric downwelling IR flux
               ENDIF
@@ -836,6 +843,7 @@ C If fff, add back-radiation=(1-skyfac)*femis*emis_x*sig*Tfar^4
                POWER = ABRAD + SHEATF - FAC5*TSUR*TS3 ! unbalanced flux
             ENDIF 
             IF (LOPN3) POWER=POWER+FARAD(JJ) ! fff only
+            IF (LRAWTAB) POWER = POWER + RAWHEAT ! raw heat flux table
             DELT = POWER / (FAC7+FAC45*TS3)
             TSUR=TSUR+DELT
             IF (MOD(II,10).EQ.0)WRITE(IOPM,*)J5,J4,JJJ,JJ,II,TSUR,DELT !db
@@ -898,9 +906,6 @@ cx 171        format(4i3,50f6.0)
             JJH = NINT(IH*AH)
           ENDIF
 C NEXT 3 LINE DEBUG ONLY.  Only on last day of last season for Rare eclipse
-D         IF (JSW.GT.0 .AND. IDB5.GE.7) WRITE(46,244) 
-D    &             JJ,ATMRAD,TSUR,ABRAD,SHEATF,POWER,FAC7,KN
-D 244        FORMAT(I6,  F9.4,F8.3,2F10.4      ,F10.5,G12.5,I4)
 C
           IF (JJ.EQ.JJP) THEN   ! print "hourly" temperatures
             IF (LP3) WRITE(IOSP,260)IP,EFROST,TTJ(1)
@@ -916,7 +921,7 @@ C 551    FORMAT(I5,I3,I3,F9.3, 2G12.5,F8.5,3G12.5, f8.4,f10.4, G12.5) ! 2018jun3
 C
 C  store results of day, calculate rms change
 C
-        IF (LATM .and. (TATMJ.LT.TATMIN)) THEN ! Tatm is below saturation T
+        IF (LATM .and. (TATMJ.LT.TATMIN) .and. (.NOT. (LASOLTAB .OR. LSOLDIFTAB .OR. LATMRADTAB))) THEN ! Tatm is below saturation T
           SNOW= (TATMIN-TATMJ)*CPOG/CFROST ! | snow formation  Kg/m^2
           IF (LFROST) THEN                 ! | in this time step
             EFROST=EFROST + SNOW ! let it fall to surface
@@ -928,7 +933,6 @@ C v355            FLOST=FLOST+ SNOW    ! record mass "lost" from system ??
             FEMIT = FEMIS*SIGSB*TFNOW**4
             FAC8=EMTIR*FEMIS
           ENDIF
-D           IF (IDB4.EQ.4) WRITE(73,741)J5,J4,JJJ,-1,SNOW,EFROST,TATMJ ! 2018jun22
           TATMJ=TATMIN           ! keep atm. no colder that saturation
         ELSE
           SNOW=0.  ! do for cleaness, not otherwise used when atm. warm
@@ -985,7 +989,6 @@ C may reset the lower layers on each successive day
           IF (J5.LE.1 .AND. JJJ.GE.JRSET) LRESET=.TRUE.
         ENDIF
  320  CONTINUE                  ! *^*^*^*^*^*^*^*^*^* end of day loop *^*^*^*^*
-D     IF (IDB2.EQ.2) WRITE(IOSP,119) LZONE,LALCON,j5,IK1,IK2,IK3,IK4
 C
       JJJ=N3                    ! if loop finished, index value not guarenteed
  330  J3=JJJ                    ! reset the counter kept in common
@@ -1006,7 +1009,6 @@ C
       CALL TPRINT8 (4)           ! print daily convergence
 C
  9    CONTINUE
-D     IF (IDB2.GE.6) WRITE(IOSP,*) 'TDAYx',J5,J4,J3
       RETURN
 C     
       END
