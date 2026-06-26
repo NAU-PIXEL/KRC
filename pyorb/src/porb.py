@@ -8,7 +8,7 @@ import numpy as np
 import spiceypy as spice
 import datetime
 from . import constants as const
-from .kernel_mgmt import kernels_dir, get_mk
+from .kernel_mgmt import kernels_dir, default_mk, make_sb_mk, make_satellite_mk, get_naifid, cached_mk_exists, get_cached_mk
 # from .body_params import write_hdf, get_body_params
 from . import defaults 
 from . import install
@@ -672,6 +672,28 @@ def get_porb_params(
     out  = PorbParams.from_orb_and_spin_params(body_name, body_type, body_naifid, orb, spin)
 
     return out
+
+def high_level_get_porb_params(body_name:str, update_kernels:bool = False) -> PorbParams:
+    #### This breaks for more obscure satellites. 
+    # get_naifid will fail to find them without first loading the relevant planetary system spks
+    # then the current logic won't find the correct naifid at all, since it won't be a small body. 
+    naifid = get_naifid(body_name)
+    if cached_mk_exists(naifid) and update_kernels == False:
+        metakernel = get_cached_mk(naifid)
+    else:
+        body_type = get_body_type(naifid)
+        if body_type == 'Planet':
+            # planet barycenters are all covered by default_mk
+            metakernel = default_mk
+        if body_type == 'Satellite':
+            # make a satellite mk associated with parent body
+            metakernel = make_satellite_mk(naifid)
+        elif body_type == 'Comet' or body_type == 'Minor':
+            metakernel = make_sb_mk(naifid) 
+
+    porb_params = get_porb_params(body_name, naifid, metakernel)
+    
+    return porb_params
 
 if __name__ == '__main__':
     # Include headers in output?

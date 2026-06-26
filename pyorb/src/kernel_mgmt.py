@@ -437,13 +437,16 @@ def testing():
     kernel_list = read_default_mk()
     return
 
-def get_mk(target_name):
+def make_sb_mk(sb_search_str:str):
+    '''
+    sb_search_str should be a name, IAU number, or NAIF ID uniquely identifying the body of interest.
+    '''
     # update_default_kernels()
     default_kernel_list = read_default_mk()
 
     # assume target is a small body
     # TODO: handle other cases
-    sb=target_name
+    sb=sb_search_str
     spkname = update_small_body_kernel(sb)
     kernel_list = default_kernel_list + [spkname]
     naifid = get_naifid(sb)
@@ -497,6 +500,20 @@ def query_sbdb(search_str:str) -> int:
     # Otherwise, some other error occurred:
     print("response code: {0}".format(response.status_code))
     raise RuntimeError(f'Invalid request: {url} \nMaybe "{search_str}" is a bad search_str?')
+
+def make_satellite_mk(satellite:str) -> str:
+    default_kernel_list = read_default_mk()
+
+    current = update_satellite_kernel(satellite)
+    kernel_list = default_kernel_list + [current]
+
+    spice.furnsh(f'{kernels_dir}/{current}')
+
+    naifid = get_naifid(satellite)
+
+    mk_path = write_metakernel(kernel_list, naifid)
+
+    return mk_path
 
 def get_naifid(search_str:str) -> int:
     # load default mk
