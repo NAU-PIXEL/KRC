@@ -674,9 +674,6 @@ def get_porb_params(
     return out
 
 def high_level_get_porb_params(body_name:str, update_kernels:bool = False) -> PorbParams:
-    #### This breaks for more obscure satellites. 
-    # get_naifid will fail to find them without first loading the relevant planetary system spks
-    # then the current logic won't find the correct naifid at all, since it won't be a small body. 
     naifid = get_naifid(body_name)
     if cached_mk_exists(naifid) and update_kernels == False:
         metakernel = get_cached_mk(naifid)
