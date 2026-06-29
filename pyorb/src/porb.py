@@ -8,7 +8,7 @@ import numpy as np
 import spiceypy as spice
 import datetime
 from . import constants as const
-from .kernel_mgmt import kernels_dir, default_mk, make_sb_mk, make_satellite_mk, get_naifid, cached_mk_exists, get_cached_mk
+from .kernel_mgmt import kernels_dir, default_mk, update_default_kernels, make_sb_mk, make_satellite_mk, get_naifid, cached_mk_exists, get_cached_mk
 # from .body_params import write_hdf, get_body_params
 from . import defaults 
 from . import install
@@ -54,6 +54,85 @@ class OrbParams:
         (orbit_period, perihelion_date, centuries_from_j2000) = orb_second_params
         return cls(long_of_asc_node, eccentricity, inclination, arg_of_peri, mean_anomaly, semimajor_axis, epoch_JD, orbit_period, perihelion_date, centuries_from_j2000)
 
+    @classmethod
+    def from_porb_params(cls, porb_params:PorbParams) -> Self:
+        long_of_asc_node    = porb_params.RODE
+        eccentricity        = porb_params.XECC
+        inclination         = porb_params.CLIN
+        arg_of_peri         = porb_params.ARGP 
+        semimajor_axis      = porb_params.SJA
+        orbit_period        = porb_params.OPERIOD
+        perihelion_date     = porb_params.TJP
+        centuries_from_j2000 = porb_params.TC
+        
+        epoch_JD = centuries_from_j2000 * const.earth_year*100 + const.j2000_JD
+        mean_anomaly = ((perihelion_date - epoch_JD + const.j2000_JD) / orbit_period) * (2*np.pi)
+
+        return cls(long_of_asc_node, eccentricity, inclination, arg_of_peri, mean_anomaly, semimajor_axis, epoch_JD, orbit_period, perihelion_date, centuries_from_j2000)
+    
+    @classmethod
+    def from_modified_params(cls, porb_params:PorbParams,
+                long_of_asc_node:float = None,
+                eccentricity:float = None,
+                inclination:float = None,
+                arg_of_peri:float = None,
+                semimajor_axis:float = None,
+                orbit_period:float = None,
+                perihelion_date:float = None,
+                centuries_from_j2000:float = None,
+                epoch_JD:float = None,
+                mean_anomaly:float = None) -> Self:
+        
+        rode    = porb_params.RODE
+        xecc    = porb_params.XECC
+        clin    = porb_params.CLIN
+        argp    = porb_params.ARGP 
+        sja     = porb_params.SJA
+        operiod = porb_params.OPERIOD
+        tjp     = porb_params.TJP
+        tc      = porb_params.TC
+
+        if (semimajor_axis is not None) and (orbit_period is not None):
+            raise ValueError("Only one of semimajor_axis and orbit_period may be specified.")
+        if semimajor_axis is not None:
+            orbit_period = semimajor_axis**(1.5) * const.earth_year    
+        elif orbit_period is not None:
+            semimajor_axis = (const.earth_year * orbit_period)**(2./3.)
+        else:
+            semimajor_axis = sja
+            orbit_period = operiod
+
+        if (epoch_JD is not None) and (centuries_from_j2000 is not None):
+            raise ValueError("Only one of epoch_JD and centuries_from_j2000 may be specified.")
+        if epoch_JD is not None:
+            centuries_from_j2000 = (epoch_JD - const.j2000_JD) / (const.earth_year*100)
+        elif centuries_from_j2000 is not None:
+            epoch_JD = centuries_from_j2000 * const.earth_year*100 + const.j2000_JD
+        else:
+            centuries_from_j2000 = tc
+            epoch_JD = centuries_from_j2000 * const.earth_year*100 + const.j2000_JD
+
+        if (perihelion_date is not None) and (mean_anomaly is not None):
+            raise ValueError("Only one of perihelion_date and mean_anomaly may be specified.")
+        if perihelion_date is not None:
+            mean_anomaly = ((perihelion_date - epoch_JD + const.j2000_JD) / orbit_period) * (2*np.pi)
+        elif mean_anomaly is not None:
+            perihelion_date = epoch_JD - (mean_anomaly/(2*np.pi))*orbit_period - const.j2000_JD
+        else:
+            perihelion_date = tjp
+            mean_anomaly = ((perihelion_date - epoch_JD + const.j2000_JD) / orbit_period) * (2*np.pi)
+
+        if long_of_asc_node is None:
+            long_of_asc_node = rode
+        if eccentricity is None:
+            eccentricity = xecc
+        if inclination is None:
+            inclination = clin
+        if arg_of_peri is None:
+            arg_of_peri = argp
+
+        return cls(long_of_asc_node, eccentricity, inclination, arg_of_peri, mean_anomaly, semimajor_axis, epoch_JD, orbit_period, perihelion_date, centuries_from_j2000)
+
 class SpinParams:
     def __init__(self,
                  rotation_period: float, 
@@ -74,24 +153,82 @@ class SpinParams:
         self.true_anomaly_at_vernal_equinox = true_anomaly_at_vernal_equinox
 
     @classmethod
-    def from_spin_axis(cls, spin_axis, orb_elems) -> Self:
+    def from_spin_axis(cls, spin_axis, orb:OrbParams) -> Self:
         '''
         Constructs a SpinParams object from spin_axis and orb_elems tuples, 
         as would be output by get_orbital_elements() and get_spin_axis().
         '''
         (rotation_period, phase_at_j2000, pole_ra, pole_dec, default_spin_flag) = spin_axis 
-        (obliquity, rotation_matrix_FtoB, true_anomaly_at_vernal_equinox) = get_secondary_spin_params(orb_elems, spin_axis) 
+        (obliquity, rotation_matrix_FtoB, true_anomaly_at_vernal_equinox) = get_secondary_spin_params(orb, spin_axis) 
         return cls(rotation_period, phase_at_j2000, pole_ra, pole_dec, default_spin_flag, obliquity, rotation_matrix_FtoB, true_anomaly_at_vernal_equinox)
     
-    def set_obliq_and_true_anomaly(self, obliquity:float, true_anomaly_at_vernal_equinox:float, orb_elems) -> Self:
+    @classmethod
+    def from_porb_params(cls, porb_params:PorbParams) -> Self:
+        rotation_period         = (360.*24.)/porb_params.WDOT
+        phase_at_j2000          = porb_params.WO
+        pole_ra                 = porb_params.ZBAB
+        pole_dec                = porb_params.ZBAA
+        default_spin_flag       = porb_params.default_spin
+        obliquity               = porb_params.BLIP
+        rotation_matrix_FtoB    = porb_params.BFRM
+        true_anomaly_at_vernal_equinox = porb_params.TAV
+        return cls(rotation_period, phase_at_j2000, pole_ra, pole_dec, default_spin_flag, obliquity, rotation_matrix_FtoB, true_anomaly_at_vernal_equinox)
+    
+    def set_obliq_and_true_anomaly(self, obliquity:float, true_anomaly_at_vernal_equinox:float, orb:OrbParams) -> Self:
         '''
         updates the obliquity and true anomaly at vernal equinox, accounting for
         the impacts on pole orientation and rotation matrix.
         '''
         self.obliquity = obliquity
         self.true_anomaly_at_vernal_equinox = true_anomaly_at_vernal_equinox
-        self.pole_ra, self.pole_dec, self.rotation_matrix_FtoB = alt_get_secondary_spin_params(orb_elems, obliquity, true_anomaly_at_vernal_equinox)
+        self.pole_ra, self.pole_dec, self.rotation_matrix_FtoB = alt_get_secondary_spin_params(orb, obliquity, true_anomaly_at_vernal_equinox)
         return self
+    
+    @classmethod
+    def from_modified_params(cls, porb_params:PorbParams, orb:OrbParams,
+            rotation_period:float = None,
+            phase_at_j2000:float = None,
+            pole_ra:float = None,
+            pole_dec:float = None,
+            default_spin_flag:bool = None,
+            obliquity:float = None,
+            rotation_matrix_FtoB:np.ndarray = None,
+            true_anomaly_at_vernal_equinox:float = None) -> Self:
+
+        default_spin = porb_params.default_spin
+
+        if all([v is None for v in [rotation_period, phase_at_j2000, pole_ra, pole_dec, default_spin_flag, obliquity, true_anomaly_at_vernal_equinox, rotation_matrix_FtoB]]):
+            default_spin_flag = default_spin
+        else:
+            default_spin_flag = False
+
+        if rotation_period is None:
+            rotation_period = (360.*24.)/porb_params.WDOT
+        if phase_at_j2000 is None:
+            phase_at_j2000  = porb_params.WO
+        
+        if not (pole_ra is None) == (pole_dec is None):
+            raise ValueError("pole_ra and pole_dec must be set together or not at all.")
+        if not (obliquity is None) == (true_anomaly_at_vernal_equinox is None):
+            raise ValueError("obliquity and true_anomaly_at_vernal_equinox must be set together or not at all.")
+        if (pole_ra is not None) and (obliquity is not None):
+            raise ValueError("Spin pole RA and Dec cannot be set at the same time as Obliquity and True Anomaly.")
+        if rotation_matrix_FtoB is not None:
+            raise NotImplementedError("Directly specifying rotation_matrix_FtoB is not currently implemented.")
+        
+        if pole_ra is not None:
+            spin_axis = (rotation_period, phase_at_j2000, pole_ra, pole_dec, default_spin_flag)
+            (obliquity, rotation_matrix_FtoB, true_anomaly_at_vernal_equinox) = get_secondary_spin_params(orb, spin_axis)
+        elif obliquity is not None:
+            (pole_ra, pole_dec, rotation_matrix_FtoB) = alt_get_secondary_spin_params(orb, obliquity, true_anomaly_at_vernal_equinox)
+        else:
+            pole_ra     = porb_params.ZBAB
+            pole_dec    = porb_params.ZBAA
+            obliquity   = porb_params.BLIP
+            true_anomaly_at_vernal_equinox = porb_params.TAV
+            rotation_matrix_FtoB = porb_params.BFRM
+        
+        return cls(rotation_period, phase_at_j2000, pole_ra, pole_dec, default_spin_flag, obliquity, rotation_matrix_FtoB, true_anomaly_at_vernal_equinox)
 
 class PorbParams:
     def __init__(self,
@@ -406,7 +543,7 @@ def get_secondary_orb_params(orb_elems):
 
     return (orbit_period, perihelion_date, centuries_from_j2000)
 
-def get_secondary_spin_params(orb_elems, spin_axis):
+def get_secondary_spin_params(orb:OrbParams, spin_axis):
     '''
     Derive secondary parameters, relating the spin axis to the orbital reference frame.
     These can all be derived from existing orbital elements and spin axis parameters.
@@ -415,7 +552,9 @@ def get_secondary_spin_params(orb_elems, spin_axis):
     rotation_matrix_FtoB:           rotation matrix from orbital frame (F) to seasonal frame (B) [3x3 matrix]
     true_anomaly_at_vernal_equinox: True anomaly at vernal equinox [radians]
     '''    
-    (long_of_asc_node, eccentricity, inclination, arg_of_peri, mean_anomaly, semimajor_axis, epoch_JD) = orb_elems
+    long_of_asc_node = orb.long_of_asc_node
+    inclination = orb.inclination
+    arg_of_peri = orb.arg_of_peri
     (rotation_period, phase_at_j2000, pole_ra, pole_dec, default_spin_flag) = spin_axis
 
     # AFRM  : rotation matrix from orbital (F) to J2000 (A)
@@ -447,7 +586,7 @@ def get_secondary_spin_params(orb_elems, spin_axis):
 
     return (obliquity, rotation_matrix_FtoB, true_anomaly_at_vernal_equinox)
 
-def alt_get_secondary_spin_params(orb_elems, obliquity, true_anomaly_at_vernal_equinox):
+def alt_get_secondary_spin_params(orb:OrbParams, obliquity, true_anomaly_at_vernal_equinox):
     '''
     Uses obliquity and true anomaly at vernal equinox to get the pole ra and dec, 
     then calculates the rotation matrix. 
@@ -460,7 +599,9 @@ def alt_get_secondary_spin_params(orb_elems, obliquity, true_anomaly_at_vernal_e
     true_anomaly_at_vernal_equinox: (TAV) True anomaly at vernal equinox [radians]
 
     '''
-    (long_of_asc_node, eccentricity, inclination, arg_of_peri, mean_anomaly, semimajor_axis, epoch_JD) = orb_elems
+    long_of_asc_node = orb.long_of_asc_node
+    inclination = orb.inclination
+    arg_of_peri = orb.arg_of_peri
 
     # AFRM  : rotation matrix from orbital (F) to J2000 (A)
     ## First do rotation from orbital (F) to ecliptic (E)
@@ -681,6 +822,7 @@ def high_level_get_porb_params(body_name:str, update_kernels:bool = False) -> Po
         body_type = get_body_type(naifid)
         if body_type == 'Planet':
             # planet barycenters are all covered by default_mk
+            update_default_kernels()
             metakernel = default_mk
         if body_type == 'Satellite':
             # make a satellite mk associated with parent body
@@ -691,6 +833,53 @@ def high_level_get_porb_params(body_name:str, update_kernels:bool = False) -> Po
     porb_params = get_porb_params(body_name, naifid, metakernel)
     
     return porb_params
+
+def modify_porb_params(porb_params:PorbParams,
+        long_of_asc_node:float = None,
+        eccentricity:float = None,
+        inclination:float = None,
+        arg_of_peri:float = None,
+        semimajor_axis:float = None,
+        orbit_period:float = None,
+        perihelion_date:float = None,
+        centuries_from_j2000:float = None,
+        epoch_JD:float = None,
+        mean_anomaly:float = None,
+        rotation_period:float = None,         
+        phase_at_j2000:float = None,
+        pole_ra:float = None,
+        pole_dec:float = None,   
+        default_spin_flag:float = None,  
+        obliquity:float = None,
+        rotation_matrix_FtoB:np.ndarray = None,
+        true_anomaly_at_vernal_equinox:float = None
+        ) -> PorbParams:
+
+    orb = OrbParams.from_modified_params(porb_params,
+            long_of_asc_node = long_of_asc_node, 
+            eccentricity     = eccentricity, 
+            inclination      = inclination, 
+            arg_of_peri      = arg_of_peri, 
+            semimajor_axis   = semimajor_axis, 
+            orbit_period     = orbit_period, 
+            perihelion_date  = perihelion_date, 
+            centuries_from_j2000 = centuries_from_j2000, 
+            epoch_JD         = epoch_JD, 
+            mean_anomaly     = mean_anomaly)
+
+    spin = SpinParams.from_modified_params(porb_params, orb,
+            rotation_period  = rotation_period,
+            phase_at_j2000   = phase_at_j2000,
+            pole_ra          = pole_ra,
+            pole_dec         = pole_dec,
+            default_spin_flag = default_spin_flag,
+            obliquity        = obliquity,
+            rotation_matrix_FtoB = rotation_matrix_FtoB,
+            true_anomaly_at_vernal_equinox = true_anomaly_at_vernal_equinox)
+
+    return PorbParams.from_orb_and_spin_params(porb_params.NAME, porb_params.body_type, porb_params.PLANUM, orb, spin)
+
+
 
 if __name__ == '__main__':
     # Include headers in output?
