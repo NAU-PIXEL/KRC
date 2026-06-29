@@ -76,7 +76,19 @@ class krc_params_dict(TypedDict):
     DELJUL      :   float
     N24         :   int
 
-def get_body_params(porb_output:porb.PorbParams, metakernel:str='None') -> tuple[type_params_dict, planet_flux_dict, krc_params_dict]:
+def get_radius(naifid:int, metakernel:str = None) -> float:
+    radius = defaults.radius 
+    if metakernel is None:
+        metakernel = f'{install.kernels_dir}/mk/{naifid:09d}.tm'
+    with spice.KernelPool(metakernel):
+        try:
+            radius = spice.bodvcd(naifid, 'RADII', 3)[1][0] # Selecting equatorial radius
+        except spice.utils.exceptions.SpiceKERNELVARNOTFOUND:
+            # Using default Radius.
+            pass
+    return radius
+
+def get_body_params(porb_output:porb.PorbParams, metakernel:str=None) -> tuple[type_params_dict, planet_flux_dict, krc_params_dict]:
     '''
     derive parameters (or extract them from the planetary parameters csv file) for writing a porb hdf.
     '''
@@ -119,14 +131,7 @@ def get_body_params(porb_output:porb.PorbParams, metakernel:str='None') -> tuple
                                   dtype=['U16',float,float,float,float,float,float])
 
     if type_params['body_type'] in ['Planet', 'Satellite']:
-        planet_flux['Radius'] = defaults.radius 
-        if metakernel != 'None':
-            with spice.KernelPool(metakernel):    
-                try:
-                    planet_flux['Radius'] = spice.bodvcd(type_params['naifid'], 'RADII', 3)[1][0] # Selecting equatorial radius
-                except spice.utils.exceptions.SpiceKERNELVARNOTFOUND:
-                    # Using default Radius.
-                    pass
+        planet_flux['Radius'] = get_radius(type_params['naifid'], metakernel)
 
     if type_params['body_type'] == 'Satellite':
         semimajor_axis = porb_output.SJA
@@ -267,3 +272,8 @@ def read_hdf(hdf_file:str) -> tuple[type_params_dict, planet_flux_dict, krc_para
         krc_params = dict(f['krc'].items())
 
     return (type_params, planet_flux, krc_params, porb_params)
+
+def high_level_write_hdf(porb_output:porb.PorbParams, out_dir:str=install.porb_defaults_dir):
+    body_params = get_body_params(porb_output)
+    hdf_file = write_hdf(porb_output, body_params, out_dir)
+    return hdf_file

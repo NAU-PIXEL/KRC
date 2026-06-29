@@ -73,13 +73,13 @@ The user can either copy the formatted string output into a KRC input file, or u
         - [x] for body type: other/general?? could I use negative naifids for stuff like that? 
     - [ ] user interface: specify body, get a metakernel using `kernel_mgmt.py`, options to force params to user input values. 
     - [x] function to derive spin pole from obliquity and true anomaly, set spin_axis and secondary_spin_params based on that method? (seems more user friendly to have that option)
-    - [ ] high-level function to take a body name, get the metakernel and naifid, (optionally updating kernels) and manage any kwargs to modify default values, then return a porb_params object.
+    - [x] high-level function to take a body name, get the metakernel and naifid, (optionally updating kernels) and manage any kwargs to modify default values, then return a porb_params object.
     - [ ] testing
 
 - `body_params.py`
-    - [ ] high-level function to attach other params for writing output to a defaults hdf.
+    - [x] high-level function to attach other params for writing output to a defaults hdf.
     - [ ] high-level function to run the above function for a standard list of bodies? or maybe every body already in the cache? while forcing a kernel update. 
-    - [ ] high-level function to read the defaults file, extract porb_params object and other objects.
+    - [x] function to read HDF files, extract porb_params object and other objects.
         values in those objects can then be modified. 
             (not recommended to modify from cached defaults directly, as linked values will not update automatically, eg semi-major axis & operiod.) preferred behavior is to construct a fresh instance of the object directly?
 

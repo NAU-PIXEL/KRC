@@ -19,9 +19,10 @@ from bs4 import BeautifulSoup
 
 from . import constants as const
 from . import defaults 
+from . import install
 
 # set some locations
-kernels_dir = '/home/nsmith/KRC/pyorb/kernels'
+kernels_dir = install.kernels_dir
 naif_source = 'https://naif.jpl.nasa.gov/pub/naif/generic_kernels'
 default_mk = f'{kernels_dir}/mk/krc_default.tm'
 naifid_map_file = f'{kernels_dir}/naifid_map.csv'
