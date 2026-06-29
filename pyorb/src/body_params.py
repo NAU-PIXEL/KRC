@@ -251,3 +251,19 @@ def write_hdf(porb_output:porb.PorbParams, body_params:tuple, out_dir: str):
 
     return hdf_file
 
+def read_hdf(hdf_file:str) -> tuple[type_params_dict, planet_flux_dict, krc_params_dict, porb.PorbParams]:
+
+    with h5py.File(hdf_file, 'r') as f:
+        porb_params = porb.PorbParams.from_str(f['rot'])
+        porb_params.default_spin = f['rot_per_flag']
+        porb_params.body_type = f['type/body_type']
+
+        type_params = {'body_type':   f['type/body_type'],
+                       'naifid':      f['type/id'],
+                       'body_name':   f['type/name'],
+                       'parent_body': f['type/parent_body']}
+        
+        planet_flux = dict(f['planet_flux'].items())
+        krc_params = dict(f['krc'].items())
+
+    return (type_params, planet_flux, krc_params, porb_params)
