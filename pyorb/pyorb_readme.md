@@ -61,7 +61,7 @@ The user can either copy the formatted string output into a KRC input file, or u
     - [x] user interface: decide what input is needed (target string, is_smallbody flag?), generate a metakernel for that input. This does not independently assess if updates are needed.
     - [ ] Some logic to only call `update_default_kernels()` once a day max, and just pull from the default metakernel otherwise when building a per-body mk? (check the mod date on the default mk? read the comment line that has the date in it?)
     - [x] function to force-update all kernels, or a list of kernels?
-    - [ ] testing?
+    - [ ] testing: [5/16]
 
 - `porb.py`
     - [x] generate formatted output as cacheable HDF (per body). 

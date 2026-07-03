@@ -6,6 +6,7 @@
 import numpy as np
 import spiceypy as spice
 import datetime
+import os
 import os.path as path
 import glob
 import re
@@ -28,7 +29,7 @@ default_mk = f'{kernels_dir}/mk/krc_default.tm'
 naifid_map_file = f'{kernels_dir}/naifid_map.csv'
 satellite_source = f'{naif_source}/spk/satellites/'
 
-def download_target(target:str, dest='None') -> str:
+def download_target(target:str, dest:str=None, kernels_dir:str=kernels_dir) -> str:
     '''
     Downloads a target file from a specified location, handles possible errors.
     Places target file in correct kernel subdir based on file extension.
@@ -50,12 +51,15 @@ def download_target(target:str, dest='None') -> str:
     
     if ext in write_dir.keys():
         destination = f'{write_dir[ext]}/{basename}'
-    elif dest != 'None':
+    elif dest is not None:
         destination = dest
     else:
         destination = f'/tmp/{basename}'
-        ### probably should thrown an exception here?
+        ### probably should throw an exception here?
         print('I just threw that download in /tmp/ for some reason!')
+
+    if not path.isdir(path.dirname(destination)):
+        os.mkdir(path.dirname(destination))
 
     try:
         urlretrieve(target, destination)
@@ -64,7 +68,7 @@ def download_target(target:str, dest='None') -> str:
 
     return destination
 
-def update_naif_kernel(source:str, regex:str) -> str:
+def update_naif_kernel(source:str, regex:str, kernels_dir=kernels_dir) -> str:
     '''
     Checks a naif source location for updated kernels, compares them to latest currently
     available kernel, and if necessary, downloads the updated version.
@@ -109,7 +113,7 @@ def update_naif_kernel(source:str, regex:str) -> str:
 
     return current
 
-def update_default_kernels():
+def update_default_kernels(default_mk:str=default_mk, kernels_dir:str=kernels_dir):
     '''
     Checks canonical sources for updated versions of the following common kernels:
     Leap Seconds Kernel (LSK): naif####.tls
@@ -130,7 +134,7 @@ def update_default_kernels():
         regex = kernel_names[kernel]
         kernel_type = regex[-3:-1]+'k'
     
-        current = update_naif_kernel(source, regex)
+        current = update_naif_kernel(source, regex, kernels_dir=kernels_dir)
         default_kernel_list.append(f'{kernel_type}/{current}')
     
     write_metakernel(default_kernel_list, default_mk)
@@ -380,24 +384,7 @@ def update_small_body_kernel(sb_search_str: str) -> str:
     print("response code: {0}".format(response.status_code))
     raise RuntimeError(f'Invalid request: {url} \nMaybe "{sb_search_str}" is a bad sb_search_str?')
 
-
-def update_all_kernels():
-    '''
-    seems useful
-    '''
-    # TODO
-
-    return
-
-def update_needed(kernel):
-    '''
-    Returns boolean indicating if a kernel needs updating.
-    '''
-    # TODO?
-
-    return
-
-def write_metakernel(kernel_list: list, naifid: int, outdir: str = f'{kernels_dir}/mk', comments: str = ''):
+def write_metakernel(kernel_list: list, naifid: int, outdir:str=f'{kernels_dir}/mk', kernels_dir:str=kernels_dir, comments: str = ''):
     '''
     Writes a metakernel. Items in kernel_list should be the path of each kernel to 
     include, relative to kernels_dir, e.g.:
@@ -407,10 +394,14 @@ def write_metakernel(kernel_list: list, naifid: int, outdir: str = f'{kernels_di
     :type kernel_list: list (of strs)
     :param outdir: Path of directory to write metakernel to.
     :type outdir: str
+    :param kernels_dir: Path of directory containing kernels.
+    :type kernels_dir: str
     :param naifid: NAIF ID code identifying the object.
     :type naifid: int
 
     '''
+    if not path.isdir(outdir):
+        os.mkdir(outdir)
 
     filename = f'{outdir}/{naifid:09d}.tm'
 
@@ -601,7 +592,7 @@ def get_cached_mk(naifid:int) -> str:
 if __name__ == '__main__':
     target_name = sys.argv[1]
 
-    get_mk(target_name)
+    # get_mk(target_name)
 
     # # Include headers in output?
     # verbose = True
