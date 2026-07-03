@@ -58,9 +58,9 @@ The user can either copy the formatted string output into a KRC input file, or u
             https://naif.jpl.nasa.gov/pub/naif/misc/toolkit_docs_N0067/C/cspice/bods2c_c.html
             if that fails, use the small body database API?
     - [x] function to take... I guess the naifid? and see if there's a cached metakernel for it.
-    - [ ] user interface: decide what input is needed (target string, is_smallbody flag?), generate a metakernel for that input. This does not independently assess if updates are needed.
+    - [x] user interface: decide what input is needed (target string, is_smallbody flag?), generate a metakernel for that input. This does not independently assess if updates are needed.
     - [ ] Some logic to only call `update_default_kernels()` once a day max, and just pull from the default metakernel otherwise when building a per-body mk? (check the mod date on the default mk? read the comment line that has the date in it?)
-    - [ ] function to force-update all kernels, or a list of kernels?
+    - [x] function to force-update all kernels, or a list of kernels?
     - [ ] testing?
 
 - `porb.py`
@@ -71,14 +71,14 @@ The user can either copy the formatted string output into a KRC input file, or u
         - [x] for body type: "Satellite"
         - [x] for body type: "Comet"
         - [x] for body type: other/general?? could I use negative naifids for stuff like that? 
-    - [ ] user interface: specify body, get a metakernel using `kernel_mgmt.py`, options to force params to user input values. 
+    - [x] user interface: specify body, get a metakernel using `kernel_mgmt.py`, options to force params to user input values. 
     - [x] function to derive spin pole from obliquity and true anomaly, set spin_axis and secondary_spin_params based on that method? (seems more user friendly to have that option)
     - [x] high-level function to take a body name, get the metakernel and naifid, (optionally updating kernels) and manage any kwargs to modify default values, then return a porb_params object.
     - [ ] testing
 
 - `body_params.py`
     - [x] high-level function to attach other params for writing output to a defaults hdf.
-    - [ ] high-level function to run the above function for a standard list of bodies? or maybe every body already in the cache? while forcing a kernel update. 
+    - [x] high-level function to run the above function for a standard list of bodies? or maybe every body already in the cache? while forcing a kernel update. 
     - [x] function to read HDF files, extract porb_params object and other objects.
         values in those objects can then be modified. 
             (not recommended to modify from cached defaults directly, as linked values will not update automatically, eg semi-major axis & operiod.) preferred behavior is to construct a fresh instance of the object directly?
@@ -88,6 +88,7 @@ The user can either copy the formatted string output into a KRC input file, or u
             2. be used by a python based fortran krc interface (?)
 
         the defaults HDFs can be read by the existing dv interface to work with fortran krc
+    - [x] testing
 
 - other (additional rotation info)
     - [ ] Find additional source for small-body periods and spin-poles. The standard PCK doesn't have nearly enough of those. 

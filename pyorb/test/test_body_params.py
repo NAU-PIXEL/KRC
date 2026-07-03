@@ -1,6 +1,10 @@
-from src.body_params import add_str_dset, add_num_dset, type_params_dict, planet_flux_dict, krc_params_dict, get_body_params, write_hdf
+from src.body_params import add_str_dset, add_num_dset, type_params_dict, planet_flux_dict, krc_params_dict, get_body_params, write_hdf, get_radius, read_hdf, high_level_write_hdf
 import src.defaults as defaults
+import src.porb as porb
 import pytest
+import tempfile
+import os
+import numpy as np
 
 def dicts_match_keys_and_types(dict1:dict, dict2:dict)->bool:
     '''
@@ -14,96 +18,85 @@ def dicts_match_keys_and_types(dict1:dict, dict2:dict)->bool:
     return keys_match and types_match
 
 def get_mars_porb_params():
-    out={}
-    out['default_spin']     = 1
-    out['porb_version']     = '2000jan01'
-    out['generation_date']  = '2000 Jan 01 00:00:00'
-    out['NAME']             = 'Mars'
-    out['body_type']        = 'Planet'
+    out=porb.PorbParams(
+        default_spin        = 1,
+        porb_version        = '2000jan01',
+        generation_date     = '2000 Jan 01 00:00:00',
+        NAME                = 'Mars',
+        body_type           = 'Planet',
 
-    out['PLANUM']           = 499
+        PLANUM              = 499,
 
-    out['TC']               = 0.0
-    out['RODE']             = 0.8644665
-    out['CLIN']             = 0.3226901E-01
-    out['ARGP']             = -1.281586  
+        TC                  = 0.0,
+        RODE                = 0.8644665,
+        CLIN                = 0.3226901E-01,
+        ARGP                = -1.281586,
 
-    out['XECC']             = 0.9340198E-01
-    out['SJA']              = 1.523712
-    out['EOBL']             = 0.4090926
-    out['SFLAG']            = 0.000000
-    out['ZBAA']             = 0.9229373
+        XECC                = 0.9340198E-01,
+        SJA                 = 1.523712,
+        EOBL                = 0.4090926,
+        SFLAG               = 0.000000,
+        ZBAA                = 0.9229373,
 
-    out['ZBAB']             = 5.544402
-    out['WDOT']             = 0.000000
-    out['WO']               = 0.000000
-    out['OPERIOD']          = 686.9928
-    out['TJP']              = 3397.977
+        ZBAB                = 5.544402,
+        WDOT                = 0.000000,
+        WO                  = 0.000000,
+        OPERIOD             = 686.9928,
+        TJP                 = 3397.977,
 
-    out['SIDAY']            = 24.62296
-    out['spar17']           = 0.000000
-    out['TAV']              = -1.240317
-    out['BLIP']             = 0.4397026
-    out['PBUG']             = 0.000000
+        SIDAY               = 24.62296,
+        spar17              = 0.000000,
+        TAV                 = -1.240317,
+        BLIP                = 0.4397026,
+        PBUG                = 0.000000,
 
-    out['spar21']           = 0.000000
-    out['BFRM 1']           = 0.3244966
-    out['BFRM 2']           = 0.8559125
-    out['BFRM 3']           = 0.4026360
-    out['BFRM 4']           = -0.9458869
-
-    out['BFRM 5']           = 0.2936299
-    out['BFRM 6']           = 0.1381286
-    out['BFRM 7']           = 0.000000
-    out['BFRM 8']           = -0.4256704
-    out['BFRM 9']           = 0.9048783
+        spar21              = 0.000000,
+        BFRM = np.array([[ 0.3244966,  -0.9458869,  0.000000 ],
+                         [ 0.8559125,   0.2936299, -0.4256704],
+                         [ 0.4026360,   0.1381286,  0.9048783]])
+        )
     
     return out
 
 def get_europa_porb_params():
-    out={}
-    out['default_spin']     = 1
-    out['porb_version']     = '2000jan01'
-    out['generation_date']  = '2000 Jan 01 00:00:00'
-    out['NAME']             = 'Europa'
-    out['body_type']        = 'Satellite'
+    out=porb.PorbParams(
+        default_spin        = 1,
+        porb_version        = '2000jan01',
+        generation_date     = '2000 Jan 01 00:00:00',
+        NAME                = 'Europa',
+        body_type           = 'Satellite',
 
-    out['PLANUM']           = 502
+        PLANUM              = 502,
 
-    out['TC']               = 0.0
-    out['RODE']             = 1.753958
-    out['CLIN']             = 0.2276282E-01
-    out['ARGP']             = -1.496526
+        TC                  = 0.0,
+        RODE                = 1.753958,
+        CLIN                = 0.2276282E-01,
+        ARGP                = -1.496526,
 
-    out['XECC']             = 0.4837299E-01
-    out['SJA']              = 5.202875
-    out['EOBL']             = 0.4090926
-    out['SFLAG']            = 0.000000
-    out['ZBAA']             = 1.125917
+        XECC                = 0.4837299E-01,
+        SJA                 = 5.202875,
+        EOBL                = 0.4090926,
+        SFLAG               = 0.000000,
+        ZBAA                = 1.125917,
 
-    out['ZBAB']             = 4.678863
-    out['WDOT']             = 0.000000
-    out['WO']               = 0.000000
-    out['OPERIOD']          = 4334.739
-    out['TJP']              = -238.1847
+        ZBAB                = 4.678863,
+        WDOT                = 0.000000,
+        WO                  = 0.000000,
+        OPERIOD             = 4334.739,
+        TJP                 = -238.1847,
 
-    out['SIDAY']            = 85.22835
-    out['spar17']           = 0.000000
-    out['TAV']              = 2.136860
-    out['BLIP']             = 0.5414684E-01
-    out['PBUG']             = 0.000000
+        SIDAY               = 85.22835,
+        spar17              = 0.000000,
+        TAV                 = 2.136860,
+        BLIP                = 0.5414684E-01,
+        PBUG                = 0.000000,
 
-    out['spar21']           = 0.000000
-    out['BFRM 1']           = -0.5363136
-    out['BFRM 2']           = -0.8427818
-    out['BFRM 3']           = -0.4567862E-01
-    out['BFRM 4']           = 0.8440188
+        spar21              = 0.000000,
+        BFRM = np.array([[ -0.5363136,      0.8440188,      0.000000     ],
+                         [ -0.8427818,     -0.5355276,     -0.5412039E-01],
+                         [ -0.4567862E-01, -0.2902550E-01,  0.9985344    ]])
+        )
 
-    out['BFRM 5']           = -0.5355276
-    out['BFRM 6']           = -0.2902550E-01
-    out['BFRM 7']           = 0.000000
-    out['BFRM 8']           = -0.5412039E-01
-    out['BFRM 9']           = 0.9985344
     
     return out
 
@@ -111,7 +104,7 @@ mars_type_params = type_params_dict(
     body_name   =   'Mars',
     body_type   =   'Planet',
     naifid      =   499,
-    parent_body =   0
+    parent_body =   ''
 )
 
 mars_planet_flux = planet_flux_dict(
@@ -166,7 +159,7 @@ def test_get_body_params_N24_is_good():
     '''
     # europa case
     (type_params, planet_flux, krc_params) = get_body_params(europa_porb, f'{kernelsdir}/pck00011.tpc')
-    timestep = europa_porb['SIDAY']/krc_params['N24']
+    timestep = europa_porb.SIDAY/krc_params['N24']
 
     assert krc_params['N24']%24 == 0 and timestep <= 0.5 and timestep >= 0.25
 
@@ -182,4 +175,35 @@ def test_get_body_params_dict_values_correct_mars():
     mars_params = get_body_params(mars_porb, f'{kernelsdir}/pck00011.tpc')
 
     assert mars_params == pytest.approx((mars_type_params, mars_planet_flux, mars_krc_params))
+
+def test_get_radius_with_metakernel():
+    # Mars case
+    mars_mk = f'{kernelsdir}/pck00011.tpc'
+    mars_radius = 3396.19
+    radius = get_radius(499, mars_mk)
+
+    assert radius == pytest.approx(mars_radius)
+
+def test_get_radius_no_metakernel():
+    # using the standard PCK, which does not supply radii for this object:
+    mk = f'{kernelsdir}/pck00011.tpc'
+    radius = get_radius(2003779, mk)
+
+    assert radius == pytest.approx(defaults.radius)
+
+def test_write_read_hdf_roundtrip():
+    temp_dir = tempfile.gettempdir()
+    mars_body_params = (mars_type_params, mars_planet_flux, mars_krc_params)
+    
+    hdf = f'{temp_dir}/MARS.porb.hdf'
+    if os.path.exists(hdf):
+        os.remove(hdf)
+    hdf = write_hdf(mars_porb, mars_body_params, temp_dir)
+    (type_params, planet_flux, krc_params, porb_params) = read_hdf(hdf)
+    os.remove(hdf)
+
+    np.testing.assert_equal(porb_params.__dict__, mars_porb.__dict__)
+    assert type_params == pytest.approx(mars_type_params)
+    assert planet_flux == pytest.approx(mars_planet_flux)
+    assert krc_params == pytest.approx(mars_krc_params) 
 

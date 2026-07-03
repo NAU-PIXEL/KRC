@@ -293,6 +293,45 @@ class PorbParams:
         self.spar21           = spar21
         self.BFRM             = BFRM
 
+    def __eq__(self, other:PorbParams) -> bool:
+        is_equal = all([
+            self.default_spin     == other.default_spin,
+            self.porb_version     == other.porb_version,
+            self.generation_date  == other.generation_date,
+            self.NAME             == other.NAME,
+            self.body_type        == other.body_type,
+
+            self.PLANUM           == other.PLANUM,
+            self.TC               == other.TC,
+            self.RODE             == other.RODE,
+            self.CLIN             == other.CLIN,
+            self.ARGP             == other.ARGP,
+
+            self.XECC             == other.XECC,
+            self.SJA              == other.SJA,
+            self.EOBL             == other.EOBL,
+            self.SFLAG            == other.SFLAG,
+            self.ZBAA             == other.ZBAA,
+
+            self.ZBAB             == other.ZBAB,
+            self.WDOT             == other.WDOT,
+            self.WO               == other.WO,
+            self.OPERIOD          == other.OPERIOD,
+            self.TJP              == other.TJP,
+
+            self.SIDAY            == other.SIDAY,
+            self.spar17           == other.spar17,
+            self.TAV              == other.TAV,
+            self.BLIP             == other.BLIP,
+            self.PBUG             == other.PBUG,
+
+            self.spar21           == other.spar21,
+            np.all(self.BFRM      == other.BFRM)
+        ])
+
+        return is_equal
+        
+
     @classmethod
     def from_orb_and_spin_params(cls,
                                  body_name: str, 
@@ -395,15 +434,15 @@ class PorbParams:
 
         lines = porb_str.split('\n')
         porb_version = lines[0].split(' ')[0][5:]
-        generation_date = lines[0].split(' ')[1]
+        generation_date = ' '.join(lines[0].split('IPLAN')[0].split()[1:])
         NAME = lines[0].split(':')[-1]
         
-        PLANUM, TC, RODE, CLIN, ARGP = lines[1].split(' ')
-        XECC, SJA, EOBL, SFLAG, ZBAA = lines[2].split(' ')
-        ZBAB, WDOT, WO, OPERIOD, TJP = lines[3].split(' ')
-        SIDAY, spar17, TAV, BLIP, PBUG = lines[4].split(' ')
-        spar21, flat_bfrm[0], flat_bfrm[1], flat_bfrm[2], flat_bfrm[3] = lines[5].split(' ')
-        flat_bfrm[4], flat_bfrm[5], flat_bfrm[6], flat_bfrm[7], flat_bfrm[8] = lines[6].split(' ')
+        [PLANUM, TC, RODE, CLIN, ARGP] = [float(i) for i in lines[1].split()]
+        [XECC, SJA, EOBL, SFLAG, ZBAA] = [float(i) for i in lines[2].split()]
+        [ZBAB, WDOT, WO, OPERIOD, TJP] = [float(i) for i in lines[3].split()]
+        [SIDAY, spar17, TAV, BLIP, PBUG] = [float(i) for i in lines[4].split()]
+        [spar21, flat_bfrm[0], flat_bfrm[1], flat_bfrm[2], flat_bfrm[3]] = [float(i) for i in lines[5].split()]
+        [flat_bfrm[4], flat_bfrm[5], flat_bfrm[6], flat_bfrm[7], flat_bfrm[8]] = [float(i) for i in lines[6].split()]
 
         BFRM = flat_bfrm.reshape(3,3).T
 

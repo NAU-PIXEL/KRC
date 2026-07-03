@@ -50,11 +50,12 @@ def add_num_dset(value, group, label, d_type):
 
     return
 
+# Three typed dictionaries, corresponding to the groups expected in the davinci PORB hdf format.
 class type_params_dict(TypedDict):
     body_name   :   str
     body_type   :   str
     naifid      :   int
-    parent_body :   int
+    parent_body :   str
 
 class planet_flux_dict(TypedDict):
     BT_Avg      :   float   
@@ -77,6 +78,13 @@ class krc_params_dict(TypedDict):
     N24         :   int
 
 def get_radius(naifid:int, metakernel:str = None) -> float:
+    '''
+    Return the radius of an object, specified by its naifid. 
+    Use the metakernel supplied, or select an appropriate one from the kernel cache.
+    If no Radius information is available in the chosen kernels, use the default radius.
+    
+    Returns: radius of the object [km]
+    '''
     radius = defaults.radius 
     if metakernel is None:
         metakernel = f'{install.kernels_dir}/mk/{naifid:09d}.tm'
@@ -91,12 +99,14 @@ def get_radius(naifid:int, metakernel:str = None) -> float:
 def get_body_params(porb_output:porb.PorbParams, metakernel:str=None) -> tuple[type_params_dict, planet_flux_dict, krc_params_dict]:
     '''
     derive parameters (or extract them from the planetary parameters csv file) for writing a porb hdf.
+
+    returns a tuple of three dicts, corresponding to the three groups with the davinci PORB hdf format.
     '''
     type_params = {
         'body_name'     :   porb_output.NAME,
         'body_type'     :   porb_output.body_type,
         'naifid'        :   porb_output.PLANUM,
-        'parent_body'   :   0
+        'parent_body'   :   ''
     }
 
     planet_flux = {
@@ -175,7 +185,7 @@ def write_hdf(porb_output:porb.PorbParams, body_params:tuple, out_dir: str):
     write a cacheable hdf for the specified body, containing PORB output, plus other 
     parameters used by various other davinci interface systems.
 
-    HDF contents, mostly matching the format expected by the Davinci interface:
+    HDF contents, matching the format expected by the Davinci interface:
 
     rot:                string  formatted string containing table of KRC input parameters from PORB. (see porb.py)
     body:               string  Name of the specified body. Converted to all uppercase for consistency in parsing user inputs.
@@ -257,23 +267,44 @@ def write_hdf(porb_output:porb.PorbParams, body_params:tuple, out_dir: str):
     return hdf_file
 
 def read_hdf(hdf_file:str) -> tuple[type_params_dict, planet_flux_dict, krc_params_dict, porb.PorbParams]:
+    '''
+    read an HDF file in the davinci PORB hdf format. 
+    unpack the 1x1x1 arrays used for scalars (because of davinci compatibility)
+    decode any bytestrings into standard python strings
+    
+    input: 
+    hdf_file:   string  Full path to the HDF file to unpack.
 
+    return:
+    a tuple of three dicts and a PorbParams object, corresponding to the contents of the HDF.
+    '''
     with h5py.File(hdf_file, 'r') as f:
-        porb_params = porb.PorbParams.from_str(f['rot'])
-        porb_params.default_spin = f['rot_per_flag']
-        porb_params.body_type = f['type/body_type']
+        porb_params = porb.PorbParams.from_str(f['rot'][0].decode())
+        porb_params.default_spin = int(f['rot_per_flag'][0,0,0])
+        porb_params.body_type = f['type/body_type'][0].decode()
 
-        type_params = {'body_type':   f['type/body_type'],
-                       'naifid':      f['type/id'],
-                       'body_name':   f['type/name'],
-                       'parent_body': f['type/parent_body']}
+        type_params = {'body_type':   f['type/body_type'][0].decode(),
+                       'naifid':      f['type/id'][0,0,0],
+                       'body_name':   f['type/name'][0].decode(),
+                       'parent_body': f['type/parent_body'][0].decode()}
         
         planet_flux = dict(f['planet_flux'].items())
         krc_params = dict(f['krc'].items())
+        for key in planet_flux.keys():
+            planet_flux[key] = planet_flux[key][0,0,0]
+        for key in krc_params.keys():
+            krc_params[key] = krc_params[key][0,0,0]
 
     return (type_params, planet_flux, krc_params, porb_params)
 
 def high_level_write_hdf(porb_output:porb.PorbParams, out_dir:str=install.porb_defaults_dir):
+    '''
+    Write an HDF file corresponding to a given PorbParams object, to some given directory.
+    This high-level function will automatically get the additional body parameters needed
+    to match the Davinci PORB hdf format. 
+
+    Returns: the path to the hdf file written. 
+    '''
     body_params = get_body_params(porb_output)
     hdf_file = write_hdf(porb_output, body_params, out_dir)
     return hdf_file
