@@ -141,7 +141,7 @@ def update_default_kernels(default_mk:str=default_mk, kernels_dir:str=kernels_di
 
     return
 
-def update_name_naifID_map(naifid_map_file:str = naifid_map_file) -> str:
+def update_name_naifID_map(naifid_map_file:str = naifid_map_file, kernels_dir=kernels_dir) -> str:
     '''
     create a fresh name-naifid mapping file, with all available satellites,
     and all currently downloaded small bodies.
@@ -161,21 +161,25 @@ def update_name_naifID_map(naifid_map_file:str = naifid_map_file) -> str:
     
     with open(naifid_map_file, 'w') as f:
         f.write('name,naifid\n')
-        f.writelines([f'{name},{naifid}' for name,naifid in iter(satellite_IDs)])
-
+        f.writelines([f'{name},{satellite_IDs[name]}\n' for name in satellite_IDs.keys()])
 
     # Add lines for any small bodies that currently have metakernels.
-    small_body_lines = []
+    names = []
+    naifids = []
     all_metakernels = glob.glob(f'{kernels_dir}/mk/*.tm')
     for mk in all_metakernels:
+        if 'krc_default' in path.basename(mk):
+            # Ignore the default metakernel
+            continue
         naifid = int(mk.split('/')[-1][:-3])
         if naifid >= 100000:
             with open(mk, 'r') as m:
-                name = m.readlines()[3]
-            small_body_lines.append(f'{name.upper()},{naifid}')
+                name = m.readlines()[3].strip()
+            names.append(name)
+            naifids.append(naifid)
     
-    with open(naifid_map_file, 'a') as f:
-        f.writelines(small_body_lines)
+    for i in range(len(names)):
+        append_to_naifid_map(names[i], naifid[i], naifid_map_file=naifid_map_file)
 
     return naifid_map_file
 
@@ -303,23 +307,19 @@ def update_satellite_kernel(satellite:str) -> str:
 
     return f'spk/{newest}'
 
-def update_small_body_kernel(sb_search_str: str) -> str:
+def update_small_body_kernel(naifid:int, kernels_dir:str = kernels_dir) -> str:
     '''
-    Downloads a fresh kernel from Horizons for a small body. sb_search_str should be a
-    name, IAU number, or NAIF ID uniquely identifying the body of interest. 
-    However, the exact query term being used here can do more tricks than this function
-    assumes. For a full description of usage, see the JPL Horizons documentation:
+    Downloads a fresh kernel from Horizons for a small body. 
+    NAIF ID must uniquely identify the body of interest. 
+
+    For a full description of horizons API, see the JPL Horizons documentation:
     https://ssd-api.jpl.nasa.gov/doc/horizons.html#command
 
     Note that this function hard-codes the ";" in the query, forcing a search only over 
     small bodies (i.e., excluding planets and moons).
 
-    When using a provisional designation (e.g., 1999 SG6), the search string is case-
-    sensitive (possibly because of the space?). Otherwise, 'ceres', 'Ceres', and 'CERES'
-    all match 1 Ceres.
-
-    :param sb_search_str: Name, IAU number, or NAIF ID of target body.
-    :type sb_search_str: str
+    :param naifid NAIF ID of target body. Case-insensitive.
+    :type naifid: int
     :return: filename of the generated spk
     :rtype: str
     '''
@@ -329,15 +329,21 @@ def update_small_body_kernel(sb_search_str: str) -> str:
     spk_path = f'{kernels_dir}/spk'
     spk_filename = f'{spk_path}/default_horizons_spk.bsp'
 
+    if not os.path.exists(spk_path):
+        os.makedirs(spk_path)
+
     # Define the time span:
     start_time = '2024-06-01'
     stop_time = '2025-06-01'
 
     # Build the appropriate URL for this API request:
+    # When using a provisional designation (e.g., 1999 SG6), the search string is case-
+    # sensitive (possibly because of the space?). Otherwise, '1', 'ceres', 'Ceres', and 'CERES'
+    # all match 1 Ceres. So, we convert to all upper-case.
     # IMPORTANT: You must encode the "=" as "%3D" and the ";" as "%3B" in the
     #            Horizons COMMAND parameter specification.
     url += "?format=json&EPHEM_TYPE=SPK&OBJ_DATA=NO"
-    url += f"&COMMAND='{sb_search_str}%3B'&START_TIME='{start_time}'&STOP_TIME='{stop_time}'"
+    url += f"&COMMAND='DES={naifid}%3B'&START_TIME='{start_time}'&STOP_TIME='{stop_time}'"
 
     # Submit the API request and decode the JSON-response:
     response = requests.get(url)
@@ -382,9 +388,9 @@ def update_small_body_kernel(sb_search_str: str) -> str:
 
     # Otherwise, some other error occurred:
     print("response code: {0}".format(response.status_code))
-    raise RuntimeError(f'Invalid request: {url} \nMaybe "{sb_search_str}" is a bad sb_search_str?')
+    raise RuntimeError(f'Invalid request: {url} \nMaybe "DES={naifid};" is a bad sb_search_str?')
 
-def write_metakernel(kernel_list: list, naifid: int, outdir:str=f'{kernels_dir}/mk', kernels_dir:str=kernels_dir, comments: str = ''):
+def write_metakernel(kernel_list: list, naifid: int, name=None, outdir:str=f'{kernels_dir}/mk', kernels_dir:str=kernels_dir, comments: str = ''):
     '''
     Writes a metakernel. Items in kernel_list should be the path of each kernel to 
     include, relative to kernels_dir, e.g.:
@@ -403,11 +409,20 @@ def write_metakernel(kernel_list: list, naifid: int, outdir:str=f'{kernels_dir}/
     if not path.isdir(outdir):
         os.mkdir(outdir)
 
+    try:
+        i = int(name)
+        raise RuntimeError(f'Name: {name}. Please do not use integers as the object name when writing metakernels!')
+    except ValueError:
+        pass
+
+    if name is None:
+        name = spice.bodc2s(naifid)
+
     filename = f'{outdir}/{naifid:09d}.tm'
 
     header = f'Metakernel for use with KRC.\n' \
              f'Object: \n' \
-             f'{spice.bodc2s(naifid)}\n' \
+             f'{name}\n' \
              f'Kernels up-to-date as of {datetime.datetime.now().strftime("%Y.%m.%d")}\n' \
              f'Generated by kernel_mgmt.py\n'
     
@@ -431,7 +446,7 @@ def write_metakernel(kernel_list: list, naifid: int, outdir:str=f'{kernels_dir}/
 
     return filename
 
-def read_default_mk():
+def read_default_mk(default_mk:str=default_mk) -> list:
     '''
     Get a list of up to date default kernels from the default metakernel.
     '''
@@ -445,55 +460,107 @@ def read_default_mk():
 
     return default_kernels
 
-def testing():
+# def testing():
+#     '''
+#     Currently just in use for testing.
+#     '''
+#
+#     # update_default_kernels()
+#     default_kernel_list = read_default_mk()
+#
+#     satellites = ['phobos', 'Io', 'Europa']
+#     for satellite in satellites:
+#         current = update_satellite_kernel(satellite)
+#         kernel_list = default_kernel_list + [current]
+#         # write_metakernel(kernel_list, f'{kernels_dir}/mk/{satellite.upper()}.tm')
+#
+#     small_bodies = ['Ceres', 'CERES', 'cErEs', '1', '269', 'europa', '1999 sg6', '1999sg6', '1999 SG6', 'mars']
+#     for sb in small_bodies:
+#         spkname = update_small_body_kernel(sb)
+#         kernel_list = default_kernel_list + [spkname]
+#         # write_metakernel(kernel_list, f'{kernels_dir}/mk/{sb.upper()}.tm')
+#
+#     kernel_list = read_default_mk()
+#     return
+
+def make_sb_mk(sb_search_str:str, default_mk:str=default_mk, naifid_map_file:str=naifid_map_file, kernels_dir:str=kernels_dir) -> str:
     '''
-    Currently just in use for testing.
+    sb_search_str should be a name, IAU number, IAU provisional designation, or NAIF ID 
+    uniquely identifying the body of interest.
+
+    This function should only be called when the sb_search_str has already been shown 
+    to match an asteroid or comet body_type.
+
+    Available search string formats (all matching the same object, (3779) Kieffer):
+        '3779'
+        'kieffer'
+        '3779 kieffer'
+        '1985jv1'
+        '1985 jv1'
+        '20003779'
+    
+    The search string is case-insensitive.
+    If searching using both the number and name of an object, e.g. '3779 Kieffer', the space
+    must be included. 
+    If searching a provisional designation, e.g. '1985 JV1', the space is optional. 
+
+    input:
+    sb_search_str   str     String identifier for the object of interest.
+    
+    output:
+    mk_path         str     Path to the metakernel written for this object.
     '''
 
     # update_default_kernels()
-    default_kernel_list = read_default_mk()
+    default_kernel_list = read_default_mk(default_mk=default_mk)
 
-    satellites = ['phobos', 'Io', 'Europa']
-    for satellite in satellites:
-        current = update_satellite_kernel(satellite)
-        kernel_list = default_kernel_list + [current]
-        # write_metakernel(kernel_list, f'{kernels_dir}/mk/{satellite.upper()}.tm')
-
-
-
-    small_bodies = ['Ceres', 'CERES', 'cErEs', '1', '269', 'europa', '1999 sg6', '1999sg6', '1999 SG6', 'mars']
-    for sb in small_bodies:
-        spkname = update_small_body_kernel(sb)
-        kernel_list = default_kernel_list + [spkname]
-        # write_metakernel(kernel_list, f'{kernels_dir}/mk/{sb.upper()}.tm')
-
-    kernel_list = read_default_mk()
-    return
-
-def make_sb_mk(sb_search_str:str):
-    '''
-    sb_search_str should be a name, IAU number, or NAIF ID uniquely identifying the body of interest.
-    '''
-    # update_default_kernels()
-    default_kernel_list = read_default_mk()
+    # update_small_body_kernel() queries JPL Horizons, which has more restrictive query 
+    # formatting than get_naifid(), which queries JPL Small Body DataBase. 
+    # To ensure the more flexible formatting is used, this function queries the SBDB 
+    # first, then uses the NAIFid when querying Horizons.
 
     sb=sb_search_str
-    spkname = update_small_body_kernel(sb)
+    naifid = get_naifid(sb, default_mk=default_mk, naifid_map_file=naifid_map_file)
+
+    body_type = get_body_type(naifid)
+    if not body_type == 'Comet' and not body_type == 'Minor':
+        raise RuntimeError(f'Object {sb} with NAIF ID {naifid} is not a small body!')
+
+    spkname = update_small_body_kernel(naifid, kernels_dir=kernels_dir)
     kernel_list = default_kernel_list + [spkname]
-    naifid = get_naifid(sb)
-    
-    spice.furnsh(f'{kernels_dir}/{spkname}')
 
     # add entry in naifid map file for this object
-    body_name = spice.bodc2s(naifid)
-    with open(naifid_map_file, 'a') as f:
-        f.writelines(f'{body_name},{naifid}')
+    append_to_naifid_map(sb, naifid, naifid_map_file=naifid_map_file)
     
-    mk_path = write_metakernel(kernel_list, naifid)
+    mk_path = write_metakernel(kernel_list, naifid, name=sb.upper(), outdir=f'{kernels_dir}/mk', kernels_dir=kernels_dir)
 
     return mk_path
 
 def query_sbdb(search_str:str) -> int:
+    '''
+    search_str should be a name, IAU number, IAU provisional designation, or NAIF ID 
+    uniquely identifying the body of interest.
+
+    Available search string formats (all matching the same object, (3779) Kieffer):
+        '3779'
+        'kieffer'
+        '3779 kieffer'
+        '1985jv1'
+        '1985 jv1'
+        '20003779'
+    
+    The search string is case-insensitive.
+    If searching using both the number and name of an object, e.g. '3779 Kieffer', the space
+    must be included. 
+    If searching a provisional designation, e.g. '1985 JV1', the space is optional. 
+
+    input:
+    sb_search_str   str     String identifier for the object of interest.
+    
+    output:
+    naifid          int     NAIF object ID code for the object.
+    '''
+    search_str = search_str.upper()
     # Define API URL
     url = 'https://ssd-api.jpl.nasa.gov/sbdb.api'
     url += f'?sstr={search_str}'
@@ -509,7 +576,7 @@ def query_sbdb(search_str:str) -> int:
     # If the request was valid...
     if (response.status_code == 200):
         if "object" in data:
-            naifid = data['object']['spkid']
+            naifid = int(data['object']['spkid'])
             return naifid
         
         # Otherwise, output an error:
@@ -539,8 +606,8 @@ def query_sbdb(search_str:str) -> int:
     print("response code: {0}".format(response.status_code))
     raise RuntimeError(f'Invalid request: {url} \nMaybe "{search_str}" is a bad search_str?')
 
-def make_satellite_mk(satellite:str) -> str:
-    default_kernel_list = read_default_mk()
+def make_satellite_mk(satellite:str, default_mk:str=default_mk) -> str:
+    default_kernel_list = read_default_mk(default_mk=default_mk)
 
     current = update_satellite_kernel(satellite)
     kernel_list = default_kernel_list + [current]
@@ -553,17 +620,47 @@ def make_satellite_mk(satellite:str) -> str:
 
     return mk_path
 
-def query_naifid_map(search_str:str) -> int:
+def query_naifid_map(search_str:str, naifid_map_file:str=naifid_map_file) -> int:
     naifid_map = np.genfromtxt(naifid_map_file, delimiter=',', names=True, encoding='utf-8',
-                               dtype=['U32', int])
+                               dtype=['U64', int])
     
     if search_str.upper() in naifid_map['name']:
-        naifid = naifid_map['naifid'][naifid_map['name']==search_str.upper()]
-        return naifid
+        naifid = naifid_map['naifid'][naifid_map['name']==search_str.upper()][0]
+        return int(naifid)
     else:
         raise RuntimeError(f'No object matching search string {search_str} found in naifid map file {naifid_map_file}')
 
-def get_naifid(search_str:str) -> int:
+def append_to_naifid_map(name:str, naifid:int, naifid_map_file:str=naifid_map_file):
+    try:
+        i = int(name)
+        raise RuntimeError(f'Name: {name}. Please do not use integers as the object name when appending to the name-naifid map file!')
+    except ValueError:
+        pass
+
+    with open(naifid_map_file, 'a') as f:
+        f.write(f'{name.upper()},{naifid}\n')
+    return
+
+def get_naifid(search_str:str, default_mk:str=default_mk, naifid_map_file:str=naifid_map_file) -> int:
+    '''
+    search_str should be a name, IAU number, IAU provisional designation, or NAIF ID 
+    uniquely identifying the body of interest.
+
+    For Small Bodies:
+        Available SBDB search string formats (all matching the same object, (3779) Kieffer):
+            '3779'
+            'kieffer'
+            '3779 kieffer'
+            '1985jv1'
+            '1985 jv1'
+            '20003779'
+        
+        The search string is case-insensitive.
+        If searching using both the number and name of an object, e.g. '3779 Kieffer', the space
+        must be included. 
+        If searching a provisional designation, e.g. '1985 JV1', the space is optional. 
+    '''
+
     # load default mk
     spice.furnsh(default_mk)
     try:
@@ -572,25 +669,50 @@ def get_naifid(search_str:str) -> int:
         print(f'String "{search_str}" matched no objects in default metakernel {default_mk}.')
         # if that fails, try the local naifid map file
         try:
-            naifid = query_naifid_map(search_str)
+            naifid = query_naifid_map(search_str, naifid_map_file=naifid_map_file)
         except RuntimeError as e:
             print(e)    
             # if it fails, use small body db api?
             print(f'Searching JPL Small Body Database')
             naifid = query_sbdb(search_str)
+            append_to_naifid_map(search_str, naifid, naifid_map_file=naifid_map_file)
 
     return naifid
 
-def cached_mk_exists(naifid:int) -> bool:
+def cached_mk_exists(naifid:int, kernels_dir:str=kernels_dir) -> bool:
     mk_path = f'{kernels_dir}/mk/{naifid:09d}.tm'
     return path.exists(mk_path)
 
-def get_cached_mk(naifid:int) -> str:
+def get_cached_mk(naifid:int, kernels_dir:str=kernels_dir) -> str:
     mk_path = f'{kernels_dir}/mk/{naifid:09d}.tm'
     return mk_path
+
+def get_body_type(body_naifid):
+    '''
+    return the type of a body, given its naifid
+
+    note: only valid for planets, satellites, comets, and asteroids (minor)
+
+    Don't use this for naifids that refer to system barycenters or spacecraft, for example.
+    '''
+
+    body_type = 'General'
+
+    if (body_naifid < 1000) and (body_naifid%100 == 99):
+        body_type = 'Planet'
+    elif (body_naifid > 10) and (body_naifid < 100000):
+        body_type = 'Satellite'
+    elif (body_naifid >= 1000000) and (body_naifid < 2000000):
+        body_type = 'Comet'
+    elif (body_naifid >= 2000000) and (body_naifid < 1000000000):
+        body_type = 'Minor'
     
+    return body_type
+
 if __name__ == '__main__':
     target_name = sys.argv[1]
+
+    update_small_body_kernel(target_name)
 
     # get_mk(target_name)
 

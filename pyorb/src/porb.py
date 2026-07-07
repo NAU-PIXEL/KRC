@@ -8,7 +8,7 @@ import numpy as np
 import spiceypy as spice
 import datetime
 from . import constants as const
-from .kernel_mgmt import kernels_dir, default_mk, update_default_kernels, make_sb_mk, make_satellite_mk, get_naifid, cached_mk_exists, get_cached_mk
+from .kernel_mgmt import kernels_dir, default_mk, update_default_kernels, make_sb_mk, make_satellite_mk, get_naifid, cached_mk_exists, get_cached_mk, get_body_type
 # from .body_params import write_hdf, get_body_params
 from . import defaults 
 from . import install
@@ -672,22 +672,6 @@ def alt_get_secondary_spin_params(orb:OrbParams, obliquity, true_anomaly_at_vern
 
     return (pole_ra, pole_dec, rotation_matrix_FtoB)
 
-def get_body_type(body_naifid):
-    '''
-    return the type of a body, given its naifid
-    '''
-    body_type = 'General'
-
-    if (body_naifid < 1000) and (body_naifid%100 == 99):
-        body_type = 'Planet'
-    elif (body_naifid > 10) and (body_naifid < 100000):
-        body_type = 'Satellite'
-    elif (body_naifid >= 1000000) and (body_naifid < 2000000):
-        body_type = 'Comet'
-    elif (body_naifid >= 2000000) and (body_naifid < 1000000000):
-        body_type = 'Minor'
-    
-    return body_type
 
 def old_get_porb_params(body_name, body_naifid, body_type, orb_elems, spin_axis):
     '''
@@ -867,7 +851,7 @@ def high_level_get_porb_params(body_name:str, update_kernels:bool = False) -> Po
             # make a satellite mk associated with parent body
             metakernel = make_satellite_mk(naifid)
         elif body_type == 'Comet' or body_type == 'Minor':
-            metakernel = make_sb_mk(naifid) 
+            metakernel = make_sb_mk(body_name) 
 
     porb_params = get_porb_params(body_name, naifid, metakernel)
     

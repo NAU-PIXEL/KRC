@@ -20,6 +20,14 @@ test/kernels/input/test1/
     spk/
         de442.bsp       <-- keep up to date to reduce unnecessary downloads during testing.
 
+test/kernels/input/test2/
+    mk/                 <--- these metakernels may point to kernels that don't exist.
+        20000024.tm
+        20000052.tm
+        20003779.tm
+        krc_default.tm
+    naifid_map.csv      <--- should contain all satellites, plus 24 Themis, 52 Europa, and 3779 Kieffer
+
 '''
 
 
@@ -108,6 +116,9 @@ def test_write_metakernel():
     shutil.rmtree(outdir)
     assert not os.path.exists(outdir)
 
+    with pytest.raises(RuntimeError):
+        mk = km.write_metakernel(kernel_list, 20003779, name='3779', outdir=outdir, kernels_dir=indir)
+
     mk = km.write_metakernel(kernel_list, naifid, outdir=outdir, kernels_dir=indir)
 
     # Check that the mk was generated successfully and written to the correct location.
@@ -169,38 +180,170 @@ def test_update_default_kernels():
     assert os.path.exists(pck)
 
 def test_read_default_mk():
+    mk = input_kernels_dir+'/test2/mk/krc_default.tm'
+    intended_kernels_list = ['lsk/naif0012.tls',
+                             'pck/pck00011.tpc',
+                             'spk/de442.bsp']
+    
+    kernels_list = km.read_default_mk(mk)
 
-    pass
+    assert kernels_list == intended_kernels_list
+
+def test_query_naifid_map():
+    searches = ['Sun', 'Mars', 'Europa', '52 Europa', 'Themis', 'THEMISTO', 'Kieffer']
+    results = [10, 499, 502, 20000052, 20000024, 518, 20003779]
+    map_file = input_kernels_dir+'/test2/naifid_map.csv'
+
+    for i in range(len(searches)):
+        naifid = km.query_naifid_map(searches[i], naifid_map_file=map_file)
+        assert naifid == results[i]
+
+    with pytest.raises(RuntimeError):
+        naifid = km.query_naifid_map('This test string should fail', naifid_map_file=map_file)
 
 def test_update_name_naifID_map():
+    naifid_map_file = output_kernels_dir+'/naifid_map.csv'
+    indir = input_kernels_dir+'/test2'
+    
+    try:
+        os.remove(naifid_map_file)
+    except FileNotFoundError:
+        pass
 
-    pass
+    assert not os.path.exists(naifid_map_file)
+
+    fileout = km.update_name_naifID_map(naifid_map_file, kernels_dir=indir)
+    print(fileout)
+
+    assert os.path.exists(fileout)
+
+    reference_naifid_map_file = indir+'/naifid_map.csv'
+    reference_map = np.genfromtxt(reference_naifid_map_file, delimiter=',', names=True, 
+                                  encoding='utf-8', dtype=['U32', int])
+    
+    for i in range(len(reference_map['name'])):
+        name = reference_map['name'][i]
+        naifid = km.query_naifid_map(name, naifid_map_file=naifid_map_file)
+        assert naifid == reference_map['naifid'][i]
+
+def test_update_small_body_kernel():
+
+    if os.path.exists(output_kernels_dir):
+        shutil.rmtree(output_kernels_dir)
+    assert not os.path.exists(output_kernels_dir)
+
+    naifids = [20000001, 20000002, 20059980, 20000052, 20003779]
+
+    spks = ['20000001.bsp', '20000002.bsp', '20059980.bsp', '20000052.bsp', '20003779.bsp']
+    
+    for i in range(len(naifids)):
+        km.update_small_body_kernel(naifids[i], kernels_dir=output_kernels_dir)
+        assert os.path.exists(output_kernels_dir+'/spk/'+spks[i])
+
+def test_get_body_type():
+    naifids = [499, 401, 1000132, 20003779]
+    types = ['Planet', 'Satellite', 'Comet', 'Minor']
+
+    for i in range(len(types)):
+        body_type = km.get_body_type(naifids[i])
+        assert body_type == types[i]
+
+def test_query_sbdb():
+    # Test many different ways of returning the same object.
+    queries = ['3779', 'kieffer', '3779 kieffer', '1985jv1', '1985 jv1', '20003779']
+    for query in queries:
+        naifid = km.query_sbdb(query)
+        assert isinstance(naifid, int)
+        assert naifid == 20003779
+
+    # Test that queries returning multiple results will raise an error
+    with pytest.raises(RuntimeError):
+        naifid = km.query_sbdb('AA*')
+    
+    # Test that queries returning no results will raise an error
+    with pytest.raises(RuntimeError):
+        naifid = km.query_sbdb('This test string will fail')
+
+def test_query_naifid_map():
+    naifid_map_file = input_kernels_dir+'/test2/naifid_map.csv'
+    
+    naifid = km.query_naifid_map('kore', naifid_map_file=naifid_map_file)
+    assert isinstance(naifid, int)
+    assert naifid == 549
+
+    with pytest.raises(RuntimeError):
+        naifid = km.query_naifid_map('This very long test string will fail', naifid_map_file=naifid_map_file)
+
+def test_get_naifid():
+    indir = input_kernels_dir+'/test2'
+    default_mk = indir+'/mk/krc_default.tm'
+    naifid_map_file = output_kernels_dir+'/naifid_map.csv'
+
+    # start with fresh naifid file from test assets
+    if os.path.exists(output_kernels_dir):
+        shutil.rmtree(output_kernels_dir)
+    assert not os.path.exists(output_kernels_dir)
+
+    os.makedirs(output_kernels_dir)
+    shutil.copy(indir+'/naifid_map.csv', naifid_map_file)
+    
+
+    bodies = ['Mars', 'Phobos', 'Kore', 'Kieffer', 'ceres']
+    naifids = [499, 401, 549, 20003779, 2000001]
+
+    for i in range(len(bodies)):
+        naifid = km.get_naifid(bodies[i], default_mk=default_mk, naifid_map_file=naifid_map_file)
+        print(f'body: {bodies[i]}, naifid: {naifid}')
+        assert naifid == naifids[i]
+
+    # this should fail to find a naifid.
+    with pytest.raises(RuntimeError):
+        naifid = km.query_naifid_map('1985 JV1', naifid_map_file=naifid_map_file)
+
+    naifid = km.get_naifid('1985 JV1', default_mk=default_mk, naifid_map_file=naifid_map_file)
+    assert naifid == 20003779
+
+    # 1985 JV1 should now be added to naifid map file
+    naifid = km.query_naifid_map('1985 JV1', naifid_map_file=naifid_map_file)
+    assert naifid == 20003779
+
+def test_make_sb_mk():
+    indir = input_kernels_dir+'/test2'
+    default_mk = indir+'/mk/krc_default.tm'
+    naifid_map_file = output_kernels_dir+'/naifid_map.csv'
+    kernels_dir = output_kernels_dir
+
+    if os.path.exists(output_kernels_dir):
+        shutil.rmtree(output_kernels_dir)
+    assert not os.path.exists(output_kernels_dir)
+
+    os.makedirs(output_kernels_dir)
+    shutil.copy(indir+'/naifid_map.csv', naifid_map_file)
+
+    # case 1: input naifid not small body
+    with pytest.raises(RuntimeError):
+        km.make_sb_mk('Europa', default_mk=default_mk, naifid_map_file=naifid_map_file, kernels_dir=kernels_dir)
+    
+    # case 2-#:
+    bodies = ['cErEs', '52 europa', 'Kieffer', '1985jv1', '3779 Kieffer', '1985 JV1']
+    naifids = [2000001, 2000052, 20003779, 20003779, 20003779, 20003779]
+    for i in range(len(bodies)):
+        mk_path = km.make_sb_mk(bodies[i], default_mk=default_mk, naifid_map_file=naifid_map_file, kernels_dir=kernels_dir)
+        assert mk_path == kernels_dir+f'/mk/{naifids[i]:09d}.tm'
+        assert os.path.exists(kernels_dir+f'spk/{naifids[i]}.bsp')
+        naifid = km.query_naifid_map(bodies[i], naifid_map_file=naifid_map_file)
+        assert naifid == naifids[i]
+
+    #### Notes:
+    # need to get the metakernels and spks to agree on how many digits to include in file name naifids.
+    # need to account for horizons spitting out 8 digit spks in update_small_body_kernel(),
+    # even though get_naifid returns a 7 digit naifid for ceres as a member of the defaults.
 
 def test_update_satellite_kernel():
 
     pass
 
-def test_update_small_body_kernel():
-
-    pass
-
-def test_make_sb_mk():
-
-    pass
-
-def test_query_sbdb():
-
-    pass
-
 def test_make_satellite_mk():
-
-    pass
-
-def test_query_naifid_map():
-
-    pass
-
-def test_get_naifid():
 
     pass
 
