@@ -59,7 +59,7 @@ def download_target(target:str, dest:str=None, kernels_dir:str=kernels_dir) -> s
         print('I just threw that download in /tmp/ for some reason!')
 
     if not path.isdir(path.dirname(destination)):
-        os.mkdir(path.dirname(destination))
+        os.makedirs(path.dirname(destination))
 
     try:
         urlretrieve(target, destination)
@@ -101,17 +101,20 @@ def update_naif_kernel(source:str, regex:str, kernels_dir=kernels_dir) -> str:
     is_a_match=[bool(re.fullmatch(regex, path.basename(i))) for i in all_current]
     
     if len(all_current[is_a_match])>0:
-        current = path.basename(np.sort(all_current[is_a_match])[-1]) 
-    else: current = 'None'
+        current_path = np.sort(all_current[is_a_match])[-1]
+        current = path.basename(current_path) 
+    else: 
+        current_path = None
+        current = None
 
     ### compare newest available to current existing in kernels_dir
     if current != newest:
-        download_target(f'{source}{newest}')
+        current_path = download_target(f'{source}{newest}', kernels_dir=kernels_dir)
         print(f'updated to {newest} from {current}.')
         current = newest
     else: print(f'{current} is already up to date.')
 
-    return current
+    return current_path
 
 def update_default_kernels(default_mk:str=default_mk, kernels_dir:str=kernels_dir):
     '''
@@ -134,10 +137,10 @@ def update_default_kernels(default_mk:str=default_mk, kernels_dir:str=kernels_di
         regex = kernel_names[kernel]
         kernel_type = regex[-3:-1]+'k'
     
-        current = update_naif_kernel(source, regex, kernels_dir=kernels_dir)
+        current = path.basename(update_naif_kernel(source, regex, kernels_dir=kernels_dir))
         default_kernel_list.append(f'{kernel_type}/{current}')
     
-    write_metakernel(default_kernel_list, default_mk)
+    write_metakernel(default_kernel_list, default_mk, name='default', outdir=kernels_dir+'/mk', kernels_dir=kernels_dir)
 
     return
 
@@ -179,11 +182,11 @@ def update_name_naifID_map(naifid_map_file:str = naifid_map_file, kernels_dir=ke
             naifids.append(naifid)
     
     for i in range(len(names)):
-        append_to_naifid_map(names[i], naifid[i], naifid_map_file=naifid_map_file)
+        append_to_naifid_map(names[i], naifids[i], naifid_map_file=naifid_map_file)
 
     return naifid_map_file
 
-def update_satellite_kernel(satellite:str) -> str:
+def update_satellite_kernel(satellite:str, kernels_dir:str=kernels_dir) -> str:
     '''
     Checks canonical sources for updated versions of SPK for a planetary system. 
     Working as of 2025.11.25 for all listed satellites. I suspect over time, NAIF
@@ -252,12 +255,10 @@ def update_satellite_kernel(satellite:str) -> str:
                 spks_containing_target.append(spks[j].strip())
     
     # throw an error if the target wasn't in any of the spks.
-    try: 
-        assert spks_containing_target > 0
-    except AssertionError as e:
-        print(f'Error: No spks found containing target from source {satellite_source}')
-        print(f'Double-check the target is a valid planetary satellite?')
-        print(f'{e}')
+    if len(spks_containing_target) == 0:
+        err = f'Error: No spks found containing target from source {satellite_source}\n'
+        err += f'Double-check the target is a valid planetary satellite?'
+        raise RuntimeError(err)
 
     ### search the source location, get the index of files
     index = download_target(satellite_source, dest='/tmp/index.html')
@@ -301,7 +302,7 @@ def update_satellite_kernel(satellite:str) -> str:
 
     ### download the desired file, if it is not already up to date.
     if newest not in all_current:
-        download_target(f'{satellite_source}{newest}')
+        download_target(f'{satellite_source}{newest}', kernels_dir=kernels_dir)
         print(f'updated satellite spk to {newest}.')
     else: print(f'{newest} is already up to date.')
 
@@ -407,25 +408,34 @@ def write_metakernel(kernel_list: list, naifid: int, name=None, outdir:str=f'{ke
 
     '''
     if not path.isdir(outdir):
-        os.mkdir(outdir)
+        os.makedirs(outdir)
 
-    try:
-        i = int(name)
-        raise RuntimeError(f'Name: {name}. Please do not use integers as the object name when writing metakernels!')
-    except ValueError:
-        pass
+    if name is not 'default':
+        try:
+            i = int(name)
+            raise RuntimeError(f'Name: {name}. Please do not use integers as the object name when writing metakernels!')
+        except (TypeError, ValueError):
+            pass
+        
 
-    if name is None:
-        name = spice.bodc2s(naifid)
+        if name is None:
+            name = spice.bodc2s(naifid)
 
-    filename = f'{outdir}/{naifid:09d}.tm'
+        filename = f'{outdir}/{naifid:09d}.tm'
 
-    header = f'Metakernel for use with KRC.\n' \
-             f'Object: \n' \
-             f'{name}\n' \
-             f'Kernels up-to-date as of {datetime.datetime.now().strftime("%Y.%m.%d")}\n' \
-             f'Generated by kernel_mgmt.py\n'
-    
+        header = f'Metakernel for use with KRC.\n' \
+                f'Object: \n' \
+                f'{name}\n' \
+                f'Kernels up-to-date as of {datetime.datetime.now().strftime("%Y.%m.%d")}\n' \
+                f'Generated by kernel_mgmt.py\n'
+
+    else:
+        filename = f'{outdir}/krc_default.tm'
+
+        header = f'Metakernel for use with KRC.\n' \
+                f'Kernels up-to-date as of {datetime.datetime.now().strftime("%Y.%m.%d")}\n' \
+                f'Generated by kernel_mgmt.py\n'
+
     if comments != '':
         header+= comments
     
@@ -606,17 +616,15 @@ def query_sbdb(search_str:str) -> int:
     print("response code: {0}".format(response.status_code))
     raise RuntimeError(f'Invalid request: {url} \nMaybe "{search_str}" is a bad search_str?')
 
-def make_satellite_mk(satellite:str, default_mk:str=default_mk) -> str:
+def make_satellite_mk(satellite:str, default_mk:str=default_mk, kernels_dir:str=kernels_dir, naifid_map_file=naifid_map_file) -> str:
     default_kernel_list = read_default_mk(default_mk=default_mk)
 
-    current = update_satellite_kernel(satellite)
+    current = update_satellite_kernel(satellite, kernels_dir=kernels_dir)
     kernel_list = default_kernel_list + [current]
 
-    spice.furnsh(f'{kernels_dir}/{current}')
+    naifid = get_naifid(satellite, default_mk=default_mk, naifid_map_file=naifid_map_file)
 
-    naifid = get_naifid(satellite)
-
-    mk_path = write_metakernel(kernel_list, naifid)
+    mk_path = write_metakernel(kernel_list, naifid, name=satellite.upper(), outdir=f'{kernels_dir}/mk', kernels_dir=kernels_dir)
 
     return mk_path
 

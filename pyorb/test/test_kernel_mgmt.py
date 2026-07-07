@@ -22,9 +22,9 @@ test/kernels/input/test1/
 
 test/kernels/input/test2/
     mk/                 <--- these metakernels may point to kernels that don't exist.
-        20000024.tm
-        20000052.tm
-        20003779.tm
+        002000024.tm
+        002000052.tm
+        020003779.tm
         krc_default.tm
     naifid_map.csv      <--- should contain all satellites, plus 24 Themis, 52 Europa, and 3779 Kieffer
 
@@ -45,7 +45,8 @@ def test_download_target_lsk_pck_spk():
     pck_dest = f'{output_kernels_dir}/pck/pck00009.tpc'
     spk_dest = f'{output_kernels_dir}/spk/de410s.bsp'
 
-    shutil.rmtree(output_kernels_dir)
+    if os.path.exists(output_kernels_dir):
+        shutil.rmtree(output_kernels_dir)
     assert not os.path.exists(output_kernels_dir)
 
     km.download_target(lsk_target, kernels_dir=output_kernels_dir)
@@ -60,8 +61,9 @@ def test_download_target_specified_dest():
     target = 'https://naif.jpl.nasa.gov/pub/naif/generic_kernels/lsk/aareadme.txt'
     destination = f'{output_kernels_dir}/test.txt'
     
-    os.remove(destination)
-    assert not os.path.exists(destination)
+    if os.path.exists(output_kernels_dir):
+        shutil.rmtree(output_kernels_dir)
+    assert not os.path.exists(output_kernels_dir)
 
     km.download_target(target, dest=destination, kernels_dir=output_kernels_dir)
 
@@ -73,9 +75,12 @@ def test_update_naif_kernel():
 
     # Clear out the destination directory
     dest_dir = f'{output_kernels_dir}/lsk'
-    shutil.rmtree(dest_dir)
+    if os.path.exists(dest_dir):
+        shutil.rmtree(dest_dir)
     assert not os.path.exists(dest_dir)
     
+    os.makedirs(dest_dir)
+
     # Case where kernel needs an update:
     # set up destination directory...
     file1 = f'{dest_dir}/naif0008.tls'
@@ -113,7 +118,8 @@ def test_write_metakernel():
     indir = input_kernels_dir+'/test1'
     
     # Clear out the destination directory
-    shutil.rmtree(outdir)
+    if os.path.exists(outdir):
+        shutil.rmtree(outdir)
     assert not os.path.exists(outdir)
 
     with pytest.raises(RuntimeError):
@@ -127,14 +133,15 @@ def test_write_metakernel():
     # Check that the header contains the correct body name.
     with open(mk, 'r') as m:
         lines = m.readlines()
-    assert lines[3] == 'MARS'
+    assert lines[3] == 'MARS\n'
 
     # Check that the mk can be loaded and contains the correct kernel info.
     spice.kclear()
     spice.furnsh(mk)
 
+    # There should be 4 total kernels loaded (including the metakernel itself)
     n_kernels = spice.ktotal('ALL')
-    assert n_kernels == 3
+    assert n_kernels == 4
 
     loaded_kernels = []
     for i in range(n_kernels):
@@ -153,9 +160,6 @@ def test_update_default_kernels():
     # set up working kernels directory, ensure the outdir matches indir.
     shutil.rmtree(outdir)
     shutil.copytree(indir,outdir)
-
-    comparison = filecmp.dircmp(indir, outdir)
-    assert comparison.same_files == comparison.left_list
 
     # Check that a newer version of pck00010.tpc is downloaded and added to the default mk.
     # pck00010.tpc has been superseded by pck00011.tpc since 2022-12-27.
@@ -212,7 +216,7 @@ def test_update_name_naifID_map():
 
     assert not os.path.exists(naifid_map_file)
 
-    fileout = km.update_name_naifID_map(naifid_map_file, kernels_dir=indir)
+    fileout = km.update_name_naifID_map(naifid_map_file=naifid_map_file, kernels_dir=indir)
     print(fileout)
 
     assert os.path.exists(fileout)
@@ -325,35 +329,79 @@ def test_make_sb_mk():
         km.make_sb_mk('Europa', default_mk=default_mk, naifid_map_file=naifid_map_file, kernels_dir=kernels_dir)
     
     # case 2-#:
+    # Note that Ceres and 52 Europa have their NAIF IDs set by default in SPICE, using 7-digit naifids,
+    # while horizons and the SBDB return 8 digit codes. 
+    # I believe this discrepancy will be resolved eventually as later SPICE versions are released??
     bodies = ['cErEs', '52 europa', 'Kieffer', '1985jv1', '3779 Kieffer', '1985 JV1']
     naifids = [2000001, 2000052, 20003779, 20003779, 20003779, 20003779]
     for i in range(len(bodies)):
         mk_path = km.make_sb_mk(bodies[i], default_mk=default_mk, naifid_map_file=naifid_map_file, kernels_dir=kernels_dir)
         assert mk_path == kernels_dir+f'/mk/{naifids[i]:09d}.tm'
-        assert os.path.exists(kernels_dir+f'spk/{naifids[i]}.bsp')
+        
+        kernel_list = km.read_default_mk(default_mk=mk_path)
+        spk_path = kernels_dir+'/'+kernel_list[-1]
+        assert os.path.exists(spk_path)
+
         naifid = km.query_naifid_map(bodies[i], naifid_map_file=naifid_map_file)
         assert naifid == naifids[i]
 
-    #### Notes:
-    # need to get the metakernels and spks to agree on how many digits to include in file name naifids.
-    # need to account for horizons spitting out 8 digit spks in update_small_body_kernel(),
-    # even though get_naifid returns a 7 digit naifid for ceres as a member of the defaults.
-
 def test_update_satellite_kernel():
+    outdir = output_kernels_dir
+    if os.path.exists(outdir):
+        shutil.rmtree(outdir)
+    assert not os.path.exists(outdir)
 
-    pass
+    spk_path = km.update_satellite_kernel('Deimos', kernels_dir=outdir)
+    assert os.path.exists(outdir+'/'+spk_path)
+
+    spk_path = km.update_satellite_kernel('S/2023_S_60', kernels_dir=outdir)
+    assert os.path.exists(outdir+'/'+spk_path)
+
+    spk_path = km.update_satellite_kernel('Deimos', kernels_dir=outdir)
+    assert os.path.exists(outdir+'/'+spk_path)
+
+    with pytest.raises(RuntimeError):
+        spk_path = km.update_satellite_kernel('This string will fail', kernels_dir=outdir)
+
 
 def test_make_satellite_mk():
+    outdir = output_kernels_dir
+    default_mk = input_kernels_dir+'/test2/mk/krc_default.tm'
+    naifid_map_file = input_kernels_dir+'/test2/naifid_map.csv'
+    if os.path.exists(outdir):
+        shutil.rmtree(outdir)
+    assert not os.path.exists(outdir)
 
-    pass
+    satellites  = ['Deimos', 'Phobos', 'S/2023_S_60']
+    naifids     = [402, 401, 65300]
+    for i in range(len(satellites)):
+        mk_path = km.make_satellite_mk(satellites[i], default_mk=default_mk, kernels_dir=outdir, naifid_map_file=naifid_map_file)
+        assert mk_path == outdir+f'/mk/{naifids[i]:09d}.tm'
+
+        kernel_list = km.read_default_mk(default_mk=mk_path)
+        spk_path = outdir+'/'+kernel_list[-1]
+        assert os.path.exists(spk_path)
+
 
 def test_cached_mk_exists():
-
-    pass
+    # Case 1: mk exists
+    exists = [2000024, 2000052, 20003779]
+    for naifid in exists:
+        assert km.cached_mk_exists(naifid, kernels_dir=input_kernels_dir+'/test2')
+    
+    # Case 2: mk does not exist
+    not_exists = [7, 20001234, 499]
+    for naifid in not_exists:
+        assert not km.cached_mk_exists(naifid, kernels_dir=input_kernels_dir+'/test2')
 
 def test_get_cached_mk():
-
-    pass
+    naifids = [2000024, 2000052, 20003779]
+    mks = [input_kernels_dir + '/test2/mk/002000024.tm',
+           input_kernels_dir + '/test2/mk/002000052.tm',
+           input_kernels_dir + '/test2/mk/020003779.tm']
+    for i in range(len(naifids)):
+        mk_path = km.get_cached_mk(naifids[i], kernels_dir=input_kernels_dir+'/test2')
+        assert mk_path == mks[i]
 
 
 
