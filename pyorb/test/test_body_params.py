@@ -39,8 +39,8 @@ def get_mars_porb_params():
         ZBAA                = 0.9229373,
 
         ZBAB                = 5.544402,
-        WDOT                = 0.000000,
-        WO                  = 0.000000,
+        WDOT                = 350.8920,
+        WO                  = 176.0499,
         OPERIOD             = 686.9928,
         TJP                 = 3397.977,
 

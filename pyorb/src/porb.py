@@ -38,6 +38,37 @@ class OrbParams:
         self.perihelion_date = perihelion_date
         self.centuries_from_j2000 = centuries_from_j2000
 
+    def __eq__(self, other:OrbParams) -> bool:
+        is_equal = all([
+            self.long_of_asc_node       == other.long_of_asc_node,
+            self.eccentricity           == other.eccentricity,
+            self.inclination            == other.inclination,
+            self.arg_of_peri            == other.arg_of_peri,
+            np.isclose(self.mean_anomaly, other.mean_anomaly),
+            np.isclose(self.semimajor_axis, other.semimajor_axis),
+            np.isclose(self.epoch_JD, other.epoch_JD),
+            np.isclose(self.orbit_period, other.orbit_period),
+            np.isclose(self.perihelion_date, other.perihelion_date),
+            np.isclose(self.centuries_from_j2000, other.centuries_from_j2000)
+        ])
+
+        return is_equal
+    
+    # def __str__(self) -> str:
+    #     string = ''
+    #     string += f'long_of_asc_node: {self.long_of_asc_node}\n'
+    #     string += f'eccentricity: {self.eccentricity}\n'
+    #     string += f'inclination: {self.inclination}\n'
+    #     string += f'arg_of_peri: {self.arg_of_peri}\n'
+    #     string += f'mean_anomaly: {self.mean_anomaly }\n'
+    #     string += f'semimajor_axis: {self.semimajor_axis}\n'
+    #     string += f'epoch_JD: {self.epoch_JD}\n'
+    #     string += f'orbit_period: {self.orbit_period}\n'
+    #     string += f'perihelion_date: {self.perihelion_date}\n'
+    #     string += f'centuries_from_j2000: {self.centuries_from_j2000}\n'
+        
+    #     return string
+
     @classmethod
     def from_elems(cls, orb_elems) -> Self:
         '''
@@ -66,7 +97,7 @@ class OrbParams:
         centuries_from_j2000 = porb_params.TC
         
         epoch_JD = centuries_from_j2000 * const.earth_year*100 + const.j2000_JD
-        mean_anomaly = ((perihelion_date - epoch_JD + const.j2000_JD) / orbit_period) * (2*np.pi)
+        mean_anomaly = ((perihelion_date - epoch_JD + const.j2000_JD) / orbit_period) * (-2*np.pi)
 
         return cls(long_of_asc_node, eccentricity, inclination, arg_of_peri, mean_anomaly, semimajor_axis, epoch_JD, orbit_period, perihelion_date, centuries_from_j2000)
     
@@ -97,7 +128,7 @@ class OrbParams:
         if semimajor_axis is not None:
             orbit_period = semimajor_axis**(1.5) * const.earth_year    
         elif orbit_period is not None:
-            semimajor_axis = (const.earth_year * orbit_period)**(2./3.)
+            semimajor_axis = (orbit_period / const.earth_year)**(2./3.)
         else:
             semimajor_axis = sja
             orbit_period = operiod
@@ -115,12 +146,12 @@ class OrbParams:
         if (perihelion_date is not None) and (mean_anomaly is not None):
             raise ValueError("Only one of perihelion_date and mean_anomaly may be specified.")
         if perihelion_date is not None:
-            mean_anomaly = ((perihelion_date - epoch_JD + const.j2000_JD) / orbit_period) * (2*np.pi)
+            mean_anomaly = ((perihelion_date - epoch_JD + const.j2000_JD) / orbit_period) * (-2*np.pi)
         elif mean_anomaly is not None:
             perihelion_date = epoch_JD - (mean_anomaly/(2*np.pi))*orbit_period - const.j2000_JD
         else:
             perihelion_date = tjp
-            mean_anomaly = ((perihelion_date - epoch_JD + const.j2000_JD) / orbit_period) * (2*np.pi)
+            mean_anomaly = ((perihelion_date - epoch_JD + const.j2000_JD) / orbit_period) * (-2*np.pi)
 
         if long_of_asc_node is None:
             long_of_asc_node = rode
@@ -151,6 +182,20 @@ class SpinParams:
         self.obliquity = obliquity
         self.rotation_matrix_FtoB = rotation_matrix_FtoB
         self.true_anomaly_at_vernal_equinox = true_anomaly_at_vernal_equinox
+
+    def __eq__(self, other:SpinParams) -> bool:
+        is_equal = all([
+            self.rotation_period == other.rotation_period,
+            self.phase_at_j2000 == other.phase_at_j2000,
+            self.pole_ra == other.pole_ra,
+            self.pole_dec == other.pole_dec,
+            self.default_spin_flag == other.default_spin_flag,
+            self.obliquity == other.obliquity,
+            np.all(np.isclose(self.rotation_matrix_FtoB, other.rotation_matrix_FtoB)),
+            self.true_anomaly_at_vernal_equinox == other.true_anomaly_at_vernal_equinox
+        ])
+
+        return is_equal
 
     @classmethod
     def from_spin_axis(cls, spin_axis, orb:OrbParams) -> Self:

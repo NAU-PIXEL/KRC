@@ -61,7 +61,7 @@ The user can either copy the formatted string output into a KRC input file, or u
     - [x] user interface: decide what input is needed (target string, is_smallbody flag?), generate a metakernel for that input. This does not independently assess if updates are needed.
     - [ ] Some logic to only call `update_default_kernels()` once a day max, and just pull from the default metakernel otherwise when building a per-body mk? (check the mod date on the default mk? read the comment line that has the date in it?)
     - [x] function to force-update all kernels, or a list of kernels?
-    - [ ] testing: [5/16]
+    - [x] testing: [16/16] (tests pass sequentially, but not in parallel because they all use the same temp directory for output)
 
 - `porb.py`
     - [x] generate formatted output as cacheable HDF (per body). 
@@ -74,7 +74,7 @@ The user can either copy the formatted string output into a KRC input file, or u
     - [x] user interface: specify body, get a metakernel using `kernel_mgmt.py`, options to force params to user input values. 
     - [x] function to derive spin pole from obliquity and true anomaly, set spin_axis and secondary_spin_params based on that method? (seems more user friendly to have that option)
     - [x] high-level function to take a body name, get the metakernel and naifid, (optionally updating kernels) and manage any kwargs to modify default values, then return a porb_params object.
-    - [ ] testing
+    - [ ] testing: [?/?]
 
 - `body_params.py`
     - [x] high-level function to attach other params for writing output to a defaults hdf.
