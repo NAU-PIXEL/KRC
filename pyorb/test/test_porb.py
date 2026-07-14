@@ -129,6 +129,14 @@ mars_porb = get_mars_porb_params()
 mars_porb_copy = get_mars_porb_params()
 europa_porb = get_europa_porb_params()
 
+mars_orb_elems = (0.8644665, 
+                  0.9340198E-01, 
+                  0.3226901E-01, 
+                  -1.281586, 
+                  (3397.977 / 686.9928) * -2*np.pi, 
+                  1.523712, 
+                  const.j2000_JD)
+
 mars_orb =  get_mars_orb_params()
 
 mars_spin = get_mars_spin_params()
@@ -147,7 +155,7 @@ def test_OrbParams_from_porb_params():
     assert from_porb == mars_orb
 
 def test_OrbParams_from_orb_elems_tuple():
-    orb_elems = (0.8644665, 0.9340198E-01, 0.3226901E-01, -1.281586, (3397.977 / 686.9928) * -2*np.pi, 1.523712, const.j2000_JD)
+    orb_elems = mars_orb_elems
     from_orb_elems_tuple = porb.OrbParams.from_elems(orb_elems)
 
     assert from_orb_elems_tuple == mars_orb
@@ -252,7 +260,7 @@ def test_SpinParams_set_obliq_and_true_anomaly():
     copy2 = get_mars_spin_params()
     copy2.obliquity = 0.0
     copy2.true_anomaly_at_vernal_equinox = 0.0
-    copy2.pole_ra = -1.5119741510431786
+    copy2.pole_ra = 4.771211156136408
     copy2.pole_dec = 1.1400991060229944
     copy2.rotation_matrix_FtoB = np.array([
             [ 1.00000000e+00,  0.00000000e+00,  0.00000000e+00],
@@ -266,21 +274,54 @@ def test_SpinParams_set_obliq_and_true_anomaly():
     
 def test_SpinParams_from_modified_params():
     # check that default spin flag updates or doesn't appropriately
+    test_spin = porb.SpinParams.from_modified_params(mars_porb, mars_orb)
+
+    assert test_spin.default_spin_flag == 1
+
+    test_spin = porb.SpinParams.from_modified_params(mars_porb, mars_orb, rotation_period=1.0, phase_at_j2000=2.0)
+    
+    assert test_spin.default_spin_flag == 0
+    assert test_spin.rotation_period == 1.0 and test_spin.phase_at_j2000 == 2.0
 
     # check errors are raised appropriately
-
+    with pytest.raises(ValueError):
+        test_spin = porb.SpinParams.from_modified_params(mars_porb, mars_orb, pole_ra=1.0)
+    
+    with pytest.raises(ValueError):
+        test_spin = porb.SpinParams.from_modified_params(mars_porb, mars_orb, obliquity=1.0)
+    
+    with pytest.raises(ValueError):
+        test_spin = porb.SpinParams.from_modified_params(mars_porb, mars_orb, pole_ra=1.0, obliquity=1.0)
+    
+    with pytest.raises(NotImplementedError):
+        test_spin = porb.SpinParams.from_modified_params(mars_porb, mars_orb, rotation_matrix_FtoB=np.array([[1,2,3],[4,5,6],[7,8,9]]))
+    
     # check setting pole_ra and dec
+    check_spin = porb.SpinParams(
+        rotation_period=24.622960911049553,
+        phase_at_j2000=176.0499,
+        pole_ra=4.771211156136408,
+        pole_dec=1.1400991060229944,
+        default_spin_flag=0,
+        obliquity=0.0,
+        rotation_matrix_FtoB=np.array(
+            [[ 1.00000000e+00,  0.00000000e+00,  0.00000000e+00],
+             [ 0.00000000e+00,  1.00000000e+00, -5.55111512e-17],
+             [ 0.00000000e+00,  5.55111512e-17,  1.00000000e+00]]),
+        true_anomaly_at_vernal_equinox=0.0
+    )
+
+    test_spin = porb.SpinParams.from_modified_params(mars_porb, mars_orb, pole_ra=-1.5119741510431786, pole_dec=1.1400991060229944)
+
+    assert test_spin == check_spin
 
     # check setting obliquity and TAV
+    test_spin = porb.SpinParams.from_modified_params(mars_porb, mars_orb, obliquity=0.0, true_anomaly_at_vernal_equinox=0.0)
 
-    # check setting everything else
-
-    assert True
+    assert test_spin == check_spin
 
 
 #### PorbParams class tests ####
-
-
 
 def test_PorbParams_init():
     assert isinstance(mars_porb, porb.PorbParams)
@@ -338,3 +379,255 @@ def test_PorbParams_from_str():
 
     assert from_str == copy
 
+kernels_dir = install.test_kernels_dir
+
+def test_get_orbital_naifid():
+    kernels = f'{kernels_dir}/input/test3'
+    epoch_date = defaults.epoch_date
+
+    # cases: Mars, Phobos, (3779) Kieffer
+    naifids = [499, 401, 20003779]
+    mks = [f'{kernels}/mk/000000401.tm',
+           f'{kernels}/mk/000000401.tm',
+           f'{kernels}/mk/020003779.tm']
+    expected_orbital_naifid = [4, 4, 20003779]
+
+    for i in range(len(naifids)):
+        orbit_naifid = porb.get_orbital_naifid(mks[i], naifids[i], epoch_date)
+
+        assert orbit_naifid == expected_orbital_naifid[i]
+
+    # cases: (65803) Didymos, Didymos system barycenter, Dimorphos (satellite of Didymos)
+    # This set of cases is probably totally overkill. 
+    naifids = [920065803, 120065803, 20065803]
+    mks = [f'{kernels}/mk/020065803.tm',
+           f'{kernels}/mk/020065803.tm',
+           f'{kernels}/mk/020065803.tm']
+    expected_orbital_naifid = [20065803, 920065803, 20065803]
+
+    for i in range(len(naifids)):
+        orbit_naifid = porb.get_orbital_naifid(mks[i], naifids[i], epoch_date)
+
+        assert orbit_naifid == expected_orbital_naifid[i]
+
+
+def test_get_orbital_elements():
+    kernels = f'{kernels_dir}/input/test3'
+    epoch_date = defaults.epoch_date
+
+    # Case: Mars
+    naifid = 4
+    mk = f'{kernels}/mk/000000401.tm'
+    parent = 'SUN'
+
+    orb_elems = porb.get_orbital_elements(mk, naifid, parent, epoch_date)
+    test_mars_orb_elems = (0.8637487929270791,
+                           0.0933859300993825,
+                           0.03224778664798331,
+                           5.004295160039962,
+                           1.6138903629894965,
+                           1.523791628489534,
+                           2460615.5)
+
+    assert orb_elems == pytest.approx(test_mars_orb_elems)
+
+def test_get_spin_axis():
+    kernels = f'{kernels_dir}/input/test3'
+
+    # case: Mars
+    # tests normal behavior
+    naifid = 499
+    mk = f'{kernels}/mk/000000401.tm'
+
+    spin_axis = porb.get_spin_axis(mk, naifid)
+
+    mars_spin_axis = (
+        24.622962143046955,
+        176.049863,
+        5.5373921900749785,
+        0.9500266243444937,
+        0)
+    
+    assert spin_axis == pytest.approx(mars_spin_axis)
+
+    # Case: justitia
+    # tests behavior with 8-digit naifid
+    naifid = 20000269
+    mk = f'{kernels}/mk/020000269.tm'
+
+    spin_axis = porb.get_spin_axis(mk, naifid)
+
+    test_spin_axis = (
+        33.12910302167519,
+        316.2 ,
+        1.4847350410358011,
+        -1.0097131800947183,
+        0)
+    
+    assert spin_axis == pytest.approx(test_spin_axis)
+
+def test_get_secondary_orb_params():
+    
+    # Case: Mars
+    secondary_orb_params = porb.get_secondary_orb_params(mars_orb_elems)
+
+    mars_secondary_orb_params = (
+        686.9928, 
+        3397.977, 
+        0.0)
+
+    assert secondary_orb_params == pytest.approx(mars_secondary_orb_params)
+
+def test_get_secondary_spin_params():
+    pole_ra = mars_porb.ZBAB
+    pole_dec = mars_porb.ZBAA
+
+    (obliquity, rotation_matrix_FtoB, tav) = porb.get_secondary_spin_params(mars_orb, pole_ra, pole_dec)
+
+
+    assert pole_ra == pytest.approx(mars_porb.ZBAB)
+    assert pole_dec == pytest.approx(mars_porb.ZBAA)
+
+    assert obliquity == pytest.approx(mars_porb.BLIP)
+    assert tav == pytest.approx(mars_porb.TAV)
+
+    assert np.all(np.isclose(rotation_matrix_FtoB, mars_porb.BFRM))
+
+    pole_ra = 4.771211156136408
+    pole_dec = 1.1400991060229944
+
+    identity_matrix = np.array(
+        [[1.0, 0.0, 0.0],
+         [0.0, 1.0, 0.0],
+         [0.0, 0.0, 1.0]]
+    )
+
+    (obliquity, rotation_matrix_FtoB, tav) = porb.get_secondary_spin_params(mars_orb, pole_ra, pole_dec)
+
+    assert obliquity == pytest.approx(0.0)
+    assert tav == pytest.approx(0.0)
+
+    assert np.all(np.isclose(rotation_matrix_FtoB, identity_matrix))
+
+def test_alt_get_secondary_spin_params():
+    obliquity = 0.0
+    tav = 0.0
+
+    obliquity = mars_porb.BLIP
+    tav = mars_porb.TAV
+
+    (pole_ra, pole_dec, rotation_matrix_FtoB) = porb.alt_get_secondary_spin_params(mars_orb, obliquity, tav)
+
+    assert pole_ra == pytest.approx(mars_porb.ZBAB)
+    assert pole_dec == pytest.approx(mars_porb.ZBAA)
+
+    assert obliquity == pytest.approx(mars_porb.BLIP)
+    assert tav == pytest.approx(mars_porb.TAV)
+
+    assert np.all(np.isclose(rotation_matrix_FtoB, mars_porb.BFRM))
+
+    obliquity = 0.0
+    tav = 0.0
+
+    (pole_ra, pole_dec, rotation_matrix_FtoB) = porb.alt_get_secondary_spin_params(mars_orb, obliquity, tav)
+
+    identity_matrix = np.array(
+        [[1.0, 0.0, 0.0],
+         [0.0, 1.0, 0.0],
+         [0.0, 0.0, 1.0]]
+    )
+
+    test_ra = 4.771211156136408
+    test_dec = 1.1400991060229944
+
+    assert pole_ra == pytest.approx(test_ra)
+    assert pole_dec == pytest.approx(test_dec)
+
+    assert np.all(np.isclose(rotation_matrix_FtoB, identity_matrix))
+
+def test_get_porb_params():
+    kernels = f'{kernels_dir}/input/test3'
+    epoch_date = defaults.epoch_date
+
+    # case: Mars
+    # tests normal behavior
+    name = 'Mars'
+    naifid = 499
+    mk = f'{kernels}/mk/000000401.tm'
+
+    p_params = porb.get_porb_params(name, naifid, mk, epoch_date)
+
+    good_porb_params = porb.PorbParams.from_str(
+        'PORB:2025nov20 2000 Jan 01 00:00:00 IPLAN,TC=   499 0.24833 Mars:Mars\n' +\
+        '        499      0.2483324      0.8637488      3.2247787E-02  5.0042952\n' +\
+        '  9.3385930E-02   1.523792      0.4090926              0      0.9500266\n' +\
+        '   5.537392        350.892       176.0499       687.0466       8894.026\n' +\
+        '   24.62296              0      -1.203815      0.4174691              0\n' +\
+        '          0      0.3587996      0.8532511      0.3784513     -0.9334146\n' +\
+        '  0.3279852      0.1454747      0.0000000     -0.4054482      0.9141180\n')
+
+    good_porb_params.default_spin = 0
+    good_porb_params.body_type = 'Planet'
+
+    lines = str(p_params).split('\n')
+    goodlines = str(good_porb_params).split('\n')
+
+    for i in range(1, len(lines)):
+        assert lines[i] == goodlines[i]
+
+    # Case: (3779) Kieffer
+    # tests using default spin axis
+    name = 'Kieffer'
+    naifid = 20003779
+    mk = f'{kernels}/mk/020003779.tm'
+
+    p_params = porb.get_porb_params(name, naifid, mk, epoch_date)
+
+    assert isinstance(p_params, porb.PorbParams)
+    assert p_params.default_spin == 1
+
+def test_high_level_get_porb_params():
+    indir = kernels_dir + '/input'
+    outdir = kernels_dir + '/output'
+    default_mk = outdir+'/mk/krc_default.tm'
+    naifid_map_file = outdir+'/naifid_map.csv'
+
+    if os.path.exists(outdir):
+        shutil.rmtree(outdir)
+    assert not os.path.exists(outdir)
+
+    os.makedirs(outdir+'/mk')
+    shutil.copy(indir+'/test2/naifid_map.csv', naifid_map_file)
+    shutil.copy(indir+'/test2/mk/krc_default.tm', default_mk)
+
+    os.makedirs(outdir+'/lsk')
+    os.makedirs(outdir+'/pck')
+    os.makedirs(outdir+'/spk')
+    shutil.copy(indir+'/test1/lsk/naif0012.tls', outdir+'/lsk/naif0012.tls')
+    shutil.copy(indir+'/test1/pck/pck00010.tpc', outdir+'/pck/pck00010.tpc')
+    shutil.copy(indir+'/test1/spk/de442.bsp', outdir+'/spk/de442.bsp')
+    
+    # Mars case
+    porb_params = porb.high_level_get_porb_params('Mars', update_kernels=False, kernels_dir=outdir, default_mk=default_mk, naifid_map_file=naifid_map_file)
+
+    good_porb_params = porb.PorbParams.from_str(
+        'PORB:2025nov20 2000 Jan 01 00:00:00 IPLAN,TC=   499 0.24833 Mars:Mars\n' +\
+        '        499      0.2483324      0.8637488      3.2247787E-02  5.0042952\n' +\
+        '  9.3385930E-02   1.523792      0.4090926              0      0.9500266\n' +\
+        '   5.537392        350.892       176.0499       687.0466       8894.026\n' +\
+        '   24.62296              0      -1.203815      0.4174691              0\n' +\
+        '          0      0.3587996      0.8532511      0.3784513     -0.9334146\n' +\
+        '  0.3279852      0.1454747      0.0000000     -0.4054482      0.9141180\n')
+
+    good_porb_params.default_spin = 0
+    good_porb_params.body_type = 'Planet'
+
+    lines = str(porb_params).split('\n')
+    goodlines = str(good_porb_params).split('\n')
+
+    for i in range(1, len(lines)):
+        assert lines[i] == goodlines[i]
+
+def test_modify_porb_params():
+
+    assert True

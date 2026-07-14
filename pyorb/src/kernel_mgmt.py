@@ -717,6 +717,32 @@ def get_body_type(body_naifid):
     
     return body_type
 
+def get_mk(body_name:str, 
+           update_kernels:bool = False, 
+           kernels_dir:str=kernels_dir,
+           default_mk:str=install.default_mk, 
+           naifid_map_file:str=install.naifid_map_file) -> str:
+    
+    naifid = get_naifid(body_name, default_mk=default_mk, naifid_map_file=naifid_map_file)
+    if cached_mk_exists(naifid, kernels_dir=kernels_dir) and update_kernels == False:
+        metakernel = get_cached_mk(naifid, kernels_dir=kernels_dir)
+    else:
+        #always update default kernels
+        update_default_kernels(default_mk=default_mk, kernels_dir=kernels_dir)
+        
+        body_type = get_body_type(naifid)
+        if body_type == 'Planet':
+            # planets are essentially satellites of their system barycenters and need satellite mks.
+            metakernel = make_satellite_mk(body_name, default_mk=default_mk, kernels_dir=kernels_dir, naifid_map_file=naifid_map_file)
+        if body_type == 'Satellite':
+            # make a satellite mk associated with parent body
+            metakernel = make_satellite_mk(body_name, default_mk=default_mk, kernels_dir=kernels_dir, naifid_map_file=naifid_map_file)
+        elif body_type == 'Comet' or body_type == 'Minor':
+            metakernel = make_sb_mk(body_name, default_mk=default_mk, kernels_dir=kernels_dir, naifid_map_file=naifid_map_file) 
+
+    return metakernel
+
+
 if __name__ == '__main__':
     target_name = sys.argv[1]
 

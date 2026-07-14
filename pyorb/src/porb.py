@@ -8,7 +8,7 @@ import numpy as np
 import spiceypy as spice
 import datetime
 from . import constants as const
-from .kernel_mgmt import kernels_dir, default_mk, update_default_kernels, make_sb_mk, make_satellite_mk, get_naifid, cached_mk_exists, get_cached_mk, get_body_type
+from .kernel_mgmt import get_naifid, get_body_type, get_mk
 # from .body_params import write_hdf, get_body_params
 from . import defaults 
 from . import install
@@ -187,15 +187,27 @@ class SpinParams:
         is_equal = all([
             self.rotation_period == other.rotation_period,
             self.phase_at_j2000 == other.phase_at_j2000,
-            self.pole_ra == other.pole_ra,
-            self.pole_dec == other.pole_dec,
+            np.isclose(self.pole_ra, other.pole_ra),
+            np.isclose(self.pole_dec, other.pole_dec),
             self.default_spin_flag == other.default_spin_flag,
-            self.obliquity == other.obliquity,
+            np.isclose(self.obliquity, other.obliquity),
             np.all(np.isclose(self.rotation_matrix_FtoB, other.rotation_matrix_FtoB)),
-            self.true_anomaly_at_vernal_equinox == other.true_anomaly_at_vernal_equinox
+            np.isclose(self.true_anomaly_at_vernal_equinox, other.true_anomaly_at_vernal_equinox)
         ])
 
         return is_equal
+    
+    def __str__(self) -> str:
+        string = ''
+        string += f'rotation_period: {self.rotation_period}\n'
+        string += f'phase_at_j2000: {self.phase_at_j2000}\n'
+        string += f'pole_ra: {self.pole_ra}\n'
+        string += f'pole_dec: {self.pole_dec}\n'
+        string += f'default_spin_flag: {self.default_spin_flag}\n'
+        string += f'obliquity: {self.obliquity}\n'
+        string += f'rotation_matrix_FtoB: \n{self.rotation_matrix_FtoB}\n'
+        string += f'true_anomaly_at_vernal_equinox: {self.true_anomaly_at_vernal_equinox}\n'
+        return string
 
     @classmethod
     def from_spin_axis(cls, spin_axis, orb:OrbParams) -> Self:
@@ -204,7 +216,7 @@ class SpinParams:
         as would be output by get_orbital_elements() and get_spin_axis().
         '''
         (rotation_period, phase_at_j2000, pole_ra, pole_dec, default_spin_flag) = spin_axis 
-        (obliquity, rotation_matrix_FtoB, true_anomaly_at_vernal_equinox) = get_secondary_spin_params(orb, spin_axis) 
+        (obliquity, rotation_matrix_FtoB, true_anomaly_at_vernal_equinox) = get_secondary_spin_params(orb, pole_ra, pole_dec) 
         return cls(rotation_period, phase_at_j2000, pole_ra, pole_dec, default_spin_flag, obliquity, rotation_matrix_FtoB, true_anomaly_at_vernal_equinox)
     
     @classmethod
@@ -235,7 +247,7 @@ class SpinParams:
             phase_at_j2000:float = None,
             pole_ra:float = None,
             pole_dec:float = None,
-            default_spin_flag:bool = None,
+            default_spin_flag:int = None,
             obliquity:float = None,
             rotation_matrix_FtoB:np.ndarray = None,
             true_anomaly_at_vernal_equinox:float = None) -> Self:
@@ -245,7 +257,7 @@ class SpinParams:
         if all([v is None for v in [rotation_period, phase_at_j2000, pole_ra, pole_dec, default_spin_flag, obliquity, true_anomaly_at_vernal_equinox, rotation_matrix_FtoB]]):
             default_spin_flag = default_spin
         else:
-            default_spin_flag = False
+            default_spin_flag = 0
 
         if rotation_period is None:
             rotation_period = (360.*24.)/porb_params.WDOT
@@ -262,8 +274,7 @@ class SpinParams:
             raise NotImplementedError("Directly specifying rotation_matrix_FtoB is not currently implemented.")
         
         if pole_ra is not None:
-            spin_axis = (rotation_period, phase_at_j2000, pole_ra, pole_dec, default_spin_flag)
-            (obliquity, rotation_matrix_FtoB, true_anomaly_at_vernal_equinox) = get_secondary_spin_params(orb, spin_axis)
+            (obliquity, rotation_matrix_FtoB, true_anomaly_at_vernal_equinox) = get_secondary_spin_params(orb, pole_ra, pole_dec)
         elif obliquity is not None:
             (pole_ra, pole_dec, rotation_matrix_FtoB) = alt_get_secondary_spin_params(orb, obliquity, true_anomaly_at_vernal_equinox)
         else:
@@ -342,7 +353,6 @@ class PorbParams:
         is_equal = all([
             self.default_spin     == other.default_spin,
             self.porb_version     == other.porb_version,
-            self.generation_date  == other.generation_date,
             self.NAME             == other.NAME,
             self.body_type        == other.body_type,
 
@@ -496,11 +506,22 @@ class PorbParams:
 
 
 
-def get_orbital_naifid(metakernel, body_naifid, epoch_date):
+def get_orbital_naifid(metakernel:str, body_naifid:int, epoch_date:datetime.datetime) -> int:
     '''
     Use spice to determine if the specified body orbits the sun. If it does, return the 
-    body's naifid, and if not, return the naifid of whatever parent body does orbit the sun.
-    For KRC purposes, we only care about the orbit of the parent body (or, more precisely, the system barycenter).
+    body's naifid, and if not, return the naifid of whatever parent body does orbit the 
+    sun.
+
+    For KRC purposes, we only care about the orbit of the parent body (or, more 
+    precisely, the system barycenter).
+
+    This should work for binary asteroids and other multiple-body systems, as the NAIFid 
+    of each system member will return the system barycenter as its orbital center, and 
+    the system barycenter will return itself, as its center is the Solar System 
+    Barycenter (id=0).
+
+    Does not work when specifying planet barycenters (i.e., '400' or '4' for Mars).
+    
     Returns:
     orbital_id (int) : The NAIF id to be used in calculating the specified body's orbit around the sun.
     '''
@@ -511,7 +532,6 @@ def get_orbital_naifid(metakernel, body_naifid, epoch_date):
     dc, ic = spice.dafus(descr, 2, 6)
     center_id = ic[1]
 
-    ### TODO: make this work for binary asteroids.
     if center_id in (0, 10):
         # body orbits sun
         orbital_id = body_naifid
@@ -519,13 +539,9 @@ def get_orbital_naifid(metakernel, body_naifid, epoch_date):
         # body does not orbit the sun
         orbital_id = center_id
 
-    # comments = spice.dafec(handle,100, 100)[1]
-    # # is SPK source JPL Horizons?
-    # from_horizons = 'Horizons On-Line Ephemeris System' in '\t'.join(comments)
-
     return orbital_id
 
-def get_orbital_elements(metakernel, orbital_naifid, parent, epoch_date):
+def get_orbital_elements(metakernel:str, orbital_naifid:int, parent:str, epoch_date:datetime.datetime) -> tuple[float, float, float, float, float, float, float]:
     '''
     Use spice to get the keplerian(?) orbital elements for a specified body.
     returns a tuple of floats:
@@ -542,7 +558,7 @@ def get_orbital_elements(metakernel, orbital_naifid, parent, epoch_date):
     et = spice.datetime2et(epoch_date)
     epoch_JD = float(spice.et2utc(et,'J', 6).split(' ')[-1])
 
-    # get the state vector of body (or its system barycenter) relative to sun.
+    # get the state vector of body (or its system barycenter) relative to some specified parent body.
     state_vector = spice.spkezr(str(orbital_naifid), et, 'ECLIPJ2000', 'NONE', parent)[0]
 
     # get orbital elements of body relative to sun
@@ -557,7 +573,7 @@ def get_orbital_elements(metakernel, orbital_naifid, parent, epoch_date):
 
     return (long_of_asc_node, eccentricity, inclination, arg_of_peri, mean_anomaly, semimajor_axis, epoch_JD)
 
-def get_spin_axis(metakernel, body_naifid):
+def get_spin_axis(metakernel:str, body_naifid:int) -> tuple[float, float, float, float, int]:
     '''
     Calculates the spin axis using spice kernels.
     returns tuple of floats:
@@ -606,7 +622,7 @@ def get_spin_axis(metakernel, body_naifid):
 
     return (rotation_period, phase_at_j2000, pole_ra, pole_dec, default_spin_flag)
 
-def get_secondary_orb_params(orb_elems):
+def get_secondary_orb_params(orb_elems:tuple[float, float, float, float, float, float, float]) -> tuple[float, float, float]:
     '''
     Calculate additional values needed for porb output.
     These values are all derived from the orbital elements.
@@ -627,7 +643,7 @@ def get_secondary_orb_params(orb_elems):
 
     return (orbit_period, perihelion_date, centuries_from_j2000)
 
-def get_secondary_spin_params(orb:OrbParams, spin_axis):
+def get_secondary_spin_params(orb:OrbParams, pole_ra:float, pole_dec:float):
     '''
     Derive secondary parameters, relating the spin axis to the orbital reference frame.
     These can all be derived from existing orbital elements and spin axis parameters.
@@ -639,7 +655,6 @@ def get_secondary_spin_params(orb:OrbParams, spin_axis):
     long_of_asc_node = orb.long_of_asc_node
     inclination = orb.inclination
     arg_of_peri = orb.arg_of_peri
-    (rotation_period, phase_at_j2000, pole_ra, pole_dec, default_spin_flag) = spin_axis
 
     # AFRM  : rotation matrix from orbital (F) to J2000 (A)
     ## First do rotation from orbital (F) to ecliptic (E)
@@ -698,15 +713,16 @@ def alt_get_secondary_spin_params(orb:OrbParams, obliquity, true_anomaly_at_vern
     # ZFAXU : orbit pole, Z unit vector, in J2000 (a 3-vector)
     orbit_Z_axis_j2000 = rotation_matrix_FtoA[:,2].copy()
 
-    # to get spin axis vector, rotate orbit_Z_axis_j2000 around vernal equinox vector by obliquity.
+    # to get spin axis vector, rotate orbit_Z_axis_j2000 around -1*(vernal equinox vector) by obliquity.
     # so I need vernal equinox vector in j2000. 
-    vernal_equinox_orbital = spice.rotvec([1,0,0], true_anomaly_at_vernal_equinox, 3)
+    vernal_equinox_orbital = spice.rotvec([1,0,0], -1*true_anomaly_at_vernal_equinox, 3)
     vernal_equinox_j2000 = np.matmul(rotation_matrix_FtoA, vernal_equinox_orbital)
 
-    spin_axis_j2000 = spice.vrotv(orbit_Z_axis_j2000, vernal_equinox_j2000, obliquity)
+    spin_axis_j2000 = spice.vrotv(orbit_Z_axis_j2000, -1*vernal_equinox_j2000, obliquity)
+
     # ZBAB  : right ascension of spin axis in J2000 frame [radians]
     # ZBAA  : declination of spin axis in J2000 frame [radians]
-    _, pole_ra, pole_dec = spice.reclat(spin_axis_j2000)
+    _, pole_ra, pole_dec = spice.recrad(spin_axis_j2000)
 
     # ZBFXU : spin axis, rotated from j2000 into orbital (F) reference frame
     spin_axis_orbital = np.matmul(rotation_matrix_FtoA.T, spin_axis_j2000)
@@ -730,7 +746,7 @@ def old_get_porb_params(body_name, body_naifid, body_type, orb_elems, spin_axis)
 
     # Unpack input spin axis parameters, derive secondary spin parameters
     (rotation_period, phase_at_j2000, pole_ra, pole_dec, default_spin_flag) = spin_axis 
-    (obliquity, rotation_matrix_FtoB, true_anomaly_at_vernal_equinox) = get_secondary_spin_params(orb_elems, spin_axis)
+    (obliquity, rotation_matrix_FtoB, true_anomaly_at_vernal_equinox) = get_secondary_spin_params(orb_elems, pole_ra, pole_dec)
 
     # hacking in a test case for Justitia, 2026.04.28.
     # Basically, just run everything as normal first, modify the values with inputs,
@@ -839,8 +855,7 @@ def get_porb_params(
         body_name: str, 
         body_naifid: int, 
         metakernel: str, 
-        epoch_date: datetime.datetime = defaults.epoch_date, 
-        verbose: bool = False):
+        epoch_date: datetime.datetime = defaults.epoch_date) -> PorbParams:
     '''
     Generate the standard PORB output for a specified body, at some epoch, using 
     SPICE kernels. Return a PorbParams object containing the standard PORB parameters.
@@ -858,9 +873,12 @@ def get_porb_params(
 
     # Determine orbital elements for either the specified body, or, if the 
     # specified body is a satellite, its sun-orbiting parent.
-    orbital_naifid = get_orbital_naifid(metakernel, body_naifid, epoch_date)
-    orb_elems = get_orbital_elements(metakernel, orbital_naifid, 'SUN', epoch_date)
     body_type = get_body_type(body_naifid)
+
+    orbital_naifid = get_orbital_naifid(metakernel, body_naifid, epoch_date)
+    
+    orb_elems = get_orbital_elements(metakernel, orbital_naifid, 'SUN', epoch_date)
+    
 
     # Determine the parameters defining the specified body's spin axis.
     try:
@@ -877,27 +895,19 @@ def get_porb_params(
     # out  = get_porb_params(body_name, body_naifid, body_type, orb_elems, spin_axis)
 
     orb  = OrbParams.from_elems(orb_elems)
-    spin = SpinParams.from_spin_axis(spin_axis)
+    spin = SpinParams.from_spin_axis(spin_axis, orb)
     out  = PorbParams.from_orb_and_spin_params(body_name, body_type, body_naifid, orb, spin)
 
     return out
 
-def high_level_get_porb_params(body_name:str, update_kernels:bool = False) -> PorbParams:
-    naifid = get_naifid(body_name)
-    if cached_mk_exists(naifid) and update_kernels == False:
-        metakernel = get_cached_mk(naifid)
-    else:
-        body_type = get_body_type(naifid)
-        if body_type == 'Planet':
-            # planet barycenters are all covered by default_mk
-            update_default_kernels()
-            metakernel = default_mk
-        if body_type == 'Satellite':
-            # make a satellite mk associated with parent body
-            metakernel = make_satellite_mk(naifid)
-        elif body_type == 'Comet' or body_type == 'Minor':
-            metakernel = make_sb_mk(body_name) 
-
+def high_level_get_porb_params(body_name:str, 
+                               update_kernels:bool = False, 
+                               kernels_dir:str=install.kernels_dir, 
+                               default_mk:str=install.default_mk, 
+                               naifid_map_file:str=install.naifid_map_file) -> PorbParams:
+    
+    metakernel = get_mk(body_name, update_kernels, kernels_dir=kernels_dir, default_mk=default_mk, naifid_map_file=naifid_map_file)
+    naifid = get_naifid(body_name, default_mk=default_mk, naifid_map_file=naifid_map_file)
     porb_params = get_porb_params(body_name, naifid, metakernel)
     
     return porb_params
@@ -966,7 +976,7 @@ if __name__ == '__main__':
     for i in range(len(body_names)):
         print()
         # metakernel = get_mk(f'{body_names[i]}')
-        metakernel = f'{kernels_dir}/mk/JUSTITIA.tm'
+        metakernel = f'{install.kernels_dir}/mk/JUSTITIA.tm'
         porb_params = get_porb_params(body_names[i], body_naifids[i], metakernel)
         if verbose:
             print(porb_params.verbose_output())

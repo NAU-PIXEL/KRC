@@ -28,6 +28,26 @@ test/kernels/input/test2/
         krc_default.tm
     naifid_map.csv      <--- should contain all satellites, plus 24 Themis, 52 Europa, and 3779 Kieffer
 
+test/kernels/input/test3/
+    lsk/
+        naif0012.tls
+    mk/
+        000000401.tm
+        020000269.tm
+        020003779.tm
+        020065803.tm
+    pck/
+        20000269.tpc
+        pck00011.tpc
+    spk/
+        20000269.bsp
+        20003779.bsp
+        de442.bsp       <-- symlink to test1/spk/de442.bsp
+        didymos_barycenter_s205_v01.bsp
+        didymos_system_s501_v01.bsp
+        mar099s.bsp
+
+
 '''
 
 
@@ -402,6 +422,49 @@ def test_get_cached_mk():
     for i in range(len(naifids)):
         mk_path = km.get_cached_mk(naifids[i], kernels_dir=input_kernels_dir+'/test2')
         assert mk_path == mks[i]
+
+def test_get_mk():
+    indir = input_kernels_dir+'/test2'
+    default_mk = output_kernels_dir+'/mk/krc_default.tm'
+    naifid_map_file = output_kernels_dir+'/naifid_map.csv'
+
+    if os.path.exists(output_kernels_dir):
+        shutil.rmtree(output_kernels_dir)
+    assert not os.path.exists(output_kernels_dir)
+
+    os.makedirs(output_kernels_dir+'/mk')
+    shutil.copy(indir+'/naifid_map.csv', naifid_map_file)
+    shutil.copy(indir+'/mk/krc_default.tm', default_mk)
+
+    os.makedirs(output_kernels_dir+'/lsk')
+    os.makedirs(output_kernels_dir+'/pck')
+    os.makedirs(output_kernels_dir+'/spk')
+    shutil.copy(input_kernels_dir+'/test1/lsk/naif0012.tls', output_kernels_dir+'/lsk/naif0012.tls')
+    shutil.copy(input_kernels_dir+'/test1/pck/pck00010.tpc', output_kernels_dir+'/pck/pck00010.tpc')
+    shutil.copy(input_kernels_dir+'/test1/spk/de442.bsp', output_kernels_dir+'/spk/de442.bsp')
+
+    shutil.copy(input_kernels_dir+'/test3/mk/020003779.tm', output_kernels_dir+'/mk/020003779.tm')
+
+    # Case: Cached metakernel exists
+    mk = porb.get_mk('Kieffer', update_kernels=False, kernels_dir=output_kernels_dir, default_mk=default_mk, naifid_map_file=naifid_map_file)
+    assert mk == f'{output_kernels_dir}/mk/020003779.tm'
+    # when using a cached metakernel, the underlying kernels are not updated.
+    assert not os.path.exists(output_kernels_dir+'/spk/20003779.bsp')
+    
+    # Case: body_type is 'Planet'
+    mk = porb.get_mk('Mars', update_kernels=False, kernels_dir=output_kernels_dir, default_mk=default_mk, naifid_map_file=naifid_map_file)
+    assert mk == f'{output_kernels_dir}/mk/krc_default.tm'
+    assert os.path.exists(output_kernels_dir+'/pck/pck00011.tpc')
+
+    # Case: body_type is 'Satellite'
+    mk = porb.get_mk('phobos', update_kernels=False, kernels_dir=output_kernels_dir, default_mk=default_mk, naifid_map_file=naifid_map_file)
+    assert mk == f'{output_kernels_dir}/mk/000000401.tm'
+    assert os.path.exists(mk)
+
+    # Case: small body (body_type is 'Comet' or 'Minor')
+    mk = porb.get_mk('Kieffer', update_kernels=True, kernels_dir=output_kernels_dir, default_mk=default_mk, naifid_map_file=naifid_map_file)
+    assert mk == f'{output_kernels_dir}/mk/020003779.tm'
+    assert os.path.exists(output_kernels_dir+'/spk/20003779.bsp')
 
 
 
