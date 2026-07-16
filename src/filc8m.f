@@ -9,6 +9,7 @@ C_Titl  filc8m.f  Common /FILCOM/ for file names and other strings
      & ,FVALB    ! Seasonal Albedo
      & ,FVTAU    ! Seasonal opacity
      & ,FZONE    ! Depth zone table
+     & ,FFLUX    ! new vis and ir flux tables
      & ,FTOUT    ! for  TOUT at one latitude
         CHARACTER*20 TITONE     ! title for each one-point line
         CHARACTER*12 VERSIN     ! version number

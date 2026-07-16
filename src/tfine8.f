@@ -117,8 +117,13 @@ C several variables, but that having all but  T constant for a given case is
 C adequate.
 C  The convergence safety factor should be chosen to be adequate to cover 
 C the conductivity variation.
+            
+      IF (LPLANHTAB .OR. LPLANVTAB) THEN
+        LPH = .TRUE.
+      ELSE
+        LPH = PARW(1).GT.0.      ! doing planetary heat loads
+      ENDIF
 
-      LPH =(PARW(1).GT. 0.)     ! doing planetary heat loads
       QA=PARC(1)                ! layer factor. 
       KFL=NINT(QA)              ! integral fine layer factor. 
       KFT=KFL*KFL               ! fine time factor
@@ -479,8 +484,6 @@ C  upper boundary conditions.
           IF (IDB5.GE.6 .AND. (JJ.LT.(J7P+3)  .OR. ABS(JJ-J8).LT.3))
      &       WRITE(44,244) JFI,FINSJ,TSUR,ABRAD,SHEATF,POWER,FAC7,KN 
  244      FORMAT(I6,f7.4,F8.3,3f11.5,g12.5,i4)
-D         WRITE(44,245) JFI,FINSOL(JFI), (TTF(I),I=1,N1F)
-D 245     FORMAT(I6,F8.4,F8.3, 99F7.2)
 C BIN5 file: vvvvvvvvvvv store  vvvvvvvvvvvvvvvvvvvvvvv
 C  CCC is [2+depth, fine-time,latitude]
           IF (LATOK) THEN       ! store this eclipse latitude

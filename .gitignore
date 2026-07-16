@@ -1,0 +1,13 @@
+*.o
+*.a
+*.so
+*.mod
+
+# Output binaries
+krc
+krcdb
+porbmn
+porbmndb
+
+# various logs
+eLog*.*

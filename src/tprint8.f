@@ -47,7 +47,6 @@ C
       INTEGER*4 I,J,J3P1,K,IQ
       INTEGER*4 IPG /0/
       REAL*8 Q2,Q4,Q6,TOUTO
-D        WRITE(IOSP,*)'TPRINT CALLED ',IQIN  !debug
 
       IQ = IQIN
       GO TO (800,800,800,400,800,800,700,800,900,99), IQ ! print page title
@@ -88,7 +87,6 @@ C
      &,         '    LP6 LPGLOB   LVFA   LVFT  LKofT'/1X,10L7
      &/        '   LPORB   LKEY    LSC  LZONE  LOCAL'
      &,         '   LD16 LPTAVE  Prt78  Prt79  L_ONE'/1X,10L7)
-D         WRITE(IOPM,*) 'TPRINT: N4,MAXN4=',n4,MAXN4
       WRITE (IOSP,230) 'Latitudes: ',(ALAT(I),I=1,N4)
       WRITE (IOSP,230) 'Elevations:',(ELEV(I),I=1,N4)
  230  FORMAT (/1X,A/(1X,10F7.2))
