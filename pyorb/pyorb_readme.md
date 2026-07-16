@@ -41,7 +41,13 @@ In the default case, the input body name will be passed to a kernel management f
 
 Next, in `porb.py`, a series of SPICE calls is used to extract orbital elements and spin axis parameters.
 Additional functions use these parameters to compute secondary, derived parameters. 
-All the relevant output parameters are collected, and passed to an output function
+All the relevant output parameters are collected, and packed into a `PorbParams` object. 
+This PorbParams object can then have its parameters modified by supplying the desired values to modify_porb_params(), which smartly updates any dependent values based on the inputs. 
+
+The resulting PorbParams object can be passed to `high_level_write_hdf()` in `body_params.py`, which will write an hdf file containing the values from the PorbParams object to the desired directory. 
+
+Additional functions are available to update the PORB default HDFs for a specified body, or for all bodies in the PORB defaults directory. 
+
 
 ## Output: to-do
 Currently, output can be returned as a formatted string, conforming to relevant portion of the standard KRC input file.
@@ -74,7 +80,7 @@ The user can either copy the formatted string output into a KRC input file, or u
     - [x] user interface: specify body, get a metakernel using `kernel_mgmt.py`, options to force params to user input values. 
     - [x] function to derive spin pole from obliquity and true anomaly, set spin_axis and secondary_spin_params based on that method? (seems more user friendly to have that option)
     - [x] high-level function to take a body name, get the metakernel and naifid, (optionally updating kernels) and manage any kwargs to modify default values, then return a porb_params object.
-    - [ ] testing: [?/?]
+    - [x] testing
 
 - `body_params.py`
     - [x] high-level function to attach other params for writing output to a defaults hdf.
@@ -89,6 +95,9 @@ The user can either copy the formatted string output into a KRC input file, or u
 
         the defaults HDFs can be read by the existing dv interface to work with fortran krc
     - [x] testing
+
+    - `interface.py`
+        - [ ] testing: [0/3]
 
 - other (additional rotation info)
     - [ ] Find additional source for small-body periods and spin-poles. The standard PCK doesn't have nearly enough of those. 

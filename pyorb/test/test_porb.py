@@ -311,7 +311,7 @@ def test_SpinParams_from_modified_params():
         true_anomaly_at_vernal_equinox=0.0
     )
 
-    test_spin = porb.SpinParams.from_modified_params(mars_porb, mars_orb, pole_ra=-1.5119741510431786, pole_dec=1.1400991060229944)
+    test_spin = porb.SpinParams.from_modified_params(mars_porb, mars_orb, pole_ra=-1.5119741510431786+(2*np.pi), pole_dec=1.1400991060229944)
 
     assert test_spin == check_spin
 
@@ -629,5 +629,37 @@ def test_high_level_get_porb_params():
         assert lines[i] == goodlines[i]
 
 def test_modify_porb_params():
+    mars_porb_params = get_mars_porb_params()
+    europa_porb_params = get_europa_porb_params()
 
-    assert True
+    test_porb_params = porb.modify_porb_params(mars_porb_params,
+        long_of_asc_node=europa_porb_params.RODE,
+        eccentricity=europa_porb_params.XECC,
+        inclination=europa_porb_params.CLIN,
+        arg_of_peri=europa_porb_params.ARGP,
+        orbit_period=europa_porb_params.OPERIOD,
+        perihelion_date=europa_porb_params.TJP,
+        centuries_from_j2000=europa_porb_params.TC,
+        rotation_period=europa_porb_params.SIDAY,
+        phase_at_j2000=europa_porb_params.WO,
+        pole_ra=europa_porb_params.ZBAB,
+        pole_dec=europa_porb_params.ZBAA
+        )
+
+    assert test_porb_params.TC == pytest.approx(europa_porb_params.TC)
+    assert test_porb_params.RODE == pytest.approx(europa_porb_params.RODE)
+    assert test_porb_params.CLIN == pytest.approx(europa_porb_params.CLIN)
+    assert test_porb_params.ARGP == pytest.approx(europa_porb_params.ARGP)
+    assert test_porb_params.XECC == pytest.approx(europa_porb_params.XECC)
+    assert test_porb_params.SJA == pytest.approx(europa_porb_params.SJA)
+    assert np.isclose(test_porb_params.ZBAA, europa_porb_params.ZBAA)
+    assert np.isclose(test_porb_params.ZBAB, europa_porb_params.ZBAB)
+    # assert test_porb_params.WDOT == pytest.approx(europa_porb_params.WDOT)  <- wdot set to 0 in default europa hdf
+    assert test_porb_params.WO == pytest.approx(europa_porb_params.WO)
+    assert test_porb_params.OPERIOD == pytest.approx(europa_porb_params.OPERIOD)
+    assert test_porb_params.TJP == pytest.approx(europa_porb_params.TJP)
+    assert test_porb_params.SIDAY == pytest.approx(europa_porb_params.SIDAY)
+    assert np.isclose(test_porb_params.TAV, europa_porb_params.TAV)
+    assert np.isclose(test_porb_params.BLIP, europa_porb_params.BLIP) # <- obliquity from pole RA & DEC is correctly calculated, but doesn't match default europa HDF
+    assert np.all(np.isclose(test_porb_params.BFRM, europa_porb_params.BFRM))
+    

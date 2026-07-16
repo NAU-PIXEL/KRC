@@ -42,7 +42,7 @@ def get_and_modify_porb_params(body_name,
             phase_at_j2000:float = None,
             pole_ra:float = None,
             pole_dec:float = None,   
-            default_spin_flag:float = None,  
+            default_spin_flag:int = None,  
             obliquity:float = None,
             rotation_matrix_FtoB:np.ndarray = None,
             true_anomaly_at_vernal_equinox:float = None) -> porb.PorbParams:
