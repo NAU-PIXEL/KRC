@@ -103,16 +103,16 @@ class OrbParams:
     
     @classmethod
     def from_modified_params(cls, porb_params:PorbParams,
-                long_of_asc_node:float = None,
-                eccentricity:float = None,
-                inclination:float = None,
-                arg_of_peri:float = None,
-                semimajor_axis:float = None,
-                orbit_period:float = None,
-                perihelion_date:float = None,
-                centuries_from_j2000:float = None,
-                epoch_JD:float = None,
-                mean_anomaly:float = None) -> Self:
+                long_of_asc_node:float|None = None,
+                eccentricity:float|None = None,
+                inclination:float|None = None,
+                arg_of_peri:float|None = None,
+                semimajor_axis:float|None = None,
+                orbit_period:float|None = None,
+                perihelion_date:float|None = None,
+                centuries_from_j2000:float|None = None,
+                epoch_JD:float|None = None,
+                mean_anomaly:float|None = None) -> Self:
         
         rode    = porb_params.RODE
         xecc    = porb_params.XECC
@@ -243,14 +243,14 @@ class SpinParams:
     
     @classmethod
     def from_modified_params(cls, porb_params:PorbParams, orb:OrbParams,
-            rotation_period:float = None,
-            phase_at_j2000:float = None,
-            pole_ra:float = None,
-            pole_dec:float = None,
-            default_spin_flag:int = None,
-            obliquity:float = None,
-            rotation_matrix_FtoB:np.ndarray = None,
-            true_anomaly_at_vernal_equinox:float = None) -> Self:
+            rotation_period:float|None = None,
+            phase_at_j2000:float|None = None,
+            pole_ra:float|None = None,
+            pole_dec:float|None = None,
+            default_spin_flag:int|None = None,
+            obliquity:float|None = None,
+            rotation_matrix_FtoB:np.ndarray|None = None,
+            true_anomaly_at_vernal_equinox:float|None = None) -> Self:
 
         default_spin = porb_params.default_spin
 
@@ -501,7 +501,7 @@ class PorbParams:
 
         BFRM = flat_bfrm.reshape(3,3).T
 
-        return cls(-1, porb_version, generation_date, NAME, 'unknown', PLANUM, TC, RODE, CLIN, ARGP, XECC, SJA, EOBL, SFLAG, ZBAA, ZBAB, WDOT, WO, OPERIOD, TJP, SIDAY, spar17, TAV, BLIP, PBUG, spar21, BFRM)
+        return cls(-1, porb_version, generation_date, NAME, 'unknown', int(PLANUM), TC, RODE, CLIN, ARGP, XECC, SJA, EOBL, int(SFLAG), ZBAA, ZBAB, WDOT, WO, OPERIOD, TJP, SIDAY, int(spar17), TAV, BLIP, int(PBUG), int(spar21), BFRM)
 
 
 
@@ -734,121 +734,121 @@ def alt_get_secondary_spin_params(orb:OrbParams, obliquity, true_anomaly_at_vern
     return (pole_ra, pole_dec, rotation_matrix_FtoB)
 
 
-def old_get_porb_params(body_name, body_naifid, body_type, orb_elems, spin_axis):
-    '''
-    Determines the orbital parameters of a body based on spice kernels.
-    Outputs a dictionary containing all the variables to include in the standard PORB
-    input table for KRC.
-    '''
-    # Unpack input orbital elements, derive secondary orbital parameters
-    (long_of_asc_node, eccentricity, inclination, arg_of_peri, mean_anomaly, semimajor_axis, epoch_JD) = orb_elems
-    (orbit_period, perihelion_date, centuries_from_j2000) = get_secondary_orb_params(orb_elems)
+# def old_get_porb_params(body_name, body_naifid, body_type, orb_elems, spin_axis):
+#     '''
+#     Determines the orbital parameters of a body based on spice kernels.
+#     Outputs a dictionary containing all the variables to include in the standard PORB
+#     input table for KRC.
+#     '''
+#     # Unpack input orbital elements, derive secondary orbital parameters
+#     (long_of_asc_node, eccentricity, inclination, arg_of_peri, mean_anomaly, semimajor_axis, epoch_JD) = orb_elems
+#     (orbit_period, perihelion_date, centuries_from_j2000) = get_secondary_orb_params(orb_elems)
 
-    # Unpack input spin axis parameters, derive secondary spin parameters
-    (rotation_period, phase_at_j2000, pole_ra, pole_dec, default_spin_flag) = spin_axis 
-    (obliquity, rotation_matrix_FtoB, true_anomaly_at_vernal_equinox) = get_secondary_spin_params(orb_elems, pole_ra, pole_dec)
+#     # Unpack input spin axis parameters, derive secondary spin parameters
+#     (rotation_period, phase_at_j2000, pole_ra, pole_dec, default_spin_flag) = spin_axis 
+#     (obliquity, rotation_matrix_FtoB, true_anomaly_at_vernal_equinox) = get_secondary_spin_params(orb_elems, pole_ra, pole_dec)
 
-    # hacking in a test case for Justitia, 2026.04.28.
-    # Basically, just run everything as normal first, modify the values with inputs,
-    # then update the secondary values that flow from the first ones.
-    # I'll need to consider how to handle user inputs more appropriately later.
-    # if body_name=='Justitia':
-    if False:
-        semimajor_axis = 2.613
-        eccentricity = 0.
-        # need to repack orb_elems with updated values:
-        orb_elems = (long_of_asc_node, eccentricity, inclination, arg_of_peri, mean_anomaly, semimajor_axis, epoch_JD)
-        (orbit_period, perihelion_date, centuries_from_j2000) = get_secondary_orb_params(orb_elems)
+#     # hacking in a test case for Justitia, 2026.04.28.
+#     # Basically, just run everything as normal first, modify the values with inputs,
+#     # then update the secondary values that flow from the first ones.
+#     # I'll need to consider how to handle user inputs more appropriately later.
+#     # if body_name=='Justitia':
+#     if False:
+#         semimajor_axis = 2.613
+#         eccentricity = 0.
+#         # need to repack orb_elems with updated values:
+#         orb_elems = (long_of_asc_node, eccentricity, inclination, arg_of_peri, mean_anomaly, semimajor_axis, epoch_JD)
+#         (orbit_period, perihelion_date, centuries_from_j2000) = get_secondary_orb_params(orb_elems)
 
-        obliquity = 0.
-        true_anomaly_at_vernal_equinox = 0.
-        pole_ra, pole_dec, rotation_matrix_FtoB = alt_get_secondary_spin_params(orb_elems, obliquity, true_anomaly_at_vernal_equinox)
+#         obliquity = 0.
+#         true_anomaly_at_vernal_equinox = 0.
+#         pole_ra, pole_dec, rotation_matrix_FtoB = alt_get_secondary_spin_params(orb_elems, obliquity, true_anomaly_at_vernal_equinox)
     
 
-    ##### record variables in output dictionary #####
-    out={}
-    out['default_spin']     = default_spin_flag
-    out['porb_version']     = const.porb_version
-    out['generation_date']  = datetime.datetime.now().strftime('%Y %b %d %H:%M:%S')
-    out['NAME']             = body_name
-    out['body_type']        = body_type
+#     ##### record variables in output dictionary #####
+#     out={}
+#     out['default_spin']     = default_spin_flag
+#     out['porb_version']     = const.porb_version
+#     out['generation_date']  = datetime.datetime.now().strftime('%Y %b %d %H:%M:%S')
+#     out['NAME']             = body_name
+#     out['body_type']        = body_type
 
-    out['PLANUM']           = body_naifid    
-    if   out['PLANUM']  >= 20000000:
-         out['PLANUM']  -= 20000000
-    elif out['PLANUM']  >=  2000000:
-         out['PLANUM']  -=  2000000
+#     out['PLANUM']           = body_naifid    
+#     if   out['PLANUM']  >= 20000000:
+#          out['PLANUM']  -= 20000000
+#     elif out['PLANUM']  >=  2000000:
+#          out['PLANUM']  -=  2000000
 
-    out['TC']               = centuries_from_j2000
-    out['RODE']             = long_of_asc_node
-    out['CLIN']             = inclination
-    out['ARGP']             = arg_of_peri
+#     out['TC']               = centuries_from_j2000
+#     out['RODE']             = long_of_asc_node
+#     out['CLIN']             = inclination
+#     out['ARGP']             = arg_of_peri
 
-    out['XECC']             = eccentricity
-    out['SJA']              = semimajor_axis
-    out['EOBL']             = const.earth_obliquity
-    out['SFLAG']            = const.sflag
-    out['ZBAA']             = pole_dec
+#     out['XECC']             = eccentricity
+#     out['SJA']              = semimajor_axis
+#     out['EOBL']             = const.earth_obliquity
+#     out['SFLAG']            = const.sflag
+#     out['ZBAA']             = pole_dec
 
-    out['ZBAB']             = pole_ra
-    out['WDOT']             = (360.*24)/rotation_period
-    out['WO']               = phase_at_j2000
-    out['OPERIOD']          = orbit_period
-    out['TJP']              = perihelion_date
+#     out['ZBAB']             = pole_ra
+#     out['WDOT']             = (360.*24)/rotation_period
+#     out['WO']               = phase_at_j2000
+#     out['OPERIOD']          = orbit_period
+#     out['TJP']              = perihelion_date
 
-    out['SIDAY']            = rotation_period
-    out['spar17']           = const.spar17
-    out['TAV']              = true_anomaly_at_vernal_equinox
-    out['BLIP']             = obliquity
-    out['PBUG']             = const.pbug
+#     out['SIDAY']            = rotation_period
+#     out['spar17']           = const.spar17
+#     out['TAV']              = true_anomaly_at_vernal_equinox
+#     out['BLIP']             = obliquity
+#     out['PBUG']             = const.pbug
 
-    out['spar21']           = const.spar21
-    out['BFRM 1']           = rotation_matrix_FtoB[0][0]
-    out['BFRM 2']           = rotation_matrix_FtoB[1][0]
-    out['BFRM 3']           = rotation_matrix_FtoB[2][0]
-    out['BFRM 4']           = rotation_matrix_FtoB[0][1]
+#     out['spar21']           = const.spar21
+#     out['BFRM 1']           = rotation_matrix_FtoB[0][0]
+#     out['BFRM 2']           = rotation_matrix_FtoB[1][0]
+#     out['BFRM 3']           = rotation_matrix_FtoB[2][0]
+#     out['BFRM 4']           = rotation_matrix_FtoB[0][1]
 
-    out['BFRM 5']           = rotation_matrix_FtoB[1][1]
-    out['BFRM 6']           = rotation_matrix_FtoB[2][1]
-    out['BFRM 7']           = rotation_matrix_FtoB[0][2]
-    out['BFRM 8']           = rotation_matrix_FtoB[1][2]
-    out['BFRM 9']           = rotation_matrix_FtoB[2][2]
+#     out['BFRM 5']           = rotation_matrix_FtoB[1][1]
+#     out['BFRM 6']           = rotation_matrix_FtoB[2][1]
+#     out['BFRM 7']           = rotation_matrix_FtoB[0][2]
+#     out['BFRM 8']           = rotation_matrix_FtoB[1][2]
+#     out['BFRM 9']           = rotation_matrix_FtoB[2][2]
     
-    return out
+#     return out
 
-def old_format_output(out: dict, verbose=False):
-    '''
-    Formats variables stored in out into a the Fortran style PORB output.
-    Outputs a multiline string. 
-    Variable labels are optionally included using the verbose flag. 
-    '''
-    out_str = ''
-    if verbose:
-        out_str += f"<--VERSION---> <--generation date->           IPLAN      TC orbit:pole\n"
-        out_str += f"PORB:{out['porb_version']} {out['generation_date']} IPLAN,TC= {out['PLANUM']:5d} {out['TC']:7.5g} {out['NAME']}:{out['NAME']}\n"
-        out_str += f"     PLANUM             Tc           RODE           CLIN           ARGP\n"
-        out_str += f" {out['PLANUM']:10d}     {out['TC']:10.7g}     {out['RODE']:10.7g}      {out['CLIN']:.7E} {out['ARGP']:10.7f}\n"
-        out_str += f"       XECC            SJA           EOBL          SFLAG           ZBAA\n"
-        out_str += f"  {out['XECC']:.7E} {out['SJA']:10.7g}     {out['EOBL']:10.7g}     {out['SFLAG']:10.7g}     {out['ZBAA']:10.7g}\n"
-        out_str += f"       ZBAB           WDOT             WO        OPERIOD            TJP\n"
-        out_str += f" {out['ZBAB']:10.7g}     {out['WDOT']:10.7g}     {out['WO']:10.7g}     {out['OPERIOD']:10.7g}     {out['TJP']:10.7g}\n"
-        out_str += f"      SIDAY          spare            TAV           BLIP           PBUG\n"
-        out_str += f" {out['SIDAY']:10.7g}     {out['spar17']:10.7g}     {out['TAV']:10.7g}     {out['BLIP']:10.7g}     {out['PBUG']:10.7g}\n"
-        out_str += f"      spare         BFRM 1              2              3              4\n"
-        out_str += f" {out['spar21']:10.7g}     {out['BFRM 1']:10.7f}     {out['BFRM 2']:10.7f}     {out['BFRM 3']:10.7f}     {out['BFRM 4']:10.7f}\n"
-        out_str += f"          5              6              7              8         BFRM 9\n"
-        out_str += f" {out['BFRM 5']:10.7f}     {out['BFRM 6']:10.7f}     {out['BFRM 7']:10.7f}     {out['BFRM 8']:10.7f}     {out['BFRM 9']:10.7f}\n"
+# def old_format_output(out: dict, verbose=False):
+#     '''
+#     Formats variables stored in out into a the Fortran style PORB output.
+#     Outputs a multiline string. 
+#     Variable labels are optionally included using the verbose flag. 
+#     '''
+#     out_str = ''
+#     if verbose:
+#         out_str += f"<--VERSION---> <--generation date->           IPLAN      TC orbit:pole\n"
+#         out_str += f"PORB:{out['porb_version']} {out['generation_date']} IPLAN,TC= {out['PLANUM']:5d} {out['TC']:7.5g} {out['NAME']}:{out['NAME']}\n"
+#         out_str += f"     PLANUM             Tc           RODE           CLIN           ARGP\n"
+#         out_str += f" {out['PLANUM']:10d}     {out['TC']:10.7g}     {out['RODE']:10.7g}      {out['CLIN']:.7E} {out['ARGP']:10.7f}\n"
+#         out_str += f"       XECC            SJA           EOBL          SFLAG           ZBAA\n"
+#         out_str += f"  {out['XECC']:.7E} {out['SJA']:10.7g}     {out['EOBL']:10.7g}     {out['SFLAG']:10.7g}     {out['ZBAA']:10.7g}\n"
+#         out_str += f"       ZBAB           WDOT             WO        OPERIOD            TJP\n"
+#         out_str += f" {out['ZBAB']:10.7g}     {out['WDOT']:10.7g}     {out['WO']:10.7g}     {out['OPERIOD']:10.7g}     {out['TJP']:10.7g}\n"
+#         out_str += f"      SIDAY          spare            TAV           BLIP           PBUG\n"
+#         out_str += f" {out['SIDAY']:10.7g}     {out['spar17']:10.7g}     {out['TAV']:10.7g}     {out['BLIP']:10.7g}     {out['PBUG']:10.7g}\n"
+#         out_str += f"      spare         BFRM 1              2              3              4\n"
+#         out_str += f" {out['spar21']:10.7g}     {out['BFRM 1']:10.7f}     {out['BFRM 2']:10.7f}     {out['BFRM 3']:10.7f}     {out['BFRM 4']:10.7f}\n"
+#         out_str += f"          5              6              7              8         BFRM 9\n"
+#         out_str += f" {out['BFRM 5']:10.7f}     {out['BFRM 6']:10.7f}     {out['BFRM 7']:10.7f}     {out['BFRM 8']:10.7f}     {out['BFRM 9']:10.7f}\n"
 
-    else:
-        out_str += f"PORB:{out['porb_version']} {out['generation_date']} IPLAN,TC= {out['PLANUM']:5.4g} {out['TC']:7.5g} {out['NAME']}:{out['NAME']}\n"
-        out_str += f" {out['PLANUM']:10.7g}     {out['TC']:10.7g}     {out['RODE']:10.7g}      {out['CLIN']:.7E} {out['ARGP']:10.7f}\n"
-        out_str += f"  {out['XECC']:.7E} {out['SJA']:10.7g}     {out['EOBL']:10.7g}     {out['SFLAG']:10.7g}     {out['ZBAA']:10.7g}\n"
-        out_str += f" {out['ZBAB']:10.7g}     {out['WDOT']:10.7g}     {out['WO']:10.7g}     {out['OPERIOD']:10.7g}     {out['TJP']:10.7g}\n"
-        out_str += f" {out['SIDAY']:10.7g}     {out['spar17']:10.7g}     {out['TAV']:10.7g}     {out['BLIP']:10.7g}     {out['PBUG']:10.7g}\n"
-        out_str += f" {out['spar21']:10.7g}     {out['BFRM 1']:10.7f}     {out['BFRM 2']:10.7f}     {out['BFRM 3']:10.7f}     {out['BFRM 4']:10.7f}\n"
-        out_str += f" {out['BFRM 5']:10.7f}     {out['BFRM 6']:10.7f}     {out['BFRM 7']:10.7f}     {out['BFRM 8']:10.7f}     {out['BFRM 9']:10.7f}\n"
+#     else:
+#         out_str += f"PORB:{out['porb_version']} {out['generation_date']} IPLAN,TC= {out['PLANUM']:5.4g} {out['TC']:7.5g} {out['NAME']}:{out['NAME']}\n"
+#         out_str += f" {out['PLANUM']:10.7g}     {out['TC']:10.7g}     {out['RODE']:10.7g}      {out['CLIN']:.7E} {out['ARGP']:10.7f}\n"
+#         out_str += f"  {out['XECC']:.7E} {out['SJA']:10.7g}     {out['EOBL']:10.7g}     {out['SFLAG']:10.7g}     {out['ZBAA']:10.7g}\n"
+#         out_str += f" {out['ZBAB']:10.7g}     {out['WDOT']:10.7g}     {out['WO']:10.7g}     {out['OPERIOD']:10.7g}     {out['TJP']:10.7g}\n"
+#         out_str += f" {out['SIDAY']:10.7g}     {out['spar17']:10.7g}     {out['TAV']:10.7g}     {out['BLIP']:10.7g}     {out['PBUG']:10.7g}\n"
+#         out_str += f" {out['spar21']:10.7g}     {out['BFRM 1']:10.7f}     {out['BFRM 2']:10.7f}     {out['BFRM 3']:10.7f}     {out['BFRM 4']:10.7f}\n"
+#         out_str += f" {out['BFRM 5']:10.7f}     {out['BFRM 6']:10.7f}     {out['BFRM 7']:10.7f}     {out['BFRM 8']:10.7f}     {out['BFRM 9']:10.7f}\n"
 
-    return out_str
+#     return out_str
 
 
 def get_porb_params(
@@ -913,24 +913,24 @@ def high_level_get_porb_params(body_name:str,
     return porb_params
 
 def modify_porb_params(porb_params:PorbParams,
-        long_of_asc_node:float = None,
-        eccentricity:float = None,
-        inclination:float = None,
-        arg_of_peri:float = None,
-        semimajor_axis:float = None,
-        orbit_period:float = None,
-        perihelion_date:float = None,
-        centuries_from_j2000:float = None,
-        epoch_JD:float = None,
-        mean_anomaly:float = None,
-        rotation_period:float = None,         
-        phase_at_j2000:float = None,
-        pole_ra:float = None,
-        pole_dec:float = None,   
-        default_spin_flag:int = None,  
-        obliquity:float = None,
-        rotation_matrix_FtoB:np.ndarray = None,
-        true_anomaly_at_vernal_equinox:float = None
+        long_of_asc_node:float|None = None,
+        eccentricity:float|None = None,
+        inclination:float|None = None,
+        arg_of_peri:float|None = None,
+        semimajor_axis:float|None = None,
+        orbit_period:float|None = None,
+        perihelion_date:float|None = None,
+        centuries_from_j2000:float|None = None,
+        epoch_JD:float|None = None,
+        mean_anomaly:float|None = None,
+        rotation_period:float|None = None,         
+        phase_at_j2000:float|None = None,
+        pole_ra:float|None = None,
+        pole_dec:float|None = None,   
+        default_spin_flag:int|None = None,  
+        obliquity:float|None = None,
+        rotation_matrix_FtoB:np.ndarray|None = None,
+        true_anomaly_at_vernal_equinox:float|None = None
         ) -> PorbParams:
 
     orb = OrbParams.from_modified_params(porb_params,
@@ -959,34 +959,34 @@ def modify_porb_params(porb_params:PorbParams,
 
 
 
-if __name__ == '__main__':
-    # Include headers in output?
-    verbose = True
+# if __name__ == '__main__':
+#     # Include headers in output?
+#     verbose = True
 
-    # body_names      = [ 'Mars', 'Deimos', 'Ceres', 'Didymos', 'Dimorphos', 'Chimaera']
-    # body_naifids    = [ 499, 402, 20000001, 920065803, 120065803, 20000623]
+#     # body_names      = [ 'Mars', 'Deimos', 'Ceres', 'Didymos', 'Dimorphos', 'Chimaera']
+#     # body_naifids    = [ 499, 402, 20000001, 920065803, 120065803, 20000623]
 
-    body_names      = ['Justitia']
-    body_naifids    = [20000269]
+#     body_names      = ['Justitia']
+#     body_naifids    = [20000269]
 
-    # epoch at which to calculate orbital params (must be covered by available kernels)
-    # epoch_date = defaults.epoch_date
-    # metakernel = f'{kernels_dir}/mk/krc_default.tm'
+#     # epoch at which to calculate orbital params (must be covered by available kernels)
+#     # epoch_date = defaults.epoch_date
+#     # metakernel = f'{kernels_dir}/mk/krc_default.tm'
     
-    for i in range(len(body_names)):
-        print()
-        # metakernel = get_mk(f'{body_names[i]}')
-        metakernel = f'{install.kernels_dir}/mk/JUSTITIA.tm'
-        porb_params = get_porb_params(body_names[i], body_naifids[i], metakernel)
-        if verbose:
-            print(porb_params.verbose_output())
-        else:
-            print(str(porb_params))
+#     for i in range(len(body_names)):
+#         print()
+#         # metakernel = get_mk(f'{body_names[i]}')
+#         metakernel = f'{install.kernels_dir}/mk/JUSTITIA.tm'
+#         porb_params = get_porb_params(body_names[i], body_naifids[i], metakernel)
+#         if verbose:
+#             print(porb_params.verbose_output())
+#         else:
+#             print(str(porb_params))
         
-        # print(format_output(out, verbose=True))
-        # write_hdf(out, '/home/nsmith/KRC/pyorb/test')
-        # body_params = get_body_params(out, metakernel)
-        # write_hdf(out, body_params, install.porb_defaults_dir)
+#         # print(format_output(out, verbose=True))
+#         # write_hdf(out, '/home/nsmith/KRC/pyorb/test')
+#         # body_params = get_body_params(out, metakernel)
+#         # write_hdf(out, body_params, install.porb_defaults_dir)
 
 
 #### ./krc_justitia.dv /work/nsmith/justitia/krc/tmp/260327_justitia_1 00599

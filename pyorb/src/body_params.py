@@ -15,7 +15,7 @@ from . import porb
 
 planet_params_file = install.planet_params_file
 
-def add_str_dset(string, group, label):
+def add_str_dset(string:str, group: h5py.Group, label:str):
     '''
     add a single-string dataset to an hdf with all the particular formatting requirements. 
     '''
@@ -34,7 +34,7 @@ def add_str_dset(string, group, label):
     
     return
 
-def add_num_dset(value, group, label, d_type):
+def add_num_dset(value:float | int, group: h5py.Group, label:str, d_type:np.dtype|str):
     '''
     add a single-value float/int dataset to an hdf with all the formatting weirdness.
     '''
@@ -77,7 +77,7 @@ class krc_params_dict(TypedDict):
     DELJUL      :   float
     N24         :   int
 
-def get_radius(naifid:int, metakernel:str = None) -> float:
+def get_radius(naifid:int, metakernel:str|None = None) -> float:
     '''
     Return the radius of an object, specified by its naifid. 
     Use the metakernel supplied, or select an appropriate one from the kernel cache.
@@ -96,7 +96,8 @@ def get_radius(naifid:int, metakernel:str = None) -> float:
             pass
     return radius
 
-def get_body_params(porb_output:porb.PorbParams, metakernel:str=None) -> tuple[type_params_dict, planet_flux_dict, krc_params_dict]:
+def get_body_params(porb_output:porb.PorbParams, 
+                    metakernel:str|None = None) -> tuple[type_params_dict, planet_flux_dict, krc_params_dict]:
     '''
     derive parameters (or extract them from the planetary parameters csv file) for writing a porb hdf.
 
@@ -149,7 +150,7 @@ def get_body_params(porb_output:porb.PorbParams, metakernel:str=None) -> tuple[t
             satellite_mass = planet_params['mass'][planet_params['Name']==type_params['body_name']]
         else: satellite_mass = 0.
         krc_params['GRAV'] = const.G * satellite_mass / (1000*planet_flux['Radius'])**2
-        planet_flux['Mut_Period'] = 2*np.pi * np.sqrt((1000*semimajor_axis)**3 / (const.G*(planet_params['mass'][planet_params['Name']==type_params['parent_body']]+satellite_mass)))
+        planet_flux['Mut_Period'] = 2*np.pi * np.sqrt((1000*semimajor_axis)**3 / (const.G*(planet_params['mass'][planet_params['Name']==type_params['parent_body']][0]+satellite_mass)))
         planet_flux['Orb_Radius'] = semimajor_axis
     
     if type_params['body_type'] == 'Planet':
@@ -180,7 +181,7 @@ def get_body_params(porb_output:porb.PorbParams, metakernel:str=None) -> tuple[t
     
     return (type_params, planet_flux, krc_params)
 
-def write_hdf(porb_output:porb.PorbParams, body_params:tuple, out_dir: str):
+def write_hdf(porb_output:porb.PorbParams, body_params:tuple, out_dir: str) -> str:
     '''
     write a cacheable hdf for the specified body, containing PORB output, plus other 
     parameters used by various other davinci interface systems.
@@ -297,7 +298,7 @@ def read_hdf(hdf_file:str) -> tuple[type_params_dict, planet_flux_dict, krc_para
 
     return (type_params, planet_flux, krc_params, porb_params)
 
-def high_level_write_hdf(porb_output:porb.PorbParams, out_dir:str=install.porb_defaults_dir):
+def high_level_write_hdf(porb_output:porb.PorbParams, out_dir:str=install.porb_defaults_dir) -> str:
     '''
     Write an HDF file corresponding to a given PorbParams object, to some given directory.
     This high-level function will automatically get the additional body parameters needed
@@ -307,4 +308,5 @@ def high_level_write_hdf(porb_output:porb.PorbParams, out_dir:str=install.porb_d
     '''
     body_params = get_body_params(porb_output)
     hdf_file = write_hdf(porb_output, body_params, out_dir)
+    
     return hdf_file
