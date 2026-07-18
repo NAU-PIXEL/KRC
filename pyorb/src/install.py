@@ -7,7 +7,7 @@ porb_defaults_dir = '/nfs/software/davinci_install/share/davinci/library/script_
 
 # set some locations
 kernels_dir = '/home/nsmith/KRC/pyorb/kernels'
-naif_source = 'https://naif.jpl.nasa.gov/pub/naif/generic_kernels'
-default_mk = f'{kernels_dir}/mk/krc_default.tm'
+# naif_source = 'https://naif.jpl.nasa.gov/pub/naif/generic_kernels'
+# default_mk = f'{kernels_dir}/mk/krc_default.tm'
 test_kernels_dir = '/home/nsmith/KRC/pyorb/test/kernels'
-naifid_map_file = f'{kernels_dir}/naifid_map.csv'
+# naifid_map_file = f'{kernels_dir}/naifid_map.csv'

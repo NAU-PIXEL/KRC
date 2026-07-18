@@ -29,19 +29,22 @@ default_mk = f'{kernels_dir}/mk/krc_default.tm'
 naifid_map_file = f'{kernels_dir}/naifid_map.csv'
 satellite_source = f'{naif_source}/spk/satellites/'
 
-def download_target(target:str, dest:str|None=None, kernels_dir:str=kernels_dir) -> str:
-    '''
+def download_target(target:str, dest:str|None=None, kernels_dir:str=install.kernels_dir) -> str:
+    """
     Downloads a target file from a specified location, handles possible errors.
     Places target file in correct kernel subdir based on file extension.
 
-    :param target: Full URL of target file to download. 
-    :type target: str
-    :param dest: Optional. Full path of location to download target to. Default is 
-    'None', which sorts .tls, .tpc, and .bsp kernels into their appropriate locations, 
-    or otherwise puts the file in /tmp/. 
-    :return: Full path of location of downloaded file. 
-    :rtype: str
-    '''
+    Args:
+        target (str): Full URL of target file to download.
+        dest (str | None, optional): Full path of location to download target to. Default is 
+            "None", which sorts .tls, .tpc, and .bsp kernels into their appropriate locations, 
+            or otherwise puts the file in /tmp/. Defaults to None.
+        kernels_dir (str, optional): Path to directory containing kernels. 
+            Defaults to install.kernels_dir.
+
+    Returns:
+        str: Full path of location of downloaded file.
+    """
     root, ext = path.splitext(target)
     basename = path.basename(target)
 
@@ -68,18 +71,20 @@ def download_target(target:str, dest:str|None=None, kernels_dir:str=kernels_dir)
 
     return destination
 
-def update_naif_kernel(source:str, regex:str, kernels_dir=kernels_dir) -> str:
-    '''
+def update_naif_kernel(source:str, regex:str, kernels_dir:str=install.kernels_dir) -> str:
+    """
     Checks a naif source location for updated kernels, compares them to latest currently
     available kernel, and if necessary, downloads the updated version.
-    
-    :param source: Full URL of the NAIF source directory to check.
-    :type source: str
-    :param regex: regular expression fully matching the desired kernel for all version numbers.
-    :type regex: str
-    :return: basename of updated current kernel.
-    :rtype: str
-    '''
+
+    Args:
+        source (str): Full URL of the NAIF source directory to check.
+        regex (str): regular expression fully matching the desired kernel for all version numbers.
+        kernels_dir (str, optional): Path to directory containing kernels. 
+            Defaults to install.kernels_dir.
+
+    Returns:
+        str: basename of updated current kernel.
+    """
     kernel_type = regex[-3:-1]+'k'
     ### search the source location, get the index of files
     index = download_target(source, dest='/tmp/index.html')
@@ -116,16 +121,19 @@ def update_naif_kernel(source:str, regex:str, kernels_dir=kernels_dir) -> str:
 
     return current_path
 
-def update_default_kernels(kernels_dir:str=kernels_dir):
-    '''
+def update_default_kernels(kernels_dir:str=install.kernels_dir):
+    """
     Checks canonical sources for updated versions of the following common kernels:
-    Leap Seconds Kernel (LSK): naif####.tls
-    Planetary Constants Kernel (PCK): pck#####.tpc
-    Solar System SPK: de###.bsp
+        - Leap Seconds Kernel (LSK): naif####.tls
+        - Planetary Constants Kernel (PCK): pck#####.tpc
+        - Solar System SPK: de###.bsp
     Once these kernels are downloaded, the default metakernel is updated with the new 
     kernel names.
-    '''
 
+    Args:
+        kernels_dir (str, optional): Path to directory containing kernels. 
+            Defaults to install.kernels_dir.
+    """
     kernel_names = {'lsk'            : 'naif\\d{4}\\.tls$', 
                     'pck'            : 'pck\\d{5}\\.tpc$', 
                     'spk/planets'    : 'de\\d{3}\\.bsp$'}
@@ -144,11 +152,20 @@ def update_default_kernels(kernels_dir:str=kernels_dir):
 
     return
 
-def update_name_naifID_map(naifid_map_file:str = naifid_map_file, kernels_dir:str=kernels_dir) -> str:
-    '''
+def update_name_naifID_map(naifid_map_file:str = naifid_map_file, kernels_dir:str=install.kernels_dir) -> str:
+    """
     create a fresh name-naifid mapping file, with all available satellites,
     and all currently downloaded small bodies.
-    '''
+
+    Args:
+        naifid_map_file (str, optional): Path to the file containing the name-naifid mapping. 
+            Defaults to f'{install.kernels_dir}/naifid_map.csv'.
+        kernels_dir (str, optional): Path to directory containing kernels. 
+            Defaults to install.kernels_dir.
+
+    Returns:
+        str: echo of input naifid_map_file. 
+    """
     # Use the summary file to list all covered satellites and their NAIF IDs.
     summary = download_target(f'{satellite_source}/aa_summaries.txt', dest='/tmp/summary.txt')
     with open(summary, 'r') as s:
@@ -186,17 +203,24 @@ def update_name_naifID_map(naifid_map_file:str = naifid_map_file, kernels_dir:st
 
     return naifid_map_file
 
-def update_satellite_kernel(satellite:str, kernels_dir:str=kernels_dir) -> str:
-    '''
+def update_satellite_kernel(satellite:str, kernels_dir:str=install.kernels_dir) -> str:
+    """
     Checks canonical sources for updated versions of SPK for a planetary system. 
-    Working as of 2025.11.25 for all listed satellites. I suspect over time, NAIF
-    naming conventions will evolve, and this may need updating.
+    Works (as of July 2026) for all satellites listed on NAIF's generic kernels site. 
+    I suspect over time, NAIF naming conventions will evolve, and this may need updating.
+
+    Args:
+        satellite (str): Name of the target satellite to update the SPK for.
+        kernels_dir (str, optional): Path to directory containing kernels. 
+            Defaults to install.kernels_dir.
+
+    Raises:
+        RuntimeError: Thrown when no available satellite kernel contains the target. 
+
+    Returns:
+        str: Path of updated latest kernel, relative to kernels_dir.
+    """
     
-    :param satellite: Name of the target satellite to update the SPK for.
-    :type satellite: str
-    :return: basename of updated latest kernel.
-    :rtype: str
-    '''
     ### Uff da none of these things are gonna be easy, are they?
     ### So, looking at the source folder, it's a total mess of options. The best way
     ### to get what I want seems to be, check the aaa_summaries.txt, parse the output
@@ -308,8 +332,8 @@ def update_satellite_kernel(satellite:str, kernels_dir:str=kernels_dir) -> str:
 
     return f'spk/{newest}'
 
-def update_small_body_kernel(naifid:int, kernels_dir:str = kernels_dir) -> str:
-    '''
+def update_small_body_kernel(naifid:int, kernels_dir:str = install.kernels_dir) -> str:
+    """
     Downloads a fresh kernel from Horizons for a small body. 
     NAIF ID must uniquely identify the body of interest. 
 
@@ -319,11 +343,19 @@ def update_small_body_kernel(naifid:int, kernels_dir:str = kernels_dir) -> str:
     Note that this function hard-codes the ";" in the query, forcing a search only over 
     small bodies (i.e., excluding planets and moons).
 
-    :param naifid NAIF ID of target body. Case-insensitive.
-    :type naifid: int
-    :return: filename of the generated spk
-    :rtype: str
-    '''
+    Args:
+        naifid (int): NAIF ID of target body. 
+        kernels_dir (str, optional): Path to directory containing kernels. 
+            Defaults to install.kernels_dir.
+
+    Raises:
+        err: OSError caught and raised when there's a problem opening the downloaded spk file.
+        RuntimeError: raised when no SPK file is generated.
+        RuntimeError: raised when the body of interest produces an invalid request.
+
+    Returns:
+        str: path of the generated spk, relative to kernels_dir.
+    """
 
     # Define API URL and SPK filename:
     url = 'https://ssd.jpl.nasa.gov/api/horizons.api'
@@ -364,6 +396,7 @@ def update_small_body_kernel(naifid:int, kernels_dir:str = kernels_dir) -> str:
                 f = open(spk_filename, "wb")
             except OSError as err:
                 print(f"Unable to open SPK file '{spk_filename}': {err}")
+                raise err
             # Decode and write the binary SPK file content:
             f.write(base64.b64decode(data["spk"]))
             f.close()
@@ -391,27 +424,34 @@ def update_small_body_kernel(naifid:int, kernels_dir:str = kernels_dir) -> str:
     print("response code: {0}".format(response.status_code))
     raise RuntimeError(f'Invalid request: {url} \nMaybe "DES={naifid};" is a bad sb_search_str?')
 
-def write_metakernel(kernel_list: list, 
+def write_metakernel(kernel_list: list[str], 
                      naifid: int, 
                      name:str|None=None, 
                      outdir:str=f'{kernels_dir}/mk', 
-                     kernels_dir:str=kernels_dir, 
+                     kernels_dir:str=install.kernels_dir, 
                      comments: str = '') -> str:
-    '''
+    """
     Writes a metakernel. Items in kernel_list should be the path of each kernel to 
     include, relative to kernels_dir, e.g.:
-    ["lsk/naif0012.tls", "pck/pck00010.tpc", "spk/de440.bsp"] 
-    
-    :param kernel_list: list of kernels to write to metakernel.
-    :type kernel_list: list (of strs)
-    :param outdir: Path of directory to write metakernel to.
-    :type outdir: str
-    :param kernels_dir: Path of directory containing kernels.
-    :type kernels_dir: str
-    :param naifid: NAIF ID code identifying the object.
-    :type naifid: int
+    ["lsk/naif0012.tls", "pck/pck00010.tpc", "spk/de440.bsp"]
 
-    '''
+    Args:
+        kernel_list (list[str]): list of kernels to write to metakernel.
+        naifid (int): NAIF ID code identifying the object.
+        name (str | None, optional): Name or other identifier of the target body.
+            Should not be an integer (even a string castable as an int). Defaults to None.
+        outdir (str, optional): Path of directory to write metakernel to. Defaults to f'{kernels_dir}/mk'.
+        kernels_dir (str, optional): Path to directory containing kernels. 
+            Defaults to install.kernels_dir.
+        comments (str, optional): Optional comments to add to the header text at the start
+            of the metakernel. Defaults to ''.
+
+    Raises:
+        RuntimeError: Raised when the supplied object name is castable as an int.
+
+    Returns:
+        str: Path of the metakernel file written.
+    """
     if not path.isdir(outdir):
         os.makedirs(outdir)
 
@@ -462,48 +502,34 @@ def write_metakernel(kernel_list: list,
 
     return filename
 
-def read_default_mk(default_mk:str=default_mk) -> list[str]:
-    '''
-    Get a list of up to date default kernels from the default metakernel.
-    '''
+def read_mk(metakernel:str) -> list[str]:
+    """
+    Returns a list of kernels contained within an input metakernel.
 
-    with open(default_mk, 'r') as f:
+    Args:
+         metakernel (str): Full path to metakernel to read.
+
+    Returns:
+        list[str]: List of kernels from the metakernel. Each item in the list returned 
+            will be a kernel's path relative to the kernels directory specified by the 
+            metakernel in the PATH_VALUES definition.
+    """
+    with open(metakernel, 'r') as f:
         lines = f.readlines()
-    default_kernels = []
+    kernels = []
     for line in lines:
         if line[:3] == "'$k":
-            default_kernels.append(line[4:-3])
+            kernels.append(line[4:-3])
 
-    return default_kernels
-
-# def testing():
-#     '''
-#     Currently just in use for testing.
-#     '''
-#
-#     # update_default_kernels()
-#     default_kernel_list = read_default_mk()
-#
-#     satellites = ['phobos', 'Io', 'Europa']
-#     for satellite in satellites:
-#         current = update_satellite_kernel(satellite)
-#         kernel_list = default_kernel_list + [current]
-#         # write_metakernel(kernel_list, f'{kernels_dir}/mk/{satellite.upper()}.tm')
-#
-#     small_bodies = ['Ceres', 'CERES', 'cErEs', '1', '269', 'europa', '1999 sg6', '1999sg6', '1999 SG6', 'mars']
-#     for sb in small_bodies:
-#         spkname = update_small_body_kernel(sb)
-#         kernel_list = default_kernel_list + [spkname]
-#         # write_metakernel(kernel_list, f'{kernels_dir}/mk/{sb.upper()}.tm')
-#
-#     kernel_list = read_default_mk()
-#     return
+    return kernels
 
 def make_sb_mk(sb_search_str:str, 
                default_mk:str=default_mk, 
                naifid_map_file:str=naifid_map_file, 
-               kernels_dir:str=kernels_dir) -> str:
-    '''
+               kernels_dir:str=install.kernels_dir) -> str:
+    """
+    For a small body specified by a search string, updates kernels and writes a metakernel.
+
     sb_search_str should be a name, IAU number, IAU provisional designation, or NAIF ID 
     uniquely identifying the body of interest.
 
@@ -523,15 +549,24 @@ def make_sb_mk(sb_search_str:str,
     must be included. 
     If searching a provisional designation, e.g. '1985 JV1', the space is optional. 
 
-    input:
-    sb_search_str   str     String identifier for the object of interest.
-    
-    output:
-    mk_path         str     Path to the metakernel written for this object.
-    '''
+    Args:
+        sb_search_str (str): String identifier for the object of interest.
+        default_mk (str, optional): metakernel containing core kernels loaded by default. 
+            Defaults to f'{install.kernels_dir}/mk/krc_default.tm'.
+        naifid_map_file (str, optional): Path to the file containing the name-naifid mapping. 
+            Defaults to f'{install.kernels_dir}/naifid_map.csv'.
+        kernels_dir (str, optional): Path to directory containing kernels. 
+            Defaults to install.kernels_dir.
 
+    Raises:
+        RuntimeError: Thrown when the requested object's search string matches to a 
+            NAIF ID that is not a small body. 
+
+    Returns:
+        str: Path to the metakernel written for this object.
+    """
     # update_default_kernels()
-    default_kernel_list = read_default_mk(default_mk=default_mk)
+    default_kernel_list = read_mk(default_mk)
 
     # update_small_body_kernel() queries JPL Horizons, which has more restrictive query 
     # formatting than get_naifid(), which queries JPL Small Body DataBase. 
@@ -548,15 +583,19 @@ def make_sb_mk(sb_search_str:str,
     spkname = update_small_body_kernel(naifid, kernels_dir=kernels_dir)
     kernel_list = default_kernel_list + [spkname]
 
-    # add entry in naifid map file for this object
-    append_to_naifid_map(sb, naifid, naifid_map_file=naifid_map_file)
+    # This bit is unnecessary since the entry gets added when get_naifid() is called!
+    # # add entry in naifid map file for this object 
+    # append_to_naifid_map(sb, naifid, naifid_map_file=naifid_map_file)
     
     mk_path = write_metakernel(kernel_list, naifid, name=sb.upper(), outdir=f'{kernels_dir}/mk', kernels_dir=kernels_dir)
 
     return mk_path
 
 def query_sbdb(search_str:str) -> int:
-    '''
+    """
+    Queries the JPL Small Body Database using a specified search string, returns the 
+    NAIF object ID code for the matching object.
+
     search_str should be a name, IAU number, IAU provisional designation, or NAIF ID 
     uniquely identifying the body of interest.
 
@@ -573,12 +612,18 @@ def query_sbdb(search_str:str) -> int:
     must be included. 
     If searching a provisional designation, e.g. '1985 JV1', the space is optional. 
 
-    input:
-    sb_search_str   str     String identifier for the object of interest.
-    
-    output:
-    naifid          int     NAIF object ID code for the object.
-    '''
+    Args:
+        search_str (str): String identifier for the object of interest.
+
+    Raises:
+        err: ValueError raised when json.loads() is unable to decode the JSON results.
+        RuntimeError: raised when the "object" field is not present in the decoded JSON.
+        RuntimeError: raised when the query returns multiple matching results.
+        RuntimeError: raised when some other error occurs preventing a valid query response.
+
+    Returns:
+        int: NAIF object ID code for the object.
+    """
     search_str = search_str.upper()
     # Define API URL
     url = 'https://ssd-api.jpl.nasa.gov/sbdb.api'
@@ -627,10 +672,29 @@ def query_sbdb(search_str:str) -> int:
 
 def make_satellite_mk(satellite:str, 
                       default_mk:str=default_mk, 
-                      kernels_dir:str=kernels_dir, 
-                      naifid_map_file:str=naifid_map_file) -> str:
+                      naifid_map_file:str=naifid_map_file,
+                      kernels_dir:str=kernels_dir) -> str:
+    """
+    For a specified planetary satellite, updates that planetary system's kernels and writes
+    a metakernel for the object of interest.
+
+    Note: Each Planet with moons is technically a satellite of its system's barycenter, so
+    this function is also needed for Planet body types, as well as Satellites.
+
+    Args:
+        satellite (str): String specifying the object of interest. 
+        default_mk (str, optional): metakernel containing core kernels loaded by default. 
+            Defaults to f'{install.kernels_dir}/mk/krc_default.tm'.
+        naifid_map_file (str, optional): Path to the file containing the name-naifid mapping. 
+            Defaults to f'{install.kernels_dir}/naifid_map.csv'.
+        kernels_dir (str, optional): Path to directory containing kernels. 
+            Defaults to install.kernels_dir.
+
+    Returns:
+        str: Path to the metakernel written for this object.
+    """
     
-    default_kernel_list = read_default_mk(default_mk=default_mk)
+    default_kernel_list = read_mk(default_mk)
 
     current = update_satellite_kernel(satellite, kernels_dir=kernels_dir)
     kernel_list = default_kernel_list + [current]
@@ -643,6 +707,22 @@ def make_satellite_mk(satellite:str,
 
 def query_naifid_map(search_str:str, 
                      naifid_map_file:str=naifid_map_file) -> int:
+    """
+    Searches the naifid-name mapping file for the given search string to return the 
+    specified object's NAIF object ID code, if there's a corresponding entry in the file.
+
+    Args:
+        search_str (str): The string identifying the object of interest. Case-insensitive.
+        naifid_map_file (str, optional): Path to the file containing the name-naifid mapping. 
+            Defaults to f'{install.kernels_dir}/naifid_map.csv'.
+
+    Raises:
+        RuntimeError: Raised when no match is found in the naifid map file for the 
+            given search string.
+
+    Returns:
+        int: NAIF object ID code for the object.
+    """
     
     naifid_map = np.genfromtxt(naifid_map_file, delimiter=',', names=True, encoding='utf-8',
                                dtype=['U64', int])
@@ -656,6 +736,27 @@ def query_naifid_map(search_str:str,
 def append_to_naifid_map(name:str, 
                          naifid:int, 
                          naifid_map_file:str=naifid_map_file):
+    """
+    Appends an entry to the naifid-name mapping file, associating the input string "name" 
+    with the input NAIF ID code. Strings that are mappable to integers are reserved for 
+    NAIF ID codes themselves, and so are blocked. 
+
+    Multiple string identifiers can be associated with the same naifid (and thus the same 
+    object). However, any given string must always map to only one naifid. 
+        (TODO: I should probably add a check to ensure this last bit is enforced, but only 
+        because a user might get spicy digging through the base functions. The system only
+        calls this function in ways that ensure this condition implicitly.)
+
+    Args:
+        name (str): A string identifying the object with the given naifid. Case-insensitive.
+        naifid (int): NAIF object ID code for the object.
+        naifid_map_file (str, optional): Path to the file containing the name-naifid mapping. 
+            Defaults to f'{install.kernels_dir}/naifid_map.csv'.
+
+    Raises:
+        RuntimeError: Raised when the input string "name" is mappable to an int. 
+            Integer-only identifiers are reserved for NAIF object ID codes.
+    """
     try:
         i = int(name)
         raise RuntimeError(f'Name: {name}. Please do not use integers as the object name when appending to the name-naifid map file!')
@@ -739,8 +840,8 @@ def get_body_type(body_naifid:int) -> str:
 def get_mk(body_name:str, 
            update_kernels:bool = False, 
            kernels_dir:str=kernels_dir,
-           default_mk:str=install.default_mk, 
-           naifid_map_file:str=install.naifid_map_file) -> str:
+           default_mk:str=default_mk, 
+           naifid_map_file:str=naifid_map_file) -> str:
     
     naifid = get_naifid(body_name, default_mk=default_mk, naifid_map_file=naifid_map_file)
     if cached_mk_exists(naifid, kernels_dir=kernels_dir) and update_kernels == False:
