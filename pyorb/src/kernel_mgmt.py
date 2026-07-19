@@ -13,13 +13,10 @@ import re
 import json
 import base64
 import requests
-import sys
 
 from urllib.request import urlretrieve
 from bs4 import BeautifulSoup
 
-from . import constants as const
-from . import defaults 
 from . import install
 
 # set some locations
@@ -219,42 +216,7 @@ def update_satellite_kernel(satellite:str, kernels_dir:str=install.kernels_dir) 
 
     Returns:
         str: Path of updated latest kernel, relative to kernels_dir.
-    """
-    
-    ### Uff da none of these things are gonna be easy, are they?
-    ### So, looking at the source folder, it's a total mess of options. The best way
-    ### to get what I want seems to be, check the aaa_summaries.txt, parse the output
-    ### and find what file/ files cover whatever moon I'm interested in (not planet),
-    ### then, that doesn't narrow it down entirely.
-
-    ### as of 2025.11.25, the source folder contains these satellite spks:
-    ### jupiter, two options, no overlaps.
-    ### mars, two overlapping options, short time range has "s" appended.
-    #   (though, that's a new convention, who knows if they'll stick with it.)
-    ### neptune, nep095.bsp has all satellites, short time range, possibly high res, based on file size.
-    #   nep097.bsp: triton, nep104.bsp: minor satellites, nep105.bsp: nereid, all medium time range. 
-    #   then, several xl options with massive time ranges I don't want. 
-    ### pluto, one option. great.
-    ### Saturn, non-overlapping: sat393_daphnis, sat415, sat441, sat455, sat456, sat457
-    #   two xl options (past and future) for the major satellites (sat441)
-    ### Uranus, 7 xl options (individual bodies, those in ura111, 
-    #   and then some small ones from 116xl, which doesn't have a non-xl version)
-    #   then, ura184_part-1, 2, & 3, which are non-overlapping and only two centuries. 
-
-    ### so the strategy should be, check the summary, get all kernels containing target satellite,
-    #   (can chuck all the "xl" ones) 
-    #   then select the one with the smallest file size. (need to parse that from the index page)
-    #   That always gets me one file, containing what I need. 
-
-    ### I need to somehow track what version is most up to date, and compare with what I have.
-    #   unfortunately, the numbers associated with each file are not version numbers, 
-    #   or at least can't be treated that way. So the only knowledge I have of if a version
-    #   is up to date is if it matches the canonical source. 
-
-    ### Also unfortunately, I can't use my "update_naif_kernel()" function to do all that, 
-    #   so it will only ever be called for updating the defaults. 
-
-    
+    """  
     satellite = satellite.upper()
 
     # Use the summary file to determine which spks from NAIF have coverage of our target.
@@ -550,7 +512,7 @@ def make_sb_mk(sb_search_str:str,
     If searching a provisional designation, e.g. '1985 JV1', the space is optional. 
 
     Args:
-        sb_search_str (str): String identifier for the object of interest.
+        sb_search_str (str): String identifier for the object of interest. (See notes above)
         default_mk (str, optional): metakernel containing core kernels loaded by default. 
             Defaults to f'{install.kernels_dir}/mk/krc_default.tm'.
         naifid_map_file (str, optional): Path to the file containing the name-naifid mapping. 
@@ -582,10 +544,6 @@ def make_sb_mk(sb_search_str:str,
 
     spkname = update_small_body_kernel(naifid, kernels_dir=kernels_dir)
     kernel_list = default_kernel_list + [spkname]
-
-    # This bit is unnecessary since the entry gets added when get_naifid() is called!
-    # # add entry in naifid map file for this object 
-    # append_to_naifid_map(sb, naifid, naifid_map_file=naifid_map_file)
     
     mk_path = write_metakernel(kernel_list, naifid, name=sb.upper(), outdir=f'{kernels_dir}/mk', kernels_dir=kernels_dir)
 
@@ -613,7 +571,7 @@ def query_sbdb(search_str:str) -> int:
     If searching a provisional designation, e.g. '1985 JV1', the space is optional. 
 
     Args:
-        search_str (str): String identifier for the object of interest.
+        search_str (str): String identifier for the object of interest. (See notes above)
 
     Raises:
         err: ValueError raised when json.loads() is unable to decode the JSON results.
@@ -673,7 +631,7 @@ def query_sbdb(search_str:str) -> int:
 def make_satellite_mk(satellite:str, 
                       default_mk:str=default_mk, 
                       naifid_map_file:str=naifid_map_file,
-                      kernels_dir:str=kernels_dir) -> str:
+                      kernels_dir:str=install.kernels_dir) -> str:
     """
     For a specified planetary satellite, updates that planetary system's kernels and writes
     a metakernel for the object of interest.
@@ -770,7 +728,14 @@ def append_to_naifid_map(name:str,
 def get_naifid(search_str:str, 
                default_mk:str=default_mk, 
                naifid_map_file:str=naifid_map_file) -> int:
-    '''
+    """
+    Return the NAIF object ID code associated with an object, given some string identifier.
+
+    The hierarchy of sources to check is:
+        1. default SPICE kernels and built-in objects
+        2. The naifid-name map file, containing all satellites and previously run objects.
+        3. The JPL Small-Body Database, which should provide results for any asteroid or comet on record.
+
     search_str should be a name, IAU number, IAU provisional designation, or NAIF ID 
     uniquely identifying the body of interest.
 
@@ -787,8 +752,17 @@ def get_naifid(search_str:str,
         If searching using both the number and name of an object, e.g. '3779 Kieffer', the space
         must be included. 
         If searching a provisional designation, e.g. '1985 JV1', the space is optional. 
-    '''
 
+    Args:
+        search_str (str): String identifier for the object of interest. (See notes above)
+        default_mk (str, optional): metakernel containing core kernels loaded by default. 
+            Defaults to f'{install.kernels_dir}/mk/krc_default.tm'.
+        naifid_map_file (str, optional): Path to the file containing the name-naifid mapping. 
+            Defaults to f'{install.kernels_dir}/naifid_map.csv'.
+
+    Returns:
+        int: NAIF object ID code for the object.
+    """
     # load default mk
     spice.furnsh(default_mk)
     try:
@@ -807,23 +781,58 @@ def get_naifid(search_str:str,
 
     return naifid
 
-def cached_mk_exists(naifid:int, kernels_dir:str=kernels_dir) -> bool:
+def cached_mk_exists(naifid:int, kernels_dir:str=install.kernels_dir) -> bool:
+    """
+    Determine if a given naifid has a metakernel in the kernels cache.
+
+    Args:
+        naifid (int): NAIF object ID code for the object of interest.
+        kernels_dir (str, optional): Path to directory containing kernels. 
+            Defaults to install.kernels_dir.
+
+    Returns:
+        bool: True if a cached metakernel exists for the object, False if not.
+    """
     mk_path = f'{kernels_dir}/mk/{naifid:09d}.tm'
     return path.exists(mk_path)
 
-def get_cached_mk(naifid:int, kernels_dir:str=kernels_dir) -> str:
+def get_cached_mk(naifid:int, kernels_dir:str=install.kernels_dir) -> str:
+    """
+    Returns the cached metakernel associated with a given naifid.
+
+    Args:
+        naifid (int): NAIF object ID code for the object of interest.
+        kernels_dir (str, optional): Path to directory containing kernels. 
+            Defaults to install.kernels_dir.
+
+    Returns:
+        str: Full path to cached metakernel for the object of interest.
+    """
     mk_path = f'{kernels_dir}/mk/{naifid:09d}.tm'
     return mk_path
 
 def get_body_type(body_naifid:int) -> str:
-    '''
-    return the type of a body, given its naifid
+    """
+    Returns the body type for the specified object. This is based entirely on the naifid, 
+    with certain numerical ranges corresponding to different object types.
 
-    note: only valid for planets, satellites, comets, and asteroids (minor)
+    The available types and their corresponding ranges are:
+        Planet:     naifids between 0 and 1000, ending in 99.
+        Satellite:  all other naifids between 11 and 99999. 
+        Comet:      naifids between 1000000 and 1999999.
+        Minor:      (asteroids) naifids between 2000000 and 1000000000.
 
-    Don't use this for naifids that refer to system barycenters or spacecraft, for example.
-    '''
+    If a naifid does not fall into one of these ranges, such as a planetary system barycenter
+    or a spacecraft, it is assigned the type 'General'. However, this body type will 
+    cause code to fail elsewhere. 
+        (TODO: maybe raise an exception in this case instead?)
 
+    Args:
+        body_naifid (int): NAIF object ID code for the object of interest.
+
+    Returns:
+        str: String indicating the type of object associated with the given NAIF ID.
+    """
     body_type = 'General'
 
     if (body_naifid < 1000) and (body_naifid%100 == 99):
@@ -839,10 +848,32 @@ def get_body_type(body_naifid:int) -> str:
 
 def get_mk(body_name:str, 
            update_kernels:bool = False, 
-           kernels_dir:str=kernels_dir,
            default_mk:str=default_mk, 
-           naifid_map_file:str=naifid_map_file) -> str:
-    
+           naifid_map_file:str=naifid_map_file,
+           kernels_dir:str=install.kernels_dir,) -> str:
+    """
+    Returns a metakernel for a body of interest, given some string identifying that body. 
+    This will prioritize returning a cached metakernel if one exists, and will generate a 
+    fresh one if there is nothing associated with it in the cache. 
+
+    Args:
+        body_name (str): String identifying the body of interest. See get_naifid() for 
+            how this string gets associated with a unique body.
+        update_kernels (bool, optional): Flag to force a kernel update for an object, even
+            if a metakernel for it already exists in the cache. Defaults to False.
+        default_mk (str, optional): metakernel containing core kernels loaded by default. 
+            Defaults to f'{install.kernels_dir}/mk/krc_default.tm'.
+        naifid_map_file (str, optional): Path to the file containing the name-naifid mapping. 
+            Defaults to f'{install.kernels_dir}/naifid_map.csv'.
+        kernels_dir (str, optional): Path to directory containing kernels. 
+            Defaults to install.kernels_dir.
+
+    Raises:
+        ValueError: Raised when the input object has an invalid body type.
+
+    Returns:
+        str: Full path to metakernel for the object of interest (either cached or newly generated)
+    """
     naifid = get_naifid(body_name, default_mk=default_mk, naifid_map_file=naifid_map_file)
     if cached_mk_exists(naifid, kernels_dir=kernels_dir) and update_kernels == False:
         metakernel = get_cached_mk(naifid, kernels_dir=kernels_dir)
@@ -863,25 +894,3 @@ def get_mk(body_name:str,
             raise ValueError(f'input body {body_name} with naifid {naifid} has invalid type {body_type}. Body must be a Planet, Satellite, Comet, or Minor (i.e., an asteroid).')
 
     return metakernel
-
-
-# if __name__ == '__main__':
-#     target_name = sys.argv[1]
-
-#     update_small_body_kernel(target_name)
-
-    # get_mk(target_name)
-
-    # # Include headers in output?
-    # verbose = True
-
-    # body_names      = ['Ceres', 'Mars', 'Deimos', 'Didymos', 'Dimorphos', 'Chimaera']
-    # body_naifids    = [20000001, 499, 402, 920065803, 120065803, 20000623]
-
-    # # epoch at which to calculate orbital params (must be covered by available kernels)
-    # epoch_date = datetime.datetime(2024,11,1,0,0,0)
-    # metakernel = f'{defaults.kernels_dir}/mk/krc_default.tm'
-    
-    # for i in range(len(body_names)):
-    #     print()
-    #     print(main(body_names[i], body_naifids[i], metakernel, epoch_date, verbose=verbose))
