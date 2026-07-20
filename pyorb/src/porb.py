@@ -9,10 +9,8 @@ import spiceypy as spice
 import datetime
 from . import constants as const
 from .kernel_mgmt import get_naifid, get_body_type, get_mk
-# from .body_params import write_hdf, get_body_params
 from . import defaults 
 from . import install
-import h5py
 from typing import Self
 
 class OrbParams:
@@ -70,23 +68,74 @@ class OrbParams:
     #     return string
 
     @classmethod
-    def from_elems(cls, orb_elems) -> Self:
-        '''
-        Constructs an OrbParams object from an orb_elems tuple, 
-        as would be output by get_orbital_elements().
-        '''
+    def from_elems(cls, 
+            orb_elems:tuple[float, float, float, float, float, float, float]) -> Self:
+        """
+        Constructs an OrbParams object from an orb_elems tuple, as would be output 
+        by get_orbital_elements(). Secondary orbital parameters are calculated based on 
+        the contents of the orb_elems tuple.
+
+        Args:
+            orb_elems (tuple[float, float, float, float, float, float, float]): Tuple of
+                orbital elements, usually from get_orbital_elements(). Contains:
+                    long_of_asc_node:   longitude of the ascending node [radians]
+                    eccentricity:       eccentricity [unitless]
+                    inclination:        inclination [radians]
+                    arg_of_peri:        argument of perihelion [radians] 
+                    mean_anomaly:       mean anomaly at epoch [radians]
+                    semimajor_axis:     semimajor axis [km]
+                    epoch_JD:           Julian date of epoch [Julian Date]
+
+        Returns:
+            Self: An OrbParams object.
+        """
         (long_of_asc_node, eccentricity, inclination, arg_of_peri, mean_anomaly, semimajor_axis, epoch_JD) = orb_elems
         (orbit_period, perihelion_date, centuries_from_j2000) = get_secondary_orb_params(orb_elems)
         return cls(long_of_asc_node, eccentricity, inclination, arg_of_peri, mean_anomaly, semimajor_axis, epoch_JD, orbit_period, perihelion_date, centuries_from_j2000)
     
     @classmethod
-    def from_elems_and_second_params(cls, orb_elems, orb_second_params) -> Self:
+    def from_elems_and_second_params(cls, 
+            orb_elems:tuple[float, float, float, float, float, float, float], 
+            orb_second_params:tuple[float, float, float]) -> Self:
+        """
+        Constructs an OrbParams object from an orb_elems tuple, as would be output 
+        by get_orbital_elements(), and an orb_second_params tuple, as would be output
+        by get_secondary_orb_params().
+
+        Args:
+            orb_elems (tuple[float, float, float, float, float, float, float]): 
+                Tuple of orbital elements, usually from get_orbital_elements(). Contains:
+                    long_of_asc_node:   longitude of the ascending node [radians]
+                    eccentricity:       eccentricity [unitless]
+                    inclination:        inclination [radians]
+                    arg_of_peri:        argument of perihelion [radians] 
+                    mean_anomaly:       mean anomaly at epoch [radians]
+                    semimajor_axis:     semimajor axis [km]
+                    epoch_JD:           Julian date of epoch [Julian Date]
+            orb_second_params (tuple[float, float, float]): Tuple of derived orbital 
+                parameters, usually from get_secondary_orb_params(). Contains:
+                    orbit_period:           Period of the orbit in Earth days
+                    perihelion_date:        J2000 date (days past J2000 epoch) of previous perihelion passage
+                    centuries_from_j2000:   Time of reference epoch from j2000 epoch, in centuries 
+
+        Returns:
+            Self: An OrbParams object.
+        """
         (long_of_asc_node, eccentricity, inclination, arg_of_peri, mean_anomaly, semimajor_axis, epoch_JD) = orb_elems
         (orbit_period, perihelion_date, centuries_from_j2000) = orb_second_params
         return cls(long_of_asc_node, eccentricity, inclination, arg_of_peri, mean_anomaly, semimajor_axis, epoch_JD, orbit_period, perihelion_date, centuries_from_j2000)
 
     @classmethod
     def from_porb_params(cls, porb_params:PorbParams) -> Self:
+        """
+        Constructs an OrbParams object from a PorbParams object.
+
+        Args:
+            porb_params (PorbParams): A PorbParams object.
+
+        Returns:
+            Self: An OrbParams object.
+        """
         long_of_asc_node    = porb_params.RODE
         eccentricity        = porb_params.XECC
         inclination         = porb_params.CLIN
@@ -113,6 +162,43 @@ class OrbParams:
                 centuries_from_j2000:float|None = None,
                 epoch_JD:float|None = None,
                 mean_anomaly:float|None = None) -> Self:
+        """
+        Constructs an OrbParams object using a PorbParams object, plus optional inputs
+        with which to replace each parameter. The function ensures conflicting parameters
+        are not set at the same time, and correctly derives dependent parameters based on
+        the input.
+
+        Args:
+            porb_params (PorbParams): PorbParams object to modify.
+            long_of_asc_node (float | None, optional): longitude of the ascending node [radians]. 
+                Defaults to None.
+            eccentricity (float | None, optional): eccentricity [unitless]. 
+                Defaults to None.
+            inclination (float | None, optional): inclination [radians]. 
+                Defaults to None.
+            arg_of_peri (float | None, optional): argument of perihelion [radians]. 
+                Defaults to None.
+            semimajor_axis (float | None, optional): semimajor axis [km]. 
+                Defaults to None.
+            orbit_period (float | None, optional): Period of the orbit in Earth days. 
+                Defaults to None.
+            perihelion_date (float | None, optional): J2000 date (days past J2000 epoch) 
+                of previous perihelion passage. Defaults to None.
+            centuries_from_j2000 (float | None, optional): Time of reference epoch from 
+                J2000 epoch, in centuries. Defaults to None.
+            epoch_JD (float | None, optional): Julian date of epoch [Julian Date]. 
+                Defaults to None.
+            mean_anomaly (float | None, optional): mean anomaly at epoch [radians]. 
+                Defaults to None.      
+
+        Raises:
+            ValueError: Raised when conflicting arguments are both specified (semimajor_axis and orbit_period)
+            ValueError: Raised when conflicting arguments are both specified (epoch_JD and centuries_from_j2000)
+            ValueError: Raised when conflicting arguments are both specified (perihelion_date and mean_anomaly)
+
+        Returns:
+            Self: An OrbParams object containing the modified values.
+        """
         
         rode    = porb_params.RODE
         xecc    = porb_params.XECC
@@ -507,7 +593,7 @@ class PorbParams:
 
 
 def get_orbital_naifid(metakernel:str, body_naifid:int, epoch_date:datetime.datetime) -> int:
-    '''
+    """
     Use spice to determine if the specified body orbits the sun. If it does, return the 
     body's naifid, and if not, return the naifid of whatever parent body does orbit the 
     sun.
@@ -521,10 +607,16 @@ def get_orbital_naifid(metakernel:str, body_naifid:int, epoch_date:datetime.date
     Barycenter (id=0).
 
     Does not work when specifying planet barycenters (i.e., '400' or '4' for Mars).
-    
+
+    Args:
+        metakernel (str): Metakernel for the specified body.
+        body_naifid (int): NAIF object ID code for the object of interest.
+        epoch_date (datetime.datetime): epoch at which to calculate orbital params 
+            (must be covered by available kernels)
+
     Returns:
-    orbital_id (int) : The NAIF id to be used in calculating the specified body's orbit around the sun.
-    '''
+        int: The NAIF id to be used in calculating the specified body's orbit around the sun.
+    """
     spice.furnsh(metakernel)
     et = spice.datetime2et(epoch_date)
 
@@ -541,18 +633,34 @@ def get_orbital_naifid(metakernel:str, body_naifid:int, epoch_date:datetime.date
 
     return orbital_id
 
-def get_orbital_elements(metakernel:str, orbital_naifid:int, parent:str, epoch_date:datetime.datetime) -> tuple[float, float, float, float, float, float, float]:
-    '''
+def get_orbital_elements(
+        metakernel:str, 
+        orbital_naifid:int, 
+        parent:str, 
+        epoch_date:datetime.datetime) -> tuple[float, float, float, float, float, float, float]:
+    """
     Use spice to get the keplerian(?) orbital elements for a specified body.
-    returns a tuple of floats:
-    long_of_asc_node:   longitude of the ascending node [radians]
-    eccentricity:       eccentricity [unitless]
-    inclination:        inclination [radians]
-    arg_of_peri:        argument of perihelion [radians] 
-    mean_anomaly:       mean anomaly at epoch [radians]
-    semimajor_axis:     semimajor axis [km]
-    epoch_JD:           Julian date of epoch [Julian Date]
-    '''
+
+    Args:
+        metakernel (str): Metakernel for the specified body.
+        orbital_naifid (int): NAIF object ID code for object of interest, or (in the case 
+            of satellites) the sun-orbiting barycenter of its host planetary system.
+        parent (str): String identifying the parent object around which the object of 
+            interest orbits. (Currently only ever called with "SUN")
+        epoch_date (datetime.datetime): epoch at which to calculate orbital params 
+            (must be covered by available kernels)
+
+    Returns:
+        tuple[float, float, float, float, float, float, float]: 
+            Tuple of orbital elements, usually from get_orbital_elements(). Contains:
+                    long_of_asc_node:   longitude of the ascending node [radians]
+                    eccentricity:       eccentricity [unitless]
+                    inclination:        inclination [radians]
+                    arg_of_peri:        argument of perihelion [radians] 
+                    mean_anomaly:       mean anomaly at epoch [radians]
+                    semimajor_axis:     semimajor axis [km]
+                    epoch_JD:           Julian date of epoch [Julian Date]
+    """
     spice.furnsh(metakernel)
 
     et = spice.datetime2et(epoch_date)
@@ -574,17 +682,25 @@ def get_orbital_elements(metakernel:str, orbital_naifid:int, parent:str, epoch_d
     return (long_of_asc_node, eccentricity, inclination, arg_of_peri, mean_anomaly, semimajor_axis, epoch_JD)
 
 def get_spin_axis(metakernel:str, body_naifid:int) -> tuple[float, float, float, float, int]:
-    '''
-    Calculates the spin axis using spice kernels.
-    returns tuple of floats:
-    rotation_period:        rotation period [hours]
-    phase_at_j2000:         rotational phase (angle of prime meridian) at J2000 epoch [degrees]
-    pole_ra:                right ascension of spin axis in J2000 frame [radians]
-    pole_dec:               declination of spin axis in J2000 frame [radians]
-    default_spin_flag:  int     0: rotation period and pole orientation are both real.
+    """
+    Calculates the spin axis parameters using spice kernels supplied by the input metakernel.
+
+    Args:
+        metakernel (str): Metakernel for the specified body.
+        body_naifid (int): NAIF object ID code for the object of interest.
+
+    Returns:
+        tuple[float, float, float, float, int]: Tuple of spin axis parameters:
+            rotation_period:    rotation period [hours]
+            phase_at_j2000:     rotational phase (angle of prime meridian) at J2000 epoch [degrees]
+            pole_ra:            right ascension of spin axis in J2000 frame [radians]
+            pole_dec:           declination of spin axis in J2000 frame [radians]
+            default_spin_flag:  0: rotation period and pole orientation are both real.
                                 1: rotation period and pole orientation are both default.
-                                2: rotation period is real, pole orientation is default. (not implemented, but I imagine this could be done by searching the small body lightcurve database) 
-    '''    
+                                2: rotation period is real, pole orientation is default. 
+                                    (not implemented, but I imagine this could be done by 
+                                    searching the small body lightcurve database) 
+    """
     spice.furnsh(metakernel)
 
     ### This translates the new-style 8-9 digit asteroid naifIDs to the old-style 7-digit ones.
@@ -622,16 +738,29 @@ def get_spin_axis(metakernel:str, body_naifid:int) -> tuple[float, float, float,
 
     return (rotation_period, phase_at_j2000, pole_ra, pole_dec, default_spin_flag)
 
-def get_secondary_orb_params(orb_elems:tuple[float, float, float, float, float, float, float]) -> tuple[float, float, float]:
-    '''
+def get_secondary_orb_params(
+        orb_elems:tuple[float, float, float, float, float, float, float]) -> tuple[float, float, float]:
+    """
     Calculate additional values needed for porb output.
-    These values are all derived from the orbital elements.
-    returns:
-    orbit_period:           Period of the orbit in Earth days
-    perihelion_date:        J2000 date (days past J2000 epoch) of previous perihelion passage
-    centuries_from_j2000:   Time of reference epoch from j2000 epoch, in centuries 
-    '''
+    These values are derived from the input orbital elements tuple.
 
+    Args:
+        orb_elems (tuple[float, float, float, float, float, float, float]): Tuple of 
+            orbital elements, usually from get_orbital_elements(). Contains:
+                long_of_asc_node:   longitude of the ascending node [radians]
+                eccentricity:       eccentricity [unitless]
+                inclination:        inclination [radians]
+                arg_of_peri:        argument of perihelion [radians] 
+                mean_anomaly:       mean anomaly at epoch [radians]
+                semimajor_axis:     semimajor axis [km]
+                epoch_JD:           Julian date of epoch [Julian Date]
+
+    Returns:
+        tuple[float, float, float]: Tuple containing derived orbital parameters:
+            orbit_period:           Period of the orbit in Earth days
+            perihelion_date:        J2000 date (days past J2000 epoch) of previous perihelion passage
+            centuries_from_j2000:   Time of reference epoch from j2000 epoch, in centuries 
+    """
     (long_of_asc_node, eccentricity, inclination, arg_of_peri, mean_anomaly, semimajor_axis, epoch_JD) = orb_elems
 
     # PERIOD, OPERIOD   : Period of the orbit (Earth days)
@@ -643,15 +772,25 @@ def get_secondary_orb_params(orb_elems:tuple[float, float, float, float, float, 
 
     return (orbit_period, perihelion_date, centuries_from_j2000)
 
-def get_secondary_spin_params(orb:OrbParams, pole_ra:float, pole_dec:float):
-    '''
+def get_secondary_spin_params(
+        orb:OrbParams, 
+        pole_ra:float, 
+        pole_dec:float) -> tuple[float, np.ndarray, float]:
+    """
     Derive secondary parameters, relating the spin axis to the orbital reference frame.
     These can all be derived from existing orbital elements and spin axis parameters.
-    Returns: 
-    obliquity:                      angle between spin axis and orbit pole [radians]
-    rotation_matrix_FtoB:           rotation matrix from orbital frame (F) to seasonal frame (B) [3x3 matrix]
-    true_anomaly_at_vernal_equinox: True anomaly at vernal equinox [radians]
-    '''    
+
+    Args:
+        orb (OrbParams): OrbParams object containing the orbital elements of the object of interest.
+        pole_ra (float): Right Ascension of the spin axis in J2000 frame [radians]
+        pole_dec (float): Declination of the spin axis in J2000 frame [radians]
+
+    Returns:
+        tuple[float, np.ndarray, float]: Tuple of derived spin parameters, containing:
+            obliquity:                      angle between spin axis and orbit pole [radians]
+            rotation_matrix_FtoB:           rotation matrix from orbital frame (F) to seasonal frame (B) [3x3 matrix]
+            true_anomaly_at_vernal_equinox: True anomaly at vernal equinox [radians]
+    """
     long_of_asc_node = orb.long_of_asc_node
     inclination = orb.inclination
     arg_of_peri = orb.arg_of_peri
@@ -685,19 +824,27 @@ def get_secondary_spin_params(orb:OrbParams, pole_ra:float, pole_dec:float):
 
     return (obliquity, rotation_matrix_FtoB, true_anomaly_at_vernal_equinox)
 
-def alt_get_secondary_spin_params(orb:OrbParams, obliquity, true_anomaly_at_vernal_equinox):
-    '''
+def alt_get_secondary_spin_params(
+        orb:OrbParams, 
+        obliquity:float, 
+        true_anomaly_at_vernal_equinox:float) -> tuple[float, float, np.ndarray]:
+    """
     Uses obliquity and true anomaly at vernal equinox to get the pole ra and dec, 
-    then calculates the rotation matrix. 
-    this is potentially more in line with how people think about objects with unknown spins,
-    so it's probably more useful for manually inputting such a case.
+    then calculates the rotation matrix. This is potentially more in line with how people 
+    think about objects with unknown spins, so it's probably more useful for manually 
+    inputting such a case.
 
-    inputs:
-    orb_elems:                      tuple containing keplerian(?) orbital elements (see get_orbital_elements())
-    obliquity:                      (BLIP) angle between spin axis and orbit pole [radians]
-    true_anomaly_at_vernal_equinox: (TAV) True anomaly at vernal equinox [radians]
+    Args:
+        orb (OrbParams): OrbParams object containing the orbital elements of the object of interest.
+        obliquity (float): angle between spin axis and orbit pole [radians]
+        true_anomaly_at_vernal_equinox (float): True anomaly at vernal equinox [radians]
 
-    '''
+    Returns:
+        tuple[float, float, np.ndarray]: Tuple of derived spin parameters, containing:
+            pole_ra:                Right Ascension of the spin axis in J2000 frame [radians]
+            pole_dec:               Declination of the spin axis in J2000 frame [radians]
+            rotation_matrix_FtoB:   Rotation matrix from orbital frame (F) to seasonal frame (B) [3x3 matrix]
+    """
     long_of_asc_node = orb.long_of_asc_node
     inclination = orb.inclination
     arg_of_peri = orb.arg_of_peri
@@ -734,143 +881,25 @@ def alt_get_secondary_spin_params(orb:OrbParams, obliquity, true_anomaly_at_vern
     return (pole_ra, pole_dec, rotation_matrix_FtoB)
 
 
-# def old_get_porb_params(body_name, body_naifid, body_type, orb_elems, spin_axis):
-#     '''
-#     Determines the orbital parameters of a body based on spice kernels.
-#     Outputs a dictionary containing all the variables to include in the standard PORB
-#     input table for KRC.
-#     '''
-#     # Unpack input orbital elements, derive secondary orbital parameters
-#     (long_of_asc_node, eccentricity, inclination, arg_of_peri, mean_anomaly, semimajor_axis, epoch_JD) = orb_elems
-#     (orbit_period, perihelion_date, centuries_from_j2000) = get_secondary_orb_params(orb_elems)
-
-#     # Unpack input spin axis parameters, derive secondary spin parameters
-#     (rotation_period, phase_at_j2000, pole_ra, pole_dec, default_spin_flag) = spin_axis 
-#     (obliquity, rotation_matrix_FtoB, true_anomaly_at_vernal_equinox) = get_secondary_spin_params(orb_elems, pole_ra, pole_dec)
-
-#     # hacking in a test case for Justitia, 2026.04.28.
-#     # Basically, just run everything as normal first, modify the values with inputs,
-#     # then update the secondary values that flow from the first ones.
-#     # I'll need to consider how to handle user inputs more appropriately later.
-#     # if body_name=='Justitia':
-#     if False:
-#         semimajor_axis = 2.613
-#         eccentricity = 0.
-#         # need to repack orb_elems with updated values:
-#         orb_elems = (long_of_asc_node, eccentricity, inclination, arg_of_peri, mean_anomaly, semimajor_axis, epoch_JD)
-#         (orbit_period, perihelion_date, centuries_from_j2000) = get_secondary_orb_params(orb_elems)
-
-#         obliquity = 0.
-#         true_anomaly_at_vernal_equinox = 0.
-#         pole_ra, pole_dec, rotation_matrix_FtoB = alt_get_secondary_spin_params(orb_elems, obliquity, true_anomaly_at_vernal_equinox)
-    
-
-#     ##### record variables in output dictionary #####
-#     out={}
-#     out['default_spin']     = default_spin_flag
-#     out['porb_version']     = const.porb_version
-#     out['generation_date']  = datetime.datetime.now().strftime('%Y %b %d %H:%M:%S')
-#     out['NAME']             = body_name
-#     out['body_type']        = body_type
-
-#     out['PLANUM']           = body_naifid    
-#     if   out['PLANUM']  >= 20000000:
-#          out['PLANUM']  -= 20000000
-#     elif out['PLANUM']  >=  2000000:
-#          out['PLANUM']  -=  2000000
-
-#     out['TC']               = centuries_from_j2000
-#     out['RODE']             = long_of_asc_node
-#     out['CLIN']             = inclination
-#     out['ARGP']             = arg_of_peri
-
-#     out['XECC']             = eccentricity
-#     out['SJA']              = semimajor_axis
-#     out['EOBL']             = const.earth_obliquity
-#     out['SFLAG']            = const.sflag
-#     out['ZBAA']             = pole_dec
-
-#     out['ZBAB']             = pole_ra
-#     out['WDOT']             = (360.*24)/rotation_period
-#     out['WO']               = phase_at_j2000
-#     out['OPERIOD']          = orbit_period
-#     out['TJP']              = perihelion_date
-
-#     out['SIDAY']            = rotation_period
-#     out['spar17']           = const.spar17
-#     out['TAV']              = true_anomaly_at_vernal_equinox
-#     out['BLIP']             = obliquity
-#     out['PBUG']             = const.pbug
-
-#     out['spar21']           = const.spar21
-#     out['BFRM 1']           = rotation_matrix_FtoB[0][0]
-#     out['BFRM 2']           = rotation_matrix_FtoB[1][0]
-#     out['BFRM 3']           = rotation_matrix_FtoB[2][0]
-#     out['BFRM 4']           = rotation_matrix_FtoB[0][1]
-
-#     out['BFRM 5']           = rotation_matrix_FtoB[1][1]
-#     out['BFRM 6']           = rotation_matrix_FtoB[2][1]
-#     out['BFRM 7']           = rotation_matrix_FtoB[0][2]
-#     out['BFRM 8']           = rotation_matrix_FtoB[1][2]
-#     out['BFRM 9']           = rotation_matrix_FtoB[2][2]
-    
-#     return out
-
-# def old_format_output(out: dict, verbose=False):
-#     '''
-#     Formats variables stored in out into a the Fortran style PORB output.
-#     Outputs a multiline string. 
-#     Variable labels are optionally included using the verbose flag. 
-#     '''
-#     out_str = ''
-#     if verbose:
-#         out_str += f"<--VERSION---> <--generation date->           IPLAN      TC orbit:pole\n"
-#         out_str += f"PORB:{out['porb_version']} {out['generation_date']} IPLAN,TC= {out['PLANUM']:5d} {out['TC']:7.5g} {out['NAME']}:{out['NAME']}\n"
-#         out_str += f"     PLANUM             Tc           RODE           CLIN           ARGP\n"
-#         out_str += f" {out['PLANUM']:10d}     {out['TC']:10.7g}     {out['RODE']:10.7g}      {out['CLIN']:.7E} {out['ARGP']:10.7f}\n"
-#         out_str += f"       XECC            SJA           EOBL          SFLAG           ZBAA\n"
-#         out_str += f"  {out['XECC']:.7E} {out['SJA']:10.7g}     {out['EOBL']:10.7g}     {out['SFLAG']:10.7g}     {out['ZBAA']:10.7g}\n"
-#         out_str += f"       ZBAB           WDOT             WO        OPERIOD            TJP\n"
-#         out_str += f" {out['ZBAB']:10.7g}     {out['WDOT']:10.7g}     {out['WO']:10.7g}     {out['OPERIOD']:10.7g}     {out['TJP']:10.7g}\n"
-#         out_str += f"      SIDAY          spare            TAV           BLIP           PBUG\n"
-#         out_str += f" {out['SIDAY']:10.7g}     {out['spar17']:10.7g}     {out['TAV']:10.7g}     {out['BLIP']:10.7g}     {out['PBUG']:10.7g}\n"
-#         out_str += f"      spare         BFRM 1              2              3              4\n"
-#         out_str += f" {out['spar21']:10.7g}     {out['BFRM 1']:10.7f}     {out['BFRM 2']:10.7f}     {out['BFRM 3']:10.7f}     {out['BFRM 4']:10.7f}\n"
-#         out_str += f"          5              6              7              8         BFRM 9\n"
-#         out_str += f" {out['BFRM 5']:10.7f}     {out['BFRM 6']:10.7f}     {out['BFRM 7']:10.7f}     {out['BFRM 8']:10.7f}     {out['BFRM 9']:10.7f}\n"
-
-#     else:
-#         out_str += f"PORB:{out['porb_version']} {out['generation_date']} IPLAN,TC= {out['PLANUM']:5.4g} {out['TC']:7.5g} {out['NAME']}:{out['NAME']}\n"
-#         out_str += f" {out['PLANUM']:10.7g}     {out['TC']:10.7g}     {out['RODE']:10.7g}      {out['CLIN']:.7E} {out['ARGP']:10.7f}\n"
-#         out_str += f"  {out['XECC']:.7E} {out['SJA']:10.7g}     {out['EOBL']:10.7g}     {out['SFLAG']:10.7g}     {out['ZBAA']:10.7g}\n"
-#         out_str += f" {out['ZBAB']:10.7g}     {out['WDOT']:10.7g}     {out['WO']:10.7g}     {out['OPERIOD']:10.7g}     {out['TJP']:10.7g}\n"
-#         out_str += f" {out['SIDAY']:10.7g}     {out['spar17']:10.7g}     {out['TAV']:10.7g}     {out['BLIP']:10.7g}     {out['PBUG']:10.7g}\n"
-#         out_str += f" {out['spar21']:10.7g}     {out['BFRM 1']:10.7f}     {out['BFRM 2']:10.7f}     {out['BFRM 3']:10.7f}     {out['BFRM 4']:10.7f}\n"
-#         out_str += f" {out['BFRM 5']:10.7f}     {out['BFRM 6']:10.7f}     {out['BFRM 7']:10.7f}     {out['BFRM 8']:10.7f}     {out['BFRM 9']:10.7f}\n"
-
-#     return out_str
-
-
 def get_porb_params(
         body_name: str, 
         body_naifid: int, 
         metakernel: str, 
         epoch_date: datetime.datetime = defaults.epoch_date) -> PorbParams:
-    '''
+    """
     Generate the standard PORB output for a specified body, at some epoch, using 
     SPICE kernels. Return a PorbParams object containing the standard PORB parameters.
 
-    args:
-    body_name: 
-    body_naifid: 
-    metakernel:
+    Args:
+        body_name (str): String identifier for the object of interest.
+        body_naifid (int): NAIF object ID code for the object of interest.
+        metakernel (str): Metakernel for the specified body.
+        epoch_date (datetime.datetime, optional): epoch at which to calculate orbital params 
+            (must be covered by available kernels). Defaults to defaults.epoch_date.
 
-    epoch_date:  epoch at which to calculate orbital params (must be covered by available kernels)
-
-    returns:
-    out:        PorbParams object
-    '''
-
+    Returns:
+        PorbParams: A PorbParams object containing orbit and spin parameters.
+    """
     # Determine orbital elements for either the specified body, or, if the 
     # specified body is a satellite, its sun-orbiting parent.
     body_type = get_body_type(body_naifid)
@@ -956,63 +985,3 @@ def modify_porb_params(porb_params:PorbParams,
             true_anomaly_at_vernal_equinox = true_anomaly_at_vernal_equinox)
 
     return PorbParams.from_orb_and_spin_params(porb_params.NAME, porb_params.body_type, porb_params.PLANUM, orb, spin)
-
-
-
-# if __name__ == '__main__':
-#     # Include headers in output?
-#     verbose = True
-
-#     # body_names      = [ 'Mars', 'Deimos', 'Ceres', 'Didymos', 'Dimorphos', 'Chimaera']
-#     # body_naifids    = [ 499, 402, 20000001, 920065803, 120065803, 20000623]
-
-#     body_names      = ['Justitia']
-#     body_naifids    = [20000269]
-
-#     # epoch at which to calculate orbital params (must be covered by available kernels)
-#     # epoch_date = defaults.epoch_date
-#     # metakernel = f'{kernels_dir}/mk/krc_default.tm'
-    
-#     for i in range(len(body_names)):
-#         print()
-#         # metakernel = get_mk(f'{body_names[i]}')
-#         metakernel = f'{install.kernels_dir}/mk/JUSTITIA.tm'
-#         porb_params = get_porb_params(body_names[i], body_naifids[i], metakernel)
-#         if verbose:
-#             print(porb_params.verbose_output())
-#         else:
-#             print(str(porb_params))
-        
-#         # print(format_output(out, verbose=True))
-#         # write_hdf(out, '/home/nsmith/KRC/pyorb/test')
-#         # body_params = get_body_params(out, metakernel)
-#         # write_hdf(out, body_params, install.porb_defaults_dir)
-
-
-#### ./krc_justitia.dv /work/nsmith/justitia/krc/tmp/260327_justitia_1 00599
-
-# function to take body name/ number as a string, get the naifid.
-
-# function to take... I guess the naifid? and see if there's a cached metakernel for it.
-
-# high-level function to take a body name, get the metakernel and naifid, (optionally updating kernels)
-# and manage any kwargs to modify default values, then return a porb_params object.
-
-# high-level function (in another file) to attach other params for writing
-# output to a defaults hdf.
-
-# high-level function to run the above function for a standard list of bodies? or maybe
-# every body already in the cache? while forcing a kernel update.
-
-# high-level function to read the defaults file, extract porb_params object and other objects.
-
-# values in those objects can then be modified. 
-# (not recommended to modify from cached defaults directly, as linked values will not
-# update automatically, eg semi-major axis & operiod.)
-# preferred behavior is to construct a fresh instance of the object directly?
-
-# objects can then:
-    # be passed as inputs to pykrc
-    # be used by a python based fortran krc interface (?)
-
-# the defaults HDFs can be read by the existing dv interface to work with fortran krc
