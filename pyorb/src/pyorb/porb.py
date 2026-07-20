@@ -34,7 +34,7 @@ class OrbParams:
         self.perihelion_date = perihelion_date
         self.centuries_from_j2000 = centuries_from_j2000
 
-    def __eq__(self, other: Self) -> bool:
+    def __eq__(self, other: "OrbParams") -> bool:
         is_equal = all([
             self.long_of_asc_node       == other.long_of_asc_node,
             self.eccentricity           == other.eccentricity,
@@ -124,7 +124,7 @@ class OrbParams:
         return cls(long_of_asc_node, eccentricity, inclination, arg_of_peri, mean_anomaly, semimajor_axis, epoch_JD, orbit_period, perihelion_date, centuries_from_j2000)
 
     @classmethod
-    def from_porb_params(cls, porb_params:Self) -> Self:
+    def from_porb_params(cls, porb_params:"PorbParams") -> Self:
         """
         Constructs an OrbParams object from a PorbParams object.
 
@@ -149,7 +149,7 @@ class OrbParams:
         return cls(long_of_asc_node, eccentricity, inclination, arg_of_peri, mean_anomaly, semimajor_axis, epoch_JD, orbit_period, perihelion_date, centuries_from_j2000)
     
     @classmethod
-    def from_modified_params(cls, porb_params:Self,
+    def from_modified_params(cls, porb_params:"PorbParams",
                 long_of_asc_node:float|None = None,
                 eccentricity:float|None = None,
                 inclination:float|None = None,
@@ -267,7 +267,7 @@ class SpinParams:
         self.rotation_matrix_FtoB = rotation_matrix_FtoB
         self.true_anomaly_at_vernal_equinox = true_anomaly_at_vernal_equinox
 
-    def __eq__(self, other:SpinParams) -> bool:
+    def __eq__(self, other:"SpinParams") -> bool:
         is_equal = all([
             self.rotation_period == other.rotation_period,
             self.phase_at_j2000 == other.phase_at_j2000,
@@ -304,7 +304,7 @@ class SpinParams:
         return cls(rotation_period, phase_at_j2000, pole_ra, pole_dec, default_spin_flag, obliquity, rotation_matrix_FtoB, true_anomaly_at_vernal_equinox)
     
     @classmethod
-    def from_porb_params(cls, porb_params:PorbParams) -> Self:
+    def from_porb_params(cls, porb_params:"PorbParams") -> Self:
         rotation_period         = (360.*24.)/porb_params.WDOT
         phase_at_j2000          = porb_params.WO
         pole_ra                 = porb_params.ZBAB
@@ -326,7 +326,7 @@ class SpinParams:
         return self
     
     @classmethod
-    def from_modified_params(cls, porb_params:PorbParams, orb:OrbParams,
+    def from_modified_params(cls, porb_params:"PorbParams", orb:OrbParams,
             rotation_period:float|None = None,
             phase_at_j2000:float|None = None,
             pole_ra:float|None = None,
@@ -433,7 +433,7 @@ class PorbParams:
         self.spar21           = spar21
         self.BFRM             = BFRM
 
-    def __eq__(self, other:Self) -> bool:
+    def __eq__(self, other:"PorbParams") -> bool:
         is_equal = all([
             self.default_spin     == other.default_spin,
             self.porb_version     == other.porb_version,
@@ -586,130 +586,6 @@ class PorbParams:
         BFRM = flat_bfrm.reshape(3,3).T
 
         return cls(-1, porb_version, generation_date, NAME, 'unknown', PLANUM, TC, RODE, CLIN, ARGP, XECC, SJA, EOBL, SFLAG, ZBAA, ZBAB, WDOT, WO, OPERIOD, TJP, SIDAY, spar17, TAV, BLIP, PBUG, spar21, BFRM)
-
-class SpinParams:
-    def __init__(self,
-                 rotation_period: float, 
-                 phase_at_j2000: float, 
-                 pole_ra: float, 
-                 pole_dec: float, 
-                 default_spin_flag: int,
-                 obliquity: float, 
-                 rotation_matrix_FtoB: np.ndarray, 
-                 true_anomaly_at_vernal_equinox: float):
-        self.rotation_period = rotation_period
-        self.phase_at_j2000 = phase_at_j2000
-        self.pole_ra = pole_ra
-        self.pole_dec = pole_dec
-        self.default_spin_flag = default_spin_flag
-        self.obliquity = obliquity
-        self.rotation_matrix_FtoB = rotation_matrix_FtoB
-        self.true_anomaly_at_vernal_equinox = true_anomaly_at_vernal_equinox
-
-    def __eq__(self, other:Self) -> bool:
-        is_equal = all([
-            self.rotation_period == other.rotation_period,
-            self.phase_at_j2000 == other.phase_at_j2000,
-            np.isclose(self.pole_ra, other.pole_ra),
-            np.isclose(self.pole_dec, other.pole_dec),
-            self.default_spin_flag == other.default_spin_flag,
-            np.isclose(self.obliquity, other.obliquity),
-            np.all(np.isclose(self.rotation_matrix_FtoB, other.rotation_matrix_FtoB)),
-            np.isclose(self.true_anomaly_at_vernal_equinox, other.true_anomaly_at_vernal_equinox)
-        ])
-
-        return is_equal
-    
-    def __str__(self) -> str:
-        string = ''
-        string += f'rotation_period: {self.rotation_period}\n'
-        string += f'phase_at_j2000: {self.phase_at_j2000}\n'
-        string += f'pole_ra: {self.pole_ra}\n'
-        string += f'pole_dec: {self.pole_dec}\n'
-        string += f'default_spin_flag: {self.default_spin_flag}\n'
-        string += f'obliquity: {self.obliquity}\n'
-        string += f'rotation_matrix_FtoB: \n{self.rotation_matrix_FtoB}\n'
-        string += f'true_anomaly_at_vernal_equinox: {self.true_anomaly_at_vernal_equinox}\n'
-        return string
-
-    @classmethod
-    def from_spin_axis(cls, spin_axis, orb:OrbParams) -> Self:
-        '''
-        Constructs a SpinParams object from spin_axis and orb_elems tuples, 
-        as would be output by get_orbital_elements() and get_spin_axis().
-        '''
-        (rotation_period, phase_at_j2000, pole_ra, pole_dec, default_spin_flag) = spin_axis 
-        (obliquity, rotation_matrix_FtoB, true_anomaly_at_vernal_equinox) = get_secondary_spin_params(orb, pole_ra, pole_dec) 
-        return cls(rotation_period, phase_at_j2000, pole_ra, pole_dec, default_spin_flag, obliquity, rotation_matrix_FtoB, true_anomaly_at_vernal_equinox)
-    
-    @classmethod
-    def from_porb_params(cls, porb_params:PorbParams) -> Self:
-        rotation_period         = (360.*24.)/porb_params.WDOT
-        phase_at_j2000          = porb_params.WO
-        pole_ra                 = porb_params.ZBAB
-        pole_dec                = porb_params.ZBAA
-        default_spin_flag       = porb_params.default_spin
-        obliquity               = porb_params.BLIP
-        rotation_matrix_FtoB    = porb_params.BFRM
-        true_anomaly_at_vernal_equinox = porb_params.TAV
-        return cls(rotation_period, phase_at_j2000, pole_ra, pole_dec, default_spin_flag, obliquity, rotation_matrix_FtoB, true_anomaly_at_vernal_equinox)
-    
-    def set_obliq_and_true_anomaly(self, obliquity:float, true_anomaly_at_vernal_equinox:float, orb:OrbParams) -> Self:
-        '''
-        updates the obliquity and true anomaly at vernal equinox, accounting for
-        the impacts on pole orientation and rotation matrix.
-        '''
-        self.obliquity = obliquity
-        self.true_anomaly_at_vernal_equinox = true_anomaly_at_vernal_equinox
-        self.pole_ra, self.pole_dec, self.rotation_matrix_FtoB = alt_get_secondary_spin_params(orb, obliquity, true_anomaly_at_vernal_equinox)
-        return self
-    
-    @classmethod
-    def from_modified_params(cls, porb_params:PorbParams, orb:OrbParams,
-            rotation_period:float = None,
-            phase_at_j2000:float = None,
-            pole_ra:float = None,
-            pole_dec:float = None,
-            default_spin_flag:int = None,
-            obliquity:float = None,
-            rotation_matrix_FtoB:np.ndarray = None,
-            true_anomaly_at_vernal_equinox:float = None) -> Self:
-
-        default_spin = porb_params.default_spin
-
-        if all([v is None for v in [rotation_period, phase_at_j2000, pole_ra, pole_dec, default_spin_flag, obliquity, true_anomaly_at_vernal_equinox, rotation_matrix_FtoB]]):
-            default_spin_flag = default_spin
-        else:
-            default_spin_flag = 0
-
-        if rotation_period is None:
-            rotation_period = (360.*24.)/porb_params.WDOT
-        if phase_at_j2000 is None:
-            phase_at_j2000  = porb_params.WO
-        
-        if not (pole_ra is None) == (pole_dec is None):
-            raise ValueError("pole_ra and pole_dec must be set together or not at all.")
-        if not (obliquity is None) == (true_anomaly_at_vernal_equinox is None):
-            raise ValueError("obliquity and true_anomaly_at_vernal_equinox must be set together or not at all.")
-        if (pole_ra is not None) and (obliquity is not None):
-            raise ValueError("Spin pole RA and Dec cannot be set at the same time as Obliquity and True Anomaly.")
-        if rotation_matrix_FtoB is not None:
-            raise NotImplementedError("Directly specifying rotation_matrix_FtoB is not currently implemented.")
-        
-        if pole_ra is not None:
-            (obliquity, rotation_matrix_FtoB, true_anomaly_at_vernal_equinox) = get_secondary_spin_params(orb, pole_ra, pole_dec)
-        elif obliquity is not None:
-            (pole_ra, pole_dec, rotation_matrix_FtoB) = alt_get_secondary_spin_params(orb, obliquity, true_anomaly_at_vernal_equinox)
-        else:
-            pole_ra     = porb_params.ZBAB
-            pole_dec    = porb_params.ZBAA
-            obliquity   = porb_params.BLIP
-            true_anomaly_at_vernal_equinox = porb_params.TAV
-            rotation_matrix_FtoB = porb_params.BFRM
-        
-        return cls(rotation_period, phase_at_j2000, pole_ra, pole_dec, default_spin_flag, obliquity, rotation_matrix_FtoB, true_anomaly_at_vernal_equinox)
-
-
 
 
 def get_orbital_naifid(metakernel:str, body_naifid:int, epoch_date:datetime.datetime) -> int:
