@@ -16,9 +16,18 @@ from . import porb
 planet_params_file = install.planet_params_file
 
 def add_str_dset(string:str, group: h5py.Group, label:str):
-    '''
-    add a single-string dataset to an hdf with all the particular formatting requirements. 
-    '''
+    """
+    Add a single-string dataset to an hdf with all the particular formatting requirements
+    expected by ASU's Davinci. 
+
+    (NOTE: I would love nothing more than to abandon Davinci compatibility and use
+        standard h5py functions and default behavior for adding datasets.)
+
+    Args:
+        string (str): The string to add as the value of the dataset.
+        group (h5py.Group): What h5py group to add the dataset to.
+        label (str): The name of the dataset to add.
+    """
     dt = h5py.string_dtype(encoding='ascii',length=len(string)+1)
     dt_id = h5py.h5t.py_create(dt)
     dt_id.set_strpad(h5py.h5t.STR_NULLTERM)
@@ -35,9 +44,16 @@ def add_str_dset(string:str, group: h5py.Group, label:str):
     return
 
 def add_num_dset(value:float | int, group: h5py.Group, label:str, d_type:np.dtype|str):
-    '''
-    add a single-value float/int dataset to an hdf with all the formatting weirdness.
-    '''
+    """
+    Add a single-value float/int dataset to an hdf with all the particular formatting 
+    requirements expected by ASU's Davinci. 
+
+    Args:
+        value (float | int): numeric value to add as the value of the dataset.
+        group (h5py.Group): What h5py group to add the dataset to.
+        label (str): The name of the dataset to add.
+        d_type (np.dtype | str): datatype of the dataset.
+    """
     # ensure 32-bit float/int, big-endian. 
     # put in a 1x1x1 array. 
     # assign attr dv_std = 1, org=0, each 32-bit big-endian signed ints.
@@ -78,13 +94,19 @@ class krc_params_dict(TypedDict):
     N24         :   int
 
 def get_radius(naifid:int, metakernel:str|None = None) -> float:
-    '''
-    Return the radius of an object, specified by its naifid. 
-    Use the metakernel supplied, or select an appropriate one from the kernel cache.
-    If no Radius information is available in the chosen kernels, use the default radius.
-    
-    Returns: radius of the object [km]
-    '''
+    """
+    Returns the radius of an object, specified by its naifid. 
+    Uses the metakernel supplied, or selects an appropriate one from the kernel cache.
+    If no Radius information is available in the chosen kernels, uses the default radius.
+
+    Args:
+        naifid (int): NAIF object ID code for the object of interest.
+        metakernel (str | None, optional): Full path to the metakernel for the object. 
+            Defaults to None.
+
+    Returns:
+        float: Radius of the object of interest [km]
+    """
     radius = defaults.radius 
     if metakernel is None:
         metakernel = f'{install.kernels_dir}/mk/{naifid:09d}.tm'
@@ -98,11 +120,20 @@ def get_radius(naifid:int, metakernel:str|None = None) -> float:
 
 def get_body_params(porb_output:porb.PorbParams, 
                     metakernel:str|None = None) -> tuple[type_params_dict, planet_flux_dict, krc_params_dict]:
-    '''
-    derive parameters (or extract them from the planetary parameters csv file) for writing a porb hdf.
+    """
+    derive parameters (or extract them from the planetary parameters csv file) for 
+    writing a porb hdf.
 
-    returns a tuple of three dicts, corresponding to the three groups with the davinci PORB hdf format.
-    '''
+    Args:
+        porb_output (porb.PorbParams): PorbParams object containing the orbit and spin 
+            parameters for the object of interest.
+        metakernel (str | None, optional): Full path to the metakernel for the object. 
+            Defaults to None.
+
+    Returns:
+        tuple[type_params_dict, planet_flux_dict, krc_params_dict]: a tuple of three dicts, 
+            corresponding to the three groups with the davinci PORB hdf format.
+    """
     type_params = {
         'body_name'     :   porb_output.NAME,
         'body_type'     :   porb_output.body_type,
@@ -182,7 +213,7 @@ def get_body_params(porb_output:porb.PorbParams,
     return (type_params, planet_flux, krc_params)
 
 def write_hdf(porb_output:porb.PorbParams, body_params:tuple, out_dir: str) -> str:
-    '''
+    """
     write a cacheable hdf for the specified body, containing PORB output, plus other 
     parameters used by various other davinci interface systems.
 
@@ -221,8 +252,16 @@ def write_hdf(porb_output:porb.PorbParams, body_params:tuple, out_dir: str) -> s
         PERIOD:         float   Sidereal rotation period in Earth days. (redundant with top-level record "rot_per")
         DELJUL:         float   Default DELJUL for KRC to use. Orbit period / 360, in Earth Days. (basically redundant with top-level record "period")
         N24:            int     Default number of diurnal timesteps for KRC to use. Usually 96. Examples have larger values for some Jovian moons, possibly to keep each time step under ~30 minutes of real time for bodies with longer rotation periods.
-            
-    '''
+
+    Args:
+        porb_output (porb.PorbParams): PorbParams object containing the orbit and spin 
+            parameters for the object of interest.
+        body_params (tuple): Tuple of additional parameters to include in the HDF.
+        out_dir (str): Directory into which to write the HDF file. 
+
+    Returns:
+        str: Full path to the newly-written HDF file.
+    """
     type_params, planet_flux, krc_params = body_params
 
     rot = str(porb_output) 
@@ -268,17 +307,18 @@ def write_hdf(porb_output:porb.PorbParams, body_params:tuple, out_dir: str) -> s
     return hdf_file
 
 def read_hdf(hdf_file:str) -> tuple[type_params_dict, planet_flux_dict, krc_params_dict, porb.PorbParams]:
-    '''
-    read an HDF file in the davinci PORB hdf format. 
-    unpack the 1x1x1 arrays used for scalars (because of davinci compatibility)
-    decode any bytestrings into standard python strings
-    
-    input: 
-    hdf_file:   string  Full path to the HDF file to unpack.
+    """
+    Read an HDF file in the davinci PORB hdf format. 
+    Unpack the 1x1x1 arrays used for scalars (because of davinci compatibility).
+    Decode any bytestrings into standard python strings.
 
-    return:
-    a tuple of three dicts and a PorbParams object, corresponding to the contents of the HDF.
-    '''
+    Args:
+        hdf_file (str): Full path to the HDF file to unpack.
+
+    Returns:
+        tuple[type_params_dict, planet_flux_dict, krc_params_dict, porb.PorbParams]: 
+            A tuple of three dicts and a PorbParams object, corresponding to the contents of the HDF.
+    """
     with h5py.File(hdf_file, 'r') as f:
         porb_params = porb.PorbParams.from_str(f['rot'][0].decode())
         porb_params.default_spin = int(f['rot_per_flag'][0,0,0])
@@ -299,13 +339,20 @@ def read_hdf(hdf_file:str) -> tuple[type_params_dict, planet_flux_dict, krc_para
     return (type_params, planet_flux, krc_params, porb_params)
 
 def high_level_write_hdf(porb_output:porb.PorbParams, out_dir:str=install.porb_defaults_dir) -> str:
-    '''
+    """
     Write an HDF file corresponding to a given PorbParams object, to some given directory.
     This high-level function will automatically get the additional body parameters needed
     to match the Davinci PORB hdf format. 
 
-    Returns: the path to the hdf file written. 
-    '''
+    Args:
+        porb_output (porb.PorbParams): PorbParams object containing the orbit and spin 
+            parameters for the object of interest.
+        out_dir (str, optional): Directory into which to write the HDF file. 
+            Defaults to install.porb_defaults_dir.
+
+    Returns:
+        str: Full path to the newly-written HDF file. 
+    """
     body_params = get_body_params(porb_output)
     hdf_file = write_hdf(porb_output, body_params, out_dir)
     
