@@ -1,5 +1,3 @@
-#! /bin/bash/python
-
 # defines defaults used by pyorb when appropriate input is missing.
 
 import numpy as np

@@ -1,7 +1,7 @@
-import src.defaults as defaults
-import src.porb as porb
-import src.kernel_mgmt as km
-import src.install as install
+import pyorb.defaults as defaults
+import pyorb.porb as porb
+import pyorb.kernel_mgmt as km
+import pyorb.install as install
 import pytest
 import filecmp
 import tempfile

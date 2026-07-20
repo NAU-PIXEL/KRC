@@ -1,5 +1,3 @@
-#! /bin/bash/python
-
 # defines constants used by pyorb
 
 # PORB version date:

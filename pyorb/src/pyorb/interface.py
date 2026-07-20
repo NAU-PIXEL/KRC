@@ -1,5 +1,3 @@
-#! /bin/bash/python
-
 import glob
 import os.path as path
 import numpy as np
