@@ -125,7 +125,9 @@ def get_mars_spin_params():
 
     return out
 
-mars_porb = get_mars_porb_params()
+@pytest.fixture(scope="function")
+def mars_porb():
+    return get_mars_porb_params()
 mars_porb_copy = get_mars_porb_params()
 europa_porb = get_europa_porb_params()
 
@@ -137,9 +139,13 @@ mars_orb_elems = (0.8644665,
                   1.523712, 
                   const.j2000_JD)
 
-mars_orb =  get_mars_orb_params()
+@pytest.fixture(scope="function")
+def mars_orb():
+    return get_mars_orb_params()
 
-mars_spin = get_mars_spin_params()
+@pytest.fixture(scope="function")
+def mars_spin():
+ return get_mars_spin_params()
 
 
 #### OrbParams class tests ####
@@ -149,18 +155,18 @@ def test_OrbParams_equality():
 
     assert test1 == test2
 
-def test_OrbParams_from_porb_params():
+def test_OrbParams_from_porb_params(mars_porb, mars_orb):
     from_porb = porb.OrbParams.from_porb_params(mars_porb)
 
     assert from_porb == mars_orb
 
-def test_OrbParams_from_orb_elems_tuple():
+def test_OrbParams_from_orb_elems_tuple(mars_orb):
     orb_elems = mars_orb_elems
     from_orb_elems_tuple = porb.OrbParams.from_elems(orb_elems)
 
     assert from_orb_elems_tuple == mars_orb
 
-def test_OrbParams_from_elems_and_second_params():
+def test_OrbParams_from_elems_and_second_params(mars_orb):
     orb_elems = (0.8644665, 0.9340198E-01, 0.3226901E-01, -1.281586, 3397.977 / 686.9928 * -2*np.pi, 1.523712, const.j2000_JD)
     second_params = (686.9928, 3397.977, 0.0)
 
@@ -168,7 +174,7 @@ def test_OrbParams_from_elems_and_second_params():
 
     assert from_elems_and_second == mars_orb
 
-def test_OrbParams_from_modified_params():
+def test_OrbParams_from_modified_params(mars_porb, mars_orb):
     # Only one of semimajor_axis and orbit_period may be specified.
     with pytest.raises(ValueError):
         from_modified = porb.OrbParams.from_modified_params(mars_porb, semimajor_axis=1., orbit_period=1.)
@@ -231,10 +237,10 @@ def test_OrbParams_from_modified_params():
     assert from_modified == desired_orb
 
 #### SpinParams class tests ####
-def test_SpinParams_init():
+def test_SpinParams_init(mars_spin):
     assert isinstance(mars_spin, porb.SpinParams)
 
-def test_SpinParams_equality():
+def test_SpinParams_equality(mars_spin):
     copy = get_mars_spin_params()
 
     assert copy == mars_spin
@@ -243,18 +249,18 @@ def test_SpinParams_equality():
 
     assert copy != mars_spin
 
-def test_SpinParams_from_spin_axis():
+def test_SpinParams_from_spin_axis(mars_spin, mars_orb):
     spin_axis = (mars_spin.rotation_period, mars_spin.phase_at_j2000, mars_spin.pole_ra, mars_spin.pole_dec, mars_spin.default_spin_flag) 
 
     from_spin_axis = porb.SpinParams.from_spin_axis(spin_axis, mars_orb)
     assert from_spin_axis == mars_spin
 
-def test_SpinParams_from_porb_params():
+def test_SpinParams_from_porb_params(mars_porb, mars_spin):
     from_porb = porb.SpinParams.from_porb_params(mars_porb)
 
     assert from_porb == mars_spin
 
-def test_SpinParams_set_obliq_and_true_anomaly():
+def test_SpinParams_set_obliq_and_true_anomaly(mars_spin, mars_orb):
     copy = mars_spin.set_obliq_and_true_anomaly(0.0, 0.0, mars_orb)
 
     copy2 = get_mars_spin_params()
@@ -272,7 +278,7 @@ def test_SpinParams_set_obliq_and_true_anomaly():
 
     assert copy == copy2
     
-def test_SpinParams_from_modified_params():
+def test_SpinParams_from_modified_params(mars_porb, mars_orb):
     # check that default spin flag updates or doesn't appropriately
     test_spin = porb.SpinParams.from_modified_params(mars_porb, mars_orb)
 
@@ -323,15 +329,15 @@ def test_SpinParams_from_modified_params():
 
 #### PorbParams class tests ####
 
-def test_PorbParams_init():
+def test_PorbParams_init(mars_porb):
     assert isinstance(mars_porb, porb.PorbParams)
 
-def test_PorbParams_equality():
+def test_PorbParams_equality(mars_porb):
     assert mars_porb == mars_porb_copy
 
     assert mars_porb != europa_porb
 
-def test_PorbParams_string_representation():
+def test_PorbParams_string_representation(mars_porb):
     correct_string = 'PORB:2000jan01 2000 Jan 01 00:00:00 IPLAN,TC=   499       0 Mars:Mars\n' + \
                      '        499              0      0.8644665      3.2269010E-02 -1.2815860\n' + \
                      '  9.3401980E-02   1.523712      0.4090926              0      0.9229373\n' + \
@@ -342,7 +348,7 @@ def test_PorbParams_string_representation():
 
     assert str(mars_porb) == correct_string
 
-def test_PorbParams_verbose_string_representation():
+def test_PorbParams_verbose_string_representation(mars_porb):
     correct_string = '<--VERSION---> <--generation date->           IPLAN      TC orbit:pole\n' +\
                 'PORB:2000jan01 2000 Jan 01 00:00:00 IPLAN,TC=   499       0 Mars:Mars\n' +\
                 '     PLANUM             Tc           RODE           CLIN           ARGP\n' +\
@@ -360,7 +366,7 @@ def test_PorbParams_verbose_string_representation():
     
     assert mars_porb.verbose_output() == correct_string
 
-def test_PorbParams_from_str():
+def test_PorbParams_from_str(mars_porb):
     test_string =    'PORB:2000jan01 2000 Jan 01 00:00:00 IPLAN,TC=   499       0 Mars:Mars\n' + \
                      '        499              0      0.8644665      3.2269010E-02 -1.2815860\n' + \
                      '  9.3401980E-02   1.523712      0.4090926              0      0.9229373\n' + \
@@ -369,7 +375,7 @@ def test_PorbParams_from_str():
                      '          0      0.3244966      0.8559125      0.4026360     -0.9458869\n' + \
                      '  0.2936299      0.1381286      0.0000000     -0.4256704      0.9048783\n'
     
-    copy = get_mars_porb_params()
+    copy = mars_porb
     copy.default_spin = -1
     copy.body_type = 'unknown'
 
@@ -478,7 +484,7 @@ def test_get_secondary_orb_params():
 
     assert secondary_orb_params == pytest.approx(mars_secondary_orb_params)
 
-def test_get_secondary_spin_params():
+def test_get_secondary_spin_params(mars_porb, mars_orb):
     pole_ra = mars_porb.ZBAB
     pole_dec = mars_porb.ZBAA
 
@@ -509,7 +515,7 @@ def test_get_secondary_spin_params():
 
     assert np.all(np.isclose(rotation_matrix_FtoB, identity_matrix))
 
-def test_alt_get_secondary_spin_params():
+def test_alt_get_secondary_spin_params(mars_porb, mars_orb):
     obliquity = 0.0
     tav = 0.0
 
@@ -628,8 +634,8 @@ def test_high_level_get_porb_params(download_de442_spk):
     for i in range(1, len(lines)):
         assert lines[i] == goodlines[i]
 
-def test_modify_porb_params():
-    mars_porb_params = get_mars_porb_params()
+def test_modify_porb_params(mars_porb):
+    mars_porb_params = mars_porb
     europa_porb_params = get_europa_porb_params()
 
     test_porb_params = porb.modify_porb_params(mars_porb_params,
