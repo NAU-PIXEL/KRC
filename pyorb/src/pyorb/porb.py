@@ -1058,8 +1058,8 @@ def get_porb_params(
 def high_level_get_porb_params(
         body_name:str, 
         update_kernels:bool = False, 
-        default_mk:str=f'{install.kernels_dir}/mk/krc_default.tm', 
-        naifid_map_file:str=f'{install.kernels_dir}/naifid_map.csv',
+        default_mk:str=install.default_mk, 
+        naifid_map_file:str=install.naifid_map_file,
         kernels_dir:str=install.kernels_dir) -> PorbParams:
     """
     Generate a PorbParams object, containing orbital and spin axis parameters, for a 
@@ -1072,9 +1072,9 @@ def high_level_get_porb_params(
         update_kernels (bool, optional): Flag to force a kernel update for an object, even
             if a metakernel for it already exists in the cache. Defaults to False.
         default_mk (str, optional): metakernel containing core kernels loaded by default. 
-            Defaults to f'{install.kernels_dir}/mk/krc_default.tm'.
+            Defaults to install.default_mk.
         naifid_map_file (str, optional): Path to the file containing the name-naifid mapping. 
-            Defaults to f'{install.kernels_dir}/naifid_map.csv'.
+            Defaults to install.naifid_map_file.
         kernels_dir (str, optional): Path to directory containing kernels. 
             Defaults to install.kernels_dir.
 

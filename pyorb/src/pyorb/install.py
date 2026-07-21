@@ -11,11 +11,11 @@ folder = Path(__file__).parent.resolve()
 planet_params_file = folder / "planet_params.csv"
 
 # set some locations
+# naif_source = "https://naif.jpl.nasa.gov/pub/naif/generic_kernels"
 kernels_dir = "./kernels"
-naif_source = "https://naif.jpl.nasa.gov/pub/naif/generic_kernels"
 default_mk = f"{kernels_dir}/mk/krc_default.tm"
-test_kernels_dir = "./test/kernels"
 naifid_map_file = f"{kernels_dir}/naifid_map.csv"
+test_kernels_dir = "./test/kernels"
 
 config_dir = Path(user_config_dir("pyorb"))
 config_file = config_dir / "config.toml"

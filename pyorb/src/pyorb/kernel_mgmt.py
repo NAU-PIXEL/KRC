@@ -18,11 +18,11 @@ from bs4 import BeautifulSoup
 from . import install
 
 # set some locations
-kernels_dir = install.kernels_dir
 naif_source = 'https://naif.jpl.nasa.gov/pub/naif/generic_kernels'
-default_mk = f'{kernels_dir}/mk/krc_default.tm'
-naifid_map_file = f'{kernels_dir}/naifid_map.csv'
 satellite_source = f'{naif_source}/spk/satellites/'
+# kernels_dir = install.kernels_dir
+# default_mk = f'{kernels_dir}/mk/krc_default.tm'
+# naifid_map_file = f'{kernels_dir}/naifid_map.csv'
 
 def download_target(target:str, dest:str|None=None, kernels_dir:str=install.kernels_dir) -> str:
     """
@@ -147,14 +147,16 @@ def update_default_kernels(kernels_dir:str=install.kernels_dir):
 
     return
 
-def update_name_naifID_map(naifid_map_file:str = naifid_map_file, kernels_dir:str=install.kernels_dir) -> str:
+def update_name_naifID_map(
+        naifid_map_file:str=install.naifid_map_file,
+        kernels_dir:str=install.kernels_dir) -> str:
     """
     create a fresh name-naifid mapping file, with all available satellites,
     and all currently downloaded small bodies.
 
     Args:
         naifid_map_file (str, optional): Path to the file containing the name-naifid mapping. 
-            Defaults to f'{install.kernels_dir}/naifid_map.csv'.
+            Defaults to install.naifid_map_file.
         kernels_dir (str, optional): Path to directory containing kernels. 
             Defaults to install.kernels_dir.
 
@@ -387,7 +389,7 @@ def update_small_body_kernel(naifid:int, kernels_dir:str = install.kernels_dir) 
 def write_metakernel(kernel_list: list[str], 
                      naifid: int, 
                      name:str|None=None, 
-                     outdir:str=f'{kernels_dir}/mk', 
+                     outdir:str=f'{install.kernels_dir}/mk', 
                      kernels_dir:str=install.kernels_dir, 
                      comments: str = '') -> str:
     """
@@ -400,7 +402,8 @@ def write_metakernel(kernel_list: list[str],
         naifid (int): NAIF ID code identifying the object.
         name (str | None, optional): Name or other identifier of the target body.
             Should not be an integer (even a string castable as an int). Defaults to None.
-        outdir (str, optional): Path of directory to write metakernel to. Defaults to f'{kernels_dir}/mk'.
+        outdir (str, optional): Path of directory to write metakernel to. 
+            Defaults to f'{install.kernels_dir}/mk'.
         kernels_dir (str, optional): Path to directory containing kernels. 
             Defaults to install.kernels_dir.
         comments (str, optional): Optional comments to add to the header text at the start
@@ -484,9 +487,9 @@ def read_mk(metakernel:str) -> list[str]:
     return kernels
 
 def make_sb_mk(sb_search_str:str, 
-               default_mk:str=default_mk, 
-               naifid_map_file:str=naifid_map_file, 
-               kernels_dir:str=install.kernels_dir) -> str:
+            default_mk:str=install.default_mk, 
+            naifid_map_file:str=install.naifid_map_file,
+            kernels_dir:str=install.kernels_dir) -> str:
     """
     For a small body specified by a search string, updates kernels and writes a metakernel.
 
@@ -512,9 +515,9 @@ def make_sb_mk(sb_search_str:str,
     Args:
         sb_search_str (str): String identifier for the object of interest. (See notes above)
         default_mk (str, optional): metakernel containing core kernels loaded by default. 
-            Defaults to f'{install.kernels_dir}/mk/krc_default.tm'.
+            Defaults to install.default_mk.
         naifid_map_file (str, optional): Path to the file containing the name-naifid mapping. 
-            Defaults to f'{install.kernels_dir}/naifid_map.csv'.
+            Defaults to install.naifid_map_file.
         kernels_dir (str, optional): Path to directory containing kernels. 
             Defaults to install.kernels_dir.
 
@@ -626,10 +629,11 @@ def query_sbdb(search_str:str) -> int:
     print("response code: {0}".format(response.status_code))
     raise RuntimeError(f'Invalid request: {url} \nMaybe "{search_str}" is a bad search_str?')
 
-def make_satellite_mk(satellite:str, 
-                      default_mk:str=default_mk, 
-                      naifid_map_file:str=naifid_map_file,
-                      kernels_dir:str=install.kernels_dir) -> str:
+def make_satellite_mk(
+        satellite:str, 
+        default_mk:str=install.default_mk, 
+        naifid_map_file:str=install.naifid_map_file,
+        kernels_dir:str=install.kernels_dir) -> str:
     """
     For a specified planetary satellite, updates that planetary system's kernels and writes
     a metakernel for the object of interest.
@@ -640,9 +644,9 @@ def make_satellite_mk(satellite:str,
     Args:
         satellite (str): String specifying the object of interest. 
         default_mk (str, optional): metakernel containing core kernels loaded by default. 
-            Defaults to f'{install.kernels_dir}/mk/krc_default.tm'.
+            Defaults to install.default_mk.
         naifid_map_file (str, optional): Path to the file containing the name-naifid mapping. 
-            Defaults to f'{install.kernels_dir}/naifid_map.csv'.
+            Defaults to install.naifid_map_file.
         kernels_dir (str, optional): Path to directory containing kernels. 
             Defaults to install.kernels_dir.
 
@@ -662,7 +666,7 @@ def make_satellite_mk(satellite:str,
     return mk_path
 
 def query_naifid_map(search_str:str, 
-                     naifid_map_file:str=naifid_map_file) -> int:
+                     naifid_map_file:str=install.naifid_map_file) -> int:
     """
     Searches the naifid-name mapping file for the given search string to return the 
     specified object's NAIF object ID code, if there's a corresponding entry in the file.
@@ -670,7 +674,7 @@ def query_naifid_map(search_str:str,
     Args:
         search_str (str): The string identifying the object of interest. Case-insensitive.
         naifid_map_file (str, optional): Path to the file containing the name-naifid mapping. 
-            Defaults to f'{install.kernels_dir}/naifid_map.csv'.
+            Defaults to install.naifid_map_file.
 
     Raises:
         RuntimeError: Raised when no match is found in the naifid map file for the 
@@ -691,7 +695,7 @@ def query_naifid_map(search_str:str,
 
 def append_to_naifid_map(name:str, 
                          naifid:int, 
-                         naifid_map_file:str=naifid_map_file):
+                         naifid_map_file:str=install.naifid_map_file):
     """
     Appends an entry to the naifid-name mapping file, associating the input string "name" 
     with the input NAIF ID code. Strings that are mappable to integers are reserved for 
@@ -707,7 +711,7 @@ def append_to_naifid_map(name:str,
         name (str): A string identifying the object with the given naifid. Case-insensitive.
         naifid (int): NAIF object ID code for the object.
         naifid_map_file (str, optional): Path to the file containing the name-naifid mapping. 
-            Defaults to f'{install.kernels_dir}/naifid_map.csv'.
+            Defaults to install.naifid_map_file.
 
     Raises:
         RuntimeError: Raised when the input string "name" is mappable to an int. 
@@ -724,8 +728,8 @@ def append_to_naifid_map(name:str,
     return
 
 def get_naifid(search_str:str, 
-               default_mk:str=default_mk, 
-               naifid_map_file:str=naifid_map_file) -> int:
+               default_mk:str=install.default_mk, 
+               naifid_map_file:str=install.naifid_map_file) -> int:
     """
     Return the NAIF object ID code associated with an object, given some string identifier.
 
@@ -754,9 +758,9 @@ def get_naifid(search_str:str,
     Args:
         search_str (str): String identifier for the object of interest. (See notes above)
         default_mk (str, optional): metakernel containing core kernels loaded by default. 
-            Defaults to f'{install.kernels_dir}/mk/krc_default.tm'.
+            Defaults to install.default_mk.
         naifid_map_file (str, optional): Path to the file containing the name-naifid mapping. 
-            Defaults to f'{install.kernels_dir}/naifid_map.csv'.
+            Defaults to install.naifid_map_file.
 
     Returns:
         int: NAIF object ID code for the object.
@@ -846,8 +850,8 @@ def get_body_type(body_naifid:int) -> str:
 
 def get_mk(body_name:str, 
            update_kernels:bool = False, 
-           default_mk:str=default_mk, 
-           naifid_map_file:str=naifid_map_file,
+           default_mk:str=install.default_mk, 
+           naifid_map_file:str=install.naifid_map_file,
            kernels_dir:str=install.kernels_dir,) -> str:
     """
     Returns a metakernel for a body of interest, given some string identifying that body. 
@@ -860,9 +864,9 @@ def get_mk(body_name:str,
         update_kernels (bool, optional): Flag to force a kernel update for an object, even
             if a metakernel for it already exists in the cache. Defaults to False.
         default_mk (str, optional): metakernel containing core kernels loaded by default. 
-            Defaults to f'{install.kernels_dir}/mk/krc_default.tm'.
+            Defaults to install.default_mk.
         naifid_map_file (str, optional): Path to the file containing the name-naifid mapping. 
-            Defaults to f'{install.kernels_dir}/naifid_map.csv'.
+            Defaults to install.naifid_map_file.
         kernels_dir (str, optional): Path to directory containing kernels. 
             Defaults to install.kernels_dir.
 
