@@ -1,5 +1,3 @@
-#! /bin/bash/python
-
 # handle combining porb output with other parameters to write hdf file for a body. 
 
 import numpy as np

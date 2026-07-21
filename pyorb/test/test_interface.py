@@ -1,7 +1,7 @@
-import src.defaults as defaults
-import src.constants as const
-import src.install as install
-import src.interface as interface
+import pyorb.defaults as defaults
+import pyorb.constants as const
+import pyorb.install as install
+import pyorb.interface as interface
 
 import pytest
 import numpy as np

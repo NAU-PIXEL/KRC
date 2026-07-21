@@ -1,6 +1,6 @@
-from src.body_params import add_str_dset, add_num_dset, type_params_dict, planet_flux_dict, krc_params_dict, get_body_params, write_hdf, get_radius, read_hdf, high_level_write_hdf
-import src.defaults as defaults
-import src.porb as porb
+from pyorb.body_params import add_str_dset, add_num_dset, type_params_dict, planet_flux_dict, krc_params_dict, get_body_params, write_hdf, get_radius, read_hdf, high_level_write_hdf
+import pyorb.defaults as defaults
+import pyorb.porb as porb
 import pytest
 import tempfile
 import os
@@ -132,7 +132,7 @@ mars_krc_params = krc_params_dict(
 mars_porb = get_mars_porb_params()
 europa_porb = get_europa_porb_params()
 
-kernelsdir = '/home/nsmith/KRC/pyorb/test/kernels'
+kernelsdir = "./test/kernels"
 
 def test_get_body_params_satellite_parent_body_is_correct():
     # europa case

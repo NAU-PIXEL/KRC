@@ -1,8 +1,8 @@
-import src.defaults as defaults
-import src.constants as const
-import src.porb as porb
-import src.kernel_mgmt as km
-import src.install as install
+import pyorb.defaults as defaults
+import pyorb.constants as const
+import pyorb.porb as porb
+import pyorb.kernel_mgmt as km
+import pyorb.install as install
 import pytest
 import numpy as np
 import spiceypy as spice
@@ -586,7 +586,7 @@ def test_get_porb_params():
     assert isinstance(p_params, porb.PorbParams)
     assert p_params.default_spin == 1
 
-def test_high_level_get_porb_params():
+def test_high_level_get_porb_params(download_de442_spk):
     indir = kernels_dir + '/input'
     outdir = kernels_dir + '/output'
     default_mk = outdir+'/mk/krc_default.tm'

@@ -1,5 +1,3 @@
-#! /bin/bash/python
-
 # get rotation matrix for KRC input file.
 # intended to replace PORB fortran stuff, specifically porbig.f
 # returns BFRM, in the PORB/KRC nomenclature.
@@ -36,7 +34,7 @@ class OrbParams:
         self.perihelion_date = perihelion_date
         self.centuries_from_j2000 = centuries_from_j2000
 
-    def __eq__(self, other:OrbParams) -> bool:
+    def __eq__(self, other: "OrbParams") -> bool:
         is_equal = all([
             self.long_of_asc_node       == other.long_of_asc_node,
             self.eccentricity           == other.eccentricity,
@@ -126,7 +124,7 @@ class OrbParams:
         return cls(long_of_asc_node, eccentricity, inclination, arg_of_peri, mean_anomaly, semimajor_axis, epoch_JD, orbit_period, perihelion_date, centuries_from_j2000)
 
     @classmethod
-    def from_porb_params(cls, porb_params:PorbParams) -> Self:
+    def from_porb_params(cls, porb_params:"PorbParams") -> Self:
         """
         Constructs an OrbParams object from a PorbParams object.
 
@@ -151,7 +149,7 @@ class OrbParams:
         return cls(long_of_asc_node, eccentricity, inclination, arg_of_peri, mean_anomaly, semimajor_axis, epoch_JD, orbit_period, perihelion_date, centuries_from_j2000)
     
     @classmethod
-    def from_modified_params(cls, porb_params:PorbParams,
+    def from_modified_params(cls, porb_params:"PorbParams",
                 long_of_asc_node:float|None = None,
                 eccentricity:float|None = None,
                 inclination:float|None = None,
@@ -269,7 +267,7 @@ class SpinParams:
         self.rotation_matrix_FtoB = rotation_matrix_FtoB
         self.true_anomaly_at_vernal_equinox = true_anomaly_at_vernal_equinox
 
-    def __eq__(self, other:SpinParams) -> bool:
+    def __eq__(self, other:"SpinParams") -> bool:
         is_equal = all([
             self.rotation_period == other.rotation_period,
             self.phase_at_j2000 == other.phase_at_j2000,
@@ -331,7 +329,7 @@ class SpinParams:
         return cls(rotation_period, phase_at_j2000, pole_ra, pole_dec, default_spin_flag, obliquity, rotation_matrix_FtoB, true_anomaly_at_vernal_equinox)
     
     @classmethod
-    def from_porb_params(cls, porb_params:PorbParams) -> Self:
+    def from_porb_params(cls, porb_params:"PorbParams") -> Self:
         """
         Generates a SpinParams object by extracting the relevant parameters from a PorbParams object.
 
@@ -376,7 +374,7 @@ class SpinParams:
         return self
     
     @classmethod
-    def from_modified_params(cls, porb_params:PorbParams, orb:OrbParams,
+    def from_modified_params(cls, porb_params:"PorbParams", orb:OrbParams,
             rotation_period:float|None = None,
             phase_at_j2000:float|None = None,
             pole_ra:float|None = None,
@@ -533,7 +531,7 @@ class PorbParams:
         self.spar21           = spar21
         self.BFRM             = BFRM
 
-    def __eq__(self, other:PorbParams) -> bool:
+    def __eq__(self, other:"PorbParams") -> bool:
         is_equal = all([
             self.default_spin     == other.default_spin,
             self.porb_version     == other.porb_version,
@@ -577,7 +575,7 @@ class PorbParams:
                                  body_type: str, 
                                  body_naifid: int, 
                                  orb: OrbParams, 
-                                 spin: SpinParams) -> Self:
+                                 spin: "SpinParams") -> Self:
         """
         Constructs a PorbParams object for some specified body, from OrbParams and 
         SpinParams objects for that body.

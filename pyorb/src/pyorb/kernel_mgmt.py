@@ -1,5 +1,3 @@
-#! /bin/bash/python
-
 # Manages spice kernels for pyorb system.
 
 

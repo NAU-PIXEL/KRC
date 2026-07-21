@@ -1,0 +1,16 @@
+[project]
+name = "pyorb"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "bs4>=0.0.2",
+    "h5py>=3.16.0",
+    "numpy>=2.5.1",
+    "pytest>=9.1.1",
+    "requests>=2.34.2",
+    "spiceypy>=8.1.2",
+    "platformdirs>=4.10.0",
+    "tomli_w>=1.2.0",
+]
