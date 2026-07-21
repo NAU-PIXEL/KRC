@@ -21,10 +21,14 @@ test_kernels_dir = "./test/kernels"
 config_dir = Path(user_config_dir("pyorb"))
 config_file = config_dir / "config.toml"
 
+def check_de442_spk():
+    dest = Path(kernels_dir + "/spk")
+    file_dest = dest / "de442.bsp"
+    return file_dest.is_file()
 
 def download_de442_spk():
     dest = Path(kernels_dir + "/spk")
-    file_dest = dest / "/de442.bsp"
+    file_dest = dest / "de442.bsp"
     url = "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de442.bsp"
     if not dest.is_dir():
         dest.mkdir(parents=True)
@@ -62,6 +66,9 @@ def install_config(install_dir: Path | None):
         )
     davinci_porb = install_dir / "script_files/krc_support/porb_defaults"
 
+    if not davinci_porb.is_dir():
+        davinci_porb.mkdir(parents=True)
+
     config = {}
 
     config["porb_defaults_dir"] = str(davinci_porb.absolute())
@@ -77,7 +84,8 @@ if __name__ == "__main__":
     else:
         install_path = None
     install_config(install_path)
-    print("Downloading DE442 SPK")
-    download_de442_spk()
+    if not check_de442_spk():
+        print("Downloading DE442 SPK")
+        download_de442_spk()
 
 porb_defaults_dir = load_config()
