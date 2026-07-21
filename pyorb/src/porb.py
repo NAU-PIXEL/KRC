@@ -284,6 +284,12 @@ class SpinParams:
         return is_equal
     
     def __str__(self) -> str:
+        """
+        Produces a string representation of the SpinParams object. Used for testing only.
+
+        Returns:
+            str: String representation of the SpinParams object.
+        """
         string = ''
         string += f'rotation_period: {self.rotation_period}\n'
         string += f'phase_at_j2000: {self.phase_at_j2000}\n'
@@ -296,17 +302,46 @@ class SpinParams:
         return string
 
     @classmethod
-    def from_spin_axis(cls, spin_axis, orb:OrbParams) -> Self:
-        '''
-        Constructs a SpinParams object from spin_axis and orb_elems tuples, 
-        as would be output by get_orbital_elements() and get_spin_axis().
-        '''
+    def from_spin_axis(cls, 
+            spin_axis:tuple[float, float, float, float, int], 
+            orb:OrbParams) -> Self:
+        """
+        Constructs a SpinParams object from spin_axis and an OrbParams object 
+        as would be output by get_spin_axis() and some OrbParams constructor.
+
+        Args:
+            spin_axis (tuple[float, float, float, float, int]): Tuple containing spin
+                axis information, as would be produced by get_spin_axis(). Contains:
+                    rotation_period:    rotation period [hours]
+                    phase_at_j2000:     rotational phase (angle of prime meridian) at J2000 epoch [degrees]
+                    pole_ra:            right ascension of spin axis in J2000 frame [radians]
+                    pole_dec:           declination of spin axis in J2000 frame [radians]
+                    default_spin_flag:  0: rotation period and pole orientation are both real.
+                                        1: rotation period and pole orientation are both default.
+                                        2: rotation period is real, pole orientation is default. 
+                                            (not implemented, but I imagine this could be done by 
+                                            searching the small body lightcurve database) 
+            orb (OrbParams): An OrbParams object containing orbital elements.
+
+        Returns:
+            Self: A SpinParams object, containing spin axis orientation and rate information.
+        """
         (rotation_period, phase_at_j2000, pole_ra, pole_dec, default_spin_flag) = spin_axis 
         (obliquity, rotation_matrix_FtoB, true_anomaly_at_vernal_equinox) = get_secondary_spin_params(orb, pole_ra, pole_dec) 
         return cls(rotation_period, phase_at_j2000, pole_ra, pole_dec, default_spin_flag, obliquity, rotation_matrix_FtoB, true_anomaly_at_vernal_equinox)
     
     @classmethod
     def from_porb_params(cls, porb_params:PorbParams) -> Self:
+        """
+        Generates a SpinParams object by extracting the relevant parameters from a PorbParams object.
+
+        Args:
+            porb_params (PorbParams): A PorbParams object containing orbital elements and 
+                spin axis information.
+
+        Returns:
+            Self: A SpinParams object, containing spin axis orientation and rate information.
+        """
         rotation_period         = (360.*24.)/porb_params.WDOT
         phase_at_j2000          = porb_params.WO
         pole_ra                 = porb_params.ZBAB
@@ -317,11 +352,24 @@ class SpinParams:
         true_anomaly_at_vernal_equinox = porb_params.TAV
         return cls(rotation_period, phase_at_j2000, pole_ra, pole_dec, default_spin_flag, obliquity, rotation_matrix_FtoB, true_anomaly_at_vernal_equinox)
     
-    def set_obliq_and_true_anomaly(self, obliquity:float, true_anomaly_at_vernal_equinox:float, orb:OrbParams) -> Self:
-        '''
-        updates the obliquity and true anomaly at vernal equinox, accounting for
+    def set_obliq_and_true_anomaly(self, 
+            obliquity:float, 
+            true_anomaly_at_vernal_equinox:float, 
+            orb:OrbParams) -> Self:
+        """
+        Updates the obliquity and true anomaly at vernal equinox, accounting for
         the impacts on pole orientation and rotation matrix.
-        '''
+
+        Args:
+            obliquity (float): Angle between the object's spin axis and the north pole of 
+                its orbit. [radians]
+            true_anomaly_at_vernal_equinox (float): True anomaly at vernal equinox (prograde 
+                angle between perihelion vector and vernal equinox vector) [radians]
+            orb (OrbParams): An OrbParams object, containing orbital elements.
+
+        Returns:
+            Self: A SpinParams object, containing spin axis orientation and rate information.
+        """
         self.obliquity = obliquity
         self.true_anomaly_at_vernal_equinox = true_anomaly_at_vernal_equinox
         self.pole_ra, self.pole_dec, self.rotation_matrix_FtoB = alt_get_secondary_spin_params(orb, obliquity, true_anomaly_at_vernal_equinox)
@@ -337,6 +385,56 @@ class SpinParams:
             obliquity:float|None = None,
             rotation_matrix_FtoB:np.ndarray|None = None,
             true_anomaly_at_vernal_equinox:float|None = None) -> Self:
+        """
+        Creates a SpinParams object, containing spin axis orientation and rate information,
+        based on existing PorbParams and OrbParams objects, plus a set of optional parameters
+        which may be directly modified. The system will correctly reject sets of modified 
+        parameters when one of a pair of linked parameters are missing, or when two 
+        conflicting parameters are both set at the same time. The system will use the 
+        provided parameters to calculate any derived parameters to complete the contents
+        of the SpinParams object.
+
+        Args:
+            porb_params (PorbParams): A PorbParams object, containing orbital elements and
+                spin axis information.
+            orb (OrbParams): An OrbParams object, containing orbital elements.
+            
+            rotation_period (float | None, optional): rotation period [hours]. 
+                Defaults to None.
+            phase_at_j2000 (float | None, optional): rotational phase (angle of prime 
+                meridian) at J2000 epoch [degrees]. Defaults to None.
+            pole_ra (float | None, optional): right ascension of spin axis in J2000 
+                frame [radians]. Defaults to None.
+            pole_dec (float | None, optional): declination of spin axis in J2000 
+                frame [radians]. Defaults to None.
+            default_spin_flag (int | None, optional): Flag indicating if the spin parameters 
+                really describe the object's spin state, or are default placeholder values.
+                Possible values listed below. Defaults to None.
+                    0: rotation period and pole orientation are both real.
+                    1: rotation period and pole orientation are both default.
+                    2: rotation period is real, pole orientation is default. 
+                        (not implemented, but I imagine this could be done by 
+                        searching the small body lightcurve database). 
+            obliquity (float | None, optional): angle between spin axis and orbit 
+                pole [radians]. Defaults to None.
+            rotation_matrix_FtoB (np.ndarray | None, optional): rotation matrix from 
+                orbital frame (F) to seasonal frame (B) [3x3 matrix]. Defaults to None.
+            true_anomaly_at_vernal_equinox (float | None, optional): 
+                True anomaly at vernal equinox [radians]. Defaults to None.
+
+        Raises:
+            ValueError: Raised when one of two paired parameters (pole_ra and pole_dec) 
+                is set without the other.  
+            ValueError: Raised when one of two paired parameters (obliquity and 
+                true_anomaly_at_vernal_equinox) is set without the other.
+            ValueError: Raised when conflicting sets of parameters ([Spin pole RA and Dec] 
+                and [Obliquity and True Anomaly]) are set at the same time.
+            NotImplementedError: Raised when rotation_matrix_FtoB is input as a parameter 
+                to be modified directly. This is not currently implemented.
+
+        Returns:
+            Self: A Spin Params object, containing spin axis orientation and rate.
+        """
 
         default_spin = porb_params.default_spin
 
@@ -480,10 +578,23 @@ class PorbParams:
                                  body_naifid: int, 
                                  orb: OrbParams, 
                                  spin: SpinParams) -> Self:
-        '''
-        Constructs a PorbParams object from OrbParams and SpinParams objects.
-        '''
-    
+        """
+        Constructs a PorbParams object for some specified body, from OrbParams and 
+        SpinParams objects for that body.
+
+        Args:
+            body_name (str): String identifier for the object of interest.
+            body_type (str): Body type for the object of interest. Can be "Planet", 
+                "Satellite", "Comet", or "Minor".
+            body_naifid (int): NAIF object ID code for the object of interest.
+            orb (OrbParams): OrbParams object for the specified body, containing orbital 
+                elements and derived orbital parameters.
+            spin (SpinParams): SpinParams object for the specified body, containing spin
+                axis orientation and rate information. 
+
+        Returns:
+            Self: A PorbParams object, containing orbital elements and spin axis information.
+        """    
         default_spin     = spin.default_spin_flag
         porb_version     = const.porb_version
         generation_date  = datetime.datetime.now().strftime('%Y %b %d %H:%M:%S')
@@ -525,9 +636,14 @@ class PorbParams:
         return cls(default_spin, porb_version, generation_date, NAME, body_type, PLANUM, TC, RODE, CLIN, ARGP, XECC, SJA, EOBL, SFLAG, ZBAA, ZBAB, WDOT, WO, OPERIOD, TJP, SIDAY, spar17, TAV, BLIP, PBUG, spar21, BFRM)
 
     def __str__(self) -> str:
-        '''
-        returns Fortran-style PORB output as a multiline string.  
-        '''
+        """
+        Produces a string representation of the PorbParams object, formatted as a 
+        Fortran-style multiline PORB output string. 
+
+        Returns:
+            str: A Fortran-style multiline PORB output string containing the data from
+                PorbParams object.
+        """
         flat_bfrm = self.BFRM.T.flatten()
 
         out_str = ''
@@ -542,10 +658,14 @@ class PorbParams:
         return out_str
     
     def verbose_output(self) -> str:
-        '''
-        returns Fortran-style PORB output as a multiline string, including variable labels. 
-        '''
+        """
+        Produces a string representation of the PorbParams object, formatted as a 
+        verbose Fortran-style multiline PORB output string, including variable labels. 
 
+        Returns:
+            str: A verbose Fortran-style multiline PORB output string containing the data from
+                PorbParams object, including variable labels.
+        """
         flat_bfrm = self.BFRM.T.flatten()
 
         out_str = ''
@@ -568,9 +688,16 @@ class PorbParams:
     
     @classmethod
     def from_str(cls, porb_str: str) -> Self:
-        '''
-        Constructs a PorbParams object from a Fortran-style PORB text table.
-        '''
+        """
+        Constructs a PorbParams object from a Fortran-style multiline PORB output string.
+
+        Args:
+            porb_str (str): A Fortran-style multiline PORB output string containing the 
+                data to load into a PorbParams object.
+
+        Returns:
+            Self: A PorbParams object, containing orbital elements and spin axis information.
+        """
         flat_bfrm = np.zeros(9)
 
         lines = porb_str.split('\n')
@@ -588,8 +715,6 @@ class PorbParams:
         BFRM = flat_bfrm.reshape(3,3).T
 
         return cls(-1, porb_version, generation_date, NAME, 'unknown', int(PLANUM), TC, RODE, CLIN, ARGP, XECC, SJA, EOBL, int(SFLAG), ZBAA, ZBAB, WDOT, WO, OPERIOD, TJP, SIDAY, int(spar17), TAV, BLIP, int(PBUG), int(spar21), BFRM)
-
-
 
 
 def get_orbital_naifid(metakernel:str, body_naifid:int, epoch_date:datetime.datetime) -> int:
@@ -835,9 +960,12 @@ def alt_get_secondary_spin_params(
     inputting such a case.
 
     Args:
-        orb (OrbParams): OrbParams object containing the orbital elements of the object of interest.
-        obliquity (float): angle between spin axis and orbit pole [radians]
-        true_anomaly_at_vernal_equinox (float): True anomaly at vernal equinox [radians]
+        orb (OrbParams): OrbParams object containing the orbital elements of the object 
+            of interest.
+        obliquity (float): Angle between the object's spin axis and the north pole of 
+            its orbit. [radians]
+        true_anomaly_at_vernal_equinox (float): True anomaly at vernal equinox (prograde 
+            angle between perihelion vector and vernal equinox vector) [radians]
 
     Returns:
         tuple[float, float, np.ndarray]: Tuple of derived spin parameters, containing:
@@ -929,12 +1057,32 @@ def get_porb_params(
 
     return out
 
-def high_level_get_porb_params(body_name:str, 
-                               update_kernels:bool = False, 
-                               kernels_dir:str=install.kernels_dir, 
-                               default_mk:str=install.default_mk, 
-                               naifid_map_file:str=install.naifid_map_file) -> PorbParams:
-    
+def high_level_get_porb_params(
+        body_name:str, 
+        update_kernels:bool = False, 
+        default_mk:str=f'{install.kernels_dir}/mk/krc_default.tm', 
+        naifid_map_file:str=f'{install.kernels_dir}/naifid_map.csv',
+        kernels_dir:str=install.kernels_dir) -> PorbParams:
+    """
+    Generate a PorbParams object, containing orbital and spin axis parameters, for a 
+    body of interest, specified by a string identifier. 
+
+    Args:
+        body_name (str): String uniquely identifying the body of interest. Case-insensitive. 
+            This string cannot be castable to an integer. 
+            See kernel_mgmt.py:get_naifid() for detailed formatting constraints.
+        update_kernels (bool, optional): Flag to force a kernel update for an object, even
+            if a metakernel for it already exists in the cache. Defaults to False.
+        default_mk (str, optional): metakernel containing core kernels loaded by default. 
+            Defaults to f'{install.kernels_dir}/mk/krc_default.tm'.
+        naifid_map_file (str, optional): Path to the file containing the name-naifid mapping. 
+            Defaults to f'{install.kernels_dir}/naifid_map.csv'.
+        kernels_dir (str, optional): Path to directory containing kernels. 
+            Defaults to install.kernels_dir.
+
+    Returns:
+        PorbParams: A PorbParams object containing orbit and spin parameters.
+    """
     metakernel = get_mk(body_name, update_kernels, kernels_dir=kernels_dir, default_mk=default_mk, naifid_map_file=naifid_map_file)
     naifid = get_naifid(body_name, default_mk=default_mk, naifid_map_file=naifid_map_file)
     porb_params = get_porb_params(body_name, naifid, metakernel)
@@ -961,7 +1109,62 @@ def modify_porb_params(porb_params:PorbParams,
         rotation_matrix_FtoB:np.ndarray|None = None,
         true_anomaly_at_vernal_equinox:float|None = None
         ) -> PorbParams:
+    """
+    Constructs PorbParams object using a PorbParams object as input, plus optional inputs
+    with which to replace each parameter. The underlying functions ensure conflicting 
+    parameters are not set at the same time, and correctly derives dependent parameters 
+    based on the input.
 
+    Args:
+        porb_params (PorbParams): PorbParams object to modify.
+        long_of_asc_node (float | None, optional): longitude of the ascending node [radians]. 
+            Defaults to None.
+        eccentricity (float | None, optional): eccentricity [unitless]. 
+            Defaults to None.
+        inclination (float | None, optional): inclination [radians]. 
+            Defaults to None.
+        arg_of_peri (float | None, optional): argument of perihelion [radians]. 
+            Defaults to None.
+        semimajor_axis (float | None, optional): semimajor axis [km]. 
+            Defaults to None.
+        orbit_period (float | None, optional): Period of the orbit in Earth days. 
+            Defaults to None.
+        perihelion_date (float | None, optional): J2000 date (days past J2000 epoch) 
+            of previous perihelion passage. Defaults to None.
+        centuries_from_j2000 (float | None, optional): Time of reference epoch from 
+            J2000 epoch, in centuries. Defaults to None.
+        epoch_JD (float | None, optional): Julian date of epoch [Julian Date]. 
+            Defaults to None.
+        mean_anomaly (float | None, optional): mean anomaly at epoch [radians]. 
+            Defaults to None.      
+        rotation_period (float | None, optional): rotation period [hours]. 
+            Defaults to None.
+        phase_at_j2000 (float | None, optional): rotational phase (angle of prime 
+            meridian) at J2000 epoch [degrees]. Defaults to None.
+        pole_ra (float | None, optional): right ascension of spin axis in J2000 
+            frame [radians]. Defaults to None.
+        pole_dec (float | None, optional): declination of spin axis in J2000 
+            frame [radians]. Defaults to None.
+        default_spin_flag (int | None, optional): Flag indicating if the spin parameters 
+            really describe the object's spin state, or are default placeholder values.
+            Possible values listed below. Defaults to None.
+                0: rotation period and pole orientation are both real.
+                1: rotation period and pole orientation are both default.
+                2: rotation period is real, pole orientation is default. 
+                    (not implemented, but I imagine this could be done by 
+                    searching the small body lightcurve database). 
+        obliquity (float): Angle between the object's spin axis and the north pole of 
+            its orbit [radians]. Defaults to None.
+        rotation_matrix_FtoB (np.ndarray | None, optional): rotation matrix from 
+            orbital frame (F) to seasonal frame (B) [3x3 matrix]. Defaults to None.
+        true_anomaly_at_vernal_equinox (float): True anomaly at vernal equinox (prograde 
+            angle between perihelion vector and vernal equinox vector) [radians].
+            Defaults to None.
+
+    Returns:
+        PorbParams: A PorbParams object containing orbit and spin parameters for 
+        the body of interest.
+    """
     orb = OrbParams.from_modified_params(porb_params,
             long_of_asc_node = long_of_asc_node, 
             eccentricity     = eccentricity, 
