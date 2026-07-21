@@ -129,7 +129,7 @@ def test_update_naif_kernel():
 
     assert current2 == current
 
-def test_write_metakernel():
+def test_write_metakernel(download_de442_spk):
     kernel_list = ['lsk/naif0012.tls', 
                    'pck/pck00010.tpc', 
                    'spk/de442.bsp']
@@ -183,7 +183,7 @@ def test_update_default_kernels():
 
     # Check that a newer version of pck00010.tpc is downloaded and added to the default mk.
     # pck00010.tpc has been superseded by pck00011.tpc since 2022-12-27.
-    km.update_default_kernels(default_mk=default_mk, kernels_dir=outdir)
+    km.update_default_kernels(kernels_dir=outdir)
 
     ##### change to use read_default_mk()?
 
@@ -208,12 +208,12 @@ def test_read_default_mk():
     intended_kernels_list = ['lsk/naif0012.tls',
                              'pck/pck00011.tpc',
                              'spk/de442.bsp']
-    
-    kernels_list = km.read_default_mk(mk)
+
+    kernels_list = km.read_mk(mk)
 
     assert kernels_list == intended_kernels_list
 
-def test_query_naifid_map():
+def test_query_naifid_map_1():
     searches = ['Sun', 'Mars', 'Europa', '52 Europa', 'Themis', 'THEMISTO', 'Kieffer']
     results = [10, 499, 502, 20000052, 20000024, 518, 20003779]
     map_file = input_kernels_dir+'/test2/naifid_map.csv'
@@ -357,8 +357,8 @@ def test_make_sb_mk():
     for i in range(len(bodies)):
         mk_path = km.make_sb_mk(bodies[i], default_mk=default_mk, naifid_map_file=naifid_map_file, kernels_dir=kernels_dir)
         assert mk_path == kernels_dir+f'/mk/{naifids[i]:09d}.tm'
-        
-        kernel_list = km.read_default_mk(default_mk=mk_path)
+
+        kernel_list = km.read_mk(metakernel=mk_path)
         spk_path = kernels_dir+'/'+kernel_list[-1]
         assert os.path.exists(spk_path)
 
@@ -398,7 +398,7 @@ def test_make_satellite_mk():
         mk_path = km.make_satellite_mk(satellites[i], default_mk=default_mk, kernels_dir=outdir, naifid_map_file=naifid_map_file)
         assert mk_path == outdir+f'/mk/{naifids[i]:09d}.tm'
 
-        kernel_list = km.read_default_mk(default_mk=mk_path)
+        kernel_list = km.read_mk(metakernel=mk_path)
         spk_path = outdir+'/'+kernel_list[-1]
         assert os.path.exists(spk_path)
 

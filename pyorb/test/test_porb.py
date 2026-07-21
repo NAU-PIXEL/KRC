@@ -586,7 +586,7 @@ def test_get_porb_params():
     assert isinstance(p_params, porb.PorbParams)
     assert p_params.default_spin == 1
 
-def test_high_level_get_porb_params():
+def test_high_level_get_porb_params(download_de442_spk):
     indir = kernels_dir + '/input'
     outdir = kernels_dir + '/output'
     default_mk = outdir+'/mk/krc_default.tm'

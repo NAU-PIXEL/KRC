@@ -132,7 +132,7 @@ mars_krc_params = krc_params_dict(
 mars_porb = get_mars_porb_params()
 europa_porb = get_europa_porb_params()
 
-kernelsdir = '/home/nsmith/KRC/pyorb/test/kernels'
+kernelsdir = "./test/kernels"
 
 def test_get_body_params_satellite_parent_body_is_correct():
     # europa case
