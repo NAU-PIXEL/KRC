@@ -1,3 +1,4 @@
+import requests
 import sys
 import tomllib
 
@@ -20,6 +21,17 @@ test_kernels_dir = "./test/kernels"
 config_dir = Path(user_config_dir("pyorb"))
 config_file = config_dir / "config.toml"
 
+
+def download_de442_spk():
+    dest = Path(kernels_dir + "/spk")
+    file_dest = dest / "/de442.bsp"
+    url = "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de442.bsp"
+    if not dest.is_dir():
+        dest.mkdir(parents=True)
+    if not file_dest.is_file():
+        r = requests.get(url)
+        with open(file_dest, "wb") as f:
+            f.write(r.content)
 
 def load_config() -> Path:
     # Davinci interface does not have consistent install locations, must be set by a user with a config file
@@ -65,5 +77,7 @@ if __name__ == "__main__":
     else:
         install_path = None
     install_config(install_path)
+    print("Downloading DE442 SPK")
+    download_de442_spk()
 
-globals()["porb_defaults_dir"] = load_config()
+porb_defaults_dir = load_config()
