@@ -3,8 +3,7 @@ import pyorb.porb as porb
 import pyorb.kernel_mgmt as km
 import pyorb.install as install
 import pytest
-import filecmp
-import tempfile
+
 import os
 import shutil
 import numpy as np
@@ -56,45 +55,49 @@ kernels_dir = install.test_kernels_dir
 output_kernels_dir = f'{kernels_dir}/output'
 input_kernels_dir = f'{kernels_dir}/input'
 
+
 def test_download_target_lsk_pck_spk():
+    outdir = output_kernels_dir + '/test1'
     lsk_target = 'https://naif.jpl.nasa.gov/pub/naif/generic_kernels/lsk/latest_leapseconds.tls'
     pck_target = 'https://naif.jpl.nasa.gov/pub/naif/generic_kernels/pck/a_old_versions/pck00009.tpc'
     spk_target = 'https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/a_old_versions/de410s.bsp'
 
-    lsk_dest = f'{output_kernels_dir}/lsk/latest_leapseconds.tls'
-    pck_dest = f'{output_kernels_dir}/pck/pck00009.tpc'
-    spk_dest = f'{output_kernels_dir}/spk/de410s.bsp'
+    lsk_dest = f'{outdir}/lsk/latest_leapseconds.tls'
+    pck_dest = f'{outdir}/pck/pck00009.tpc'
+    spk_dest = f'{outdir}/spk/de410s.bsp'
 
-    if os.path.exists(output_kernels_dir):
-        shutil.rmtree(output_kernels_dir)
-    assert not os.path.exists(output_kernels_dir)
+    if os.path.exists(outdir):
+        shutil.rmtree(outdir)
+    assert not os.path.exists(outdir)
 
-    km.download_target(lsk_target, kernels_dir=output_kernels_dir)
-    km.download_target(pck_target, kernels_dir=output_kernels_dir)
-    km.download_target(spk_target, kernels_dir=output_kernels_dir)
+    km.download_target(lsk_target, kernels_dir=outdir)
+    km.download_target(pck_target, kernels_dir=outdir)
+    km.download_target(spk_target, kernels_dir=outdir)
 
     assert os.path.exists(lsk_dest)
     assert os.path.exists(pck_dest)
     assert os.path.exists(spk_dest)
 
 def test_download_target_specified_dest():
+    outdir = output_kernels_dir+'/test2'
     target = 'https://naif.jpl.nasa.gov/pub/naif/generic_kernels/lsk/aareadme.txt'
-    destination = f'{output_kernels_dir}/test.txt'
+    destination = f'{outdir}/test.txt'
     
-    if os.path.exists(output_kernels_dir):
-        shutil.rmtree(output_kernels_dir)
-    assert not os.path.exists(output_kernels_dir)
+    if os.path.exists(outdir):
+        shutil.rmtree(outdir)
+    assert not os.path.exists(outdir)
 
-    km.download_target(target, dest=destination, kernels_dir=output_kernels_dir)
+    km.download_target(target, dest=destination, kernels_dir=outdir)
 
     assert os.path.exists(destination)
 
 def test_update_naif_kernel():
+    outdir = output_kernels_dir+'/test3'
     source = 'https://naif.jpl.nasa.gov/pub/naif/generic_kernels/lsk/'
     regex = 'naif\\d{4}\\.tls$'
 
     # Clear out the destination directory
-    dest_dir = f'{output_kernels_dir}/lsk'
+    dest_dir = f'{outdir}/lsk'
     if os.path.exists(dest_dir):
         shutil.rmtree(dest_dir)
     assert not os.path.exists(dest_dir)
@@ -110,22 +113,22 @@ def test_update_naif_kernel():
     with open(file2, 'w') as f:
         f.write('')
 
-    current = km.update_naif_kernel(source, regex, kernels_dir=output_kernels_dir)
+    current = km.update_naif_kernel(source, regex, kernels_dir=outdir)
 
     assert os.path.exists(current) and current != file1 and current != file2
 
     # Clear out the destination directory
-    dest_dir = f'{output_kernels_dir}/lsk'
+    dest_dir = f'{outdir}/lsk'
     shutil.rmtree(dest_dir)
     assert not os.path.exists(dest_dir)
 
     # Case where no kernels exist:
-    current = km.update_naif_kernel(source, regex, kernels_dir=output_kernels_dir)
+    current = km.update_naif_kernel(source, regex, kernels_dir=outdir)
 
     assert os.path.exists(current)
 
     # Case where no update is needed:
-    current2 = km.update_naif_kernel(source, regex, kernels_dir=output_kernels_dir)
+    current2 = km.update_naif_kernel(source, regex, kernels_dir=outdir)
 
     assert current2 == current
 
@@ -134,7 +137,7 @@ def test_write_metakernel(download_de442_spk):
                    'pck/pck00010.tpc', 
                    'spk/de442.bsp']
     naifid = 499
-    outdir = output_kernels_dir+'/mk'
+    outdir = output_kernels_dir+'/test4/mk'
     indir = input_kernels_dir+'/test1'
     
     # Clear out the destination directory
@@ -173,12 +176,13 @@ def test_write_metakernel(download_de442_spk):
     assert f'{indir}/spk/de442.bsp'    in loaded_kernels
 
 def test_update_default_kernels():
-    default_mk = output_kernels_dir+'/mk/krc_default.tm'
+    outdir = output_kernels_dir+'/test5'
+    default_mk = outdir+'/mk/krc_default.tm'
     indir = input_kernels_dir+'/test1'
-    outdir = output_kernels_dir
-
+    
     # set up working kernels directory, ensure the outdir matches indir.
-    shutil.rmtree(outdir)
+    if os.path.exists(outdir):
+        shutil.rmtree(outdir)
     shutil.copytree(indir,outdir)
 
     # Check that a newer version of pck00010.tpc is downloaded and added to the default mk.
@@ -213,27 +217,33 @@ def test_read_default_mk():
 
     assert kernels_list == intended_kernels_list
 
-def test_query_naifid_map_1():
-    searches = ['Sun', 'Mars', 'Europa', '52 Europa', 'Themis', 'THEMISTO', 'Kieffer']
-    results = [10, 499, 502, 20000052, 20000024, 518, 20003779]
+def test_query_naifid_map():
+    searches = ['Sun', 'Mars', 'Europa', 'kore', '52 Europa', 'Themis', 'THEMISTO', 'Kieffer']
+    results = [10, 499, 502, 549, 2000052, 2000024, 518, 20003779]
     map_file = input_kernels_dir+'/test2/naifid_map.csv'
 
     for i in range(len(searches)):
         naifid = km.query_naifid_map(searches[i], naifid_map_file=map_file)
+        assert isinstance(naifid, int)
         assert naifid == results[i]
 
     with pytest.raises(RuntimeError):
         naifid = km.query_naifid_map('This test string should fail', naifid_map_file=map_file)
 
 def test_update_name_naifID_map():
-    naifid_map_file = output_kernels_dir+'/naifid_map.csv'
+    outdir = output_kernels_dir+'/test6'
+    naifid_map_file = outdir+'/naifid_map.csv'
     indir = input_kernels_dir+'/test2'
     
     try:
         os.remove(naifid_map_file)
     except FileNotFoundError:
         pass
+    
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
 
+    assert os.path.exists(outdir)
     assert not os.path.exists(naifid_map_file)
 
     fileout = km.update_name_naifID_map(naifid_map_file=naifid_map_file, kernels_dir=indir)
@@ -251,18 +261,18 @@ def test_update_name_naifID_map():
         assert naifid == reference_map['naifid'][i]
 
 def test_update_small_body_kernel():
-
-    if os.path.exists(output_kernels_dir):
-        shutil.rmtree(output_kernels_dir)
-    assert not os.path.exists(output_kernels_dir)
+    outdir = output_kernels_dir+'/test7'
+    if os.path.exists(outdir):
+        shutil.rmtree(outdir)
+    assert not os.path.exists(outdir)
 
     naifids = [20000001, 20000002, 20059980, 20000052, 20003779]
 
     spks = ['20000001.bsp', '20000002.bsp', '20059980.bsp', '20000052.bsp', '20003779.bsp']
     
     for i in range(len(naifids)):
-        km.update_small_body_kernel(naifids[i], kernels_dir=output_kernels_dir)
-        assert os.path.exists(output_kernels_dir+'/spk/'+spks[i])
+        km.update_small_body_kernel(naifids[i], kernels_dir=outdir)
+        assert os.path.exists(outdir+'/spk/'+spks[i])
 
 def test_get_body_type():
     naifids = [499, 401, 1000132, 20003779]
@@ -288,27 +298,18 @@ def test_query_sbdb():
     with pytest.raises(RuntimeError):
         naifid = km.query_sbdb('This test string will fail')
 
-def test_query_naifid_map():
-    naifid_map_file = input_kernels_dir+'/test2/naifid_map.csv'
-    
-    naifid = km.query_naifid_map('kore', naifid_map_file=naifid_map_file)
-    assert isinstance(naifid, int)
-    assert naifid == 549
-
-    with pytest.raises(RuntimeError):
-        naifid = km.query_naifid_map('This very long test string will fail', naifid_map_file=naifid_map_file)
-
 def test_get_naifid():
     indir = input_kernels_dir+'/test2'
+    outdir = output_kernels_dir+'/test8'
     default_mk = indir+'/mk/krc_default.tm'
-    naifid_map_file = output_kernels_dir+'/naifid_map.csv'
+    naifid_map_file = outdir+'/naifid_map.csv'
 
     # start with fresh naifid file from test assets
-    if os.path.exists(output_kernels_dir):
-        shutil.rmtree(output_kernels_dir)
-    assert not os.path.exists(output_kernels_dir)
+    if os.path.exists(outdir):
+        shutil.rmtree(outdir)
+    assert not os.path.exists(outdir)
 
-    os.makedirs(output_kernels_dir)
+    os.makedirs(outdir)
     shutil.copy(indir+'/naifid_map.csv', naifid_map_file)
     
 
@@ -333,15 +334,16 @@ def test_get_naifid():
 
 def test_make_sb_mk():
     indir = input_kernels_dir+'/test2'
+    outdir = output_kernels_dir+'/test9'
     default_mk = indir+'/mk/krc_default.tm'
-    naifid_map_file = output_kernels_dir+'/naifid_map.csv'
-    kernels_dir = output_kernels_dir
+    naifid_map_file = outdir+'/naifid_map.csv'
+    kernels_dir = outdir
 
-    if os.path.exists(output_kernels_dir):
-        shutil.rmtree(output_kernels_dir)
-    assert not os.path.exists(output_kernels_dir)
+    if os.path.exists(outdir):
+        shutil.rmtree(outdir)
+    assert not os.path.exists(outdir)
 
-    os.makedirs(output_kernels_dir)
+    os.makedirs(outdir)
     shutil.copy(indir+'/naifid_map.csv', naifid_map_file)
 
     # case 1: input naifid not small body
@@ -352,8 +354,12 @@ def test_make_sb_mk():
     # Note that Ceres and 52 Europa have their NAIF IDs set by default in SPICE, using 7-digit naifids,
     # while horizons and the SBDB return 8 digit codes. 
     # I believe this discrepancy will be resolved eventually as later SPICE versions are released??
-    bodies = ['cErEs', '52 europa', 'Kieffer', '1985jv1', '3779 Kieffer', '1985 JV1']
-    naifids = [2000001, 2000052, 20003779, 20003779, 20003779, 20003779]
+    # Note also that because 'CERES' and '52 EUROPA' are known bodies to the SPICE system, 
+    # Those bodies will not reach the inner portion of get_naifid() that appends to the 
+    # naifid_map_file. Testing those bodies (or any other similar case) will fail the final
+    # assert in this loop. 
+    bodies = ['Kieffer', '1985jv1', '3779 Kieffer', '1985 JV1']
+    naifids = [20003779, 20003779, 20003779, 20003779]
     for i in range(len(bodies)):
         mk_path = km.make_sb_mk(bodies[i], default_mk=default_mk, naifid_map_file=naifid_map_file, kernels_dir=kernels_dir)
         assert mk_path == kernels_dir+f'/mk/{naifids[i]:09d}.tm'
@@ -366,7 +372,7 @@ def test_make_sb_mk():
         assert naifid == naifids[i]
 
 def test_update_satellite_kernel():
-    outdir = output_kernels_dir
+    outdir = output_kernels_dir+'/test10'
     if os.path.exists(outdir):
         shutil.rmtree(outdir)
     assert not os.path.exists(outdir)
@@ -385,7 +391,7 @@ def test_update_satellite_kernel():
 
 
 def test_make_satellite_mk():
-    outdir = output_kernels_dir
+    outdir = output_kernels_dir+'/test11'
     default_mk = input_kernels_dir+'/test2/mk/krc_default.tm'
     naifid_map_file = input_kernels_dir+'/test2/naifid_map.csv'
     if os.path.exists(outdir):
@@ -425,46 +431,47 @@ def test_get_cached_mk():
 
 def test_get_mk():
     indir = input_kernels_dir+'/test2'
-    default_mk = output_kernels_dir+'/mk/krc_default.tm'
-    naifid_map_file = output_kernels_dir+'/naifid_map.csv'
+    outdir = output_kernels_dir+'/test12'
+    default_mk = outdir+'/mk/krc_default.tm'
+    naifid_map_file = outdir+'/naifid_map.csv'
 
-    if os.path.exists(output_kernels_dir):
-        shutil.rmtree(output_kernels_dir)
-    assert not os.path.exists(output_kernels_dir)
+    if os.path.exists(outdir):
+        shutil.rmtree(outdir)
+    assert not os.path.exists(outdir)
 
-    os.makedirs(output_kernels_dir+'/mk')
+    os.makedirs(outdir+'/mk')
     shutil.copy(indir+'/naifid_map.csv', naifid_map_file)
     shutil.copy(indir+'/mk/krc_default.tm', default_mk)
 
-    os.makedirs(output_kernels_dir+'/lsk')
-    os.makedirs(output_kernels_dir+'/pck')
-    os.makedirs(output_kernels_dir+'/spk')
-    shutil.copy(input_kernels_dir+'/test1/lsk/naif0012.tls', output_kernels_dir+'/lsk/naif0012.tls')
-    shutil.copy(input_kernels_dir+'/test1/pck/pck00010.tpc', output_kernels_dir+'/pck/pck00010.tpc')
-    shutil.copy(input_kernels_dir+'/test1/spk/de442.bsp', output_kernels_dir+'/spk/de442.bsp')
+    os.makedirs(outdir+'/lsk')
+    os.makedirs(outdir+'/pck')
+    os.makedirs(outdir+'/spk')
+    shutil.copy(input_kernels_dir+'/test1/lsk/naif0012.tls', outdir+'/lsk/naif0012.tls')
+    shutil.copy(input_kernels_dir+'/test1/pck/pck00010.tpc', outdir+'/pck/pck00010.tpc')
+    shutil.copy(input_kernels_dir+'/test1/spk/de442.bsp', outdir+'/spk/de442.bsp')
 
-    shutil.copy(input_kernels_dir+'/test3/mk/020003779.tm', output_kernels_dir+'/mk/020003779.tm')
+    shutil.copy(input_kernels_dir+'/test3/mk/020003779.tm', outdir+'/mk/020003779.tm')
 
     # Case: Cached metakernel exists
-    mk = porb.get_mk('Kieffer', update_kernels=False, kernels_dir=output_kernels_dir, default_mk=default_mk, naifid_map_file=naifid_map_file)
-    assert mk == f'{output_kernels_dir}/mk/020003779.tm'
+    mk = porb.get_mk('Kieffer', update_kernels=False, kernels_dir=outdir, default_mk=default_mk, naifid_map_file=naifid_map_file)
+    assert mk == f'{outdir}/mk/020003779.tm'
     # when using a cached metakernel, the underlying kernels are not updated.
-    assert not os.path.exists(output_kernels_dir+'/spk/20003779.bsp')
+    assert not os.path.exists(outdir+'/spk/20003779.bsp')
     
     # Case: body_type is 'Planet'
-    mk = porb.get_mk('Mars', update_kernels=False, kernels_dir=output_kernels_dir, default_mk=default_mk, naifid_map_file=naifid_map_file)
-    assert mk == f'{output_kernels_dir}/mk/krc_default.tm'
-    assert os.path.exists(output_kernels_dir+'/pck/pck00011.tpc')
+    mk = porb.get_mk('Mars', update_kernels=False, kernels_dir=outdir, default_mk=default_mk, naifid_map_file=naifid_map_file)
+    assert mk == f'{outdir}/mk/000000499.tm'
+    assert os.path.exists(outdir+'/spk/mar099s.bsp')
 
     # Case: body_type is 'Satellite'
-    mk = porb.get_mk('phobos', update_kernels=False, kernels_dir=output_kernels_dir, default_mk=default_mk, naifid_map_file=naifid_map_file)
-    assert mk == f'{output_kernels_dir}/mk/000000401.tm'
+    mk = porb.get_mk('phobos', update_kernels=False, kernels_dir=outdir, default_mk=default_mk, naifid_map_file=naifid_map_file)
+    assert mk == f'{outdir}/mk/000000401.tm'
     assert os.path.exists(mk)
 
     # Case: small body (body_type is 'Comet' or 'Minor')
-    mk = porb.get_mk('Kieffer', update_kernels=True, kernels_dir=output_kernels_dir, default_mk=default_mk, naifid_map_file=naifid_map_file)
-    assert mk == f'{output_kernels_dir}/mk/020003779.tm'
-    assert os.path.exists(output_kernels_dir+'/spk/20003779.bsp')
+    mk = porb.get_mk('Kieffer', update_kernels=True, kernels_dir=outdir, default_mk=default_mk, naifid_map_file=naifid_map_file)
+    assert mk == f'{outdir}/mk/020003779.tm'
+    assert os.path.exists(outdir+'/spk/20003779.bsp')
 
 
 

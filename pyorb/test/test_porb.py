@@ -594,7 +594,7 @@ def test_get_porb_params():
 
 def test_high_level_get_porb_params(download_de442_spk):
     indir = kernels_dir + '/input'
-    outdir = kernels_dir + '/output'
+    outdir = kernels_dir + '/output/test13'
     default_mk = outdir+'/mk/krc_default.tm'
     naifid_map_file = outdir+'/naifid_map.csv'
 
