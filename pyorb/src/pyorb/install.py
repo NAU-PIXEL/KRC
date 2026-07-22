@@ -1,3 +1,4 @@
+import os
 import requests
 import sys
 import tomllib
@@ -7,13 +8,15 @@ import tomli_w
 from pathlib import Path
 from platformdirs import user_config_dir
 
-folder = Path(__file__).parent.resolve()
+src_dir = Path(__file__).parent.resolve()
+install_dir = Path(src_dir.parent.parent)
+os.chdir(install_dir)
 
-planet_params_file = folder / "planet_params.csv"
-
+planet_params_file = src_dir / "planet_params.csv"
 # set some locations
 # naif_source = "https://naif.jpl.nasa.gov/pub/naif/generic_kernels"
-kernels_dir = "./kernels"
+kernels_dir = str((install_dir / "kernels").resolve())
+print(kernels_dir)
 default_mk = f"{kernels_dir}/mk/krc_default.tm"
 naifid_map_file = f"{kernels_dir}/naifid_map.csv"
 test_kernels_dir = "./test/kernels"
