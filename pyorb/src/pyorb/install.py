@@ -1,4 +1,5 @@
 import os
+import readline
 import requests
 import sys
 import tomllib
@@ -62,6 +63,8 @@ def install_config(install_dir: Path | None):
     config_dir.mkdir(parents=True, exist_ok=True)
 
     if install_dir is None:
+        readline.set_completer_delims(" \t\n=")
+        readline.parse_and_bind("tab: complete")
         install_dir = Path(
             input(
                 "Enter the path to the root of the Davinci library, e.g. /usr/share/davinci/library/:"
