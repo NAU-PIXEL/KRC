@@ -14,8 +14,10 @@ sudo apt-get install gfortran make
 ```
 Other distributions should have similar package names.
 
-On macOS 
-<!-- @haberlec please give advice on how to set up on macOS -->
+On macOS Homebrew can be used to install the build tools. 
+```
+brew install gcc make
+```
 
 
 ### Compilation
