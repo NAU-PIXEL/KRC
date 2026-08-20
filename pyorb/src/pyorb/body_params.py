@@ -3,6 +3,7 @@
 import numpy as np
 import h5py
 import spiceypy as spice
+import datetime
 from typing import TypedDict
 
 from . import defaults 
@@ -116,6 +117,46 @@ def get_radius(naifid:int, metakernel:str|None = None) -> float:
             pass
     return radius
 
+def get_satellite_semimajor_axis(
+        naifid:int,
+        parent_naifid:int,
+        parent_mass:float, 
+        metakernel:str|None = None, 
+        epoch_date: datetime.datetime = defaults.epoch_date) -> float:
+    """
+    Returns the semimajor axis of a satellite's orbit around a parent body, 
+    specified by the satellite's naifid. 
+    Uses the metakernel supplied, or selects an appropriate one from the kernel cache.
+
+    Args:
+        naifid (int): NAIF object ID code for the object of interest.
+        parent_naifid (int): NAIF object ID code for the parent body.
+        parent_mass (float): Mass of the parent body. [kg]
+        metakernel (str | None, optional): Full path to the metakernel for the object. 
+            Defaults to None.
+        epoch_date (datetime.datetime, optional): epoch at which to calculate orbital 
+            params. Must be covered by available kernels. Defaults to defaults.epoch_date.
+
+    Returns:
+        float: Semimajor axis of the satellite's orbit around its parent body. [km]
+    """
+    if metakernel is None:
+        metakernel = f'{install.kernels_dir}/mk/{naifid:09d}.tm'    
+    spice.furnsh(metakernel)
+
+    et = spice.datetime2et(epoch_date)
+    # get the state vector of body (or its system barycenter) relative to some specified parent body.
+    state_vector = spice.spkezr(str(naifid), et, 'ECLIPJ2000', 'NONE', str(parent_naifid))[0]
+
+    # get orbital elements of body relative to parent
+    grav_param = const.G * parent_mass
+    elts = spice.oscelt(state_vector, et, grav_param)
+
+    eccentricity        = elts[1]
+    semimajor_axis      = elts[0] / (1-eccentricity)
+
+    return semimajor_axis
+
 def get_body_params(porb_output:porb.PorbParams, 
                     metakernel:str|None = None) -> tuple[type_params_dict, planet_flux_dict, krc_params_dict]:
     """
@@ -161,24 +202,27 @@ def get_body_params(porb_output:porb.PorbParams,
         'N24'           : 96
     }
 
-    # TODO: Make this work for binary asteroids 
-    if type_params['body_type'] == 'Satellite':
-        parent_number = int(str(type_params['naifid'])[0])
-        parents = ['', 'Mercury', 'Venus', 'Earth', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto']
-        type_params['parent_body'] = parents[parent_number]
-
     planet_params = np.genfromtxt(planet_params_file, delimiter=',', names=True, encoding='utf-8',
                                   dtype=['U16',float,float,float,float,float,float])
 
     if type_params['body_type'] in ['Planet', 'Satellite']:
         planet_flux['Radius'] = get_radius(type_params['naifid'], metakernel)
 
+    # TODO: Make this work for binary asteroids 
     if type_params['body_type'] == 'Satellite':
-        semimajor_axis = porb_output.SJA
+        parent_number = int(str(type_params['naifid'])[0])
+        parents = ['', 'Mercury', 'Venus', 'Earth', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto']
+        type_params['parent_body'] = parents[parent_number]
+
         if type_params['body_name'] in planet_params['Name']:
             satellite_mass = planet_params['mass'][planet_params['Name']==type_params['body_name']]
         else: satellite_mass = 0.
         krc_params['GRAV'] = const.G * satellite_mass / (1000*planet_flux['Radius'])**2
+
+        if type_params['parent_body'] in planet_params['Name']:
+            parent_mass = planet_params['mass'][planet_params['Name']==type_params['parent_body']]
+        else: parent_mass = 1.0 # TODO: make this work for binary asteroids
+        semimajor_axis = get_satellite_semimajor_axis(type_params['naifid'], parent_number, parent_mass)
         planet_flux['Mut_Period'] = 2*np.pi * np.sqrt((1000*semimajor_axis)**3 / (const.G*(planet_params['mass'][planet_params['Name']==type_params['parent_body']][0]+satellite_mass)))
         planet_flux['Orb_Radius'] = semimajor_axis
     
