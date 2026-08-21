@@ -149,13 +149,28 @@ def get_satellite_semimajor_axis(
     state_vector = spice.spkezr(str(naifid), et, 'ECLIPJ2000', 'NONE', str(parent_naifid))[0]
 
     # get orbital elements of body relative to parent
-    grav_param = const.G * parent_mass
+    grav_param = const.G * parent_mass / 1e9 # km^3/s^2
     elts = spice.oscelt(state_vector, et, grav_param)
 
     eccentricity        = elts[1]
     semimajor_axis      = elts[0] / (1-eccentricity)
 
     return semimajor_axis
+
+def get_N24(siday:float) -> int:
+    """
+    Determine the appropriate number of diurnal timesteps, given the length of a day.
+    This produces timesteps between 16 and 30 minutes, approaching the lower bound as 
+    siday grows larger, while also ensuring N24 is a multiple of 24. 
+
+    Args:
+        siday (float): The length of a sidereal day in hours.
+
+    Returns:
+        int: N24, the number of diurnal timesteps.
+    """
+    factor = 3.8 
+    return int(siday*factor - (siday*factor)%24)
 
 def get_body_params(porb_output:porb.PorbParams, 
                     metakernel:str|None = None) -> tuple[type_params_dict, planet_flux_dict, krc_params_dict]:
@@ -220,9 +235,9 @@ def get_body_params(porb_output:porb.PorbParams,
         krc_params['GRAV'] = const.G * satellite_mass / (1000*planet_flux['Radius'])**2
 
         if type_params['parent_body'] in planet_params['Name']:
-            parent_mass = planet_params['mass'][planet_params['Name']==type_params['parent_body']]
+            parent_mass = planet_params['mass'][planet_params['Name']==type_params['parent_body']][0]
         else: parent_mass = 1.0 # TODO: make this work for binary asteroids
-        semimajor_axis = get_satellite_semimajor_axis(type_params['naifid'], parent_number, parent_mass)
+        semimajor_axis = get_satellite_semimajor_axis(type_params['naifid'], parent_number, parent_mass, metakernel=metakernel)
         planet_flux['Mut_Period'] = 2*np.pi * np.sqrt((1000*semimajor_axis)**3 / (const.G*(planet_params['mass'][planet_params['Name']==type_params['parent_body']][0]+satellite_mass)))
         planet_flux['Orb_Radius'] = semimajor_axis
     
@@ -246,11 +261,7 @@ def get_body_params(porb_output:porb.PorbParams,
 
     if porb_output.SIDAY/krc_params['N24'] > 0.5:
         # if the default N24 produces timesteps that are longer than half an hour (ie, if siday > 48hrs)
-        # factor of 3.8 means timesteps of about 16 minutes
-        # the additional term ensures N24 is a multiple of 24. 
-        # so this will produce timesteps between 16 and 30 minutes, approaching the lower bound as siday grows larger.
-        factor = 3.8 
-        krc_params['N24'] = int(porb_output.SIDAY*factor - (porb_output.SIDAY*factor)%24)
+        krc_params['N24'] = get_N24(porb_output.SIDAY)
     
     return (type_params, planet_flux, krc_params)
 

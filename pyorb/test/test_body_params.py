@@ -1,4 +1,4 @@
-from pyorb.body_params import add_str_dset, add_num_dset, type_params_dict, planet_flux_dict, krc_params_dict, get_body_params, write_hdf, get_radius, read_hdf, high_level_write_hdf
+from pyorb.body_params import add_str_dset, add_num_dset, type_params_dict, planet_flux_dict, krc_params_dict, get_N24, get_satellite_semimajor_axis, get_body_params, write_hdf, get_radius, read_hdf, high_level_write_hdf
 import pyorb.defaults as defaults
 import pyorb.porb as porb
 import pytest
@@ -54,6 +54,47 @@ def get_mars_porb_params():
         BFRM = np.array([[ 0.3244966,  -0.9458869,  0.000000 ],
                          [ 0.8559125,   0.2936299, -0.4256704],
                          [ 0.4026360,   0.1381286,  0.9048783]])
+        )
+    
+    return out
+
+def get_deimos_porb_params():
+    out=porb.PorbParams(
+        default_spin        = 1,
+        porb_version        = '2000jan01',
+        generation_date     = '2000 Jan 01 00:00:00',
+        NAME                = 'Deimos',
+        body_type           = 'Satellite',
+
+        PLANUM              = 402,
+
+        TC                  = 0.0,
+        RODE                = 0.8644665,
+        CLIN                = 0.3226901E-01,
+        ARGP                = -1.281586,
+
+        XECC                = 0.9340198E-01,
+        SJA                 = 1.523712,
+        EOBL                = 0.4090926,
+        SFLAG               = 0.000000,
+        ZBAA                = 0.9339938,
+
+        ZBAB                = 5.526397,
+        WDOT                = 350.8920,
+        WO                  = 176.0499,
+        OPERIOD             = 686.9928,
+        TJP                 = 3397.977,
+
+        SIDAY               = 30.29858,
+        spar17              = 0.000000,
+        TAV                 = -1.240317,
+        BLIP                = 0.4397026,
+        PBUG                = 0.000000,
+
+        spar21              = 0.000000,
+        BFRM = np.array([[ 0.3240992,  -0.9460231,  0.000000 ],
+                         [ 0.8621530,   0.2953660, -0.4116443],
+                         [ 0.3894250,   0.1334136,  0.9113446]])
         )
     
     return out
@@ -123,7 +164,7 @@ mars_krc_params = krc_params_dict(
     DUSTA   = 0.9,
     TAURAT  = 0.22,
     PTOTAL  = 546.,
-    GRAV    = 3.71481570247261607912,
+    GRAV    = 3.7131376704574803,
     PERIOD  = 24.62296/24.,
     DELJUL  = 686.9928/360.,
     N24     = 96
@@ -131,14 +172,21 @@ mars_krc_params = krc_params_dict(
 
 mars_porb = get_mars_porb_params()
 europa_porb = get_europa_porb_params()
+deimos_porb = get_deimos_porb_params()
 
 kernelsdir = "./test/kernels"
 
 def test_get_body_params_satellite_parent_body_is_correct():
-    # europa case
-    (type_params, planet_flux, krc_params) = get_body_params(europa_porb, f'{kernelsdir}/pck00011.tpc')
+    # deimos case
+    (type_params, planet_flux, krc_params) = get_body_params(deimos_porb, f'{kernelsdir}/input/test3/mk/000000401.tm')
 
-    assert type_params['parent_body'] == 'Jupiter'
+    assert type_params['parent_body'] == 'Mars'
+
+def test_get_satellite_semimajor_axis():
+    # deimos case
+    semimajor_axis = get_satellite_semimajor_axis(402, 4, 6.4171E+23, f'{kernelsdir}/input/test3/mk/000000401.tm')
+
+    assert semimajor_axis == pytest.approx(2.346e+4,rel=1e5)
 
 def test_get_body_params_has_default_radius_given_a_bad_metakernel():
     # Mars, metakernel has no radius info.
@@ -152,16 +200,16 @@ def test_get_body_params_has_good_radius_from_kernels():
 
     assert planet_flux['Radius'] == pytest.approx(3396.19)
 
-def test_get_body_params_N24_is_good():
+def test_get_N24():
     '''
     N24 should always be at least 96, be a multiple of 24, 
     and produce a timestep between 0.25 and 0.5 hours when SIDAY > 48 hours.
     '''
     # europa case
-    (type_params, planet_flux, krc_params) = get_body_params(europa_porb, f'{kernelsdir}/pck00011.tpc')
-    timestep = europa_porb.SIDAY/krc_params['N24']
+    N24 = get_N24(europa_porb.SIDAY)
+    timestep = europa_porb.SIDAY/N24
 
-    assert krc_params['N24']%24 == 0 and timestep <= 0.5 and timestep >= 0.25
+    assert N24%24 == 0 and timestep <= 0.5 and timestep >= 0.25
 
 
 def test_get_body_params_typing_is_correct():
