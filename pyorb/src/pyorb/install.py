@@ -16,6 +16,7 @@ planet_params_file = folder / "planet_params.csv"
 kernels_dir = "./kernels"
 default_mk = f"{kernels_dir}/mk/krc_default.tm"
 naifid_map_file = f"{kernels_dir}/naifid_map.csv"
+# Note: Running tests will produce ~ 766 MB of output in this directory.
 test_kernels_dir = "./test/kernels"
 
 config_dir = Path(user_config_dir("pyorb"))
