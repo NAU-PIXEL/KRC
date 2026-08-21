@@ -1,3 +1,5 @@
+import os
+import readline
 import requests
 import sys
 import tomllib
@@ -7,13 +9,15 @@ import tomli_w
 from pathlib import Path
 from platformdirs import user_config_dir
 
-folder = Path(__file__).parent.resolve()
+src_dir = Path(__file__).parent.resolve()
+install_dir = Path(src_dir.parent.parent)
+os.chdir(install_dir)
 
-planet_params_file = folder / "planet_params.csv"
-
+planet_params_file = src_dir / "planet_params.csv"
 # set some locations
 # naif_source = "https://naif.jpl.nasa.gov/pub/naif/generic_kernels"
-kernels_dir = "./kernels"
+kernels_dir = str((install_dir / "kernels").resolve())
+print(kernels_dir)
 default_mk = f"{kernels_dir}/mk/krc_default.tm"
 naifid_map_file = f"{kernels_dir}/naifid_map.csv"
 # Note: Running tests will produce ~ 766 MB of output in this directory.
@@ -60,6 +64,8 @@ def install_config(install_dir: Path | None):
     config_dir.mkdir(parents=True, exist_ok=True)
 
     if install_dir is None:
+        readline.set_completer_delims(" \t\n=")
+        readline.parse_and_bind("tab: complete")
         install_dir = Path(
             input(
                 "Enter the path to the root of the Davinci library, e.g. /usr/share/davinci/library/:"
