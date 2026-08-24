@@ -170,6 +170,36 @@ mars_krc_params = krc_params_dict(
     N24     = 96
 )
 
+deimos_type_params  = type_params_dict(
+    body_name   = 'Deimos',
+    body_type   = 'Satellite',
+    naifid      = 402,
+    parent_body = 'Mars'
+)
+
+deimos_planet_flux = planet_flux_dict(
+    BT_Avg      = -999.,
+    BT_Max      = -999.,
+    BT_Min      = -999.,
+    Dis_AU      = -999.,
+    Geom_alb    = -999.,
+    Mut_Period  = 1.26262422,
+    Orb_Radius  = 23459.225,
+    Radius      = 7.8
+)
+
+deimos_krc_params = krc_params_dict(
+    ARC2_G0 = -999.,
+    DUSTA   = -999.,
+    TAURAT  = -999.,
+    PTOTAL  = 0.0,
+    GRAV    = 0.00164546351085,
+    PERIOD  = 1.2624408,
+    DELJUL  = 1.9083133,
+    N24     = 96
+)
+
+
 mars_porb = get_mars_porb_params()
 europa_porb = get_europa_porb_params()
 deimos_porb = get_deimos_porb_params()
@@ -223,6 +253,14 @@ def test_get_body_params_dict_values_correct_mars():
     mars_params = get_body_params(mars_porb, f'{kernelsdir}/pck00011.tpc')
 
     assert mars_params == pytest.approx((mars_type_params, mars_planet_flux, mars_krc_params))
+
+def test_get_body_params_dict_values_correct_deimos():
+    # Deimos case
+    deimos_params = get_body_params(deimos_porb, f'{kernelsdir}/input/test3/mk/000000401.tm')
+
+    assert deimos_params[0] == pytest.approx(deimos_type_params)
+    assert deimos_params[1] == pytest.approx(deimos_planet_flux)
+    assert deimos_params[2] == pytest.approx(deimos_krc_params)
 
 def test_get_radius_with_metakernel():
     # Mars case

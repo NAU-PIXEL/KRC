@@ -230,7 +230,7 @@ def get_body_params(porb_output:porb.PorbParams,
         type_params['parent_body'] = parents[parent_number]
 
         if type_params['body_name'] in planet_params['Name']:
-            satellite_mass = planet_params['mass'][planet_params['Name']==type_params['body_name']]
+            satellite_mass = planet_params['mass'][planet_params['Name']==type_params['body_name']][0]
         else: satellite_mass = 0.
         krc_params['GRAV'] = const.G * satellite_mass / (1000*planet_flux['Radius'])**2
 
@@ -238,7 +238,7 @@ def get_body_params(porb_output:porb.PorbParams,
             parent_mass = planet_params['mass'][planet_params['Name']==type_params['parent_body']][0]
         else: parent_mass = 1.0 # TODO: make this work for binary asteroids
         semimajor_axis = get_satellite_semimajor_axis(type_params['naifid'], parent_number, parent_mass, metakernel=metakernel)
-        planet_flux['Mut_Period'] = 2*np.pi * np.sqrt((1000*semimajor_axis)**3 / (const.G*(planet_params['mass'][planet_params['Name']==type_params['parent_body']][0]+satellite_mass)))
+        planet_flux['Mut_Period'] = 2*np.pi * np.sqrt((1000*semimajor_axis)**3 / (const.G*(planet_params['mass'][planet_params['Name']==type_params['parent_body']][0]+satellite_mass))) / (3600*24.)
         planet_flux['Orb_Radius'] = semimajor_axis
     
     if type_params['body_type'] == 'Planet':
