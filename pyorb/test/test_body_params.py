@@ -220,13 +220,13 @@ def test_get_satellite_semimajor_axis():
 
 def test_get_body_params_has_default_radius_given_a_bad_metakernel():
     # Mars, metakernel has no radius info.
-    (type_params, planet_flux, krc_params) = get_body_params(mars_porb, f'{kernelsdir}/naif0012.tls')
+    (type_params, planet_flux, krc_params) = get_body_params(mars_porb, f'{kernelsdir}/input/test3/lsk/naif0012.tls')
 
     assert planet_flux['Radius'] == pytest.approx(defaults.radius)
 
 def test_get_body_params_has_good_radius_from_kernels():
     # Mars case
-    (type_params, planet_flux, krc_params) = get_body_params(mars_porb, f'{kernelsdir}/pck00011.tpc')
+    (type_params, planet_flux, krc_params) = get_body_params(mars_porb, f'{kernelsdir}/input/test3/pck/pck00011.tpc')
 
     assert planet_flux['Radius'] == pytest.approx(3396.19)
 
@@ -244,13 +244,13 @@ def test_get_N24():
 
 def test_get_body_params_typing_is_correct():
     # Mars case
-    (type_params, planet_flux, krc_params) = get_body_params(mars_porb, f'{kernelsdir}/pck00011.tpc')
+    (type_params, planet_flux, krc_params) = get_body_params(mars_porb, f'{kernelsdir}/input/test3/pck/pck00011.tpc')
 
     assert dicts_match_keys_and_types(type_params, mars_type_params) and dicts_match_keys_and_types(planet_flux, mars_planet_flux) and dicts_match_keys_and_types(krc_params, mars_krc_params)
 
 def test_get_body_params_dict_values_correct_mars():
     # Mars case
-    mars_params = get_body_params(mars_porb, f'{kernelsdir}/pck00011.tpc')
+    mars_params = get_body_params(mars_porb, f'{kernelsdir}/input/test3/pck/pck00011.tpc')
 
     assert mars_params == pytest.approx((mars_type_params, mars_planet_flux, mars_krc_params))
 
@@ -264,7 +264,7 @@ def test_get_body_params_dict_values_correct_deimos():
 
 def test_get_radius_with_metakernel():
     # Mars case
-    mars_mk = f'{kernelsdir}/pck00011.tpc'
+    mars_mk = f'{kernelsdir}/input/test3/pck/pck00011.tpc'
     mars_radius = 3396.19
     radius = get_radius(499, mars_mk)
 
@@ -272,7 +272,7 @@ def test_get_radius_with_metakernel():
 
 def test_get_radius_no_metakernel():
     # using the standard PCK, which does not supply radii for this object:
-    mk = f'{kernelsdir}/pck00011.tpc'
+    mk = f'{kernelsdir}/input/test3/pck/pck00011.tpc'
     radius = get_radius(2003779, mk)
 
     assert radius == pytest.approx(defaults.radius)
