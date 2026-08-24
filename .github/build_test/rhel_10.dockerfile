@@ -6,6 +6,5 @@ WORKDIR /usr/krc/
 
 COPY Makefile /usr/krc/Makefile
 COPY src/ /usr/krc/src/
-COPY interfaces/idl/ /usr/krc/idl/
 
 RUN make krc
