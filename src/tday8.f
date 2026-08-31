@@ -144,7 +144,32 @@ C If user specified a total depth in diurnal units:
         FLAY=DEPTH/DTJ(N1-1)           ! first physical layer, scaled
       ENDIF
  
+c Sanity check:if solar penetration in the ground is lower than 1e-3m (1 mm), then assumed that we run krc as usual
+      if((RADGND).AND.(EFOLD_RADGND.LE.1e-3)) RADGND = .FALSE.
+
+C If solar penetration in the ground, needs to modify FLAY
+      IF(RADGND) THEN      
+        IF(FLAY.GT.(EFOLD_RADGND/(2.*RLAY)/
+     &         (RLAY* SCALE*(0.5+(1-RLAY))))) THEN
+
+             IRET=3                  ! error return if unstable
+        WRITE (IOERR,149)FLAY,0.5*FLAY*RLAY*SCALE,EFOLD_RADGND
+ 149    FORMAT ('TDAY: First Layer too large for solar irradiation; 
+     &          FLAY, 1st layer depth, EFOLD_RADGND =',F8.4,F8.4,F8.4)
+        stop
+        ENDIF
+      ENDIF 
+
+      IF(EmisT) THEN
+        DO JJ = 1,5 !5 iterations are sufficient
+          TGLOB=(SOLCON*(1.D0-ALB)/(2.D0*PIVAL*SJA**2*EMIS*SIGSB))**0.25 ! Tg
+          CALL EVMONO3D(CCEMIS,1,TGLOB, EMIS) ! upper cond.
+          EMIS = MAX(0.,MIN(EMIS,1.))
+          IF(EMIS.LE.0) GOTO 340
+      ENDDO
+      ENDIF
       TGLOB=(SOLCON*(1.D0-ALB)/(2.D0*PIVAL*SJA**2*EMIS*SIGSB))**0.25 ! Tg
+
 C Compute Tg values here as may need 1 or 2 times. Last arg is scalar here
       CALL EVMONO3D(CCKU,1,TGLOB, Q3) ! upper cond.
       CALL EVMONO3D(CCPU,1,TGLOB, Q4) ! upper sp.heat
@@ -441,7 +466,7 @@ C                   all the Qn are available for use
       DTIMI=DTIM                ! current time step
       DO J=2,N1                 ! LAYER LOOP 3: Assign time doubling
         IF (K.LT.KM .AND. J.GT.3 .AND. MOD(KKK,2).EQ.0 
-     &    .AND. ZDZ(J).GT. 2.D0*QA*CONVF) THEN ! double time step for this layer
+     &    .AND. ZDZ(J).GT. 2.D0*QA*CONVF.AND.(.NOT.RADGND)) THEN ! double time step for this layer
           DTIMI=2.*DTIMI        ! doubled time interval
           K=K+1                 ! have new binary interval
           N1K(K)=J-1            ! bottom layer of prior interval
@@ -621,6 +646,14 @@ C  TATMJ and  EFROST enter via  KRCCOM
         FAC8=EMTIR*FEMIS        ! ground effective emissivity through atmosphere
       ELSE                      ! bare ground
         LFROST = .FALSE.
+        IF(EmisT) THEN
+          CALL EVMONO3D(CCEMIS,1,TSUR, EMIS) ! recompute emissivity
+          EMIS = MAX(0.,MIN(EMIS,1.))
+          FAC5  = SKYFAC*EMIS*SIGSB
+          FAC45 = 4.D0*FAC5
+          FAC6  = SKYFAC*EMIS
+          FEFAC = FEMIS/EMIS        ! adjust FARAD is frost present
+        ENDIF
         FAC8=EMTIR*EMIS
       ENDIF
       FLOST=0.                  ! sum of lost frost
@@ -696,7 +729,9 @@ C     Last arg is number of good layers in TTF, must not change in time loop
           ENDIF
 C     
 C     -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v- layer loops v-v-v-v-v-v-v-v-v-v-v-v-v-
-C     
+C  
+
+          DTJ(:) = 0.
           IF (LALCON) THEN      ! all layers T-con  --------------
             DO  J=2,KN
               DTJ(J)=FA1(J)* (TTJ(J+1)+FA2(J)*TTJ(J)+FA3(J)*TTJ(J-1)) ! diffusion
@@ -714,7 +749,7 @@ C     EVMONO3D loads arg2 output values into locations starting at last arg.
             ENDIF
 
             FBK=RLAY            ! F_B_i * F_k_i for virtual layer
-            DO J=2,KN           ! kt
+            DO J=2,KN -1          ! kt
               FBKL=FBK          ! kt
               FBK= FBI(J)*KTT(J)/KTT(J+1) ! F_B_i * F_k_i 
               FA1J=FCI(J)*KTT(J)/(CTT(J)*(1.+FBK)) ! eq F1
@@ -724,6 +759,24 @@ C     EVMONO3D loads arg2 output values into locations starting at last arg.
             FAC7=KTT(2)/XCEN(2)
           ENDIF                 !---------------------- 
 C     - - - - - - - - - - - - -
+
+C     Solar heating in the subsurface   
+
+          IF((RADGND).AND.
+     &     ((FAC3*ASOL(JJ)+FAC3S*SOLDIF(JJ)).gt.0 ).AND.
+     &     (COSINC(JJ).GT.0)) THEN
+           DO J = 2,KN-1
+            DTJ(J) = DTJ(J) + DTIMI/(DENN(J)*CTT(J))*
+     s       (FAC3*ASOL(JJ)+FAC3S*SOLDIF(JJ))*
+c     s       DEXP(-(XCEN(J))/(EFOLD_RADGND))
+c     s       /(EFOLD_RADGND)     
+     s       DEXP(-(XCEN(J))/(EFOLD_RADGND*COSINC(JJ)))
+     s       /(EFOLD_RADGND*COSINC(JJ))
+            
+          ENDDO
+        ENDIF
+C     - - - - - - - - - - - - - 
+
           DO  J=2,KN
             TTJ(J)=TTJ(J) + DTJ(J) ! apply the delta-T
           ENDDO
@@ -781,7 +834,14 @@ C If fff, add back-radiation=(1-skyfac)*femis*emis_x*sig*Tfar^4
  230        TS3=TSUR**3         ! bare ground
             II=II+1
             SHEATF= FAC7*(TTJ(2)-TSUR) ! upward heat flow to surface
-            POWER = ABRAD + SHEATF - FAC5*TSUR*TS3 ! unbalanced flux
+            IF(RADGND) THEN
+              POWER = SHEATF - FAC5*TSUR*TS3 
+              IF (LATM) THEN 
+                POWER = POWER + ATMRAD
+              ENDIF       
+            ELSE
+               POWER = ABRAD + SHEATF - FAC5*TSUR*TS3 ! unbalanced flux
+            ENDIF 
             IF (LOPN3) POWER=POWER+FARAD(JJ) ! fff only
             IF (LRAWTAB) POWER = POWER + RAWHEAT ! raw heat flux table
             DELT = POWER / (FAC7+FAC45*TS3)
@@ -798,6 +858,14 @@ C If fff, add back-radiation=(1-skyfac)*femis*emis_x*sig*Tfar^4
             ENDIF             
           ENDIF                 !+-+-+-+ end no frost
 C
+          IF(EmisT.AND.(.NOT.LFROST)) THEN
+            CALL EVMONO3D(CCEMIS,1,TSUR, EMIS) ! recompute emissivity
+            EMIS = MAX(0.,MIN(EMIS,1.))
+            FAC5  = SKYFAC*EMIS*SIGSB
+            FAC45 = 4.D0*FAC5
+            FAC6  = SKYFAC*EMIS
+            FEFAC = FEMIS/EMIS        ! adjust FARAD is frost present
+          ENDIF
           TSURM=TSURM+TSUR      ! sum over the day
           TBOTM=TBOTM+TTJ(N1)   ! "
           HEATFM=HEATFM+SHEATF  ! "
@@ -932,6 +1000,7 @@ C
       WRITE(IOSP,*)'LATM,LFROST,LALCON,ABRAD=',LATM,LFROST,LALCON,ABRAD
       IF (LATM) WRITE(IOSP,*)'atm items=',ATMRAD,LFROST,EFROST
       WRITE(IOSP,*)'FARAD,SHEATF,POW,DT=',FARAD(JJ),SHEATF,POWER,DELT
+      WRITE(IOSP,*)'EMIS=',EMIS
       TTJ(1)=TSUR
       J2=JJ
       J3=JJJ

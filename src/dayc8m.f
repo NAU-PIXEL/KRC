@@ -26,11 +26,13 @@ C  ASOL &  ADGR are set in  TLATS, the rest are set in  TDAY
      &, TOUT(MAXN2)     ! Surface temperatures of solution at each time of day
      &, TSFH(MAXNH)     ! Hourly surface temperatures at solution
      &, TPFH(MAXNH)     ! Hourly planetary temperatures at solution
+     &, COSINC(MAXN2)     ! Direct solar flux on sloped surface at each time of day
+
       INTEGER*4 N1K(MAXBOT)     ! Binary time division layers
 
       COMMON /DAYCOM/ XCEN,SCONVG, BLAY, TMIN,TMAX, TTJ, TT1
      &, TTS,TTB,TTA,DTMJ,FRO, ASOL,ADGR,ALBJ,SOLDIF,FINSOL
-     &, PLANH,PLANV,TOUT, TSFH,TPFH, N1K
+     &, PLANH,PLANV,TOUT, TSFH,TPFH, N1K,COSINC
 
 C_Hist  84jun15  Hugh_H_Kieffer  97feb11  HHK add  ADGR  
 C   97mar03 HK correct  NWDAY       97sep08  HHK add  TPFH
