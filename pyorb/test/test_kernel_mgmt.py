@@ -132,7 +132,7 @@ def test_update_naif_kernel():
 
     assert current2 == current
 
-def test_write_metakernel():
+def test_write_metakernel(download_de442_spk):
     kernel_list = ['lsk/naif0012.tls', 
                    'pck/pck00010.tpc', 
                    'spk/de442.bsp']
