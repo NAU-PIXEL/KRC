@@ -132,7 +132,7 @@ def test_update_naif_kernel():
 
     assert current2 == current
 
-def test_write_metakernel(download_de442_spk):
+def test_write_metakernel():
     kernel_list = ['lsk/naif0012.tls', 
                    'pck/pck00010.tpc', 
                    'spk/de442.bsp']
@@ -145,9 +145,18 @@ def test_write_metakernel(download_de442_spk):
         shutil.rmtree(outdir)
     assert not os.path.exists(outdir)
 
+    # Check that an error is raised when name is castable as an int.
     with pytest.raises(RuntimeError):
         mk = km.write_metakernel(kernel_list, 20003779, name='3779', outdir=outdir, kernels_dir=indir)
 
+    # Check behavior when name=None and body is not covered by default kernels
+    mk = km.write_metakernel(kernel_list, 20003779, name=None, outdir=outdir, kernels_dir=indir)
+    # Check that the header contains the correct body name.
+    with open(mk, 'r') as m:
+        lines = m.readlines()
+    assert lines[3] == 'KIEFFER\n'
+
+    # Mars case...
     mk = km.write_metakernel(kernel_list, naifid, outdir=outdir, kernels_dir=indir)
 
     # Check that the mk was generated successfully and written to the correct location.

@@ -4,18 +4,23 @@ It is used to generate the planetary parameters matrix used in KRC input files, 
 This reimplementation is of the calculations and outputs of the original Porb system, and does not reimplement the interactive command line interface.
 Instead, Pyorb provides a simple command line tool, and a more extensive Python interface, which can be used to generate the required parameters for the KRC interfaces.
 
-## Setup
+## Installation
 Pyorb is designed for use as a Python module, but is currently only distributed with the main KRC repository, not as a PyPI package.
 To install Pyorb from source, clone the KRC repository, create or activate the desired virtual environment, navigate to `krc/pyorb/`, and run `pip install -e .`.
 This will install Pyorb as a local package, and will make the `pyorb` command available while the virtual environment is active.
 
-### Davinci Setup
-Pyorb must be configured to output its parameters to the correct location for the Davinci interface to discover them.
-Because Davinci does not have a standard installation or library location, the user must specify this location themselves.
-Pyorb provides a utility command to configure this path, `python -m pyorb.install`, which then prompts the user for the location of the Davinci library directory.
-This utility will prompt the user for the location of the davinci directory, and store the path in a config file in the user's home directory.
+### Setup
+Before using Pyorb for the first time, you must first run a script to configure the paths for two locations used by the system: 
+    1. The Davinci PORB defaults HDFs cache, where HDFs are output by default. 
+    2. The kernels cache, where SPICE kernels are managed.
 
-Each user of Pyorb with Davinci, even if they are using the same virtual environment, must run `python -m pyorb.install` to specify the location of the davinci directory.
+To do this, activate the virtual environment, then run this command:
+> `python -m pyorb.setup`
+The script will prompt the user for the path to the Davinci library directory (e.g., `/usr/share/davinci/library/`) and the path to a location for the kernels cache directory.  
+These locations will be stored in a config file in the user's home directory.
+Once the user specifies these locations, the script will also initialize these directories with the appropriate contents, if they are not already prepared.
+
+Note that, because the config files are local, each user must run the setup command before using Pyorb, even if they are sharing the same virtual environment.
 
 ## Usage
 ### Command Line
