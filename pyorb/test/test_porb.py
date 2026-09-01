@@ -593,8 +593,8 @@ def test_get_porb_params():
     assert p_params.default_spin == 1
 
 def test_high_level_get_porb_params(download_de442_spk):
-    indir = kernels_dir + '/input'
-    outdir = kernels_dir + '/output/test13'
+    indir = f'{kernels_dir}/input'
+    outdir = f'{kernels_dir}/output/test13'
     default_mk = outdir+'/mk/krc_default.tm'
     naifid_map_file = outdir+'/naifid_map.csv'
 
