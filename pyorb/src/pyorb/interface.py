@@ -3,7 +3,7 @@ import os.path as path
 import numpy as np
 
 from . import defaults 
-from . import install
+from . import config
 from . import constants as const
 from . import porb
 from . import body_params
@@ -14,13 +14,13 @@ def update_default_hdf(body_name:str) -> str:
     return hdf_file
 
 def update_all_default_hdfs():
-    default_hdfs = glob.glob(f'{install.porb_defaults_dir}/*.hdf')
+    default_hdfs = glob.glob(f'{config.porb_defaults_dir}/*.hdf')
     bodies = []
     for hdf in default_hdfs:
         body_name = path.basename(hdf).split('.')[0]
         update_default_hdf(body_name)
         bodies.append(body_name)
-    print(f'Updated default hdfs in {install.porb_defaults_dir} for these bodies:')
+    print(f'Updated default hdfs in {config.porb_defaults_dir} for these bodies:')
     print(bodies)
 
     return

@@ -7,12 +7,12 @@ import datetime
 from typing import TypedDict
 
 from . import defaults 
-from . import install
+from . import config
 from . import constants as const
 from . import porb
 
 
-planet_params_file = install.planet_params_file
+planet_params_file = config.planet_params_file
 
 def add_str_dset(string:str, group: h5py.Group, label:str):
     """
@@ -108,7 +108,7 @@ def get_radius(naifid:int, metakernel:str|None = None) -> float:
     """
     radius = defaults.radius 
     if metakernel is None:
-        metakernel = f'{install.kernels_dir}/mk/{naifid:09d}.tm'
+        metakernel = f'{config.kernels_dir}/mk/{naifid:09d}.tm'
     with spice.KernelPool(metakernel):
         try:
             radius = spice.bodvcd(naifid, 'RADII', 3)[1][0] # Selecting equatorial radius
@@ -141,7 +141,7 @@ def get_satellite_semimajor_axis(
         float: Semimajor axis of the satellite's orbit around its parent body. [km]
     """
     if metakernel is None:
-        metakernel = f'{install.kernels_dir}/mk/{naifid:09d}.tm'    
+        metakernel = f'{config.kernels_dir}/mk/{naifid:09d}.tm'    
     spice.furnsh(metakernel)
 
     et = spice.datetime2et(epoch_date)
@@ -391,7 +391,7 @@ def read_hdf(hdf_file:str) -> tuple[type_params_dict, planet_flux_dict, krc_para
 
     return (type_params, planet_flux, krc_params, porb_params)
 
-def high_level_write_hdf(porb_output:porb.PorbParams, out_dir:str=install.porb_defaults_dir) -> str:
+def high_level_write_hdf(porb_output:porb.PorbParams, out_dir:str=config.porb_defaults_dir) -> str:
     """
     Write an HDF file corresponding to a given PorbParams object, to some given directory.
     This high-level function will automatically get the additional body parameters needed
@@ -401,7 +401,7 @@ def high_level_write_hdf(porb_output:porb.PorbParams, out_dir:str=install.porb_d
         porb_output (porb.PorbParams): PorbParams object containing the orbit and spin 
             parameters for the object of interest.
         out_dir (str, optional): Directory into which to write the HDF file. 
-            Defaults to install.porb_defaults_dir.
+            Defaults to config.porb_defaults_dir.
 
     Returns:
         str: Full path to the newly-written HDF file. 

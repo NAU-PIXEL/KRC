@@ -1,6 +1,6 @@
 import pyorb.defaults as defaults
 import pyorb.constants as const
-import pyorb.install as install
+import pyorb.config as config
 import pyorb.interface as interface
 
 import pytest

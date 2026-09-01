@@ -1,7 +1,7 @@
 import pyorb.defaults as defaults
 import pyorb.porb as porb
 import pyorb.kernel_mgmt as km
-import pyorb.install as install
+import pyorb.config as config
 import pytest
 
 import os
@@ -50,7 +50,7 @@ test/kernels/input/test3/
 '''
 
 
-kernels_dir = install.test_kernels_dir
+kernels_dir = config.test_kernels_dir
 
 output_kernels_dir = f'{kernels_dir}/output'
 input_kernels_dir = f'{kernels_dir}/input'

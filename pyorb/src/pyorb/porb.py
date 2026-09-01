@@ -8,7 +8,7 @@ import datetime
 from . import constants as const
 from .kernel_mgmt import get_naifid, get_body_type, get_mk
 from . import defaults 
-from . import install
+from . import config
 from typing import Self
 
 class OrbParams:
@@ -1058,9 +1058,9 @@ def get_porb_params(
 def high_level_get_porb_params(
         body_name:str, 
         update_kernels:bool = False, 
-        default_mk:str=install.default_mk, 
-        naifid_map_file:str=install.naifid_map_file,
-        kernels_dir:str=install.kernels_dir) -> PorbParams:
+        default_mk:str=config.default_mk, 
+        naifid_map_file:str=config.naifid_map_file,
+        kernels_dir:str=config.kernels_dir) -> PorbParams:
     """
     Generate a PorbParams object, containing orbital and spin axis parameters, for a 
     body of interest, specified by a string identifier. 
@@ -1072,11 +1072,11 @@ def high_level_get_porb_params(
         update_kernels (bool, optional): Flag to force a kernel update for an object, even
             if a metakernel for it already exists in the cache. Defaults to False.
         default_mk (str, optional): metakernel containing core kernels loaded by default. 
-            Defaults to install.default_mk.
+            Defaults to config.default_mk.
         naifid_map_file (str, optional): Path to the file containing the name-naifid mapping. 
-            Defaults to install.naifid_map_file.
+            Defaults to config.naifid_map_file.
         kernels_dir (str, optional): Path to directory containing kernels. 
-            Defaults to install.kernels_dir.
+            Defaults to config.kernels_dir.
 
     Returns:
         PorbParams: A PorbParams object containing orbit and spin parameters.

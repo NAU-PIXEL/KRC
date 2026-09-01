@@ -96,8 +96,20 @@ The user can either copy the formatted string output into a KRC input file, or u
         the defaults HDFs can be read by the existing dv interface to work with fortran krc
     - [x] testing
 
-    - `interface.py`
-        - [ ] testing: [0/3]
+- `interface.py`
+    - [ ] testing: [0/3]
+
+- `config.py`
+    - [x] configure the davinci install location.
+    - [ ] configure the kernels directory location.
+
+- `setup.py`
+    - [ ] create & populate the kernels directory.
+        - [ ] create the default metakernel.
+        - [ ] create the naifid_map.csv.
+    - [ ] download de442.bsp and put it in test/kernels/input/test1/spk/
+    - [ ] verify the installation.
+        - [ ] run tests and confirm they pass.
 
 - other (additional rotation info)
     - [ ] Find additional source for small-body periods and spin-poles. The standard PCK doesn't have nearly enough of those. 

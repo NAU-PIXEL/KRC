@@ -2,7 +2,7 @@ import pyorb.defaults as defaults
 import pyorb.constants as const
 import pyorb.porb as porb
 import pyorb.kernel_mgmt as km
-import pyorb.install as install
+import pyorb.config as config
 import pytest
 import numpy as np
 import spiceypy as spice
@@ -385,7 +385,7 @@ def test_PorbParams_from_str(mars_porb):
 
     assert from_str == copy
 
-kernels_dir = install.test_kernels_dir
+kernels_dir = config.test_kernels_dir
 
 def test_get_orbital_naifid():
     kernels = f'{kernels_dir}/input/test3'
