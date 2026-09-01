@@ -1,0 +1,2 @@
+porb_defaults_dir = "/path/to/porb_defaults"
+kernels_dir = "/path/to/kernels_cache"
