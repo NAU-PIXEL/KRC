@@ -143,7 +143,7 @@ def update_default_kernels(kernels_dir:str=config.kernels_dir):
         current = path.basename(update_naif_kernel(source, regex, kernels_dir=kernels_dir))
         default_kernel_list.append(f'{kernel_type}/{current}')
     
-    write_metakernel(default_kernel_list, -1, name='default', outdir=kernels_dir+'/mk', kernels_dir=kernels_dir)
+    write_metakernel(default_kernel_list, -1, name='default', outdir=f"{kernels_dir}/mk", kernels_dir=kernels_dir)
 
     return
 

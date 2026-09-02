@@ -120,6 +120,9 @@ def install_config(config_file:Path=config_file):
 if __name__ == "__main__":
     install_config()
 
+if not Path.exists(config_file):
+    install_config()
+
 porb_defaults_dir, kernels_dir = load_config()
 default_mk = f"{kernels_dir}/mk/krc_default.tm"
 naifid_map_file = f"{kernels_dir}/naifid_map.csv"
