@@ -6,7 +6,9 @@ Instead, Pyorb provides a simple command line tool, and a more extensive Python 
 
 ## Installation
 Pyorb is designed for use as a Python module, but is currently only distributed with the main KRC repository, not as a PyPI package.
-To install Pyorb from source, clone the KRC repository, create or activate the desired virtual environment, navigate to `krc/pyorb/`, and run `pip install -e .`.
+To install Pyorb from source, clone the KRC repository, create or activate the desired virtual environment, navigate to `krc/pyorb/`, and run: 
+> `pip install -e .`
+
 This will install Pyorb as a local package, and will make the `pyorb` command available while the virtual environment is active.
 
 ### Setup
@@ -16,7 +18,8 @@ Before using Pyorb for the first time, you must first run a script to configure 
 
 To do this, activate the virtual environment, then run this command:
 > `python -m pyorb.setup`
-The script will prompt the user for the path to the Davinci library directory (e.g., `/usr/share/davinci/library/`) and the path to a location for the kernels cache directory.  
+
+The script will prompt the user for the path to the Davinci library directory (e.g., `/usr/share/davinci/library/`) and the path to a location for the kernels cache directory. 
 These locations will be stored in a config file in the user's home directory.
 Once the user specifies these locations, the script will also initialize these directories with the appropriate contents, if they are not already prepared.
 
