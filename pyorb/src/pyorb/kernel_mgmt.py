@@ -47,10 +47,10 @@ def download_target(target:str, dest:str|None=None, kernels_dir:str=config.kerne
                  '.tpc' : f'{kernels_dir}/pck',
                  '.bsp' : f'{kernels_dir}/spk'}
     
-    if ext in write_dir.keys():
-        destination = f'{write_dir[ext]}/{basename}'
-    elif dest is not None:
+    if dest is not None:
         destination = dest
+    elif ext in write_dir.keys():
+        destination = f'{write_dir[ext]}/{basename}'
     else:
         destination = f'/tmp/{basename}'
         ### probably should throw an exception here?
@@ -294,6 +294,31 @@ def update_satellite_kernel(satellite:str, kernels_dir:str=config.kernels_dir) -
 
     return f'spk/{newest}'
 
+def update_bennu_kernel(kernels_dir:str = config.kernels_dir) -> str:
+    """
+    Downloads a Bennu SPK into the spk directory. 
+    We have to grab this from a non-standard source because of a bug with JPL's Horizons. 
+
+    Args:
+        kernels_dir (str, optional): Path to directory containing kernels. 
+            Defaults to config.kernels_dir.
+
+    Returns:
+        str: path of the generated spk, relative to kernels_dir.
+    """
+    source = 'https://ssd.jpl.nasa.gov/ftp/xfr/sb-101955-118_long.bsp'
+
+    # This is an alternative source, much smaller filesize but doesn't cover the default 
+    #   epoch I'm using to calculate orbits (2024-11-01):     
+    # source = 'https://naif.jpl.nasa.gov/pub/naif/pds/pds4/orex/orex_spice/spice_kernels/spk/bennu_refdrmc_v1.bsp'
+    
+    spk = "spk/20101955.bsp"
+    destination = f"{kernels_dir}/{spk}"
+
+    download_target(source, dest=destination, kernels_dir=kernels_dir)
+
+    return spk
+
 def update_small_body_kernel(naifid:int, kernels_dir:str = config.kernels_dir) -> str:
     """
     Downloads a fresh kernel from Horizons for a small body. 
@@ -318,6 +343,10 @@ def update_small_body_kernel(naifid:int, kernels_dir:str = config.kernels_dir) -
     Returns:
         str: path of the generated spk, relative to kernels_dir.
     """
+
+    # Handle the Bennu case, working around a JPL Horizons bug.
+    if naifid == 20101955:
+        return update_bennu_kernel(kernels_dir=kernels_dir)
 
     # Define API URL and SPK filename:
     url = 'https://ssd.jpl.nasa.gov/api/horizons.api'

@@ -269,15 +269,24 @@ def test_update_name_naifID_map():
         naifid = km.query_naifid_map(name, naifid_map_file=naifid_map_file)
         assert naifid == reference_map['naifid'][i]
 
+def test_update_bennu_kernel():
+    outdir = output_kernels_dir+'/test7a'
+    if os.path.exists(outdir):
+        shutil.rmtree(outdir)
+    assert not os.path.exists(outdir)
+
+    km.update_bennu_kernel(kernels_dir=outdir)
+    assert os.path.exists(outdir+'/spk/20101955.bsp')
+
 def test_update_small_body_kernel():
     outdir = output_kernels_dir+'/test7'
     if os.path.exists(outdir):
         shutil.rmtree(outdir)
     assert not os.path.exists(outdir)
 
-    naifids = [20000001, 20000002, 20059980, 20000052, 20003779]
+    naifids = [20000001, 20000002, 20059980, 20000052, 20003779, 20101955]
 
-    spks = ['20000001.bsp', '20000002.bsp', '20059980.bsp', '20000052.bsp', '20003779.bsp']
+    spks = ['20000001.bsp', '20000002.bsp', '20059980.bsp', '20000052.bsp', '20003779.bsp', '20101955.bsp']
     
     for i in range(len(naifids)):
         km.update_small_body_kernel(naifids[i], kernels_dir=outdir)
