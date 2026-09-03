@@ -29,7 +29,19 @@ Note that, because the config files are local, each user must run the setup comm
 ### Command Line
 To use the command line, ensure that the virtual environment is active, and run `pyorb` to verify that the command is available.
 
-To download a body, run `pyorb update <body_name>` , where body_name should be the body's English name or <!-- @nmsplanets explain the way to specify asteroids> -->.
+To download a body, run `pyorb update <body_name>` , where body_name should be the body's name or alphanumeric IAU provisional designation (case-insensitive).
+Note that you can't use any designation that's entirely numeric for the body_name, to prevent potential collisions with object NAIF ID codes. 
+For small bodies, this means the object's IAU number should not be used, except when paired with its name. 
+For example, the following strings are each valid identifiers, and all map to the same object:
+```
+    Kieffer
+    kIeFfEr
+    3779 kieffer
+    1985jv1
+    1985 jv1
+```
+If searching using both the number and name of an object, e.g. `3779 Kieffer`, the space must be included. 
+If searching a provisional designation, e.g. `1985 JV1`, the space is optional.
 
 To use custom orbital orbital parameters based off a body, run `pyorb custom <body_name>` , and specify the parameters you are changing with `--<parameter> <value>`, e.g. `pyorb custom Mars --inclination 0.125`.
 Any number of parameters can be changed this way, by adding more `--<parameter> <value>` pairs.

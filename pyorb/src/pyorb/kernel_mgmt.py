@@ -695,7 +695,7 @@ def make_satellite_mk(
     return mk_path
 
 def query_naifid_map(search_str:str, 
-                     naifid_map_file:str=config.naifid_map_file) -> int:
+                     naifid_map_file:str=config.naifid_map_file) -> int | None:
     """
     Searches the naifid-name mapping file for the given search string to return the 
     specified object's NAIF object ID code, if there's a corresponding entry in the file.
@@ -705,14 +705,10 @@ def query_naifid_map(search_str:str,
         naifid_map_file (str, optional): Path to the file containing the name-naifid mapping. 
             Defaults to config.naifid_map_file.
 
-    Raises:
-        RuntimeError: Raised when no match is found in the naifid map file for the 
-            given search string.
-
     Returns:
-        int: NAIF object ID code for the object.
-    """
-    
+        int | None: NAIF object ID code for the object. 
+            Or, if no matching entry is found, returns None.
+    """    
     naifid_map = np.genfromtxt(naifid_map_file, delimiter=',', names=True, encoding='utf-8',
                                dtype=['U64', int])
     
@@ -720,7 +716,7 @@ def query_naifid_map(search_str:str,
         naifid = naifid_map['naifid'][naifid_map['name']==search_str.upper()][0]
         return int(naifid)
     else:
-        raise RuntimeError(f'No object matching search string {search_str} found in naifid map file {naifid_map_file}')
+        return None
 
 def append_to_naifid_map(name:str, 
                          naifid:int, 
@@ -732,9 +728,6 @@ def append_to_naifid_map(name:str,
 
     Multiple string identifiers can be associated with the same naifid (and thus the same 
     object). However, any given string must always map to only one naifid. 
-        (TODO: I should probably add a check to ensure this last bit is enforced, but only 
-        because a user might get spicy digging through the base functions. The system only
-        calls this function in ways that ensure this condition implicitly.)
 
     Args:
         name (str): A string identifying the object with the given naifid. Case-insensitive.
@@ -745,6 +738,8 @@ def append_to_naifid_map(name:str,
     Raises:
         RuntimeError: Raised when the input string "name" is mappable to an int. 
             Integer-only identifiers are reserved for NAIF object ID codes.
+        RuntimeError: Raised when the input string "name" is already present in the 
+            naifid map file with some other NAIF ID. 
     """
     try:
         i = int(name)
@@ -752,9 +747,20 @@ def append_to_naifid_map(name:str,
     except ValueError:
         pass
 
-    with open(naifid_map_file, 'a') as f:
-        f.write(f'{name.upper()},{naifid}\n')
-    return
+    id_from_file = query_naifid_map(name,naifid_map_file=naifid_map_file)
+    if id_from_file is not None:
+        # Name is already a record in the naifid map.
+        if id_from_file == naifid:
+            # existing record matches. No action necessary.
+            return
+        else:
+            raise RuntimeError(f'Name: {name} already exists in {naifid_map_file} with NAIF ID: {id_from_file}.\nCannot append with NAIF ID: {naifid}.')
+
+    else:
+        # Append new entry
+        with open(naifid_map_file, 'a') as f:
+            f.write(f'{name.upper()},{naifid}\n')
+        return
 
 def get_naifid(search_str:str, 
                default_mk:str=config.default_mk, 
@@ -801,10 +807,10 @@ def get_naifid(search_str:str,
     except spice.utils.exceptions.NotFoundError:
         print(f'String "{search_str}" matched no objects in default metakernel {default_mk}.')
         # if that fails, try the local naifid map file
-        try:
-            naifid = query_naifid_map(search_str, naifid_map_file=naifid_map_file)
-        except RuntimeError as e:
-            print(e)    
+        naifid = query_naifid_map(search_str, naifid_map_file=naifid_map_file)
+
+        if naifid == None:
+            print(f'No object matching search string {search_str} found in naifid map file {naifid_map_file}')
             # if it fails, use small body db api?
             print(f'Searching JPL Small Body Database')
             naifid = query_sbdb(search_str)

@@ -3,6 +3,7 @@ import pyorb.porb as porb
 import pyorb.kernel_mgmt as km
 import pyorb.config as config
 import pytest
+import hashlib
 
 import os
 import shutil
@@ -236,8 +237,47 @@ def test_query_naifid_map():
         assert isinstance(naifid, int)
         assert naifid == results[i]
 
+    naifid = km.query_naifid_map('This test string should fail', naifid_map_file=map_file)
+    assert naifid == None
+
+def test_append_to_naifid_map():
+    outdir = output_kernels_dir+'/test6a'
+    naifid_map_file = outdir+'/naifid_map.csv'
+    indir = input_kernels_dir+'/test2'
+
+    if os.path.exists(naifid_map_file):
+        os.remove(naifid_map_file)
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
+
+    assert os.path.exists(outdir)
+    assert not os.path.exists(naifid_map_file)
+
+    shutil.copy(indir+'/naifid_map.csv', naifid_map_file)
+
+    names = ['52 Europa', 'Themis', 'Kieffer']
+    naifids = [2000052, 2000024, 20003779]
+
+    for i, name in enumerate(names):
+        km.append_to_naifid_map(name, naifids[i], naifid_map_file=naifid_map_file)
+
+        assert km.query_naifid_map(name, naifid_map_file=naifid_map_file) == naifids[i]
+
+    # ensure nothing happens when attempting to append an existing entry
+    with open(naifid_map_file, 'rb') as f:
+        hash1 = hashlib.file_digest(f, "sha256").digest()
+    km.append_to_naifid_map('Kieffer', 20003779, naifid_map_file=naifid_map_file)
+    with open(naifid_map_file, 'rb') as f:
+        hash2 = hashlib.file_digest(f, "sha256").digest()
+    assert hash1 == hash2
+
+    # case attempting to append an entry conflicting with an existing name
     with pytest.raises(RuntimeError):
-        naifid = km.query_naifid_map('This test string should fail', naifid_map_file=map_file)
+        km.append_to_naifid_map('Kieffer', 1, naifid_map_file=naifid_map_file)
+
+    # case attempting to append with a name that's castable as an int:
+    with pytest.raises(RuntimeError):
+        km.append_to_naifid_map('1234', 2000379, naifid_map_file=naifid_map_file)
 
 def test_update_name_naifID_map():
     outdir = output_kernels_dir+'/test6'
@@ -340,8 +380,8 @@ def test_get_naifid():
         assert naifid == naifids[i]
 
     # this should fail to find a naifid.
-    with pytest.raises(RuntimeError):
-        naifid = km.query_naifid_map('1985 JV1', naifid_map_file=naifid_map_file)
+    naifid = km.query_naifid_map('1985 JV1', naifid_map_file=naifid_map_file)
+    assert naifid == None
 
     naifid = km.get_naifid('1985 JV1', default_mk=default_mk, naifid_map_file=naifid_map_file)
     assert naifid == 20003779
