@@ -46,6 +46,8 @@ If searching a provisional designation, e.g. `1985 JV1`, the space is optional.
 To use custom orbital orbital parameters based off a body, run `pyorb custom <body_name>` , and specify the parameters you are changing with `--<parameter> <value>`, e.g. `pyorb custom Mars --inclination 0.125`.
 Any number of parameters can be changed this way, by adding more `--<parameter> <value>` pairs.
 
+To update all HDFs in the default HDF directory, run `pyorb update_all`. 
+
 ### Python Interface
 <!-- @nmsplanets could you explain the way you envision basic usage of the direct Python interface? -->
 <!-- The group also needs to discuss how this could be used with Haberle's Python wrapper around KRC -->
