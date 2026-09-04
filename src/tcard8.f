@@ -390,29 +390,29 @@ C                  ls   lat hour Elev  Alb Iner Opac Slop Azim
 380   IF(IREAD.EQ.1) THEN  ! Allow Emissivity-temperature dependancy
         WHAT='EmisT'
         EmisT = XREAD.GT.0
-        WRITE(IOSP,*) 'TCARD:17 ',WHAT,XREAD
+        WRITE(IOSP,*) 'TCARD:18 ',WHAT,XREAD
       ELSEIF(IREAD.EQ.2) THEN
         WHAT='Emis0'
         Emis0 = XREAD ! mostly for debuging ? check that it is read correctly
         CCEMIS(1) = Emis0 
-        WRITE(IOSP,*) 'TCARD:17 ',WHAT,XREAD
+        WRITE(IOSP,*) 'TCARD:18 ',WHAT,XREAD
       ELSEIF(IREAD.EQ.3) THEN
         WHAT='Emis1'
         Emis1 = XREAD 
         CCEMIS(2) = Emis1 
-        WRITE(IOSP,*) 'TCARD:17 ',WHAT,XREAD
+        WRITE(IOSP,*) 'TCARD:18 ',WHAT,XREAD
       ELSEIF(IREAD.EQ.4) THEN
         WHAT='Emis2'
         Emis2 = XREAD
         CCEMIS(3) = Emis2
-        WRITE(IOSP,*) 'TCARD:17 ',WHAT,XREAD
+        WRITE(IOSP,*) 'TCARD:18 ',WHAT,XREAD
       ELSEIF(IREAD.EQ.5) THEN
-        WHAT='Emis0'
+        WHAT='Emis3'
         Emis3 = XREAD
         CCEMIS(4) = Emis3
-        WRITE(IOSP,*) 'TCARD:17 ',WHAT,XREAD
+        WRITE(IOSP,*) 'TCARD:18 ',WHAT,XREAD
       ELSE
-        WRITE (IOERR,*)'Tcard 17: invalid file type= ',IREAD,' ',TEXT
+        WRITE (IOERR,*)'Tcard 18: invalid file type= ',IREAD,' ',TEXT
       ENDIF
       GO TO 160
 

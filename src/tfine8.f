@@ -507,7 +507,6 @@ C  upper boundary conditions.
           ELSE
             POWER = ABRAD + SHEATF - FAC5*TSUR*TS3 ! unbalanced flux
           ENDIF
-          POWER = ABRAD + SHEATF - FAC5*TSUR*TS3 ! unbalanced flux
           IF (LOPN3) POWER=POWER+ZFAR ! fff only
           DELT = POWER / (FAC7+FAC45*TS3)
           TSUR=TSUR+DELT
