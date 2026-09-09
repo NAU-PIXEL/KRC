@@ -1,6 +1,6 @@
 # KRC
 KRC is a 1D thermal model intended for use in modeling planetary surfaces, especially Martian environments. 
-This repository holds not only the core KRC thermal model, but also several related tools, including `porbmn`, an interface to KRC in IDL, a Davinci interface to KRC and porbmn, a Python interface to KRC, and a Python reimplementation of `porbmn` with additional features.
+This repository holds not only the core KRC thermal model, but also several related tools, including interfaces to KRC in Davinci and Python, a Python reimplementation of `porbmn` with additional features, a tool for utilizing MCD or GCM Mars fluxes as input for KRC, and soon a ray tracing model for generating flux to any body.
 
 ## Quickstart
 KRC is compatible and tested with macOS and Linux. Windows support is unknown, and it is recommended to use WSL (Windows Subsystem for Linux) for a Linux environment on Windows.
