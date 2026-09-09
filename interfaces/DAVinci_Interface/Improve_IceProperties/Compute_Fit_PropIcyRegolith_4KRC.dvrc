@@ -1,0 +1,1280 @@
+define Compute_Fit_ThermophysicalProperties_IcyRegolith(0,10){
+  if ($ARGC != 10) {
+    printf("\n Returns a 3rd order polynomial fit of the dependance of water ice emissivity,specific heat, conductivity vs temperature \n")
+    printf("$1: LKofT: is specfic heat and conductivity temperature dependant ? \n")
+    printf("$2: EmisT: is emissivity temperature dependant ? \n")
+    printf("$3: Minimum Temperature [K] \n")
+    printf("$4: Minimum Temperature [K] \n")
+    printf("$5: Grain Radius [m] \n")
+    printf("$6: Porosity \n")
+    printf("$7: Default emissivity  \n")
+    printf("$8: Model used. Must be one of the folollowing string: 'GJKRBB', 'GB','WBB','WGB' \n")
+    printf("$9: Form of the ice. Must be one of the folollowing string: 'Amorphous', 'Crystalline' \n")
+    printf("$10: Path to read emissivity spectrum - in case emissivity has a dependance to the temperature \n")
+    printf("L.Lange 05-23-2025\n\n")
+
+    return(null)
+  }
+
+  LKofT = $1
+  EmisT = $2
+  Tmin = double($3)
+  Tmax = double($4)
+  Radius = double($5)
+  Porosity = double($6)
+  defaut_emis = double($7)
+  Model = $8;
+  Form = $9
+  Path = $10
+
+  out = {}
+
+  out.EmisT = EmisT
+
+  if(EmisT == 'T'){
+    defaut_emis = -1. # so that the algorithm for conductivity knows he has to recompute the emissivity
+    fit_emis = compute_fit_emissivitywaterice_vstemperature(Tmin,Tmax,Radius,Form,Path)
+    out.Emis0 = fit_emis[1] 
+    out.Emis1 = fit_emis[2] 
+    out.Emis2 = fit_emis[3] 
+    out.Emis3 = fit_emis[4] 
+  }
+
+  out.LKofT = LKofT
+  if(LKofT == 'T'){
+
+    fit_Cp = fit_Cp_waterice(Tmin,Tmax)
+
+    out.Sph0 = fit_Cp[1] #note: not up or lo because we do not know for which layer it applies
+    out.Sph1 = fit_Cp[2] 
+    out.Sph2 = fit_Cp[3] 
+    out.Sph3 = fit_Cp[4] 
+
+    fit_k = fit_Cond_waterice(Tmin,Tmax,Radius,Porosity,defaut_emis,Model,Form,Path)
+
+    out.Con0 = fit_k[1] #note: not up or lo because we do not know for which layer it applies
+    out.Con1 = fit_k[2] 
+    out.Con2 = fit_k[3] 
+    out.Con3 = fit_k[4] 
+  }
+
+  return(out)
+}
+
+
+define compute_fit_emissivitywaterice_vstemperature(0,5){
+  if ($ARGC !=5) {
+    printf("\n Returns a 3rd order polynomial fit of the dependance of water ice emissivity vs temperature \n")
+    printf("$1: Minimum Temperature [K] \n")
+    printf("$2: Maximum Temperature [K] \n")
+    printf("$3: Grain Radius [m] \n")
+    printf("$4: Form of the ice. Must be one of the folollowing string: 'Amorphous', 'Crystalline' \n")
+    printf("$5: Path to find the spectrum of the ice \n")
+
+    printf("L.Lange 05-22-2025\n\n")
+    return(null)
+  }
+
+  Tmin = double($1)
+  Tmax = double($2)
+  Radius = double($3)
+  Form = $4
+  Path = $5
+
+  # 0. Sanity checks
+  if((Form != "Crystalline") && (Form != "Amorphous")){
+    printf("$4: Form of the ice. Must be one of the folollowing string: 'Amorphous', 'Crystalline' \n")
+    return(null)
+  }
+
+  if(Tmin>Tmax){
+    printf("Error: Tmin > Tmax \n")
+    return(null)
+  }
+
+  if(Tmin<=0){
+    printf("Error: Temperature must be positive - and in Kelvin- \n")
+    return(null)
+  }
+
+  if(Radius<=0){
+    printf("Error: Radius must be > 0 (and given in meter) \n")
+    return(null)
+  }
+
+  if((Radius<1e-6) || (Radius>1) ){
+    printf("Error: Radius must be > 1e-6  and < 1 (and given in meter) \n")
+    return(null)
+  }
+
+  # 1. Create array of temperature
+  T_step    = 1.
+  T_num     = int((Tmax - Tmin)/T_step + 1)
+  T         = create(T_num,1,1,start=Tmin,step=T_step,format=float)
+  xt = ( T - 220 ) * 0.01
+
+  # 2. Create the curve temperature  vs emissivity
+
+  emiss_vs_T = compute_temperaturedependance_purewaterice(Tmin,Tmax,Radius,Form,Path)
+
+  out=fit(y=emiss_vs_T.emissivity,x=xt,type="cube",plot=0,step=1)
+
+  if(out[1]<0){
+    fit=fit(y=Condice_true,x=xt,type="quad",plot=0,step=1)
+    out[1] = fit[1]
+    out[2] = fit[2]
+    out[3] = fit[3]
+    out[4] = 0
+  }
+  return(out[:4,,])
+}
+
+define compute_emissivityspectrum_purewaterice(0,3){
+
+  if ($ARGC !=3) {
+    printf("\n Returns the emissivity spectrum of water ice for a given radius \n")
+    printf("$1: Grain Radius [m] \n")
+    printf("$2: Form of the ice. Must be one of the folollowing string: 'Amorphous', 'Crystalline' \n")
+    printf("$3: Path to find the spectrum of the ice \n")
+    printf("L.Lange 05-22-2025\n\n")
+    return(null)
+  }
+  Radius = double($1)
+  Form = $2
+  Path = $3
+
+  # 0. Sanity checks
+  if((Form != "Crystalline") && (Form != "Amorphous")){
+    printf("$4: Form of the ice. Must be one of the folollowing string: 'Amorphous', 'Crystalline' \n")
+    return(null)
+  }
+
+  if(Radius<=0){
+    printf("Error: Radius must be > 0 (and given in meter) \n")
+    return(null)
+  }
+
+  if((Radius<1e-6) || (Radius>1) ){
+    printf("Error: Radius must be > 1e-6  and < 1 (and given in meter) \n")
+    return(null)
+  }
+
+  # 1. Load data
+
+  database_wavenumber = ascii(Path+"Syntheticspectrum_wavenumber.txt",format='float')
+  database_grainsize = ascii(Path+"Radius_emissivity.txt",format='float')
+  database_emissivity_amorphous = ascii(Path+"emis_amorphous_ice.txt",format='float')
+  database_emissivity_crystalline = ascii(Path+"emis_crystalline_ice.txt",format='float')
+
+  Numer_grainsize = dim(database_grainsize)[2]
+  Numer_wavenumber = dim(database_wavenumber)[2]
+
+  # Just put it in correct dimension for future processings
+  database_grainsize =  translate(database_grainsize,y,x)
+  database_wavenumber =  translate(database_wavenumber,y,x)
+
+  #  2. Select the data to be used next
+  if(Form == "Crystalline"){
+    data_emissivity = database_emissivity_crystalline
+  } else{
+    data_emissivity = database_emissivity_amorphous
+  }
+
+  #  3. Compute the spectrum for a given Radius -based on an interpolation of the spectrum from the library
+
+  if(abs(Radius - 1.)<1e-6){
+    spectrum_interp = data_emissivity[,Numer_grainsize,]
+  } else{
+    ind_R = 0
+    for (intk = 1; intk < Numer_grainsize; intk++) {
+      if( (Radius >= database_grainsize[intk,,]) && (Radius < database_grainsize[intk+1,,])){
+        ind_R = intk  # Algorithm must converge because of the sanity checks before
+      }
+    }
+
+    array_R_forinterp = database_grainsize[ind_R:ind_R+1,,]
+    spectrum_forinterp = data_emissivity[,ind_R:ind_R+1,]
+    spectrum_interp = 0.*spectrum_forinterp[,1,]
+
+    # Now we procede to the interpolation
+    for (intk = 1; intk <= Numer_wavenumber; intk++) {
+      spectrum_interp[intk,,] = interp(object = spectrum_forinterp[intk,,], from = array_R_forinterp, to = Radius)
+    }
+  }
+
+  # 4. Output
+  out = {}
+  out.wavenumber =  database_wavenumber
+  out.spectrum = spectrum_interp
+  return(out)
+
+}
+
+define compute_temperaturedependance_purewaterice(0,5){
+  if ($ARGC !=5) {
+    printf("\n Returns the emissivity of pure water ice as a function of the temperature \n")
+    printf("$1: Minimum Temperature [K] \n")
+    printf("$2: Maximum Temperature [K] \n")
+    printf("$3: Grain Radius [m] \n")
+    printf("$4: Form of the ice. Must be one of the folollowing string: 'Amorphous', 'Crystalline' \n")
+    printf("$5: Path to find the spectrum of the ice \n")
+
+    printf("L.Lange 05-22-2025\n\n")
+    return(null)
+  }
+
+  Tmin = double($1)
+  Tmax = double($2)
+  Radius = double($3)
+  Form = $4
+  Path = $5
+
+  # 0. Sanity checks
+  if((Form != "Crystalline") && (Form != "Amorphous")){
+    printf("$4: Form of the ice. Must be one of the folollowing string: 'Amorphous', 'Crystalline' \n")
+    return(null)
+  }
+
+  if(Tmin>Tmax){
+    printf("Error: Tmin > Tmax \n")
+    return(null)
+  }
+
+  if(Tmin<=0){
+    printf("Error: Temperature must be positive - and in Kelvin- \n")
+    return(null)
+  }
+
+  if(Radius<=0){
+    printf("Error: Radius must be > 0 (and given in meter) \n")
+    return(null)
+  }
+
+  if((Radius<1e-6) || (Radius>1) ){
+    printf("Error: Radius must be > 1e-6  and < 1 (and given in meter) \n")
+    return(null)
+  }
+
+  # 1. Compute the emissivity spectrum
+
+  emissivity_spectrum = compute_emissivityspectrum_purewaterice(Radius,Form,Path)
+  wn  = emissivity_spectrum.wavenumber
+  emissivity_wn =  emissivity_spectrum.spectrum # emissivity in wavenumber
+
+  #  2. For a given spectrum, we can now compute the dependance of the emissivity w.r.t the temperature
+  T_step    = 1.
+  T_num     = int((Tmax - Tmin)/T_step + 1)
+  T         = create(T_num,1,1,start=Tmin,step=T_step,format=float)
+  Planck_BB = create(dim(T)[1],dim(wn)[1],1,start=0.,step=0.,format=float)                  #BB Emission
+  Planck_Em = create(dim(T)[1],dim(wn)[1],1,start=0.,step=0.,format=float)                  #Emission convolved with emissivity
+
+  for(i=1;i<=dim(T)[1];i+=1){
+    Planck_Em[i,,1] =translate(bbr(wn,T[i,,1])*emissivity_wn,x,y)
+    Planck_BB[i,,1] = translate(bbr(wn,T[i,,1]),x,y)
+  }
+
+  Rad_Em = sum(Planck_Em,axis=y)                                                            #Surface Emission vs Temperature, convolved with Emissivity
+  Rad_BB = sum(Planck_BB,axis=y)                                                            #BB surface Emission as a function of temperature
+  Rat    = Rad_Em/Rad_BB                                                                    #Broadband Surface emissivity vs Temperature
+  out={}
+  out.temperature = T
+  out.emissivity = Rat
+  return(out)
+}
+
+define fit_Cond_waterice(0,8) {
+
+  if ($ARGC !=8) {
+    printf("\n Returns a 3rd order polynomial fit of the dependance conductivity of ice wrt temperature, computed with the models from Ferrari and al 2016 \n")
+    printf("$1: Minimum Temperature [K] \n")
+    printf("$2: Maximum Temperature [K] \n")
+    printf("$3: Grain Radius [m] \n")
+    printf("$4: Porosity \n")
+    printf("$5: Emissivity - a negative value means that the emissivity depends on the temperature \n")
+    printf("$6: Model used. Must be one of the folollowing string: 'GJKRBB', 'GB','WBB','WGB' \n")
+    printf("$7: Form of the ice. Must be one of the folollowing string: 'Amorphous', 'Crystalline' \n")    
+    printf("$8: Path to read emissivity spectrum - in case emissivity has a dependance to the temperature")
+    printf("L.Lange 08-05-2020\n\n")
+
+    return(null)
+  }
+  Tmin = double($1)
+  Tmax = double($2)
+  Radius = double($3)
+  Porosity = double($4)
+  emissivity = double($5)
+  Model = $6;
+  Form = $7
+  Path = $8
+
+  It = create2(Tmin,1.,Tmax)
+  xt = ( It - 220 ) * 0.01
+
+  Condice_true = ComputeConductivity(It,Radius,Porosity,emissivity,Model,Form,Path)
+
+  out=fit(y=Condice_true,x=xt,type="cube",plot=0,step=10)
+
+  if(out[1]<0){
+    fit=fit(y=Condice_true,x=xt,type="quad",plot=0,step=10)
+    out[1] = fit[1]
+    out[2] = fit[2]
+    out[3] = fit[3]
+    out[4] = 0
+  }
+  return(out[:4,,])
+}
+
+define fit_Cp_waterice(0,2) {
+  if ($ARGC != 2) {
+    printf("\nReturns a third order fit of the specific heat of water ice\n")
+    printf("\nBased on the work of  Shulman (2004)\n")
+    printf("L.Lange 04-22-2025\n\n")
+    printf("\nTo run, this function needs the minimun and maximum temperatures of the domain where C needs to be fitted\n")
+    return(null)
+  }
+  Tmin = double($1)
+  Tmax = double($2)
+  It = create2(Tmin,1,Tmax)
+  xt = ( It - 220 ) * 0.01
+
+  Cice_true = Cp_ice_water(It)
+  fit=fit(y=Cice_true,x=xt,type="cube",plot=0,step=10)
+
+  return(fit)
+}
+
+define Cp_ice_water(0,1) {
+
+  if ($ARGC != 1) {
+    printf("\nReturns the specific heat of water ice\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+    pi = 3.141592653589793
+  }
+  intd = dim(outp)
+
+  # Element-by-element
+
+  for (intk = 1; intk <= intd[3,1,1]; intk++) {
+    for (intj = 1; intj <= intd[2,1,1]; intj++) {
+      for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+        intx = float(1)*outp[inti, intj, intk]
+        C_T = 7.73*intx*(1-exp(-1.263*1e-3*intx^2))*(1+8.47*1e-3*intx^6*exp(-3*sqrt(intx)) + 2.0825*1e-7*intx^4*exp(-4.97*1e-2*intx))
+        outp[inti, intj, intk] = C_T
+      }
+    }
+  }
+
+  return(outp[:4,,])
+}
+
+define ComputeConductivity(0,7){
+
+  if ($ARGC != 7) {
+    printf("\n Returns the conductivity of ice computed with the models from Ferrari and al 2016 \n")
+    printf("$1: Temperature [K] \n")
+    printf("$2: Grain Radius [m] \n")
+    printf("$3: Porosity \n")
+    printf("$4: Emissivity - a negative value means that the emissivity depends on the temperature \n")
+    printf("$5: Model used. Must be one of the folollowing string: 'GJKRBB', 'GB','WBB','WGB' \n")
+    printf("$6: Form of the ice. Must be one of the folollowing string: 'Amorphous', 'Crystalline' \n")
+    printf("$7: Path to read emissivity spectrum - in case emissivity has a dependance to the temperature")
+    printf("L.Lange 08-05-2020\n\n")
+
+    return(null)
+  }
+
+  Temp = double($1)
+  Radius = double($2)
+  Porosity = double($3)
+  emis_input = double($4)
+  Model = $5;
+  Form = $6
+  Path = $7
+
+  if(type(Model) != "STRING"){
+    printf(" $5 must be a string \n")
+    return(null)
+  }
+
+  if(type(Form) != "STRING"){
+    printf(" $6 must be a string \n")
+    return(null)
+  }
+
+  if(((Model == "GJKRBB") || (Model == "GB") || (Model == "WBB") || (Model == "WGB")) ==0){
+    printf("\n Invalid name of model \n")
+    printf("\n")
+    printf("Must be one of the folollowing string: 'GJKRBB', 'GB','WBB','WGB \n")
+    return(null)
+  }
+
+  if(((Form == "Crystalline") || (Form == "Amorphous")) == 0){
+    printf("\n Invalid name of form \n")
+    printf("\n")
+    printf("Must be one of the folollowing string: 'Amorphous', 'Crystalline' \n ")
+    return(null)
+  }
+
+  if(Form == "Crystalline"){
+    flagstructCryst = 1
+  } else{
+    flagstructCryst = 0
+  }
+
+  emissivity = 0*Temp
+  if(emis_input >=0){
+    emissivity[,,] = emis_input
+  } else{ # emissivity depends on the temperature
+    fit_emis = compute_fit_emissivitywaterice_vstemperature(min(Temp),max(Temp),Radius,Form,Path) 
+    xt = (Temp-220)*0.01
+    emissivity[,,] = fit_emis[1] + fit_emis[2]*xt + fit_emis[3]*xt^2 + fit_emis[4]*xt^3
+  }
+
+  if(Model == "GJKRBB"){
+
+    if(flagstructCryst == 1){
+      conductivity =  K_E_T(Temp,Radius,Porosity,emissivity,1,2,1,1)
+    } else{
+      conductivity =  K_E_T(Temp,Radius,Porosity,emissivity,1,2,1,2)
+    }
+  }
+
+  if(Model == "GB"){
+
+    if(flagstructCryst == 1){
+      conductivity =  K_E_T(Temp,Radius,Porosity,emissivity,2,1,2,1)
+    } else{
+      conductivity =  K_E_T(Temp,Radius,Porosity,emissivity,2,1,2,2)
+    }
+  }
+
+  if(Model == "WBB"){
+
+    if(flagstructCryst == 1){
+      conductivity =  K_E_T(Temp,Radius,Porosity,emissivity,3,3,1,1)
+    } else{
+      conductivity =  K_E_T(Temp,Radius,Porosity,emissivity,3,3,1,2)
+    }
+  }
+
+  if(Model == "WGB"){
+
+    if(flagstructCryst == 1){
+      conductivity =  K_E_T(Temp,Radius,Porosity,emissivity,3,3,2,1)
+    } else{
+      conductivity =  K_E_T(Temp,Radius,Porosity,emissivity,3,3,2,2)
+    }
+  }
+
+  return(conductivity)
+
+}
+
+## following computes model from the article
+#Low thermal inertias of icy planetary surfaces Evidence for amorphous ice
+# C.Ferrari and A.Lucas (2016)
+
+define h_JKR_T(0,4) {
+
+  if ($ARGC != 4) {
+    printf("\nReturns the Hertz factor with JKR model. Variable is the temperature\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+    pi = 3.141592653589793
+  }
+
+  if (type($2) == "double") {
+    gamma = double($2)
+  } else {
+    gamma = float($2)
+  }
+
+  if (type($3) == "double") {
+    mu = double($3)
+  } else {
+    mu = float($3)
+  }
+  if (type($4) == "double") {
+    R = double($4)
+  } else {
+    R = float($4)
+  }
+  intd = dim(outp)
+
+  for (intk = 1; intk <= intd[3,1,1]; intk++) {
+    for (intj = 1; intj <= intd[2,1,1]; intj++) {
+      for (inti = 1; inti <= intd[1,1,1]; inti++) {
+        intx = float(1)*outp[inti, intj, intk]
+        E = 6.6*1e9*(4.276-0.012*intx)
+        outp[inti, intj, intk] = (9/4* (1-mu^2)*gamma*pi/(E*R))^(1.0/3.0)
+      }
+    }
+  }
+  return(outp)
+}
+
+define h_GB_T(0,4) {
+
+  if ($ARGC != 4) {
+    printf("\nReturns the Hertz factor with GB model. Variable is the temperature.\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+    pi = 3.141592653589793
+  }
+
+  if (type($2) == "double") {
+    gamma = double($2)
+  } else {
+    gamma = float($2)
+  }
+
+  if (type($3) == "double") {
+    mu = double($3)
+  } else {
+    mu = float($3)
+  }
+  if (type($4) == "double") {
+    R = double($4)
+  } else {
+    R = float($4)
+  }
+  intd = dim(outp)
+  for (intk = 1; intk <= intd[3,1,1]; intk++) {
+    for (intj = 1; intj <= intd[2,1,1]; intj++) {
+      for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+        intx = float(1)*outp[inti, intj, intk]
+        E = 6.6*1e9*(4.276-0.012*intx)
+
+        outp[inti, intj, intk] = (9/4* (1-mu^2)*gamma*pi/(E*R))^(1.0/3.0)
+      }
+    }
+  }
+
+  return(outp)
+}
+
+define h_W_R(0,1) {
+
+  if ($ARGC != 1) {
+    printf("\nReturns the Hertz factor with Watson model. Variable is the grain size.\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+    pi = 3.141592653589793
+  }
+  intd = dim(outp)
+  for (intk = 1; intk <= intd[3,1,1]; intk++) {
+    for (intj = 1; intj <= intd[2,1,1]; intj++) {
+      for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+        intx = float(1)*outp[inti, intj, intk]
+
+        outp[inti, intj, intk] = 1.5e-8/intx
+      }
+    }
+  }
+
+  return(outp)
+}
+
+define phi_GB_p(0,2){
+
+  if ($ARGC != 2) {
+    printf("\nReturns the  factor phi with GB model. Variable is the porosity.\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+    pi = 3.141592653589793
+  }
+
+  if (type($2) == "double") {
+    xhi = double($2)
+  } else {
+    xhi = float($2)
+  }
+
+  #Define constants
+  f1 = 5.18e-2
+  f2 = 5.26
+  intd = dim(outp)
+
+  for (intk = 1; intk <= intd[3,1,1]; intk++) {
+    for (intj = 1; intj <= intd[2,1,1]; intj++) {
+      for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+        intx = float(1)*outp[inti, intj, intk]
+
+        outp[inti, intj, intk] = f1*exp(f2*(1-intx))*xhi
+      }
+    }
+  }
+
+  return(outp)
+}
+
+define contact_number(0,1){
+
+  if ($ARGC != 1) {
+    printf("\nReturns the  number of contact for a sphere. Variable is the porosity.\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+    pi = 3.141592653589793
+  }
+
+  A = create(2,2,1,format = double)
+  A[1,1,1] = 0.26
+  A[2,1,1] = 1
+  A[1,2,1] = 0.84
+  A[2,2,1] = 1
+
+  b = create(1,2,1,format = double)
+  b[1,1,1] = 12
+  b[1,2,1] = 4
+
+  res = mxm(minvert(A),b)
+  alpha = res[1,1,1]
+  beta = res[1,2,1]
+  intd = dim(outp)
+  for (intk = 1; intk <= intd[3,1,1]; intk++) {
+    for (intj = 1; intj <= intd[2,1,1]; intj++) {
+      for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+        intx = float(1)*outp[inti, intj, intk]
+
+        outp[inti, intj, intk] = (alpha*intx+beta)
+      }
+    }
+  }
+
+  return(outp)
+}
+
+define phi_G_p(0,1){
+
+  if ($ARGC != 1) {
+    printf("\nReturns the  factor phi with G model. Variable is the porosity.\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+    pi = 3.141592653589793
+  }
+
+  intd = dim(outp)
+
+  for (intk = 1; intk <= intd[3,1,1]; intk++) {
+    for (intj = 1; intj <= intd[2,1,1]; intj++) {
+      for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+        intx = float(1)*outp[inti, intj, intk]
+
+        outp[inti, intj, intk] = (1-intx)*contact_number(intx)/pi
+      }
+    }
+  }
+  return(outp)
+
+}
+
+define phi_W_p(0,0){
+
+  if ($ARGC != 0) {
+    printf("\nReturns the  factor phi with W model. \n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+  return(double(1))
+
+}
+
+define Fe_BB_T(0,5){
+  if ($ARGC != 5) {
+    printf("\nReturns the  factor FE with BB model. Variable is the temperature.\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+    pi = 3.141592653589793
+  }
+
+  if (type($2) == "double") {
+    porosity = double($2)
+  } else {
+    porosity = float($2)
+  }
+
+  if (type($3) == "double") {
+    R = double($3)
+  } else {
+    R = float($3)
+  }
+
+  if (type($4) == "double") {
+    emissivity = double($4)
+  } else {
+    emissivity = float($4)
+  }
+
+  #Define constants
+  sigma = 5.670374e-8
+  flag = int($5) #if flag = 1, crystalline structure
+  intd = dim(outp)
+
+  # Element-by-element
+
+  for (intk = 1; intk <= intd[3,1,1]; intk++) {
+    for (intj = 1; intj <= intd[2,1,1]; intj++) {
+      for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+        intx = float(1)*outp[inti, intj, intk]
+        B = 1.25*((1-porosity)/porosity)^(10/9)
+        if(flag == 1){
+          Ks = K_bulk_crystaline(intx)
+        } else{
+          Ks = K_bulk_amorphous(intx)
+        }
+
+        Gammaf = Ks/(8*R*sigma*intx^3)
+
+        Fe = (1-sqrt(1-porosity))*porosity + (sqrt(1-porosity))/(2/emissivity[inti,intj,intk]-1)*(B+1)/B*(1/(1+ 1/(Gammaf*(2/emissivity[inti,intj,intk]-1))))
+
+        outp[inti, intj, intk] = Fe
+      }
+    }
+  }
+
+  return(outp)
+}
+
+define K_contact_T(0,9){
+  if ($ARGC != 9) {
+    printf("\nReturns the  Contact conductivity Kc. Variable is the temperature.\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+    pi = 3.141592653589793
+  }
+
+  if (type($2) == "double") {
+    R = double($2)
+  } else {
+    R = float($2)
+  }
+
+  if (type($3) == "double") {
+    porosity = double($3)
+  } else {
+    porosity = float($3)
+  }
+
+  if (type($4) == "double") {
+    gamma = double($4)
+  } else {
+    gamma = float($4)
+  }
+
+  if (type($5) == "double") {
+    mu = double($5)
+  } else {
+    mu = float($5)
+  }
+
+  if (type($6) == "double") {
+    xhi = double($6)
+  } else {
+    xhi = float($6)
+  }
+
+  flagh = int($7) #choice of h
+  flagphi = int($8) #choice of h
+  flagstruct = int($9) #choice of h
+  intd = dim(outp)
+
+  # Element-by-element
+
+  for (intk = 1; intk <= intd[3,1,1]; intk++) {
+    for (intj = 1; intj <= intd[2,1,1]; intj++) {
+      for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+        intx = float(1)*outp[inti, intj, intk]
+
+        #Conputing h
+
+        if(flagh == 1){
+          h = h_JKR_T(intx,gamma,mu,R)
+        }
+        if(flagh == 2){
+          h = h_GB_T(intx,gamma,mu,R)
+        }
+        if(flagh == 3){
+          h = h_W_R(R)
+        }
+
+        #Conputing Phi
+
+        if(flagphi == 1){
+          Phi = phi_GB_p(porosity,xhi)
+        }
+        if(flagphi == 2){
+          Phi = phi_G_p(porosity)
+        }
+        if(flagphi == 3){
+          Phi = phi_W_p()
+        }
+
+        #Conputing Ks
+
+        if(flagstruct == 1){
+          Ks = K_bulk_crystaline(intx)
+        }
+        if(flagstruct == 2){
+          Ks = K_bulk_amorphous(intx)
+        }
+
+        outp[inti, intj, intk] = h*Phi*Ks
+
+      }
+    }
+  }
+
+  return(outp)
+}
+
+define K_E_T(0,8){
+  if ($ARGC != 8) {
+    printf("\nReturns the  Effective conductivity Ke. Variable is the temperature.\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+    pi = 3.141592653589793
+  }
+
+  if (type($2) == "double") {
+    R = double($2)
+  } else {
+    R = float($2)
+  }
+
+  if (type($3) == "double") {
+    porosity = double($3)
+  } else {
+    porosity = float($3)
+  }
+
+ 
+  if (type($4) == "double") {
+    emissivity = double($4)
+  } else {
+    emissivity = float($4)
+  }
+
+  flagh = int($5) #choice of h
+  flagphi = int($6) #choice of phi
+  flagrad = int($7)
+  flagstruct = int($8)
+  intd = dim(outp)
+
+
+  # Constants based on Ferrari & Lucas (2016) - see their paper for definition-
+
+  gamma = 0.076
+  mu = 0.33
+  xhi = 0.41
+
+  # Computation of the conductivity Element-by-element
+
+  for (intk = 1; intk <= intd[3,1,1]; intk++) {
+    for (intj = 1; intj <= intd[2,1,1]; intj++) {
+      for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+        intx = float(1)*outp[inti, intj, intk]
+
+        #Computing h
+
+        if(flagh == 1){
+          h = h_JKR_T(intx,gamma,mu,R)
+        }
+        if(flagh == 2){
+          h = h_GB_T(intx,gamma,mu,R)
+        }
+        if(flagh == 3){
+          h = h_W_R(R)
+        }
+
+        #Conputing Phi
+
+        if(flagphi == 1){
+          Phi = phi_GB_p(porosity,xhi)
+        }
+        if(flagphi == 2){
+          Phi = phi_G_p(porosity)
+        }
+        if(flagphi == 3){
+          Phi = phi_W_p()
+        }
+
+        #Conputing Ks
+
+        if(flagstruct == 1){
+          Ks = K_bulk_crystaline(intx)
+        }
+        if(flagstruct == 2){
+          Ks = K_bulk_amorphous(intx)
+        }
+        #Computing Kr
+        if(flagrad == 1){
+          Kr = K_rad_BB_T(intx,R,porosity,emissivity[inti,intj,intk],flagstruct)
+        }
+
+        if(flagrad == 2){
+          Kr = K_rad_GB_T(intx,R,porosity,emissivity[inti,intj,intk],flagstruct)
+        }
+
+        outp[inti, intj, intk] = h*Phi*Ks + Kr
+
+      }
+    }
+  }
+
+  return(outp)
+}
+
+define K_rad_BB_T(0,5) {
+
+  if ($ARGC != 5) {
+    printf("\nReturns the radiative thermal conductivity for a given radius and porosity. The variable is the temperature\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+    pi = 3.141592653589793
+  }
+  intd = dim(outp)
+
+  if (type($2) == "double") {
+    R = double($2)
+  } else {
+    R = float($2)
+  }
+
+  if (type($3) == "double") {
+    porosity = double($3)
+  } else {
+    porosity = float($3)
+  }
+
+  if (type($4) == "double") {
+    emissivity = double($4)
+  } else {
+    emissivity = float($4)
+  }
+
+  #Define constants
+  sigma = 5.670374e-8
+  flag = int($5) #if flag = 1, crystalline structure
+  intd = dim(outp)
+
+  # Element-by-element
+
+  for (intk = 1; intk <= intd[3,1,1]; intk++) {
+    for (intj = 1; intj <= intd[2,1,1]; intj++) {
+      for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+        intx = float(1)*outp[inti, intj, intk]
+        B = 1.25*((1-porosity)/porosity)^(10/9)
+        if(flag == 1){
+          Ks = K_bulk_crystaline(intx)
+        } else{
+          Ks = K_bulk_amorphous(intx)
+        }
+
+        Gammaf = Ks/(8*R*sigma*intx^3)
+
+        Fe = (1-sqrt(1-porosity))*porosity + (sqrt(1-porosity))/(2/emissivity[inti,intj,intk]-1)*(B+1)/B*1/(1+ 1/(Gammaf*(2/emissivity[inti,intj,intk]-1)))
+
+        outp[inti, intj, intk] = 8*R*Fe*sigma*intx^3
+      }
+    }
+  }
+
+  return(outp)
+}
+
+define K_rad_GB_T(0,5) {
+
+  if ($ARGC != 5) {
+    printf("\nReturns the radiative thermal conductivity for a given radius and porosity. The variable is the temperature\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+    pi = 3.141592653589793
+  }
+  intd = dim(outp)
+
+  if (type($2) == "double") {
+    R = double($2)
+  } else {
+    R = float($2)
+  }
+
+  if (type($3) == "double") {
+    porosity = double($3)
+  } else {
+    porosity = float($3)
+  }
+
+  if (type($4) == "double") {
+    emissivity = double($4)
+  } else {
+    emissivity = float($4)
+  }
+
+  #Define constants
+  sigma = 5.670374e-8
+  flag = int($5) #if flag = 1, crystalline structure
+  e_1 = 1.34
+  intd = dim(outp)
+
+  # Element-by-element
+
+  for (intk = 1; intk <= intd[3,1,1]; intk++) {
+    for (intj = 1; intj <= intd[2,1,1]; intj++) {
+      for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+        intx = float(1)*outp[inti, intj, intk]
+        B = 1.25*((1-porosity)/porosity)^(10/9)
+        if(flag == 1){
+          Ks = K_bulk_crystaline(intx)
+        } else{
+          Ks = K_bulk_amorphous(intx)
+        }
+
+        Gammaf = Ks/(8*R*sigma*intx^3)
+
+        Fe = e_1*emissivity[inti,intj,intk]*porosity/(1-porosity)
+
+        outp[inti, intj, intk] = 8*R*Fe*sigma*intx^3
+      }
+    }
+  }
+
+  return(outp)
+}
+
+define K_bulk_amorphous(0,1) {
+
+  if ($ARGC != 1) {
+    printf("\nReturns the bulk thermal conductivity of an amorphous hexagonal ice\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+    pi = 3.141592653589793
+  }
+  intd = dim(outp)
+
+  # Define constants
+  rho = 940
+  mu = 2500
+  lambda = 5*1e-10
+
+  # Element-by-element
+
+  for (intk = 1; intk <= intd[3,1,1]; intk++) {
+    for (intj = 1; intj <= intd[2,1,1]; intj++) {
+      for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+        intx = float(1)*outp[inti, intj, intk]
+        C_T = Cp_ice_water(intx)
+
+        outp[inti, intj, intk] = C_T*mu*lambda*rho/4
+      }
+    }
+  }
+
+  return(outp)
+}
+
+define K_bulk_crystaline(0,1) {
+
+  if ($ARGC != 1) {
+    printf("\nReturns the bulk thermal conductivity of a crystalline hexagonal ice\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+    pi = 3.141592653589793
+  }
+  intd = dim(outp)
+
+  # Element-by-element
+
+  for (intk = 1; intk <= intd[3,1,1]; intk++) {
+    for (intj = 1; intj <= intd[2,1,1]; intj++) {
+      for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+        intx = float(1)*outp[inti, intj, intk]
+        outp[inti, intj, intk] = 567/intx
+      }
+    }
+  }
+
+  return(outp)
+}
+
+
+
+
+
+
+define Cp_ice_water(0,1) {
+
+  if ($ARGC != 1) {
+    printf("\nReturns the specific heat of water ice\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+  intd = dim(outp)
+
+# Element-by-element 
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+  for (intj = 1; intj <= intd[2,1,1]; intj++) {
+    for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+          intx = float(1)*outp[inti, intj, intk]
+          C_T = 7.73*intx*(1-exp(-1.263*1e-3*intx^2))*(1+8.47*1e-3*intx^6*exp(-3*sqrt(intx)) + 2.0825*1e-7*intx^4*exp(-4.97*1e-2*intx))
+          outp[inti, intj, intk] = C_T
+    }
+  }
+}
+  
+return(outp)
+}
+
+

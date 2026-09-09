@@ -1,0 +1,236 @@
+define compute_fit_emissivitywaterice_vstemperature(0,5){
+  if ($ARGC !=5) {
+    printf("\n Returns a 3rd order polynomial fit of the dependance of water ice emissivity vs temperature \n")
+    printf("$1: Minimum Temperature [K] \n")
+    printf("$2: Maximum Temperature [K] \n")
+    printf("$3: Grain Radius [m] \n")
+    printf("$4: Form of the ice. Must be one of the folollowing string: 'Amorphous', 'Crystalline' \n")
+    printf("$5: Path to find the spectrum of the ice \n")
+
+    printf("L.Lange 05-22-2025\n\n")
+    return(null)
+  }
+
+  Tmin = double($1)
+  Tmax = double($2)
+  Radius = double($3)
+  Form = $4
+  Path = $5
+
+  # 0. Sanity checks
+  if((Form != "Crystalline") && (Form != "Amorphous")){
+    printf("$4: Form of the ice. Must be one of the folollowing string: 'Amorphous', 'Crystalline' \n")
+    return(null)
+   }
+
+  if(Tmin>Tmax){
+    printf("Error: Tmin > Tmax \n")
+    return(null)  
+  }
+
+  if(Tmin<=0){
+    printf("Error: Temperature must be positive - and in Kelvin- \n")
+    return(null)  
+  }
+
+  if(Radius<=0){
+    printf("Error: Radius must be > 0 (and given in meter) \n")
+    return(null)  
+  } 
+    
+  if((Radius<1e-6) || (Radius>1) ){
+    printf("Error: Radius must be > 1e-6  and < 1 (and given in meter) \n")
+    return(null)  
+  } 
+
+# 1. Create array of temperature
+  T_step    = 1.
+  T_num     = int((Tmax - Tmin)/T_step + 1)
+  T         = create(T_num,1,1,start=Tmin,step=T_step,format=float)
+  xt = ( T - 220 ) * 0.01
+  
+# 2. Create the curve temperature  vs emissivity
+
+  emiss_vs_T = compute_temperaturedependance_purewaterice(Tmin,Tmax,Radius,Form,Path)
+
+  out=fit(y=emiss_vs_T.emissivity,x=xt,type="cube",plot=0,step=1)
+  
+ if(out[1]<0){
+    fit=fit(y=Condice_true,x=xt,type="quad",plot=0,step=1)
+    out[1] = fit[1]
+    out[2] = fit[2]
+    out[3] = fit[3]
+    out[4] = 0
+ }
+  return(out[:4,,])
+}
+
+
+
+define compute_emissivityspectrum_purewaterice(0,3){
+
+  if ($ARGC !=3) {
+    printf("\n Returns the emissivity spectrum of water ice for a given radius \n")
+    printf("$1: Grain Radius [m] \n")
+    printf("$2: Form of the ice. Must be one of the folollowing string: 'Amorphous', 'Crystalline' \n")
+    printf("$3: Path to find the spectrum of the ice \n")
+    printf("L.Lange 05-22-2025\n\n")
+    return(null)
+  }
+  Radius = double($1)
+  Form = $2
+  Path = $3
+
+  # 0. Sanity checks
+  if((Form != "Crystalline") && (Form != "Amorphous")){
+    printf("$4: Form of the ice. Must be one of the folollowing string: 'Amorphous', 'Crystalline' \n")
+    return(null)
+  }
+  
+  if(Radius<=0){
+      printf("Error: Radius must be > 0 (and given in meter) \n")
+    return(null)  
+  } 
+  
+  if((Radius<1e-6) || (Radius>1) ){
+      printf("Error: Radius must be > 1e-6  and < 1 (and given in meter) \n")
+    return(null)  
+  } 
+
+  # 1. Load data
+
+  database_wavenumber = ascii(Path+"Syntheticspectrum_wavenumber.txt",format='float')
+  database_grainsize = ascii(Path+"Radius_emissivity.txt",format='float')
+  database_emissivity_amorphous = ascii(Path+"emis_amorphous_ice.txt",format='float')
+  database_emissivity_crystalline = ascii(Path+"emis_crystalline_ice.txt",format='float')
+
+  Numer_grainsize = dim(database_grainsize)[2]
+  Numer_wavenumber = dim(database_wavenumber)[2]
+
+# Just put it in correct dimension for future processings
+  database_grainsize =  translate(database_grainsize,y,x)
+  database_wavenumber =  translate(database_wavenumber,y,x)
+
+
+#  2. Select the data to be used next
+  if(Form == "Crystalline"){
+    data_emissivity = database_emissivity_crystalline
+  } else{
+    data_emissivity = database_emissivity_amorphous
+  }
+
+  
+#  3. Compute the spectrum for a given Radius -based on an interpolation of the spectrum from the library
+   
+  if(abs(Radius - 1.)<1e-6){
+       spectrum_interp = data_emissivity[,Numer_grainsize,]
+  } else{
+       ind_R = 0
+       for (intk = 1; intk < Numer_grainsize; intk++) {
+          if( (Radius >= database_grainsize[intk,,]) && (Radius < database_grainsize[intk+1,,])){
+            ind_R = intk  # Algorithm must converge because of the sanity checks before
+          }
+       }
+
+       array_R_forinterp = database_grainsize[ind_R:ind_R+1,,]
+       spectrum_forinterp = data_emissivity[,ind_R:ind_R+1,]
+       spectrum_interp = 0.*spectrum_forinterp[,1,]
+      
+       # Now we procede to the interpolation 
+       for (intk = 1; intk <= Numer_wavenumber; intk++) {
+            spectrum_interp[intk,,] = interp(object = spectrum_forinterp[intk,,], from = array_R_forinterp, to = Radius)
+       }   
+  }
+
+
+# 4. Output
+  out = {}
+  out.wavenumber =  database_wavenumber
+  out.spectrum = spectrum_interp
+  return(out)
+
+}
+
+
+
+
+
+
+define compute_temperaturedependance_purewaterice(0,5){
+  if ($ARGC !=5) {
+    printf("\n Returns the emissivity of pure water ice as a function of the temperature \n")
+    printf("$1: Minimum Temperature [K] \n")
+    printf("$2: Maximum Temperature [K] \n")
+    printf("$3: Grain Radius [m] \n")
+    printf("$4: Form of the ice. Must be one of the folollowing string: 'Amorphous', 'Crystalline' \n")
+    printf("$5: Path to find the spectrum of the ice \n")
+
+    printf("L.Lange 05-22-2025\n\n")
+    return(null)
+  }
+
+  Tmin = double($1)
+  Tmax = double($2)
+  Radius = double($3)
+  Form = $4
+  Path = $5
+
+  # 0. Sanity checks
+  if((Form != "Crystalline") && (Form != "Amorphous")){
+    printf("$4: Form of the ice. Must be one of the folollowing string: 'Amorphous', 'Crystalline' \n")
+    return(null)
+   }
+
+  if(Tmin>Tmax){
+    printf("Error: Tmin > Tmax \n")
+    return(null)  
+  }
+
+  if(Tmin<=0){
+    printf("Error: Temperature must be positive - and in Kelvin- \n")
+    return(null)  
+  }
+
+  if(Radius<=0){
+    printf("Error: Radius must be > 0 (and given in meter) \n")
+    return(null)  
+  } 
+    
+  if((Radius<1e-6) || (Radius>1) ){
+    printf("Error: Radius must be > 1e-6  and < 1 (and given in meter) \n")
+    return(null)  
+  } 
+
+  # 1. Compute the emissivity spectrum
+
+  emissivity_spectrum = compute_emissivityspectrum_purewaterice(Radius,Form,Path)
+  wn  = emissivity_spectrum.wavenumber
+  emissivity_wn =  emissivity_spectrum.spectrum # emissivity in wavenumber
+
+#  2. For a given spectrum, we can now compute the dependance of the emissivity w.r.t the temperature  
+  T_step    = 1.
+  T_num     = int((Tmax - Tmin)/T_step + 1)
+  T         = create(T_num,1,1,start=Tmin,step=T_step,format=float)
+  Planck_BB = create(dim(T)[1],dim(wn)[1],1,start=0.,step=0.,format=float)                  #BB Emission 
+  Planck_Em = create(dim(T)[1],dim(wn)[1],1,start=0.,step=0.,format=float)                  #Emission convolved with emissivity
+
+  for(i=1;i<=dim(T)[1];i+=1){
+    Planck_Em[i,,1] =translate(bbr(wn,T[i,,1])*emissivity_wn,x,y)
+    Planck_BB[i,,1] = translate(bbr(wn,T[i,,1]),x,y)
+  }
+
+  Rad_Em = sum(Planck_Em,axis=y)                                                            #Surface Emission vs Temperature, convolved with Emissivity
+  Rad_BB = sum(Planck_BB,axis=y)                                                            #BB surface Emission as a function of temperature
+  Rat    = Rad_Em/Rad_BB                                                                    #Broadband Surface emissivity vs Temperature
+  out={}
+  out.temperature = T
+  out.emissivity = Rat
+  return(out)
+} 
+
+
+
+
+
+
+

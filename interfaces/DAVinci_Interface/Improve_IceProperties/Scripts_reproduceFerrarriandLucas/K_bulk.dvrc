@@ -1,0 +1,120 @@
+define K_bulk_amorphous(0,1) {
+
+  if ($ARGC != 1) {
+    printf("\nReturns the bulk thermal conductivity of an amorphous hexagonal ice\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846") # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+  intd = dim(outp)
+
+
+# Define constants
+rho = 940
+mu = 2500
+lambda = 5*1e-10
+
+
+
+# Element-by-element
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+
+          intx = float(1)*outp[inti, intj, intk]
+          C_T = Cp_ice_water(intx)
+
+
+
+
+          outp[inti, intj, intk] = C_T*mu*lambda*rho/4
+        }
+      }
+    }
+
+           return(outp)
+}
+
+define K_bulk_crystaline(0,1) {
+
+  if ($ARGC != 1) {
+    printf("\nReturns the bulk thermal conductivity of a crystalline hexagonal ice\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846") # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+  intd = dim(outp)
+
+# Element-by-element
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+          intx = float(1)*outp[inti, intj, intk]
+          outp[inti, intj, intk] = 567/intx
+        }
+      }
+    }
+
+           return(outp)
+}
+
+
+
+
+
+define Cp_ice_water(0,1) {
+
+  if ($ARGC != 1) {
+    printf("\nReturns the specific heat of water ice\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846") # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+  intd = dim(outp)
+
+# Element-by-element
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+          intx = float(1)*outp[inti, intj, intk]
+          C_T = 7.73*intx*(1-exp(-1.263*1e-3*intx^2))*(1+8.47*1e-3*intx^6*exp(-3*sqrt(intx)) + 2.0825*1e-7*intx^4*exp(-4.97*1e-2*intx))
+          outp[inti, intj, intk] = C_T
+        }
+      }
+    }
+
+           return(outp)
+}

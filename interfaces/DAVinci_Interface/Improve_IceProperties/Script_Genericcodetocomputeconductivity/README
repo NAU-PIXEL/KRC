@@ -1,0 +1,3 @@
+ComputeK.dvrc is a routine computing the conductivity of ice using the models from ferrari and Lucas (2016)
+
+.sh allow to compare to reproduce the curve of their paper by using this fonction.

@@ -1,0 +1,419 @@
+define preprocess_atmosphericflux_from_MCD_PCM(0,6){
+    if ($ARGC != 6){
+        printf("\n Pre-compute the VIS, IR, Sensible flux at a given latitude/longitude \n")
+        printf("\n $1: Path to read the PCM/ MCD data \n")
+        printf("\n $2: Model to use: MCD or PCM \n")
+        printf("\n $3: MY: dust scenario to consider (0 = clim, 1 = dusty, 2 = clear,  24, 25, .... 37: the dust opacity from Montabone et al.  \n")
+        printf("\n $4: Latitude \n")
+        printf("\n $5: Longitude \n")
+        printf("\n $6: Boolean to include the sensible heat flux \n")
+        printf("\n L.Lange 12-10-2025\n\n")
+        return(null)
+    }
+
+    path_files = $1
+    model = $2
+    path_files = path_files + '/' + model 
+    MY = int($3)
+    current_latitude = float($4)
+    current_longitude = float($5)
+    include_sensible_heat_flux = int($6)
+
+    # 0. Preliminary checks
+    if ( (current_latitude < -90.) || (current_latitude > 90.) ){
+        printf("\n Latitude should be between -90 and 90 degrees \n")
+        return(null)
+    }
+    if ( (current_longitude < -180.) || (current_longitude > 180.) ){
+        printf("\n Longitude should be between -180 and 180 degrees \n")
+        return(null)
+    }
+    if ( (MY != 0) && (MY != 1) && (MY != 2) && ((MY < 24) || (MY > 37)) ){
+        printf("\n MY should be 0, 1, 2 or between 24 and 37 \n")
+        return(null)
+    }
+
+    if ( (model != 'MCD') && (model != 'PCM')){
+        printf("\n model should be either 'MCD' or 'PCM' \n")
+        return(null)
+    }
+
+    if ( (model == 'MCD') && (MY != 0)){
+        printf("\n The MCD file can only be 'clim' for now \n")
+        return(null)
+    }
+
+
+    # 1. Load PCM/MCD data
+    if(MY == 0){
+        if(fexists(path_files + '/' + model +'_clim.hdf') == 0){
+            printf("\n File MCD/PCM_clim.hdf not found in the specified path. Please check the path or the MY value \n")
+            return(null)
+        }
+        data_MCD_PCM = load(path_files + '/' + model +'_clim.hdf')
+    } else if (MY == 1){
+        if(fexists(path_files + '/' + model +'_dusty.hdf') == 0){
+            printf("\n File MCD/PCM_dusty.hdf not found in the specified path. Please check the path or the MY value \n")
+            return(null)
+        }
+        data_MCD_PCM = load(path_files + '/' + model +'_dusty.hdf')
+    } else if (MY == 2){
+        if(fexists(path_files + '/' + model +'_clear.hdf') == 0){
+            printf("\n File MCD/PCM_clear.hdf not found in the specified path. Please check the path or the MY value \n")
+            return(null)
+        }
+        data_MCD_PCM = load(path_files + '/' + model +'_clear.hdf')
+    } else {
+        MY_str = MY + ""
+        if(fexists(path_files + '/' + model +'_MY'+ MY_str +'.hdf') == 0){
+            printf("\n File MCD/PCM_MY"+ MY_str +".hdf not found in the specified path. Please check the path or the MY value \n")
+            return(null)
+        }
+        data_MCD_PCM = load(path_files + '/' + model +'_MY'+ MY_str +'.hdf')
+    }
+    
+    #2. Bilinear interpolation to get the fluxes at the specified lat/lon
+    # Coordinates of the grid
+lon_grid = data_MCD_PCM.longitude
+lat_grid = data_MCD_PCM.latitude
+
+nlon = int(max(dim(lon_grid)))
+nlat = int(max(dim(lat_grid)))
+
+#--------------------------------------------------
+# Longitude indices
+#--------------------------------------------------
+
+if(current_longitude >= lon_grid[nlon]) {
+    i1 = nlon
+    i2 = nlon
+    t = 0.
+} else {
+    for(i=1;i<nlon;i++) {
+        if((current_longitude >= lon_grid[i]) && (current_longitude < lon_grid[i+1])) {
+            i1 = i
+            i2 = i + 1
+            t = (current_longitude - lon_grid[i]) / (lon_grid[i+1] - lon_grid[i])
+            continue
+        }
+    }
+}
+
+#--------------------------------------------------
+# Latitude indices
+#--------------------------------------------------
+
+if(current_latitude >= lat_grid[1]){
+    j1 = 1
+    j2 = 1
+    u = 0.
+} else if(current_latitude <= lat_grid[nlat]){
+    j1 = nlat
+    j2 = nlat
+    u = 0.
+} else {
+    for(j=1;j<nlat;j++) {
+        if((current_latitude <= lat_grid[j]) && (current_latitude > lat_grid[j+1])) {
+            j1 = j
+            j2 = j + 1
+            u = (lat_grid[j] - current_latitude) /  (lat_grid[j] - lat_grid[j+1])
+            continue
+        }
+    }
+}
+
+#--------------------------------------------------
+# Bilinear weights
+#--------------------------------------------------
+
+weight1 = (1-t)*(1-u)
+weight2 = t*(1-u)
+weight3 = t*u
+weight4 = (1-t)*u
+
+#--------------------------------------------------
+# Interpolation
+#--------------------------------------------------
+
+time = data_MCD_PCM.Time
+Flux_VIS = data_MCD_PCM.fvis
+Flux_IR  = data_MCD_PCM.fir
+Flux_Sensible = data_MCD_PCM.sensible
+
+interpolated_Fvis = weight1*Flux_VIS[i1,j1,] + weight2*Flux_VIS[i2,j1,] + weight3*Flux_VIS[i2,j2,] + weight4*Flux_VIS[i1,j2,]
+
+interpolated_Fir = weight1*Flux_IR[i1,j1,] +  weight2*Flux_IR[i2,j1,] + weight3*Flux_IR[i2,j2,] + weight4*Flux_IR[i1,j2,]
+
+if(include_sensible_heat_flux == 1){
+
+    interpolated_Sensible = weight1*Flux_Sensible[i1,j1,] +  weight2*Flux_Sensible[i2,j1,] + weight3*Flux_Sensible[i2,j2,] + weight4*Flux_Sensible[i1,j2,]
+
+    interpolated_Fir += interpolated_Sensible
+}
+
+
+
+    # 3. Create input table for KRC
+    Ntime = int(max(dim(time)))  # we will need to add the last point to loop.
+    Matrix_flux_MCD_PCM_Ls = create(3,Ntime,1,format = 'float',start = 0.,step = 0.)
+    Matrix_flux_MCD_PCM_Ls[1,1:Ntime,1] = translate(time,from=x,to =y)
+    Matrix_flux_MCD_PCM_Ls[2,1:Ntime,1] = translate(interpolated_Fvis,from=z,to=y)
+    Matrix_flux_MCD_PCM_Ls[3,1:Ntime,1] = translate(interpolated_Fir,from=z,to=y)
+
+    input_table = Compute_VIS_IR_Table_From_MCD_PCM(Matrix_flux_MCD_PCM_Ls)
+    return(input_table)
+}
+
+
+
+
+
+define sol2ls(0,1){
+    if ($ARGC != 1){
+        printf("Sol to Ls conversion, using the algorithm from Allison and McEwen 2000, JGR, 105, E4, 9553-9572 \n")
+        printf("Input: Sol number (float) \n")
+        printf("Output: Ls (float) \n")
+        printf("\n L.Lange 02/2025\n")
+        return(null)
+    }
+
+    sol = float($1)
+
+    year_day=668.6 # number of martian days (sols) in a martian year
+    peri_day=485.35 # perihelion date (in sols)
+    e_elips=0.09340 #orbital eccentricity
+    timeperi=1.90258341759902 # time of perihelion in radians 2*pi*( 1 - Ls(perihelion)/ 360 ); Ls(perihelion)=250.99
+    pi=3.14159265358979
+    radtodeg = 180/pi
+
+#1. Compute mean anomalie
+      zz=(sol-peri_day)/year_day
+      zanom=2.*pi*(zz-round(zz))
+      xref=abs(zanom)
+
+#2. Compute eccentric anomaly - The equation zx0 - e * sin (zx0) = xref, solved by Newton
+      zx0=xref+e_elips*sin(xref)
+      for(iter=1; iter<=10;iter++){
+         zdx=-(zx0-e_elips*sin(zx0)-xref)/(1.-e_elips*cos(zx0))
+         if(abs(zdx)<1e-7){
+            break
+         } 
+         zx0=zx0+zdx
+      }
+      zx0=zx0+zdx
+      if(zanom< 0.){
+        zx0=-zx0    
+      } 
+
+#3. compute true anomaly zteta, now that eccentric anomaly zx0 is known
+      zteta=2.*atan(sqrt((1.+e_elips)/(1.-e_elips))*tan(zx0/2.))
+
+#4. compute Ls
+      ls=zteta-timeperi
+      if(ls<0.) ls=ls+2.*pi
+      if(ls>2.*pi) ls=ls-2.*pi
+
+#5. convert Ls in deg.
+      ls=ls*radtodeg    
+      return(ls)
+}
+
+define deltaJD_2ls(0,1){
+    if ($ARGC != 1){
+        printf("Delta JD to Ls conversion, using the algorithm from Allison and McEwen 2000, JGR, 105, E4, 9553-9572 \n")
+        printf("Input: Delta JD (float) \n")
+        printf("Output: Ls (float) \n")
+        printf("\n L.Lange 02/2025\n")
+        return(null)
+    }
+
+    index_JD = float($1)
+    DELJUL = 1.9083 #hardcoded ... 
+    earth_year_sec = 86400.
+    mars_year_sec = 88775.245
+
+    sol = index_JD*DELJUL*(earth_year_sec/mars_year_sec) # convert delta JD to Sol number
+    sol = sol%669.
+    ls = sol2ls(sol) # convert Sol number to Ls
+    return(ls)
+}
+
+define interpolate_flux(0,4){
+    if ($ARGC != 4){
+        printf("\n Compute flux from MCD/PCM at a specific hour/longitude, using interpolation on the MCD temporal grid \n")
+        printf("\n $1: Solar Longitude Ls (float) \n")
+        printf("\n $2: Hour of the day (float, in [0,24]) \n")
+        printf("\n $3: The quantity to interpolate (2D array, with dimensions 1xtime_mcd x 1) \n")
+        printf("\n $4: The time array corresponding to the quantity to interpolate (2D array, with dimensions 1xtime_mcd x 1) \n")
+        printf("\n L.Lange 02/2025\n")
+        return(null)
+    }
+
+    ls = float($1)
+    hour = float($2)
+    quantity_2_interp = float($3)
+    time_mcd = float($4)
+
+    # given the Ls, find
+    Nls = 360
+    Ntime = int(max(dim(time_mcd))/Nls)
+
+    index_Ls_min = 1+ int(ls*Ntime)
+    index_Ls_max = Ntime+index_Ls_min
+    if(index_Ls_max > Nls*Ntime){ # if the Ls is above the maximum Ls of the last day, we interpolate between the last and the first day of the year
+        index_Ls_max = 1
+    }
+
+    index_hr_min =  int(hour*Ntime/24.)
+    index_hr_max = 1+index_hr_min
+
+    # interpolation on hour, then on day
+    if(index_Ls_min + index_hr_min > Nls*Ntime){ # if the hour is above the maximum hour of the last day, we interpolate between the last and the first day of the year
+        quantity_interp_Lsmin_hrmin = quantity_2_interp[1,index_hr_min,1]
+    } else {
+        quantity_interp_Lsmin_hrmin = quantity_2_interp[1,index_Ls_min + index_hr_min,1]
+    }
+    if(index_Ls_min + index_hr_max > Nls*Ntime){ # if the hour is above the maximum hour of the last day, we interpolate between the last and the first day of the year
+        quantity_interp_Lsmin_hrmax = quantity_2_interp[1,index_hr_max,1]
+    } else {
+        quantity_interp_Lsmin_hrmax = quantity_2_interp[1,index_Ls_min + index_hr_max,1]
+    }
+    if((index_Ls_max + index_hr_min ) > Nls*Ntime){ # if the hour is above the maximum hour of the last day, we interpolate between the last and the first day of the year
+        quantity_interp_Lsmax_hrmin = quantity_2_interp[1,index_hr_min,1]
+    } else {
+        quantity_interp_Lsmax_hrmin = quantity_2_interp[1,index_Ls_max + index_hr_min,1]
+    }
+    if((index_Ls_max + index_hr_max ) > Nls*Ntime){ # if the hour is above the maximum hour of the last day, we interpolate between the last and the first day of the year
+        quantity_interp_Lsmax_hrmax = quantity_2_interp[1,index_hr_max,1]
+    } else {
+        quantity_interp_Lsmax_hrmax = quantity_2_interp[1,index_Ls_max + index_hr_max,1]
+    }
+
+    quantity_interp_Lsmin = quantity_interp_Lsmin_hrmin + (quantity_interp_Lsmin_hrmax - quantity_interp_Lsmin_hrmin) * (hour*Ntime/24. - index_hr_min)
+    quantity_interp_Lsmax = quantity_interp_Lsmax_hrmin + (quantity_interp_Lsmax_hrmax - quantity_interp_Lsmax_hrmin) * (hour*Ntime/24. - index_hr_min)
+    quantity_interp = quantity_interp_Lsmin + (quantity_interp_Lsmax - quantity_interp_Lsmin) * (1+ls*Ntime - index_Ls_min)
+    return(quantity_interp)
+}
+
+
+
+define Compute_VIS_IR_Table_From_MCD_PCM(0,1){
+    if ($ARGC != 1) {
+        printf("\n Compute the matrix of Visible and Infrared fluxes input table for a KRC run \n")
+        printf("$1 : MCD fluxes array array  \n")
+        printf("L.Lange 11-17-2025\n\n")
+        return(null)
+    }
+
+    matrix_fluxes_MCD = float($1)
+    Nls = 360
+    Ntime = int(max(dim(matrix_fluxes_MCD))/Nls)
+
+    Matrix_fluxes_forKRCinput =  0*create(7,Nls*Ntime,1,format = 'float')
+    
+    cnt = 1
+    for(index_seasonal = 0;index_seasonal<Nls;index_seasonal++){
+        current_ls = round(deltaJD_2ls(index_seasonal))
+        for(index_diurnal = 0;index_diurnal<Ntime;index_diurnal++){
+            Matrix_fluxes_forKRCinput[1,cnt,1] = index_seasonal + float(index_diurnal)/Ntime
+            Matrix_fluxes_forKRCinput[2,cnt,1] = interpolate_flux(current_ls,index_diurnal*24./Ntime,matrix_fluxes_MCD[2,,],matrix_fluxes_MCD[1,,])
+            Matrix_fluxes_forKRCinput[4,cnt,1] = interpolate_flux(current_ls,index_diurnal*24./Ntime,matrix_fluxes_MCD[3,,],matrix_fluxes_MCD[1,,])
+            cnt = cnt + 1
+        }
+    }
+    
+    return(Matrix_fluxes_forKRCinput)
+}
+
+
+
+define interpolate_fromLs_2_indexKRC(0,2){
+    if ($ARGC != 2) {
+        printf("\n Compute the array interpolated in time from Ls axis to KRC time steaping \n")
+        printf("$1 :  Time Array  from the MCD \n")
+        printf("$2 :  Array  from the MCD \n")
+        printf("L.Lange 11-17-2025\n\n")
+        return(null)
+    }
+
+    time_Ls = float($1)
+    array_2_interpolate = float($2)
+
+    Nls = 360
+    Ntime = int(max(dim(array_2_interpolate))/Nls)
+
+    array_interpolated =  0*create(1,Nls*Ntime,1,format = 'float')
+    
+    cnt = 1
+    for(index_seasonal = 0;index_seasonal<Nls;index_seasonal++){
+        current_ls = round(deltaJD_2ls(index_seasonal))
+        for(index_diurnal = 0;index_diurnal<Ntime;index_diurnal++){
+            array_interpolated[1,cnt,1] = interpolate_flux(current_ls,index_diurnal*24./Ntime,array_2_interpolate,time_Ls)
+            cnt = cnt + 1
+        }
+    }
+    
+    return(array_interpolated)
+}
+
+
+define Compute_VIS_IR_Tsurf_Table_Lsaxis_From_KRC_RUN(0,1){
+    if ($ARGC != 1) {
+        printf("\n Compute the matrix of Visible and Infrared fluxes from a KRC run \n")
+        printf("L.Lange 11-17-2025\n\n")
+        return(null)
+    }
+
+    krc_out = $1
+    VIS = krc_out.down_vis
+    IR = krc_out.down_ir
+    Tsurf = krc_out.tsurf
+    time_axis = krc_out.time
+    Ntime = int(max(dim(time_axis)))
+    ls_axis= round(krc_out.ls)
+    Nls = int(max(dim(ls_axis)))
+    
+    #1. we sort everything
+    time_axis = cat(time_axis[Ntime,,],time_axis[1:Ntime-1,,],axis=x)%24
+    IR[,,] = cat(IR[Ntime,,],IR[1:Ntime-1,,],axis=x)
+    VIS[,,] = cat(VIS[Ntime,,],VIS[1:Ntime-1,,],axis=x)
+    Tsurf[,,] = cat(Tsurf[Ntime,,],Tsurf[1:Ntime-1,,],axis=x)
+
+    VIS = krc_out.down_vis
+    IR = krc_out.down_ir
+    Tsurf = krc_out.tsurf
+    time_axis = krc_out.time
+    Ntime = int(max(dim(time_axis)))
+    ls_axis= round(krc_out.ls)
+    Nls = int(max(dim(ls_axis)))
+
+    # 4. Create the matrix of fluxes
+    Matrix_fluxes = create(4,Nls*Ntime,1,format = 'float')
+    count = 1
+    for(i = 1;i<=Nls;i++){
+            Matrix_fluxes[1,count,1] = i-1 
+            Matrix_fluxes[2,count,1] = VIS[Ntime,1,i]
+            Matrix_fluxes[3,count,1] = IR[Ntime,1,i]
+            Matrix_fluxes[4,count,1] = Tsurf[Ntime,1,i]
+            count += 1
+        for(j = 1;j<=Ntime-1;j++){
+                Matrix_fluxes[1,count,1] = i-1 + time_axis[j,1,1]/24.0
+                Matrix_fluxes[2,count,1] = VIS[j,1,i]
+                Matrix_fluxes[3,count,1] = IR[j,1,i]
+                Matrix_fluxes[4,count,1] = Tsurf[j,1,i]
+                count += 1
+        }
+    }
+    return(Matrix_fluxes)
+}
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,252 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{mathptmx}
+\usepackage[expansion=false]{microtype}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{siunitx}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{url}
+\Urlmuskip=0mu plus 1mu
+\usepackage[colorlinks=true,linkcolor=blue!50!black,citecolor=blue!50!black,urlcolor=blue!50!black]{hyperref}
+
+\definecolor{codebg}{RGB}{245,245,245}
+\definecolor{warncol}{RGB}{160,60,0}
+\lstdefinestyle{dv}{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small,
+  commentstyle=\color{gray!70!black},
+  morecomment=[l]{\#},
+  breaklines=true,
+  frame=single, framerule=0pt,
+  xleftmargin=6pt, xrightmargin=6pt,
+  aboveskip=8pt, belowskip=8pt
+}
+
+\newcommand{\code}[1]{\path{#1}}
+\newcommand{\file}[1]{\path{#1}}
+\newcommand{\cardline}[1]{\texttt{#1}}
+\newcommand{\Interface}{\path{krc_davinciinterface.dvrc}}
+\newcommand{\warn}{\textcolor{warncol}{\textbf{!}}\ }
+\newcommand{\dif}{\mathrm{d}}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\sffamily Extending the KRC--Davinci interface}
+\fancyhead[R]{\small\thepage}
+\renewcommand{\headrulewidth}{0.3pt}
+
+\title{\textbf{Extending the KRC--Davinci Interface}\\[6pt]
+\large Subsurface solar energy deposition, temperature-dependent emissivity,
+adaptive meshing, and ice thermal conductivity}
+\author{L.~Lange}
+\date{}
+
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+
+\begin{abstract}
+\noindent
+This note documents four additions made to the Davinci interface that drives KRC
+(\Interface, function \code{krc()}, and its helper \code{krc_evalN1}, originally
+written by S.~Piqueux): (i) distribution of absorbed solar energy within the
+subsurface rather than at the surface alone, (ii) a temperature-dependent surface
+emissivity, (iii) an adaptive first-layer thickness that keeps the near-surface mesh
+consistent with (i), and (iv) temperature-dependent thermal conductivity and density
+for water ice. The first two correspond to new KRC input cards (17 and 18); the
+mesh adaptation is interface-side bookkeeping required by the first; the ice
+properties feed the existing $T$-dependent conductivity card (12) through a
+material-property lookup. Prescribing MCD/PCM atmospheric fluxes in KRC
+(\code{UserPrescribed_Fluxes}, card 8/26) is a fifth, already-documented change:
+it is only summarized here, with pointers to the dedicated design document.
+\end{abstract}
+
+\section{Context}
+
+\Interface\ builds a KRC input deck from high-level physical parameters, sizes the
+default vertical mesh (\code{krc_evalN1}), and manages external flux and albedo
+files. It is the layer between physically meaningful arguments (thermal inertia,
+albedo, orbital elements, \dots) and the fixed-format card deck that the KRC Fortran
+executable reads (see \file{docs/flux_tables.md} and the two new-feature notes,
+\file{docs/solar_penetration_in_ground.md} and
+\file{docs/emissivity_temperature_dependant.md}, in the KRC repository). The four
+modifications below extend both the KRC side (two new card types) and the interface
+side (argument list of \code{krc()}, mesh sizing logic, and a material-property
+helper).
+
+\section{Subsurface solar energy deposition (RADGND / EFOLD\_RADGND)}
+\label{sec:radgnd}
+
+By default KRC deposits all absorbed insolation $S_0(1-A)$ at the surface, which
+appears as a source term in the surface radiative balance. For optically
+translucent materials (e.g.\ water ice), a fraction of that energy is instead
+absorbed in depth. \code{RADGND} switches on a volumetric deposition following a
+Beer--Lambert-type exponential profile with e-folding length
+\code{EFOLD_RADGND} (in metres):
+\begin{equation}
+  \frac{\dif Q}{\dif z} \;\propto\; \exp\!\left(-\frac{z}{\ell}\right), \qquad
+  \ell \equiv \texttt{EFOLD\_RADGND},
+\end{equation}
+and removes the corresponding term from the surface boundary condition, which then
+reduces to $\varepsilon\sigma T_\mathrm{surf}^4 = -k\,\partial T/\partial z$ (no
+$S_0(1-A)$ term at $z=0$). On the interface side this is exposed as two new
+\code{krc()} arguments, translated into KRC card 17:
+
+\begin{center}
+\begin{tabular}{@{}p{2.7cm}p{5.3cm}p{5.8cm}@{}}
+\toprule
+Argument & Meaning & KRC card \\
+\midrule
+\code{RADGND} & enable subsurface deposition (boolean) & \cardline{17 1 \textless{}0/1\textgreater{} 'RADGND' /} \\
+\code{EFOLD_RADGND} & e-folding length $\ell$ [m] & \cardline{17 2 \textless{}val\textgreater{} 'EFOLD\_RADGND' /} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\warn A mesh sized only for surface thermal diffusion can be far coarser than
+$\ell$; Section~\ref{sec:flay} describes the mesh-side consequence of enabling
+\code{RADGND}. Validation: \file{Test_effectTIvssolarpene},
+\file{Test_constantabslength_vs_cosilength} (incidence-angle scaling of the
+absorption length), against the analytical reference in
+\file{Validation_solarpenetration.dv}.
+
+\section{Temperature-dependent surface emissivity (EmisT)}
+\label{sec:emist}
+
+\code{EmisT} replaces the constant surface emissivity by a third-order polynomial
+in temperature, evaluated at each iteration of the surface energy balance:
+\begin{equation}
+  \varepsilon(T) = \mathtt{Emis0} + \mathtt{Emis1}\,X + \mathtt{Emis2}\,X^2 +
+  \mathtt{Emis3}\,X^3, \qquad X = \frac{T - 220}{100},
+\end{equation}
+the same normalized-temperature basis already used by the $T$-dependent
+conductivity and specific-heat cards (12/13). The result is clamped to
+$[0,1]$; a non-positive value aborts the current case (KRC's blow-up handler), so
+coefficient sets should be checked against the expected surface temperature range
+before production use. Interface side, this is card 18:
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Argument & Meaning & KRC card \\
+\midrule
+\code{EmisT} & enable $T$-dependent emissivity (boolean) & \cardline{18 1 \textless{}0/1\textgreater{} 'EmisT' /} \\
+\code{Emis0}--\code{Emis3} & polynomial coefficients & \cardline{18 2..5 \textless{}val\textgreater{} 'Emis0'..'Emis3' /} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Coefficients are obtained by fitting $\varepsilon(T)$ derived from a Mie/Hapke
+emissivity model for amorphous and crystalline water ice
+(\file{Compute_Fit_Emissivity_4KRC.dvrc}, inputs
+\file{emis_amorphous_ice.txt}, \file{emis_crystalline_ice.txt}); fit quality is
+checked in \file{Figures/Figure_EmissIcevsT.pdf} against the tabulated true
+emissivity for a range of grain radii and absorption coefficients. The combined
+effect of \code{EmisT} and $T$-dependent conductivity on $T_\mathrm{surf}$ is
+checked separately in \file{combined_effect_emissT_and_conductivity}.
+
+\section{Adaptive first-layer thickness (FLAY)}
+\label{sec:flay}
+
+\code{krc_evalN1} sizes the default vertical mesh (first-layer thickness
+\code{FLAY}, layer count \code{IC2}/\code{N1}) from the diurnal and seasonal skin
+depths implied by the surface thermal inertia, density, and specific heat, for
+three layering cases (homogeneous half-space, fixed-thickness two-layer medium, or
+an exponential Hayne-type profile). When \code{RADGND} is active, the resulting
+\code{FLAY} is additionally capped so that the first mesh element stays fine
+compared to the solar e-folding length, guaranteeing that the volumetric heating
+profile of Section~\ref{sec:radgnd} is numerically resolved:
+\begin{equation}
+  \text{if } \mathtt{RADGND=T} \text{ and } \mathtt{FLAY2} >
+  \frac{\ell}{3\,\mathtt{RLAY}\cdot\mathtt{RLAY}\cdot\mathtt{DSD1\_m}\cdot(0.5+(1-\mathtt{RLAY}))},
+  \quad \mathtt{FLAY2} \leftarrow \text{that bound},
+\end{equation}
+where \code{DSD1_m} is the diurnal skin depth of the top material and
+\code{RLAY} the layer-thickness growth ratio. Without this cap, a mesh dimensioned
+for surface thermal diffusion alone can be coarser than $\ell$, biasing the
+in-depth heating profile. Validated in \file{Test_adaptativeFLAY} by comparing
+fixed-\code{FLAY} and adaptive-\code{FLAY} runs at two thermal inertias (33 and 133
+$\mathrm{J\,m^{-2}\,K^{-1}\,s^{-1/2}}$) and checking convergence of $T_\mathrm{surf}$.
+
+\section{Temperature-dependent ice thermal properties}
+\label{sec:icetprop}
+
+The material-property helper \code{Mat_Prop} returns, for a given material, the
+polynomial coefficients expected by KRC's $T$-dependent conductivity and specific
+heat cards (12/13), on the same normalized basis $X=(T-220)/100$ as
+Section~\ref{sec:emist}. The \code{"H2O"} entry encodes:
+\begin{itemize}[nosep]
+  \item thermal conductivity $k(T)$ after Slack (1980), valid
+  \SIrange{60}{270}{\kelvin};
+  \item density $\rho(T)$ after R\"ottger et al.\ (2012), valid
+  \SIrange{10}{265}{\kelvin};
+  \item specific heat $C_p(T)$ after Giauque \& Stout (1936), valid
+  \SIrange{15}{273}{\kelvin}.
+\end{itemize}
+These defaults are derived from, and cross-checked against, an icy-regolith
+conductivity model reproducing Ferrari \& Lucas (\file{Scripts_reproduceFerrarriandLucas})
+and initially refit for standalone injection into KRC
+(\file{Script_Fiticeproperties4KRC}). End-to-end sensitivity of KRC output to the
+new coefficients (surface temperature and effective thermal inertia, as a function
+of albedo and stratigraphy) is checked in \file{Test_newcondinKRC}.
+
+\paragraph{Joint fit with emissivity.} Since the conductivity of icy regolith
+itself depends on emissivity (radiative conductivity term), grain radius and
+porosity, fitting conductivity and emissivity independently is only an
+approximation. \file{Compute_Fit_PropIcyRegolith_4KRC.dvrc} replaces the two
+separate fits above by a single, self-consistent one (Davinci function
+\code{Compute_Fit_ThermophysicalProperties_IcyRegolith}): given a grain radius,
+porosity, conductivity mixing model (\code{GJKRBB}/\code{GB}/\code{WBB}/\code{WGB})
+and ice form (amorphous/crystalline), it returns the \code{Emis0}--\code{Emis3}
+coefficients of Section~\ref{sec:emist} together with matching
+\emph{Con0--Con3} and \emph{Sph0--Sph3} coefficients for card 12/13, recomputing
+emissivity internally when it is temperature-dependent rather than assuming a
+fixed default. This is the current, production version of this fit; the
+effect of enabling each $T$-dependence (conductivity, emissivity, or both)
+on $T_\mathrm{surf}$ is checked in \file{joint_fit_validation}.
+
+\section{Summary of new \texttt{krc()} arguments}
+
+\begin{center}
+\begin{tabular}{@{}p{3.1cm}p{6cm}p{5.5cm}@{}}
+\toprule
+Argument & Purpose & KRC card \\
+\midrule
+\code{RADGND} & enable subsurface solar deposition & \cardline{17 1 \textless{}0/1\textgreater{} 'RADGND' /} \\
+\code{EFOLD_RADGND} & solar absorption e-folding length [m] & \cardline{17 2 \textless{}val\textgreater{} 'EFOLD\_RADGND' /} \\
+\code{EmisT} & enable $T$-dependent emissivity & \cardline{18 1 \textless{}0/1\textgreater{} 'EmisT' /} \\
+\code{Emis0}--\code{Emis3} & $\varepsilon(T)$ polynomial coefficients & \cardline{18 2..5 \textless{}val\textgreater{} 'Emis0'..'Emis3' /} \\
+\code{UserPrescribed_Fluxes} & prescribed VIS/IR/ATM flux table (MCD/PCM) & \cardline{8 26 0 '\textless{}file\textgreater{}' /} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\code{UserPrescribed_Fluxes} is unchanged by the present work and is documented in
+full (format, database construction, coupling tutorial) in the companion design
+document \emph{Prescribing Mars PCM/MCD Atmospheric Fluxes in KRC}; it is listed
+here only for completeness, since it shares the interface file and the same
+argument-to-card mechanism as the four additions above.
+
+\section{Validation trace}
+
+Complete inputs, scripts and figures are archived alongside this note:
+\code{KRC_repo_additions/docs/validation/} for the two KRC-side cards (RADGND,
+EmisT --- Sections~\ref{sec:radgnd}--\ref{sec:emist}); adaptive FLAY validation
+sits with it (\file{Test_adaptativeFLAY}, Section~\ref{sec:flay}, since it is
+checked through the RADGND card). On the interface side,
+\code{Davinci_interface/CouplingwithMCD_PCM/} covers \code{UserPrescribed_Fluxes},
+and \code{Davinci_interface/Improve_IceProperties/} covers the ice thermal
+properties of Section~\ref{sec:icetprop}, including the joint fit.
+A short \file{README} in every folder of that archive states its content and how it
+maps to the sections above.
+
+\end{document}

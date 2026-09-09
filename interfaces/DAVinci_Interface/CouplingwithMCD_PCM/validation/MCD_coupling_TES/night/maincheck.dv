@@ -1,0 +1,114 @@
+putenv("DV_KRC_HOME","/home/ll2456/KRC/")
+source('/home/ll2456/krc_v1.07a.dvrc')
+
+index = atoi($1)
+
+path = '/scratch/ll2456/KRC_mcd_final_validationTESnight/'
+source('Interface_KRC_MCD_PCM.dv')
+
+path_MCD = '/scratch/ll2456/MCD_Fluxes'
+
+parameters = ascii(path+'Tsurf_night.txt',format='float')
+
+hour = 2.
+current_lat = parameters[1,index,1]
+current_ls = parameters[2,index,1] % 360.
+T_tes = parameters[3,index,1]
+MY = int(parameters[4,index,1])
+
+
+isnan = ((T_tes <= -32678) == 0) && ((T_tes > -32678)==0)
+
+
+if (isnan == 1){
+        Matrix_Results = create(6,1,1,format = 'float',start = 0.,step = 0.)
+Matrix_Results[1,,] = current_lat
+
+Matrix_Results[2,,] = current_ls
+Matrix_Results[3,,] = T_tes
+Matrix_Results[4,,] = MY
+Matrix_Results[5,,] = 0.
+Matrix_Results[6,,] = 0.
+
+index_str = index+""
+
+        write(Matrix_Results,path+ "Results_"+index_str+".txt", ascii, force=1)
+        return(null)
+} else{
+
+T_krc_avg_withMCD = 0.
+T_krc_avg_raw = 0.
+TI_MAP = load('MCS_TI_regrid_2x10.hdf').data
+ALB_MAP = load('TES_Alb_regrid_2x10').data
+
+index_lat = 1 + int((current_lat+89.)/2.)
+
+cnt_loop_MCD = 0.
+cnt_loop_raw = 0.
+for(iloop = 1; iloop <=36; iloop++){
+        current_lon = -180+ 10*iloop
+        current_lon_0_360 = current_lon
+        if(current_lon_0_360 < 0){
+                current_lon_0_360 = current_lon_0_360 +360.
+        }
+        index_lon = int(current_lon_0_360/10.)
+
+
+        current_alb = ALB_MAP[index_lon,index_lat,]
+        current_TI = TI_MAP[index_lon,index_lat,]
+
+ 
+        inputs_MCD= preprocess_atmosphericflux_fromMCD(path_MCD,'PCM',MY,current_lat,current_lon,1)
+
+
+
+
+        lon_krc = current_lon
+        if(lon_krc < 0){
+                lon_krc = lon_krc+360
+        }
+        out_krc_withMCD = krc(lat = current_lat, lon = lon_krc, UserPrescribed_Fluxes = inputs_MCD,ls = current_ls, hour = 2,TAUD=0.,EMISS = 0.95,ALBEDO = current_alb,INERTIA = current_TI)
+
+
+        Tsurf_krc = out_krc_withMCD.tsurf
+        isnan = ((Tsurf_krc <= -32678) == 0) && ((Tsurf_krc > -32678)==0)
+
+        if (isnan == 0){
+                cnt_loop_MCD = cnt_loop_MCD + 1
+                T_krc_avg_withMCD = T_krc_avg_withMCD + Tsurf_krc
+        } 
+
+        Opacity = TAU_2D(MY,current_lat,lon_krc,360,0)
+
+        out_krc_raw = krc(lat = current_lat, lon = lon_krc,TAUD = Opacity,ls = current_ls, hour = 2,EMISS = 0.95,ALBEDO = current_alb,INERTIA = current_TI)
+
+        Tsurf_krc = out_krc_raw.tsurf
+
+        isnan = ((Tsurf_krc <= -32678) == 0) && ((Tsurf_krc > -32678)==0)
+        if (isnan == 0){
+                cnt_loop_raw = cnt_loop_raw + 1
+                T_krc_avg_raw = T_krc_avg_raw + Tsurf_krc
+        } 
+}
+
+T_krc_avg_raw = T_krc_avg_raw/cnt_loop_raw
+T_krc_avg_withMCD = T_krc_avg_withMCD/cnt_loop_MCD
+
+
+
+        Matrix_Results = create(6,1,1,format = 'float',start = 0.,step = 0.)
+Matrix_Results[1,,] = current_lat
+
+Matrix_Results[2,,] = current_ls
+Matrix_Results[3,,] = T_tes
+Matrix_Results[4,,] = MY
+Matrix_Results[5,,] = T_krc_avg_raw
+Matrix_Results[6,,] = T_krc_avg_withMCD
+
+index_str = index+""
+
+        write(Matrix_Results, path+"Results_"+index_str+".txt", ascii, force=1)
+
+
+
+}

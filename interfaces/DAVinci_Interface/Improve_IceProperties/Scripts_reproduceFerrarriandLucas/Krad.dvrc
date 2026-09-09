@@ -1,0 +1,87 @@
+define K_rad_BB_R(0,5){
+
+	if ($ARGC ~= 5 ) {
+    	printf("\nReturns the radiative thermal conductivity for a given porosity and temperature\n")
+
+
+    	printf("\n Variable : grain size\n")
+    	printf("L.Lange 03-16-2020\n\n")
+
+
+
+
+
+    	return(null)
+  	}
+
+	if (type($1) == "double") {
+    	outp = double($1)
+    	pi = atod("3.14159265358979323846") # This gets around the intermediate float bug
+  	} else {
+    	outp = float($1) # Must be float or double for values to be computed accurately
+    	pi = 3.141592653589793
+  	}
+	intd = dim(outp)
+
+
+	if (type($2) == "double") {
+		porosity = double($2)
+	} else {
+		porosity = float($2) # Must be float or double for values to be computed accurately
+  	}
+
+
+
+	if (type($3) == "double") {
+    	T = double($3)
+	} else {
+    T = float($3) #Must be float or double for values to be computed accurately
+  	}
+
+
+	if (type($4) == "double") {
+	    emissivity = double($4)
+	} else {
+    	emissivity = float($4) # Must be float or double for values to be computed accurately
+  	}
+
+
+
+
+	#Define constants
+	sigma = 5.670374e-8
+	flag = atoi($4) #if flag = 0, crystalline structure
+
+
+	# Element-by-element
+
+	for (intk = 1; intk <= intd[3,1,1]; intk++) {
+    	for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        	for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+
+        		intx = float(1)*outp[inti, intj, intk]
+
+        		B = 1.25*((1-porosity)/porosity)^(10/9)
+        		if(flag == 0){
+        			Ks = K_bulk_crystaline(T)
+        		}else{
+          			Ks = K_bulk_amorphous(T)
+        		}
+
+
+        		Gammaf = Ks/(8*intx*sigma*T^3)
+
+
+        		Fe = (1-sqrt(1-porosity))*porosity + (sqrt(1-porosity))/(2/emissivity-1)*(B+1)/B*1/(1+ 1/(Gammaf*(2/emissivity-1)))
+
+
+
+
+        		outp[inti, intj, intk] = 8*intx*Fe*sigma*T
+        	}
+      	}
+    }
+
+    return(outp)
+}

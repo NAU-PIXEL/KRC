@@ -1,0 +1,27 @@
+
+#!/Applications/davinci.app/Contents/Resources/bin/davinci -f
+#
+# Check the implementation of solar aborption in the ground comparing to Urquhart & Jakosky 1996 & Lange et al. 2026 (Fig C1) 
+#
+
+
+# 1st. Run KRC for Europa, for severel e-folding depth (0, 1, 2,4 cm)
+
+OUT_nopen = krc(lat=0,INERTIA=33.76,DENSITY=150,SPEC_HEAT = 1000, body="Europa",ALBEDO=.72,EMISS=0.95,LKofT="F",lbound = -2//95,RADGND='F')
+OUT_pen1cm = krc(lat=0,INERTIA=33.76,DENSITY=150,SPEC_HEAT = 1000, body="Europa",ALBEDO=.72,EMISS=0.95,LKofT="F",lbound = -2//95,RADGND='T', EFOLD_RADGND = 1e-2)
+OUT_pen2cm = krc(lat=0,INERTIA=33.76,DENSITY=150,SPEC_HEAT = 1000, body="Europa",ALBEDO=.72,EMISS=0.95,LKofT="F",lbound = -2//95,RADGND='T', EFOLD_RADGND = 2e-2)
+OUT_pen4cm = krc(lat=0,INERTIA=33.76,DENSITY=150,SPEC_HEAT = 1000, body="Europa",ALBEDO=.72,EMISS=0.95,LKofT="F",lbound = -2//95,RADGND='T', EFOLD_RADGND = 4e-2)
+
+
+
+# 2nd Load data from Lange et al. 2026 (Fig C1)
+LL26_nopen = ascii("LL26_solarpen_eps=0.txt",format='float')
+LL26_pen1cm = ascii("LL26_solarpen_eps=1cm.txt",format='float')
+LL26_pen2cm = ascii("LL26_solarpen_eps=2cm.txt",format='float')
+LL26_pen4cm = ascii("LL26_solarpen_eps=4cm.txt",format='float')
+LL26_time = ascii("LL26_time.txt",format='float')
+
+# 3rd Plot the results from KRC and Lange et al. 2026 (Fig C1)
+
+plot(OUT_nopen.tsurf[,1,1]-LL26_nopen,xaxis=OUT_nopen.time, OUT_pen1cm.tsurf[,1,1]-LL26_pen1cm, OUT_pen2cm.tsurf[,1,1]-LL26_pen2cm, OUT_pen4cm.tsurf[,1,1]-LL26_pen4cm, xaxis=OUT_nopen.time)
+

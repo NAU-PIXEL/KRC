@@ -1,0 +1,4199 @@
+define fit_Cond_waterice(0,6) {
+
+  if ($ARGC !=6) {
+    printf("\n Returns the conductivity of ice computed with the models from Ferrari and al 2016 \n")
+    printf("$1: Minimum Temperature [K] \n")
+    printf("$2: Maximum Temperature [K] \n")
+    printf("$3: Grain Radius [m] \n")
+    printf("$4: Porosity \n")
+    printf("$5: Model used. Must be one of the folollowing string: 'GJKRBB', 'GB','WBB','WGB' \n")
+    printf("$6: Form of the ice. Must be one of the folollowing string: 'Amorphous', 'Crystalline' \n")
+
+    printf("L.Lange 08-05-2020\n\n")
+
+    return(null)
+  }
+  Tmin = double($1)
+  Tmax = double($2)
+  Radius = double($3)
+  Porosity = double($4)
+  Model = $5;
+  Form = $6
+
+  It = create2(Tmin,1,Tmax)
+  xt = ( It - 220 ) * 0.01
+  
+
+  
+  Condice_true = ComputeConductivity(It,Radius,Porosity,Model,Form)
+
+  fit=fit(y=Condice_true,x=xt,type="cube",plot=0,step=10)
+  out = fit
+
+ if(out[1]<0){
+    fit=fit(y=Condice_true,x=xt,type="quad",plot=0,step=10)
+    out[1] = fit[1]
+    out[2] = fit[2]
+    out[3] = fit[3]
+    out[4] = 0
+ }
+  return(out[:4,,])
+}
+
+
+
+
+
+define fit_Cp_waterice(0,2) {
+ if ($ARGC != 2) {
+    printf("\nReturns a third order fit of the specific heat of water ice\n")
+    printf("\nBased on the work of  Shulman (2004)\n")
+    printf("L.Lange 04-22-2025\n\n")
+    printf("\nTo run, this function needs the minimun and maximum temperatures of the domain where C needs to be fitted\n")
+    return(null)
+  }
+  Tmin = double($1)
+  Tmax = double($2)
+  It = create2(Tmin,1,Tmax)
+  xt = ( It - 220 ) * 0.01
+  
+  Cice_true = Cp_ice_water(It)
+  fit=fit(y=Cice_true,x=xt,type="cube",plot=0,step=10)
+
+  return(fit)
+}
+
+
+define Cp_ice_water(0,1) {
+
+  if ($ARGC != 1) {
+    printf("\nReturns the specific heat of water ice\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+  intd = dim(outp)
+
+# Element-by-element 
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+          intx = float(1)*outp[inti, intj, intk]
+          C_T = 7.73*intx*(1-exp(-1.263*1e-3*intx^2))*(1+8.47*1e-3*intx^6*exp(-3*sqrt(intx)) + 2.0825*1e-7*intx^4*exp(-4.97*1e-2*intx))
+          outp[inti, intj, intk] = C_T
+        }
+      }
+    }
+
+           return(outp[:4,,])
+}
+
+
+
+
+
+
+
+
+
+
+
+define ComputeConductivity(0,5){
+
+
+  if ($ARGC != 5) {
+    printf("\n Returns the conductivity of ice computed with the models from Ferrari and al 2016 \n")
+    printf("$1: Temperature [K] \n")
+    printf("$2: Grain Radius [m] \n")
+    printf("$3: Porosity \n")
+    printf("$4: Model used. Must be one of the folollowing string: 'GJKRBB', 'GB','WBB','WGB' \n")
+    printf("$5: Form of the ice. Must be one of the folollowing string: 'Amorphous', 'Crystalline' \n")
+
+    printf("L.Lange 08-05-2020\n\n")
+
+    return(null)
+  }
+
+
+
+
+  Temp = double($1)
+  Radius = double($2)
+  Porosity = double($3)
+  Model = $4;
+  Form = $5
+
+
+if(type(Model) != "STRING"){
+    printf(" $4 must be a string \n")
+    return(null)
+    }
+
+
+if(type(Form) != "STRING"){
+    printf(" $5 must be a string \n")
+    return(null)
+    }
+
+if(((Model == "GJKRBB") || (Model == "GB") || (Model == "WBB") || (Model == "WGB")) ==0){
+printf("\n Invalid name of model \n")
+printf("\n")
+printf("Must be one of the folollowing string: 'GJKRBB', 'GB','WBB','WGB \n")
+return(null)
+}
+
+if(((Form == "Crystalline") || (Form == "Amorphous")) == 0){
+printf("\n Invalid name of form \n")
+printf("\n")
+printf("Must be one of the folollowing string: 'Amorphous', 'Crystalline' \n ")
+return(null)
+}
+
+
+  if(Form == "Crystalline"){
+    flagstructCryst = 1
+  } else{
+    flagstructCryst = 0
+  }
+
+
+
+    if(Model == "GJKRBB"){
+
+    if(flagstructCryst == 1){
+    conductivity =  K_E_T(Temp,Radius,Porosity,0.076,0.33,0.41,1,1,2,1,1)
+    } else{
+    conductivity =  K_E_T(Temp,Radius,Porosity,0.076,0.33,0.41,1,1,2,1,2)
+    }
+    }
+
+    if(Model == "GB"){
+
+    if(flagstructCryst == 1){
+    conductivity =  K_E_T(Temp,Radius,Porosity,0.076,0.33,0.41,1,2,1,2,1)
+    } else{
+    conductivity =  K_E_T(Temp,Radius,Porosity,0.076,0.33,0.41,1,2,1,2,2)
+    }
+    }
+
+
+    if(Model == "WBB"){
+
+    if(flagstructCryst == 1){
+    conductivity =  K_E_T(Temp,Radius,Porosity,0.076,0.33,0.41,1,3,3,1,1)
+    } else{
+    conductivity =  K_E_T(Temp,Radius,Porosity,0.076,0.33,0.41,1,3,3,1,2)
+    }
+    }
+
+
+    if(Model == "WGB"){
+
+    if(flagstructCryst == 1){
+    conductivity =  K_E_T(Temp,Radius,Porosity,0.076,0.33,0.41,1,3,3,2,1)
+    } else{
+    conductivity =  K_E_T(Temp,Radius,Porosity,0.076,0.33,0.41,1,3,3,2,2)
+    }
+    }
+
+
+
+    return(conductivity)
+
+    }
+
+
+
+
+
+
+
+
+
+
+## following computes model from the article
+#Low thermal inertias of icy planetary surfaces Evidence for amorphous ice
+# C.Ferrari and A.Lucas
+
+
+
+
+
+define h_JKR_R(0,4) {
+
+  if ($ARGC != 4) {
+    printf("\nReturns the Hertz factor with JKR model. Variable is the grain size\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+
+  if (type($2) == "double") {
+    gamma = double($2)
+  } else {
+    gamma = float($2)
+  }
+
+  if (type($3) == "double") {
+    mu = double($3)
+  } else {
+    mu = float($3)
+  }
+  if (type($4) == "double") {
+    T = double($4)
+  } else {
+    T = float($4)
+  }
+
+intd = dim(outp) 
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+
+          intx = float(1)*outp[inti, intj, intk]
+          E = 6.6*1e9*(4.276-0.012*T)
+
+          outp[inti, intj, intk] = (9/4* (1-mu^2)*gamma*pi/(E*intx))^(1.0/3.0)
+        }
+      }
+    }
+
+           return(outp)
+}
+
+
+
+
+
+define h_JKR_T(0,4) {
+
+  if ($ARGC != 4) {
+    printf("\nReturns the Hertz factor with JKR model. Variable is the temperature\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+
+  if (type($2) == "double") {
+    gamma = double($2)
+  } else {
+    gamma = float($2)
+  }
+
+  if (type($3) == "double") {
+    mu = double($3)
+  } else {
+    mu = float($3)
+  }
+  if (type($4) == "double") {
+    R = double($4)
+  } else {
+    R = float($4)
+  }
+  intd = dim(outp)
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+
+          intx = float(1)*outp[inti, intj, intk]
+          E = 6.6*1e9*(4.276-0.012*intx)
+
+          outp[inti, intj, intk] = (9/4* (1-mu^2)*gamma*pi/(E*R))^(1.0/3.0)
+        }
+      }
+    }
+
+           return(outp)
+}
+
+
+
+define h_GB_R(0,4) {
+
+  if ($ARGC != 4) {
+    printf("\nReturns the Hertz factor with GB model. Variable is the grain size.\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+
+  if (type($2) == "double") {
+    gamma = double($2)
+  } else {
+    gamma = float($2)
+  }
+
+  if (type($3) == "double") {
+    mu = double($3)
+  } else {
+    mu = float($3)
+  }
+  if (type($4) == "double") {
+    T = double($4)
+  } else {
+    T = float($4)
+  }
+  intd = dim(outp)
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+
+          intx = float(1)*outp[inti, intj, intk]
+          E = 6.6*1e9*(4.276-0.012*T)
+
+          outp[inti, intj, intk] = (9/4* (1-mu^2)*gamma*pi/(E*intx))^(1.0/3.0)
+        }
+      }
+    }
+
+           return(outp)
+}
+
+
+
+
+
+define h_GB_T(0,4) {
+
+  if ($ARGC != 4) {
+    printf("\nReturns the Hertz factor with GB model. Variable is the temperature.\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+
+  if (type($2) == "double") {
+    gamma = double($2)
+  } else {
+    gamma = float($2)
+  }
+
+  if (type($3) == "double") {
+    mu = double($3)
+  } else {
+    mu = float($3)
+  }
+  if (type($4) == "double") {
+    R = double($4)
+  } else {
+    R = float($4)
+  }
+  intd = dim(outp)
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+
+          intx = float(1)*outp[inti, intj, intk]
+          E = 6.6*1e9*(4.276-0.012*intx)
+
+          outp[inti, intj, intk] = (9/4* (1-mu^2)*gamma*pi/(E*R))^(1.0/3.0)
+        }
+      }
+    }
+
+           return(outp)
+}
+
+
+define h_W_R(0,1) {
+
+  if ($ARGC != 1) {
+    printf("\nReturns the Hertz factor with Watson model. Variable is the grain size.\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+intd = dim(outp)
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+
+          intx = float(1)*outp[inti, intj, intk]
+
+          outp[inti, intj, intk] = 1.5e-8/intx
+        }
+      }
+    }
+
+           return(outp)
+}
+
+
+
+define phi_GB_p(0,2){
+
+  if ($ARGC != 2) {
+    printf("\nReturns the  factor phi with GB model. Variable is the porosity.\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }	
+
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+
+  if (type($2) == "double") {
+    xhi = double($2)
+  } else {
+    xhi = float($2)
+  }
+
+
+
+  #Define constants
+  f1 = 5.18e-2
+  f2 = 5.26
+  intd = dim(outp)
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+
+          intx = float(1)*outp[inti, intj, intk]
+
+          outp[inti, intj, intk] = f1*exp(f2*(1-intx))*xhi
+        }
+      }
+    }
+
+           return(outp)
+}
+
+
+
+
+define contact_number(0,1){
+
+  if ($ARGC != 1) {
+    printf("\nReturns the  number of contact for a sphere. Variable is the porosity.\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }	
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+
+
+  A = create(2,2,1,format = double)
+  A[1,1,1] = 0.26
+  A[2,1,1] = 1
+  A[1,2,1] = 0.84
+  A[2,2,1] = 1
+
+  b = create(1,2,1,format = double)
+  b[1,1,1] = 12
+  b[1,2,1] = 4
+
+  res = mxm(minvert(A),b)
+  alpha = res[1,1,1]
+  beta = res[1,2,1]
+  intd = dim(outp)
+  for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+
+          intx = float(1)*outp[inti, intj, intk]
+
+          outp[inti, intj, intk] = (alpha*intx+beta)
+        }
+      }
+    }
+
+           return(outp)
+}
+
+
+
+define phi_G_p(0,1){
+
+  if ($ARGC != 1) {
+    printf("\nReturns the  factor phi with G model. Variable is the porosity.\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }	
+
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+    pi = 3.141592653589793
+  }
+
+intd = dim(outp)
+
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+
+          intx = float(1)*outp[inti, intj, intk]
+
+          outp[inti, intj, intk] = (1-intx)*contact_number(intx)/pi
+        }
+      }
+    }
+    return(outp)
+
+
+}
+
+
+
+define phi_W_p(0,0){
+
+  if ($ARGC != 0) {
+    printf("\nReturns the  factor phi with W model. \n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }	
+  return(double(1))
+
+
+}
+
+
+define Fe_BB_P(Fe0,5){
+	if ($ARGC != 5) {
+    printf("\nReturns the  factor FE with BB model. Variable is the porosity.\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }	
+
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+
+
+  if (type($2) == "double") {
+    T = double($2)
+  } else {
+    T = float($2)
+  }
+
+  if (type($3) == "double") {
+    R = double($3)
+  } else {
+    R = float($3)
+  }
+
+  if (type($4) == "double") {
+    emissivity = double($4)
+  } else {
+    emissivity = float($4)
+  }
+
+  #Define constants
+  sigma = 5.670374e-8
+  flag = int($5) #if flag = 1, crystalline structure 
+intd = dim(outp)
+# Element-by-element 
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+
+          intx = float(1)*outp[inti, intj, intk]
+          B = 1.25*((1-intx)/intx)^(10/9)
+          if(flag == 1){
+            Ks = K_bulk_crystaline(T)
+          } else{
+            Ks = K_bulk_amorphous(T)
+          }
+
+
+
+
+          Gammaf = Ks/(8*R*sigma*T^3)
+
+
+          Fe = (1-sqrt(1-intx))*intx + (sqrt(1-intx))/(2/emissivity-1)*(B+1)/B*1/(1+ 1/(Gammaf*(2/emissivity-1)))
+
+
+
+          outp[inti, intj, intk] = Fe
+        }
+      }
+    }
+
+           return(outp)
+}
+
+
+define Fe_BB_T(0,5){
+	if ($ARGC != 5) {
+    printf("\nReturns the  factor FE with BB model. Variable is the temperature.\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }	
+
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+
+
+  if (type($2) == "double") {
+    porosity = double($2)
+  } else {
+    porosity = float($2)
+  }
+
+  if (type($3) == "double") {
+    R = double($3)
+  } else {
+    R = float($3)
+  }
+
+  if (type($4) == "double") {
+    emissivity = double($4)
+  } else {
+    emissivity = float($4)
+  }
+
+  #Define constants
+  sigma = 5.670374e-8
+  flag = int($5) #if flag = 1, crystalline structure 
+  intd = dim(outp)
+
+# Element-by-element 
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+
+          intx = float(1)*outp[inti, intj, intk]
+          B = 1.25*((1-porosity)/porosity)^(10/9)
+          if(flag == 1){
+            Ks = K_bulk_crystaline(intx)
+          } else{
+            Ks = K_bulk_amorphous(intx)
+          }
+
+
+
+
+          Gammaf = Ks/(8*R*sigma*intx^3)
+
+
+          Fe = (1-sqrt(1-porosity))*porosity + (sqrt(1-porosity))/(2/emissivity-1)*(B+1)/B*(1/(1+ 1/(Gammaf*(2/emissivity-1))))
+
+
+
+          outp[inti, intj, intk] = Fe
+        }
+      }
+    }
+
+           return(outp)
+}
+
+
+define Fe_BB_R(0,5){
+	if ($ARGC != 5) {
+    printf("\nReturns the  factor FE with BB model. Variable is the grain size.\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }	
+
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+
+
+  if (type($2) == "double") {
+    porosity = double($2)
+  } else {
+    porosity = float($2)
+  }
+
+  if (type($3) == "double") {
+    T = double($3)
+  } else {
+    T = float($3)
+  }
+
+  if (type($4) == "double") {
+    emissivity = double($4)
+  } else {
+    emissivity = float($4)
+  }
+
+  #Define constants
+  sigma = 5.670374e-8
+  flag = int($5) #if flag = 1, crystalline structure 
+intd = dim(outp)
+# Element-by-element 
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+
+          intx = float(1)*outp[inti, intj, intk]
+          B = 1.25*((1-porosity)/porosity)^(10/9)
+          if(flag == 1){
+            Ks = K_bulk_crystaline(T)
+          } else{
+            Ks = K_bulk_amorphous(T)
+          }
+
+
+
+
+          Gammaf = Ks/(8*intx*sigma*T^3)
+
+
+          Fe = (1-sqrt(1-porosity))*porosity + (sqrt(1-porosity))/(2/emissivity-1)*(B+1)/B*1/(1+ 1/(Gammaf*(2/emissivity-1)))
+
+
+
+          outp[inti, intj, intk] = Fe
+        }
+      }
+    }
+
+           return(outp)
+}
+
+
+
+
+
+
+define Fe_GB_P(0,2){
+	if ($ARGC != 2) {
+    printf("\nReturns the  factor FE with gb model. Variable is the porosity.\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }	
+
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+
+
+
+
+  if (type($2) == "double") {
+    emissivity = double($2)
+  } else {
+    emissivity = float($2)
+  }
+
+  #Define constants
+  sigma = 5.670374e-8
+  e_1 = 1.34
+  intd = dim(outp)
+
+# Element-by-element 
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+
+          intx = float(1)*outp[inti, intj, intk]
+
+
+
+          outp[inti, intj, intk] = emissivity*e_1* intx/(1-intx)
+
+        }
+      }
+    }
+
+           return(outp)
+}
+
+
+
+
+
+
+define K_contact_P(0,9){
+	if ($ARGC != 9) {
+    printf("\nReturns the  Contact conductivity Kc. Variable is the porosity.\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }	
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+
+
+
+
+  if (type($2) == "double") {
+    R = double($2)
+  } else {
+    R = float($2)
+  }
+
+  if (type($3) == "double") {
+    T = double($3)
+  } else {
+    T = float($3)
+  }
+
+  if (type($4) == "double") {
+    gamma = double($4)
+  } else {
+    gamma = float($4)
+  }
+
+  if (type($5) == "double") {
+    mu = double($5)
+  } else {
+    mu = float($5)
+  }
+
+  if (type($6) == "double") {
+    xhi = double($6)
+  } else {
+    xhi = float($6)
+  }
+
+
+  flagh = int($7) #choice of h
+  flagphi = int($8) #choice of h
+  flagstruct = int($9) #choice of h
+  intd = dim(outp)
+
+  # Element-by-element 
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+
+          intx = float(1)*outp[inti, intj, intk]
+
+
+
+          #Conputing h
+
+          if(flagh == 1){
+          h = h_JKR_R(R,gamma,mu,T)
+          }
+          if(flagh == 2){
+          h = h_GB_R(R,gamma,mu,T)
+          }
+          if(flagh == 3){
+          h = h_W_R(R)
+          }
+
+          #Conputing Phi
+
+          if(flagphi == 1){
+          Phi = phi_GB_p(intx,xhi)
+          }
+          if(flagphi == 2){
+          Phi = phi_G_p(intx)
+          }
+          if(flagphi == 3){
+          Phi = phi_W_p()
+          }
+
+
+          #Conputing Ks
+
+          if(flagstruct == 1){
+          Ks = K_bulk_crystaline(T)
+          }
+          if(flagstruct == 2){
+          Ks = K_bulk_amorphous(T)
+          }
+
+
+          outp[inti, intj, intk] = h*Phi*Ks
+
+
+
+
+        }
+      }
+    }
+
+           return(outp)
+}
+
+
+define K_contact_T(0,9){
+	if ($ARGC != 9) {
+    printf("\nReturns the  Contact conductivity Kc. Variable is the temperature.\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }	
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+
+
+
+
+  if (type($2) == "double") {
+    R = double($2)
+  } else {
+    R = float($2)
+  }
+
+  if (type($3) == "double") {
+    porosity = double($3)
+  } else {
+    porosity = float($3)
+  }
+
+  if (type($4) == "double") {
+    gamma = double($4)
+  } else {
+    gamma = float($4)
+  }
+
+  if (type($5) == "double") {
+    mu = double($5)
+  } else {
+    mu = float($5)
+  }
+
+  if (type($6) == "double") {
+    xhi = double($6)
+  } else {
+    xhi = float($6)
+  }
+
+
+  flagh = int($7) #choice of h
+  flagphi = int($8) #choice of h
+  flagstruct = int($9) #choice of h
+  intd = dim(outp)
+
+  # Element-by-element 
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+
+          intx = float(1)*outp[inti, intj, intk]
+
+
+
+          #Conputing h
+
+          if(flagh == 1){
+          h = h_JKR_T(intx,gamma,mu,R)
+          }
+          if(flagh == 2){
+          h = h_GB_T(intx,gamma,mu,R)
+          }
+          if(flagh == 3){
+          h = h_W_R(R)
+          }
+
+          #Conputing Phi
+
+          if(flagphi == 1){
+          Phi = phi_GB_p(porosity,xhi)
+          }
+          if(flagphi == 2){
+          Phi = phi_G_p(porosity)
+          }
+          if(flagphi == 3){
+          Phi = phi_W_p()
+          }
+
+
+          #Conputing Ks
+
+          if(flagstruct == 1){
+          Ks = K_bulk_crystaline(intx)
+          }
+          if(flagstruct == 2){
+          Ks = K_bulk_amorphous(intx)
+          }
+
+
+          outp[inti, intj, intk] = h*Phi*Ks
+
+
+
+
+        }
+      }
+    }
+
+           return(outp)
+}
+
+
+define K_contact_R(0,9){
+	if ($ARGC != 9) {
+    printf("\nReturns the  Contact conductivity Kc. Variable is the grain size.\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }	
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+
+
+
+
+  if (type($2) == "double") {
+    T = double($2)
+  } else {
+    T = float($2)
+  }
+
+  if (type($3) == "double") {
+    porosity = double($3)
+  } else {
+    porosity = float($3)
+  }
+
+  if (type($4) == "double") {
+    gamma = double($4)
+  } else {
+    gamma = float($4)
+  }
+
+  if (type($5) == "double") {
+    mu = double($5)
+  } else {
+    mu = float($5)
+  }
+
+  if (type($6) == "double") {
+    xhi = double($6)
+  } else {
+    xhi = float($6)
+  }
+
+
+  flagh = int($7) #choice of h
+  flagphi = int($8) #choice of h
+  flagstruct = int($9) #choice of h
+  intd = dim(outp)
+
+  # Element-by-element 
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+
+          intx = float(1)*outp[inti, intj, intk]
+
+
+
+          #Conputing h
+
+          if(flagh == 1){
+          h = h_JKR_R(intx,gamma,mu,R)
+          }
+          if(flagh == 2){
+          h = h_GB_R(intx,gamma,mu,R)
+          }
+          if(flagh == 3){
+          h = h_W_R(R)
+          }
+
+          #Conputing Phi
+
+          if(flagphi == 1){
+          Phi = phi_GB_p(porosity,xhi)
+          }
+          if(flagphi == 2){
+          Phi = phi_G_p(porosity)
+          }
+          if(flagphi == 3){
+          Phi = phi_W_p()
+          }
+
+
+          #Conputing Ks
+
+          if(flagstruct == 1){
+          Ks = K_bulk_crystaline(intx)
+          }
+          if(flagstruct == 2){
+          Ks = K_bulk_amorphous(intx)
+          }
+
+
+          outp[inti, intj, intk] = h*Phi*Ks
+
+
+
+
+        }
+      }
+    }
+
+           return(outp)
+}
+
+
+define K_E_P(0,11){
+	if ($ARGC != 11) {
+    printf("\nReturns the  Effective Contact conductivity Ke. Variable is the porosity.\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }	
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+
+
+
+
+  if (type($2) == "double") {
+    R = double($2)
+  } else {
+    R = float($2)
+  }
+
+  if (type($3) == "double") {
+    T = double($3)
+  } else {
+    T = float($3)
+  }
+
+  if (type($4) == "double") {
+    gamma = double($4)
+  } else {
+    gamma = float($4)
+  }
+
+  if (type($5) == "double") {
+    mu = double($5)
+  } else {
+    mu = float($5)
+  }
+
+  if (type($6) == "double") {
+    xhi = double($6)
+  } else {
+    xhi = float($6)
+  }
+
+  if (type($7) == "double") {
+    emissivity = double($7)
+  } else {
+    emissivity = float($7)
+  }
+
+
+  flagh = int($8) #choice of h
+  flagphi = int($9) #choice of phi
+  flagrad = int($10) #choice of radiative model
+  flagstruct = int($11) 
+  intd = dim(outp)
+
+  # Element-by-element 
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+
+          intx = float(1)*outp[inti, intj, intk]
+
+
+
+          #Conputing h
+
+          if(flagh == 1){
+          h = h_JKR_R(R,gamma,mu,T)
+          }
+          if(flagh == 2){
+          h = h_GB_R(R,gamma,mu,T)
+          }
+          if(flagh == 3){
+          h = h_W_R(R)
+          }
+
+          #Conputing Phi
+
+          if(flagphi == 1){
+          Phi = phi_GB_p(intx,xhi)
+          }
+          if(flagphi == 2){
+          Phi = phi_G_p(intx)
+          }
+          if(flagphi == 3){
+          Phi = phi_W_p()
+          }
+
+
+          #Computing Ks
+
+          if(flagstruct == 1){
+          Ks = K_bulk_crystaline(T)
+          }
+          if(flagstruct == 2){
+          Ks = K_bulk_amorphous(T)
+          }
+
+
+          #Computing Kr
+
+          if(flagrad == 1){
+          Kr = K_rad_BB_P(intx,R,T,emissivity,flagstruct)
+          }
+
+          if(flagrad == 2){
+          Kr = K_rad_GB_P(intx,R,T,emissivity,flagstruct)
+          }
+
+
+          outp[inti, intj, intk] = h*Phi*Ks + Kr
+
+
+
+
+        }
+      }
+    }
+
+           return(outp)
+}
+
+
+
+define Gamma_P(0,11){
+	if ($ARGC != 11) {
+    printf("\nReturns the  Thermal inertia. Variable is the porosity.\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }	
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+
+
+
+
+  if (type($2) == "double") {
+    R = double($2)
+  } else {
+    R = float($2)
+  }
+
+  if (type($3) == "double") {
+    T = double($3)
+  } else {
+    T = float($3)
+  }
+
+  if (type($4) == "double") {
+    gamma = double($4)
+  } else {
+    gamma = float($4)
+  }
+
+  if (type($5) == "double") {
+    mu = double($5)
+  } else {
+    mu = float($5)
+  }
+
+  if (type($6) == "double") {
+    xhi = double($6)
+  } else {
+    xhi = float($6)
+  }
+
+  if (type($7) == "double") {
+    emissivity = double($7)
+  } else {
+    emissivity = float($7)
+  }
+
+
+  flagh = int($8) #choice of h
+  flagphi = int($9) #choice of phi
+  flagrad = int($10) #choice of radiative model
+  flagstruct = int($11) 
+  intd = dim(outp)
+
+  # Element-by-element 
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+
+          intx = float(1)*outp[inti, intj, intk]
+
+
+
+          #Conputing h
+
+          if(flagh == 1){
+          h = h_JKR_R(R,gamma,mu,T)
+          }
+          if(flagh == 2){
+          h = h_GB_R(R,gamma,mu,T)
+          }
+          if(flagh == 3){
+          h = h_W_R(R)
+          }
+
+          #Conputing Phi
+
+          if(flagphi == 1){
+          Phi = phi_GB_p(intx,xhi)
+          }
+          if(flagphi == 2){
+          Phi = phi_G_p(intx)
+          }
+          if(flagphi == 3){
+          Phi = phi_W_p()
+          }
+
+
+          #Computing Ks
+
+          if(flagstruct == 1){
+          Ks = K_bulk_crystaline(T)
+          rho = 918;
+          }
+          if(flagstruct == 2){
+          Ks = K_bulk_amorphous(T)
+          rho = (940);
+          }
+
+
+          #Computing Kr
+
+          if(flagrad == 1){
+          Kr = K_rad_BB_P(intx,R,T,emissivity,flagstruct)
+          }
+
+          if(flagrad == 2){
+          Kr = K_rad_GB_P(intx,R,T,emissivity,flagstruct)
+          }
+
+
+          outp[inti, intj, intk] = sqrt((h*Phi*Ks + Kr)*(1-intx)*rho*Cp_ice_water(T))
+
+
+
+
+        }
+      }
+    }
+
+           return(outp)
+}
+
+
+
+define Gamma_bulk_P(0,3){
+	if ($ARGC != 3) {
+    printf("\nReturns the  Thermal inertia of the bulk. Variable is the porosity.\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }	
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+
+
+  if (type($2) == "double") {
+    T = double($2)
+  } else {
+    T = float($2)
+  }
+
+
+
+
+
+  flagstruct = int($3) 
+  intd = dim(outp)
+
+  # Element-by-element 
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+
+          intx = float(1)*outp[inti, intj, intk]
+
+
+
+          #Computing Ks
+
+          if(flagstruct == 1){
+          Ks = K_bulk_crystaline(T)
+          rho = 918;
+          }
+          if(flagstruct == 2){
+          Ks = K_bulk_amorphous(T)
+          rho = (940);
+          }
+
+
+
+          outp[inti, intj, intk] = sqrt((Ks)*(1-intx)*rho*Cp_ice_water(T))
+
+
+
+
+        }
+      }
+    }
+
+           return(outp)
+}
+
+
+
+
+
+define Gamma_rad_P(0,6){
+	if ($ARGC != 6) {
+    printf("\nReturns the contribution of the radiative to the   Thermal inertia. Variable is the porosity.\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }	
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+
+
+
+
+  if (type($2) == "double") {
+    R = double($2)
+  } else {
+    R = float($2)
+  }
+
+  if (type($3) == "double") {
+    T = double($3)
+  } else {
+    T = float($3)
+  }
+
+
+  if (type($4) == "double") {
+    emissivity = double($4)
+  } else {
+    emissivity = float($4)
+  }
+
+
+  flagrad = int($5) #choice of radiative model
+  flagstruct = int($6)
+  intd = dim(outp)
+
+  # Element-by-element 
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+
+          intx = float(1)*outp[inti, intj, intk]
+
+
+
+
+
+          #Computing Kr
+
+          if(flagrad == 1){
+          Kr = K_rad_BB_P(intx,R,T,emissivity,flagstruct)
+          }
+
+          if(flagrad == 2){
+          Kr = K_rad_GB_P(intx,R,T,emissivity,flagstruct)
+          }
+
+
+          outp[inti, intj, intk] = sqrt(( Kr)*(1-intx)*rho*Cp_ice_water(T))
+
+
+
+
+        }
+      }
+    }
+
+           return(outp)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+define K_E_T(0,11){
+	if ($ARGC != 11) {
+    printf("\nReturns the  Effective conductivity Ke. Variable is the temperature.\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }	
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+
+
+
+
+  if (type($2) == "double") {
+    R = double($2)
+  } else {
+    R = float($2)
+  }
+
+  if (type($3) == "double") {
+    porosity = double($3)
+  } else {
+    porosity = float($3)
+  }
+
+  if (type($4) == "double") {
+    gamma = double($4)
+  } else {
+    gamma = float($4)
+  }
+
+  if (type($5) == "double") {
+    mu = double($5)
+  } else {
+    mu = float($5)
+  }
+
+  if (type($6) == "double") {
+    xhi = double($6)
+  } else {
+    xhi = float($6)
+  }
+  if (type($7) == "double") {
+    emissivity = double($7)
+  } else {
+    emissivity = float($7)
+  }
+
+
+  flagh = int($8) #choice of h
+  flagphi = int($9) #choice of phi
+  flagrad = int($10)
+  flagstruct = int($11) 
+  intd = dim(outp)
+
+  # Element-by-element 
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+
+          intx = float(1)*outp[inti, intj, intk]
+
+
+
+          #Conputing h
+
+          if(flagh == 1){
+          h = h_JKR_T(intx,gamma,mu,R)
+          }
+          if(flagh == 2){
+          h = h_GB_T(intx,gamma,mu,R)
+          }
+          if(flagh == 3){
+          h = h_W_R(R)
+          }
+
+          #Conputing Phi
+
+          if(flagphi == 1){
+          Phi = phi_GB_p(porosity,xhi)
+          }
+          if(flagphi == 2){
+          Phi = phi_G_p(porosity)
+          }
+          if(flagphi == 3){
+          Phi = phi_W_p()
+          }
+
+
+          #Conputing Ks
+
+          if(flagstruct == 1){
+          Ks = K_bulk_crystaline(intx)
+          }
+          if(flagstruct == 2){
+          Ks = K_bulk_amorphous(intx)
+          }
+
+
+           #Computing Kr
+
+          if(flagrad == 1){
+          Kr = K_rad_BB_T(intx,R,porosity,emissivity,flagstruct)
+          }
+
+          if(flagrad == 2){
+          Kr = K_rad_GB_T(intx,R,porosity,emissivity,flagstruct)
+          }
+
+
+          outp[inti, intj, intk] = h*Phi*Ks + Kr
+
+
+
+
+        }
+      }
+    }
+
+           return(outp)
+}
+
+
+
+
+
+
+define Gamma_T(0,11){
+	if ($ARGC != 11) {
+    printf("\nReturns the Thermal Inertia Gamma. Variable is the temperature.\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }	
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+
+
+
+
+  if (type($2) == "double") {
+    R = double($2)
+  } else {
+    R = float($2)
+  }
+
+  if (type($3) == "double") {
+    porosity = double($3)
+  } else {
+    porosity = float($3)
+  }
+
+  if (type($4) == "double") {
+    gamma = double($4)
+  } else {
+    gamma = float($4)
+  }
+
+  if (type($5) == "double") {
+    mu = double($5)
+  } else {
+    mu = float($5)
+  }
+
+  if (type($6) == "double") {
+    xhi = double($6)
+  } else {
+    xhi = float($6)
+  }
+  if (type($7) == "double") {
+    emissivity = double($7)
+  } else {
+    emissivity = float($7)
+  }
+
+
+  flagh = int($8) #choice of h
+  flagphi = int($9) #choice of phi
+  flagrad = int($10)
+  flagstruct = int($11) 
+  intd = dim(outp)
+
+  # Element-by-element 
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+
+          intx = float(1)*outp[inti, intj, intk]
+
+
+
+          #Conputing h
+
+          if(flagh == 1){
+          h = h_JKR_T(intx,gamma,mu,R)
+          }
+          if(flagh == 2){
+          h = h_GB_T(intx,gamma,mu,R)
+          }
+          if(flagh == 3){
+          h = h_W_R(R)
+          }
+
+          #Conputing Phi
+
+          if(flagphi == 1){
+          Phi = phi_GB_p(porosity,xhi)
+          }
+          if(flagphi == 2){
+          Phi = phi_G_p(porosity)
+          }
+          if(flagphi == 3){
+          Phi = phi_W_p()
+          }
+
+
+          #Conputing Ks
+
+          if(flagstruct == 1){
+          Ks = K_bulk_crystaline(intx)
+          rho = 918;
+          }
+          if(flagstruct == 2){
+          Ks = K_bulk_amorphous(intx)
+          rho = 940;
+          }
+
+
+           #Computing Kr
+
+          if(flagrad == 1){
+          Kr = K_rad_BB_T(intx,R,porosity,emissivity,flagstruct)
+          }
+
+          if(flagrad == 2){
+          Kr = K_rad_GB_T(intx,R,porosity,emissivity,flagstruct)
+          }
+
+
+          outp[inti, intj, intk] = sqrt((h*Phi*Ks + Kr)*(1-porosity)*rho*Cp_ice_water(intx))
+
+
+
+
+        }
+      }
+    }
+
+           return(outp)
+}
+
+
+
+define Gamma_bulk_T(0,3){
+	if ($ARGC != 3) {
+    printf("\nReturns the  Thermal inertia of the bulk. Variable is the temperature.\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }	
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+
+
+  if (type($2) == "double") {
+    porosity = double($2)
+  } else {
+    porosity = float($2)
+  }
+
+
+
+
+  flagstruct = int($3) 
+  intd = dim(outp)
+
+  # Element-by-element 
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+
+          intx = float(1)*outp[inti, intj, intk]
+
+
+
+          #Computing Ks
+
+          if(flagstruct == 1){
+          Ks = K_bulk_crystaline(intx)
+          rho = 918;
+          }
+          if(flagstruct == 2){
+          Ks = K_bulk_amorphous(intx)
+          rho = (940);
+          }
+
+
+
+          outp[inti, intj, intk] = sqrt((Ks)*(1-porosity)*rho*Cp_ice_water(intx))
+
+
+
+
+        }
+      }
+    }
+
+           return(outp)
+}
+
+
+
+
+
+define Gamma_rad_T(0,6){
+	if ($ARGC != 6) {
+    printf("\nReturns the contribution of the radiative to the   Thermal inertia. Variable is the temperature.\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }	
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+
+
+
+
+  if (type($2) == "double") {
+    R = double($2)
+  } else {
+    R = float($2)
+  }
+
+  if (type($3) == "double") {
+    porosity = double($3)
+  } else {
+    porosity = float($3)
+  }
+
+
+  if (type($4) == "double") {
+    emissivity = double($4)
+  } else {
+    emissivity = float($4)
+  }
+
+
+  flagrad = int($5)
+  flagstruct = int($6) 
+  intd = dim(outp)
+
+  # Element-by-element 
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+
+          intx = float(1)*outp[inti, intj, intk]
+
+
+
+
+
+          #Computing Kr
+
+          if(flagrad == 1){
+          Kr = K_rad_BB_T(intx,R,porosity,emissivity,flagstruct)
+          }
+
+          if(flagrad == 2){
+          Kr = K_rad_GB_T(intx,R,porosity,emissivity,flagstruct)
+          }
+
+          if(flagstruct == 1){
+          rho = 918;
+          }else{
+          rho = 940;
+          }
+
+
+          outp[inti, intj, intk] = sqrt(( Kr)*(1-porosity)*rho*Cp_ice_water(intx))
+
+
+
+
+        }
+      }
+    }
+
+           return(outp)
+}
+
+
+
+
+
+
+
+
+
+
+define K_E_R(0,11){
+	if ($ARGC != 11) {
+    printf("\nReturns the effective  conductivity Ke. Variable is the grain size.\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }	
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+
+  intd = dim(outp)
+
+
+
+  if (type($2) == "double") {
+    T = double($2)
+  } else {
+    T = float($2)
+  }
+
+  if (type($3) == "double") {
+    porosity = double($3)
+  } else {
+    porosity = float($3)
+  }
+
+  if (type($4) == "double") {
+    gamma = double($4)
+  } else {
+    gamma = float($4)
+  }
+
+  if (type($5) == "double") {
+    mu = double($5)
+  } else {
+    mu = float($5)
+  }
+
+  if (type($6) == "double") {
+    xhi = double($6)
+  } else {
+    xhi = float($6)
+  }
+
+  if (type($7) == "double") {
+    emissivity = double($7)
+  } else {
+    emissivity = float($7)
+  }
+
+
+  flagh = int($8) #choice of h
+  flagphi = int($9) #choice of phi
+  flagrad = int($10) #choice of phi
+  flagstruct = int($11) 
+
+  # Element-by-element 
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+
+          intx = float(1)*outp[inti, intj, intk]
+
+
+
+          #Conputing h
+
+          if(flagh == 1){
+          h = h_JKR_R(intx,gamma,mu,T)
+          }
+          if(flagh == 2){
+          h = h_GB_R(intx,gamma,mu,T)
+          }
+          if(flagh == 3){
+          h = h_W_R(intx)
+          }
+
+          #Conputing Phi
+
+          if(flagphi == 1){
+          Phi = phi_GB_p(porosity,xhi)
+          }
+          if(flagphi == 2){
+          Phi = phi_G_p(porosity)
+          }
+          if(flagphi == 3){
+          Phi = phi_W_p()
+          }
+
+
+          #Conputing Ks
+
+          if(flagstruct == 1){
+          Ks = K_bulk_crystaline(T)
+          }
+          if(flagstruct == 2){
+          Ks = K_bulk_amorphous(T)
+          }
+
+
+          #Conputing Kr
+
+          if(flagrad == 1){
+          Kr = K_rad_BB_R(intx,porosity,T,emissivity,flagstruct)
+          }
+          if(flagrad == 2){
+          Kr = K_rad_GB_R(intx,porosity,T,emissivity,flagstruct)
+          }
+
+
+          outp[inti, intj, intk] = h*Phi*Ks + Kr
+
+
+
+
+        }
+      }
+    }
+
+           return(outp)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+define Gamma_bulk_R(0,4){
+	if ($ARGC != 3) {
+    printf("\nReturns the Thermal Inertia Gamma. Variable is the grain size.\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }	
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+
+  intd = dim(outp)
+
+
+
+  if (type($2) == "double") {
+    T = double($2)
+  } else {
+    T = float($2)
+  }
+
+  if (type($3) == "double") {
+    porosity = double($3)
+  } else {
+    porosity = float($3)
+  }
+
+
+  flagstruct = int($4) 
+
+  # Element-by-element 
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+
+          intx = float(1)*outp[inti, intj, intk]
+
+
+
+
+
+          #Conputing Ks
+
+          if(flagstruct == 1){
+          Ks = K_bulk_crystaline(T)
+          rho = 918;
+          }
+          if(flagstruct == 2){
+          Ks = K_bulk_amorphous(T)
+          rho = 940;
+          }
+
+
+
+
+
+          outp[inti, intj, intk] = sqrt((Ks )*(1-porosity)*rho*Cp_ice_water(T))
+
+
+
+
+        }
+      }
+    }
+
+           return(outp)
+}
+
+
+
+define Gamma_R(0,11){
+  if ($ARGC != 11) {
+    printf("\nReturns the Thermal Inertia Gamma. Variable is the grain size.\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  } 
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+
+  intd = dim(outp)
+
+
+
+  if (type($2) == "double") {
+    T = double($2)
+  } else {
+    T = float($2)
+  }
+
+  if (type($3) == "double") {
+    porosity = double($3)
+  } else {
+    porosity = float($3)
+  }
+
+  if (type($4) == "double") {
+    gamma = double($4)
+  } else {
+    gamma = float($4)
+  }
+
+  if (type($5) == "double") {
+    mu = double($5)
+  } else {
+    mu = float($5)
+  }
+
+  if (type($6) == "double") {
+    xhi = double($6)
+  } else {
+    xhi = float($6)
+  }
+
+  if (type($7) == "double") {
+    emissivity = double($7)
+  } else {
+    emissivity = float($7)
+  }
+
+
+  flagh = int($8) #choice of h
+  flagphi = int($9) #choice of phi
+  flagrad = int($10) #choice of phi
+  flagstruct = int($11) 
+
+  # Element-by-element 
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+
+          intx = float(1)*outp[inti, intj, intk]
+
+
+
+          #Conputing h
+
+          if(flagh == 1){
+          h = h_JKR_R(intx,gamma,mu,T)
+          }
+          if(flagh == 2){
+          h = h_GB_R(intx,gamma,mu,T)
+          }
+          if(flagh == 3){
+          h = h_W_R(intx)
+          }
+
+          #Conputing Phi
+
+          if(flagphi == 1){
+          Phi = phi_GB_p(porosity,xhi)
+          }
+          if(flagphi == 2){
+          Phi = phi_G_p(porosity)
+          }
+          if(flagphi == 3){
+          Phi = phi_W_p()
+          }
+
+
+          #Conputing Ks
+
+          if(flagstruct == 1){
+          Ks = K_bulk_crystaline(T)
+          rho = 918;
+          }
+          if(flagstruct == 2){
+          Ks = K_bulk_amorphous(T)
+          rho = 940;
+          }
+
+
+          #Conputing Kr
+
+          if(flagrad == 1){
+          Kr = K_rad_BB_R(intx,porosity,T,emissivity,flagstruct)
+          }
+          if(flagrad == 2){
+          Kr = K_rad_GB_R(intx,porosity,T,emissivity,flagstruct)
+          }
+
+
+         outp[inti, intj, intk] = sqrt((h*Phi*Ks + Kr)*(1-porosity)*rho*Cp_ice_water(T))
+
+
+
+
+        }
+      }
+    }
+
+           return(outp)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+define K_rad_BB_R(0,5) {
+
+  if ($ARGC != 5) {
+    printf("\nReturns the radiative thermal conductivity for a given porosity and tempeature. The variable is the grain size\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+  intd = dim(outp)
+
+  if (type($2) == "double") {
+    porosity = double($2)
+  } else {
+    porosity = float($2)
+  }
+
+  if (type($3) == "double") {
+    T = double($3)
+  } else {
+    T = float($3)
+  }
+
+  if (type($4) == "double") {
+    emissivity = double($4)
+  } else {
+    emissivity = float($4)
+  }
+
+#Define constants
+sigma = 5.670374e-8
+flag = int($5) #if flag = 1, crystalline structure 
+intd = dim(outp)
+
+# Element-by-element 
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+
+          intx = float(1)*outp[inti, intj, intk]
+          B = 1.25*((1-porosity)/porosity)^(10/9)
+          if(flag == 1){
+            Ks = K_bulk_crystaline(T)
+          } else{
+            Ks = K_bulk_amorphous(T)
+          }
+
+
+
+
+          Gammaf = Ks/(8*intx*sigma*T^3)
+
+
+          Fe = (1-sqrt(1-porosity))*porosity + (sqrt(1-porosity))/(2/emissivity-1)*(B+1)/B*1/(1+ 1/(Gammaf*(2/emissivity-1)))
+
+
+
+          outp[inti, intj, intk] = 8*intx*Fe*sigma*T^3
+        }
+      }
+    }
+
+           return(outp)
+}
+
+
+
+
+
+define K_rad_BB_P(0,5) {
+
+  if ($ARGC != 5) {
+    printf("\nReturns the radiative thermal conductivity for a given radius and tempeature. The variable is the porosity\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+  intd = dim(outp)
+
+  if (type($2) == "double") {
+    R = double($2)
+  } else {
+    R = float($2)
+  }
+
+  if (type($3) == "double") {
+    T = double($3)
+  } else {
+    T = float($3)
+  }
+
+  if (type($4) == "double") {
+    emissivity = double($4)
+  } else {
+    emissivity = float($4)
+  }
+
+#Define constants
+sigma = 5.670374e-8
+flag = int($5) #if flag = 1, crystalline structure 
+intd = dim(outp)
+
+
+# Element-by-element 
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+
+          intx = float(1)*outp[inti, intj, intk]
+          B = 1.25*((1-intx)/intx)^(10/9)
+          if(flag == 1){
+            Ks = K_bulk_crystaline(T)
+          } else{
+            Ks = K_bulk_amorphous(T)
+          }
+
+
+
+
+          Gammaf = Ks/(8*R*sigma*T^3)
+
+
+          Fe = (1-sqrt(1-intx))*intx + (sqrt(1-intx))/(2/emissivity-1)*(B+1)/B*1/(1+ 1/(Gammaf*(2/emissivity-1)))
+
+
+
+          outp[inti, intj, intk] = 8*R*Fe*sigma*T^3
+        }
+      }
+    }
+
+           return(outp)
+}
+
+
+
+define K_rad_BB_T(0,5) {
+
+  if ($ARGC != 5) {
+    printf("\nReturns the radiative thermal conductivity for a given radius and porosity. The variable is the temperature\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+  intd = dim(outp)
+
+  if (type($2) == "double") {
+    R = double($2)
+  } else {
+    R = float($2)
+  }
+
+  if (type($3) == "double") {
+  	porosity = double($3)
+  } else {
+    porosity = float($3)
+  }
+
+  if (type($4) == "double") {
+    emissivity = double($4)
+  } else {
+    emissivity = float($4)
+  }
+
+#Define constants
+sigma = 5.670374e-8
+flag = int($5) #if flag = 1, crystalline structure 
+intd = dim(outp)
+
+
+# Element-by-element 
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+
+          intx = float(1)*outp[inti, intj, intk]
+          B = 1.25*((1-porosity)/porosity)^(10/9)
+          if(flag == 1){
+            Ks = K_bulk_crystaline(intx)
+          } else{
+            Ks = K_bulk_amorphous(intx)
+          }
+
+
+
+
+          Gammaf = Ks/(8*R*sigma*intx^3)
+
+
+          Fe = (1-sqrt(1-porosity))*porosity + (sqrt(1-porosity))/(2/emissivity-1)*(B+1)/B*1/(1+ 1/(Gammaf*(2/emissivity-1)))
+
+
+
+          outp[inti, intj, intk] = 8*R*Fe*sigma*intx^3
+        }
+      }
+    }
+
+           return(outp)
+}
+
+
+
+
+
+
+
+
+define K_rad_GB_R(0,5) {
+
+  if ($ARGC != 5) {
+    printf("\nReturns the radiative thermal conductivity for a given porosity and tempeature. The variable is the grain size\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+  intd = dim(outp)
+
+  if (type($2) == "double") {
+    porosity = double($2)
+  } else {
+    porosity = float($2)
+  }
+
+  if (type($3) == "double") {
+    T = double($3)
+  } else {
+    T = float($3)
+  }
+
+  if (type($4) == "double") {
+    emissivity = double($4)
+  } else {
+    emissivity = float($4)
+  }
+
+#Define constants
+sigma = 5.670374e-8
+flag = int($5) #if flag = 1, crystalline structure 
+e_1 = 1.34
+intd = dim(outp)
+
+# Element-by-element 
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+
+          intx = float(1)*outp[inti, intj, intk]
+          B = 1.25*((1-porosity)/porosity)^(10/9)
+          if(flag == 1){
+            Ks = K_bulk_crystaline(T)
+          } else{
+            Ks = K_bulk_amorphous(T)
+          }
+
+
+
+
+          Gammaf = Ks/(8*intx*sigma*T^3)
+
+
+          Fe = e_1*emissivity*porosity/(1-porosity)
+
+
+
+          outp[inti, intj, intk] = 8*intx*Fe*sigma*T^3
+        }
+      }
+    }
+
+           return(outp)
+}
+
+
+
+
+
+define K_rad_GB_P(0,5) {
+
+  if ($ARGC != 5) {
+    printf("\nReturns the radiative thermal conductivity for a given radius and tempeature. The variable is the porosity\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+  intd = dim(outp)
+
+  if (type($2) == "double") {
+    R = double($2)
+  } else {
+    R = float($2)
+  }
+
+  if (type($3) == "double") {
+    T = double($3)
+  } else {
+    T = float($3)
+  }
+
+  if (type($4) == "double") {
+    emissivity = double($4)
+  } else {
+    emissivity = float($4)
+  }
+
+#Define constants
+sigma = 5.670374e-8
+flag = int($5) #if flag = 1, crystalline structure 
+e_1 = 1.34
+intd = dim(outp)
+
+# Element-by-element 
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+
+          intx = float(1)*outp[inti, intj, intk]
+          B = 1.25*((1-intx)/intx)^(10/9)
+          if(flag == 1){
+            Ks = K_bulk_crystaline(T)
+          } else{
+            Ks = K_bulk_amorphous(T)
+          }
+
+
+
+
+          Gammaf = Ks/(8*R*sigma*T^3)
+
+
+          Fe = e_1*emissivity*intx/(1-intx)
+
+
+
+          outp[inti, intj, intk] = 8*R*Fe*sigma*T^3
+        }
+      }
+    }
+
+           return(outp)
+}
+
+
+
+define K_rad_GB_T(0,5) {
+
+  if ($ARGC != 5) {
+    printf("\nReturns the radiative thermal conductivity for a given radius and porosity. The variable is the temperature\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+  intd = dim(outp)
+
+  if (type($2) == "double") {
+    R = double($2)
+  } else {
+    R = float($2)
+  }
+
+  if (type($3) == "double") {
+  	porosity = double($3)
+  } else {
+    porosity = float($3)
+  }
+
+  if (type($4) == "double") {
+    emissivity = double($4)
+  } else {
+    emissivity = float($4)
+  }
+
+#Define constants
+sigma = 5.670374e-8
+flag = int($5) #if flag = 1, crystalline structure 
+e_1 = 1.34
+intd = dim(outp)
+
+# Element-by-element 
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+
+          intx = float(1)*outp[inti, intj, intk]
+          B = 1.25*((1-porosity)/porosity)^(10/9)
+          if(flag == 1){
+            Ks = K_bulk_crystaline(intx)
+          } else{
+            Ks = K_bulk_amorphous(intx)
+          }
+
+
+
+
+          Gammaf = Ks/(8*R*sigma*intx^3)
+
+
+          Fe = e_1*emissivity*porosity/(1-porosity)
+
+
+
+          outp[inti, intj, intk] = 8*R*Fe*sigma*intx^3
+        }
+      }
+    }
+
+           return(outp)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+define K_bulk_amorphous(0,1) {
+
+  if ($ARGC != 1) {
+    printf("\nReturns the bulk thermal conductivity of an amorphous hexagonal ice\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+  intd = dim(outp)
+
+
+# Define constants
+rho = 940
+mu = 2500
+lambda = 5*1e-10
+
+
+
+# Element-by-element 
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+
+          intx = float(1)*outp[inti, intj, intk]
+          C_T = Cp_ice_water(intx)
+
+
+
+
+          outp[inti, intj, intk] = C_T*mu*lambda*rho/4
+        }
+      }
+    }
+
+           return(outp)
+}
+
+define K_bulk_crystaline(0,1) {
+
+  if ($ARGC != 1) {
+    printf("\nReturns the bulk thermal conductivity of a crystalline hexagonal ice\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+  intd = dim(outp)
+
+# Element-by-element 
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+          intx = float(1)*outp[inti, intj, intk]
+          outp[inti, intj, intk] = 567/intx
+        }
+      }
+    }
+
+           return(outp)
+}
+
+
+
+
+
+define Cp_ice_water(0,1) {
+
+  if ($ARGC != 1) {
+    printf("\nReturns the specific heat of water ice\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+  intd = dim(outp)
+
+# Element-by-element 
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+          intx = float(1)*outp[inti, intj, intk]
+          C_T = 7.73*intx*(1-exp(-1.263*1e-3*intx^2))*(1+8.47*1e-3*intx^6*exp(-3*sqrt(intx)) + 2.0825*1e-7*intx^4*exp(-4.97*1e-2*intx))
+          outp[inti, intj, intk] = C_T
+        }
+      }
+    }
+
+           return(outp)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+define inverse_Gamma_porosity(0,10){
+   if ($ARGC != 10) {
+    printf("\nBuild the inverse equation for retrieve the grain size from Gamma. The porosity is the variable\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+  intd = dim(outp)
+
+  if (type($2) == "double") {
+    Inertia = double($2)
+  } else {
+    Inertia = float($2)
+  }
+
+  if (type($3) == "double") {
+    T = double($3)
+  } else {
+    T = float($3)
+  }
+
+  if (type($4) == "double") {
+    emissivity = double($4)
+  } else {
+    emissivity = float($4)
+  }
+  if (type($5) == "double") {
+    gamma = double($5)
+  } else {
+    gamma = float($5)
+  }
+
+  if (type($6) == "double") {
+    mu = double($6)
+  } else {
+    mu = float($6)
+  }
+
+  if (type($7) == "double") {
+    xhi = double($7)
+  } else {
+    xhi = float($7)
+  }
+
+  if (type($8) == "double") {
+    tol = double($8)
+  } else {
+    tol = float($8)
+  }
+
+
+
+  flagmodel = int($9)
+  flagstruct = int($10)
+
+  #Define constant
+  sigma = 5.670374e-8;
+  e_1 = 1.34;
+  f1 = 5.18e-2;
+  f2 = 5.26;
+  C = Cp_ice_water(T);
+  E = 6.6*1e9*(4.276-0.012*T);
+  itermax = 1e3;
+
+  #Computing Ks
+
+  if(flagstruct == 1){
+    Ks = K_bulk_crystaline(T)
+    rho = 918;
+  }
+  if(flagstruct == 2){
+    Ks = K_bulk_amorphous(T)
+    rho = 940;
+  }
+
+
+
+
+output = create(2,length(outp),1,format = double );
+
+  # Element-by-element 
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+          intx = float(1)*outp[inti, intj, intk]
+
+
+          printf("%f \n", intx)
+          a = 1e-6;
+          b = 1e-1;
+
+          Ir = create( int((b-a)/a), 1,1,format = double,  start =10*a, step = a)
+
+          it = 0;
+          sol = create(1,2,1,format = double );
+
+
+
+
+
+
+
+          if(flagmodel == 1){
+          F_Ir = inverse_Model_GJKRBB(Ir,Inertia,T,intx,rho,C,emissivity,Ks,E,mu,gamma,xhi);
+          mid = minpos(F_Ir);
+
+          a= 1e-6;
+          b = Ir[mid];
+
+
+           while((abs(b-a)> tol) && (it < itermax)){
+
+            x = (a+b)/2
+
+
+            f_a =  inverse_Model_GJKRBB(a,Inertia,T,intx,rho,C,emissivity,Ks,E,mu,gamma,xhi)
+            f_x =  inverse_Model_GJKRBB(x,Inertia,T,intx,rho,C,emissivity,Ks,E,mu,gamma,xhi)
+
+
+
+
+            if(f_a*f_x < 0.0){
+            b = x;
+            }else{
+            a = x;
+            }
+            it = it + 1;
+          }
+
+          a= 1e-6;
+          b = Ir[mid];
+
+
+
+
+          if(abs(x - a) < 0.5*a){
+            x = 0  
+
+          }
+          if(abs(x - b) < 0.5*b){
+            x = 0  
+
+          }
+
+          sol[1,1,1] = x;
+
+
+
+
+
+
+          a= Ir[mid];
+          b = 1e-1;
+
+
+           while((abs(b-a)> tol) && (it < itermax)){
+
+            x = (a+b)/2
+
+
+            f_a =  inverse_Model_GJKRBB(a,Inertia,T,intx,rho,C,emissivity,Ks,E,mu,gamma,xhi)
+            f_x =  inverse_Model_GJKRBB(x,Inertia,T,intx,rho,C,emissivity,Ks,E,mu,gamma,xhi)
+
+
+
+
+            if(f_a*f_x < 0.0){
+            b = x;
+            }else{
+            a = x;
+            }
+            it = it + 1;
+          }
+          a=  Ir[mid];
+          b = 1e-1;
+          if(abs(x - a) < 0.5*a){
+            x = 0  
+
+          }
+          if(abs(x - b) < 0.5*b){
+            x = 0  
+
+          }
+
+          sol[1,2,1] = x;
+
+
+
+
+
+          }
+
+          if(flagmodel == 2){
+          F_Ir = inverse_Model_GB(Ir,Inertia,T,intx,rho,C,emissivity,Ks,E,mu,gamma,xhi);
+          mid = minpos(F_Ir);
+
+          a= 1e-6;
+          b = Ir[mid];
+
+
+           while((abs(b-a)> tol) && (it < itermax)){
+
+            x = (a+b)/2
+
+
+            f_a =  inverse_Model_GB(a,Inertia,T,intx,rho,C,emissivity,Ks,E,mu,gamma,xhi)
+            f_x =  inverse_Model_GB(x,Inertia,T,intx,rho,C,emissivity,Ks,E,mu,gamma,xhi)
+
+
+
+
+            if(f_a*f_x < 0.0){
+            b = x;
+            }else{
+            a = x;
+            }
+            it = it + 1;
+          }
+          a= 1e-6;
+          b = Ir[mid];
+          if(abs(x - a) < 0.5*a){
+            x = 0  
+
+          }
+          if(abs(x - b) < 0.5*b){
+            x = 0  
+
+          }
+
+          sol[1,1,1] = x;
+
+
+
+
+
+
+          a= Ir[mid];
+          b = 1;
+
+
+           while((abs(b-a)> tol) && (it < itermax)){
+
+            x = (a+b)/2
+
+
+            f_a =  inverse_Model_GB(a,Inertia,T,intx,rho,C,emissivity,Ks,E,mu,gamma,xhi)
+            f_x =  inverse_Model_GB(x,Inertia,T,intx,rho,C,emissivity,Ks,E,mu,gamma,xhi)
+
+
+
+
+            if(f_a*f_x < 0.0){
+            b = x;
+            }else{
+            a = x;
+            }
+            it = it + 1;
+          }
+          a=  Ir[mid];
+          b = 1;
+          if(abs(x - a) < 0.5*a){
+            x = 0  
+
+          }
+          if(abs(x - b) < 0.5*b){
+            x = 0  
+
+          }
+
+          sol[1,2,1] = x;
+
+
+
+
+
+          }
+
+
+          if(flagmodel == 3){
+          F_Ir = inverse_Model_WBB(Ir,Inertia,T,intx,rho,C,emissivity,Ks,E,mu,gamma,xhi);
+          mid = minpos(F_Ir);
+
+          a= 1e-6;
+          b = Ir[mid];
+
+
+           while((abs(b-a)> tol) && (it < itermax)){
+
+            x = (a+b)/2
+
+
+            f_a =  inverse_Model_WBB(a,Inertia,T,intx,rho,C,emissivity,Ks,E,mu,gamma,xhi)
+            f_x =  inverse_Model_WBB(x,Inertia,T,intx,rho,C,emissivity,Ks,E,mu,gamma,xhi)
+
+
+
+
+            if(f_a*f_x < 0.0){
+            b = x;
+            }else{
+            a = x;
+            }
+            it = it + 1;
+          }
+          a= 1e-6;
+          b = Ir[mid];
+          if(abs(x - a) < 0.5*a){
+            x = 0  
+
+          }
+          if(abs(x - b) < 0.5*b){
+            x = 0  
+
+          }
+
+          sol[1,1,1] = x;
+
+
+
+
+
+
+          a= Ir[mid];
+          b = 1;
+
+
+           while((abs(b-a)> tol) && (it < itermax)){
+
+            x = (a+b)/2
+
+
+            f_a =  inverse_Model_WBB(a,Inertia,T,intx,rho,C,emissivity,Ks,E,mu,gamma,xhi)
+            f_x =  inverse_Model_WBB(x,Inertia,T,intx,rho,C,emissivity,Ks,E,mu,gamma,xhi)
+
+
+
+
+            if(f_a*f_x < 0.0){
+            b = x;
+            }else{
+            a = x;
+            }
+            it = it + 1;
+          }
+          a=  Ir[mid];
+          b = 1;
+          if(abs(x - a) < 0.5*a){
+            x = 0  
+
+          }
+          if(abs(x - b) < 0.5*b){
+            x = 0  
+
+          }
+
+          sol[1,2,1] = x;
+
+
+
+
+
+          }
+
+
+          if(flagmodel == 4){
+          F_Ir = inverse_Model_W(Ir,Inertia,T,intx,rho,C,emissivity,Ks,E,mu,gamma,xhi);
+          mid = minpos(F_Ir);
+
+          a= 1e-6;
+          b = Ir[mid];
+
+
+           while((abs(b-a)> tol) && (it < itermax)){
+
+            x = (a+b)/2
+
+
+            f_a =  inverse_Model_W(a,Inertia,T,intx,rho,C,emissivity,Ks,E,mu,gamma,xhi)
+            f_x =  inverse_Model_W(x,Inertia,T,intx,rho,C,emissivity,Ks,E,mu,gamma,xhi)
+
+
+
+
+            if(f_a*f_x < 0.0){
+            b = x;
+            }else{
+            a = x;
+            }
+            it = it + 1;
+          }
+          a= 1e-6;
+          b = Ir[mid];
+          if(abs(x - a) < 0.5*a){
+            x = 0  
+
+          }
+          if(abs(x - b) < 0.5*b){
+            x = 0  
+
+          }
+
+          sol[1,1,1] = x;
+
+
+
+
+
+
+          a= Ir[mid];
+          b = 1;
+
+
+           while((abs(b-a)> tol) && (it < itermax)){
+
+            x = (a+b)/2
+
+
+            f_a =  inverse_Model_W(a,Inertia,T,intx,rho,C,emissivity,Ks,E,mu,gamma,xhi)
+            f_x =  inverse_Model_W(x,Inertia,T,intx,rho,C,emissivity,Ks,E,mu,gamma,xhi)
+
+
+
+
+            if(f_a*f_x < 0.0){
+            b = x;
+            }else{
+            a = x;
+            }
+            it = it + 1;
+          }
+          a=  Ir[mid];
+          b = 1;
+          if(abs(x - a) < 0.5*a){
+            x = 0  
+
+          }
+          if(abs(x - b) < 0.5*b){
+            x = 0  
+
+          }
+
+          sol[1,2,1] = x;
+
+
+
+
+
+          }
+
+
+
+
+          output[1, intj, intk] = sol[1,1,1];
+          output[2, intj, intk] = sol[1,2,1];
+        }
+      }
+    }
+
+           return(output)
+}
+
+
+
+
+
+
+
+
+define inverse_Model_GJKRBB(0,12){
+  if ($ARGC != 12) {
+    printf("\nInverse equation to retrieve grain size. Model: G+JKR+BB\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+
+   if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+  intd = dim(outp)
+
+  if (type($2) == "double") {
+    Inertia = double($2)
+  } else {
+    Inertia = float($2)
+  }
+  if (type($3) == "double") {
+    T = double($3)
+  } else {
+    T = float($3)
+  }
+
+  if (type($4) == "double") {
+    porosity = double($4)
+  } else {
+    porosity = float($4)
+  }
+
+  if (type($5) == "double") {
+    rho = double($5)
+  } else {
+    rho = float($5)
+  }
+
+  if (type($6) == "double") {
+    C = double($6)
+  } else {
+    C = float($6)
+  }
+
+  if (type($7) == "double") {
+    emissivity = double($7)
+  } else {
+    emissivity = float($7)
+  }
+
+  if (type($8) == "double") {
+    Ks = double($8)
+  } else {
+    Ks = float($8)
+  }
+  if (type($9) == "double") {
+    E = double($9)
+  } else {
+    E = float($9)
+  }
+  if (type($10) == "double") {
+    mu = double($10)
+  } else {
+    mu = float($10)
+  }
+  if (type($11) == "double") {
+    gamma = double($11)
+  } else {
+    gamma = float($11)
+  }
+
+  if (type($12) == "double") {
+    xhi = double($11)
+  } else {
+    xhi = float($11)
+  }
+
+
+
+
+  #Define constant
+  sigma = 5.670374e-8;
+  e_1 = 1.34;
+  f1 = 5.18e-2;
+  f2 = 5.26;
+
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+          intx = float(1)*outp[inti, intj, intk]
+
+
+          B = 1.25*((1-porosity)/porosity)^(10.0/9.0) ;
+          gammaf = Ks/(8*sigma*intx*T^3);
+
+          Fe = Fe_BB_T(T,porosity,intx,emissivity,1)
+
+          part_rad = 8*intx*Fe*sigma*T^3*(1-porosity)*rho*C ;
+          part_cont = (1-porosity)*contact_number(porosity)/pi*(9.0/4.0 *(1-mu^2)*gamma*pi/(E*intx))^(1.0/3.0)*Ks*(1-porosity)*rho*C;
+
+         outp[inti, intj, intk] = part_rad + part_cont - Inertia^2;
+         }
+        }
+      }
+
+
+
+
+  return(outp)
+}
+
+
+
+define inverse_Model_GB(0,12){
+  if ($ARGC != 12) {
+    printf("\nInverse equation to retrieve grain size. Model: GB \n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+  intd = dim(outp)
+
+  if (type($2) == "double") {
+    Inertia = double($2)
+  } else {
+    Inertia = float($2)
+  }
+  if (type($3) == "double") {
+    T = double($3)
+  } else {
+    T = float($3)
+  }
+
+  if (type($4) == "double") {
+    porosity = double($4)
+  } else {
+    porosity = float($4)
+  }
+
+  if (type($5) == "double") {
+    rho = double($5)
+  } else {
+    rho = float($5)
+  }
+
+  if (type($6) == "double") {
+    C = double($6)
+  } else {
+    C = float($6)
+  }
+
+  if (type($7) == "double") {
+    emissivity = double($7)
+  } else {
+    emissivity = float($7)
+  }
+
+  if (type($8) == "double") {
+    Ks = double($8)
+  } else {
+    Ks = float($8)
+  }
+  if (type($9) == "double") {
+    E = double($9)
+  } else {
+    E = float($9)
+  }
+  if (type($10) == "double") {
+    mu = double($10)
+  } else {
+    mu = float($10)
+  }
+  if (type($11) == "double") {
+    gamma = double($11)
+  } else {
+    gamma = float($11)
+  }
+
+  if (type($12) == "double") {
+    xhi = double($11)
+  } else {
+    xhi = float($11)
+  }
+
+
+
+
+  #Define constant
+  sigma = 5.670374e-8
+  e_1 = 1.34
+  f1 = 5.18e-2
+  f2 = 5.26
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+
+      intx = float(1)*outp[inti, intj, intk]
+      Fe = emissivity*e_1*porosity/(1-porosity)
+
+      part_rad = 8*intx*Fe*sigma*T^3*(1-porosity)*rho*C 
+      part_cont =xhi*f1*exp(f2*(1-porosity))*(9.0/4.0 *(1-mu^2)*gamma*pi/(E*intx))^(1.0/3.0)*Ks*(1-porosity)*rho*C
+      outp[inti, intj, intk] = part_rad + part_cont - Inertia^2;
+         }
+        }
+      }
+
+
+
+
+  return(outp)
+}
+
+
+
+define inverse_Model_WBB(0,12){
+  if ($ARGC != 12) {
+    printf("\nInverse equation to retrieve grain size. Model: W+BB\n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+  intd = dim(outp)
+
+  if (type($2) == "double") {
+    Inertia = double($2)
+  } else {
+    Inertia = float($2)
+  }
+  if (type($3) == "double") {
+    T = double($3)
+  } else {
+    T = float($3)
+  }
+
+  if (type($4) == "double") {
+    porosity = double($4)
+  } else {
+    porosity = float($4)
+  }
+
+  if (type($5) == "double") {
+    rho = double($5)
+  } else {
+    rho = float($5)
+  }
+
+  if (type($6) == "double") {
+    C = double($6)
+  } else {
+    C = float($6)
+  }
+
+  if (type($7) == "double") {
+    emissivity = double($7)
+  } else {
+    emissivity = float($7)
+  }
+
+  if (type($8) == "double") {
+    Ks = double($8)
+  } else {
+    Ks = float($8)
+  }
+  if (type($9) == "double") {
+    E = double($9)
+  } else {
+    E = float($9)
+  }
+  if (type($10) == "double") {
+    mu = double($10)
+  } else {
+    mu = float($10)
+  }
+  if (type($11) == "double") {
+    gamma = double($11)
+  } else {
+    gamma = float($11)
+  }
+
+  if (type($12) == "double") {
+    xhi = double($11)
+  } else {
+    xhi = float($11)
+  }
+
+
+
+
+  #Define constant
+  sigma = 5.670374e-8
+  e_1 = 1.34
+  f1 = 5.18e-2
+  f2 = 5.26
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+        intx = float(1)*outp[inti, intj, intk]
+
+        B = 1.25*((1-porosity)/porosity)^(10.0/9.0) 
+        gammaf = Ks/(8*sigma*intx*T^3)
+
+        Fe = ((1-sqrt(1-porosity))*porosity + sqrt(1-porosity)/(2/emissivity - 1)* (B+1)/B*(1/(1+1/(gammaf*(2/emissivity - 1)))))
+
+        part_rad = 8*intx*Fe*sigma*T^3*(1-porosity)*rho*C 
+        part_cont = 1.5e-8/intx*Ks*(1-porosity)*rho*C
+
+        outp[inti, intj, intk] = part_rad + part_cont - Inertia^2;
+         }
+        }
+      }
+
+
+
+
+  return(outp)
+}
+
+
+define inverse_Model_W(0,12){
+  if ($ARGC != 12) {
+    printf("\nInverse equation to retrieve grain size. Model: GB \n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+
+if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+  intd = dim(outp)
+
+  if (type($2) == "double") {
+    Inertia = double($2)
+  } else {
+    Inertia = float($2)
+  }
+  if (type($3) == "double") {
+    T = double($3)
+  } else {
+    T = float($3)
+  }
+
+  if (type($4) == "double") {
+    porosity = double($4)
+  } else {
+    porosity = float($4)
+  }
+
+  if (type($5) == "double") {
+    rho = double($5)
+  } else {
+    rho = float($5)
+  }
+
+  if (type($6) == "double") {
+    C = double($6)
+  } else {
+    C = float($6)
+  }
+
+  if (type($7) == "double") {
+    emissivity = double($7)
+  } else {
+    emissivity = float($7)
+  }
+
+  if (type($8) == "double") {
+    Ks = double($8)
+  } else {
+    Ks = float($8)
+  }
+  if (type($9) == "double") {
+    E = double($9)
+  } else {
+    E = float($9)
+  }
+  if (type($10) == "double") {
+    mu = double($10)
+  } else {
+    mu = float($10)
+  }
+  if (type($11) == "double") {
+    gamma = double($11)
+  } else {
+    gamma = float($11)
+  }
+
+  if (type($12) == "double") {
+    xhi = double($11)
+  } else {
+    xhi = float($11)
+  }
+
+
+
+
+  #Define constant
+  sigma = 5.670374e-8
+  e_1 = 1.34
+  f1 = 5.18e-2
+  f2 = 5.26
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+        intx = float(1)*outp[inti, intj, intk]
+
+        Fe = emissivity*e_1*porosity/(1-porosity)
+
+        part_rad = 8*intx*Fe*sigma*T^3*(1-porosity)*rho*C 
+        part_cont = 1.5e-8/intx*Ks*(1-porosity)*rho*C
+
+        outp[inti, intj, intk] = part_rad + part_cont - Inertia^2;
+         }
+        }
+      }
+
+
+
+
+  return(outp)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+define plot_inverse_Model_GB(0,12){
+  if ($ARGC != 12) {
+    printf("\nInverse equation to retrieve grain size. Model: GB \n")
+    #printf("\n")
+    printf("L.Lange 03-16-2020\n\n")
+
+    return(null)
+  }
+
+  if (type($1) == "double") {
+    outp = double($1)
+    pi = atod("3.14159265358979323846"); # This gets around the intermediate float bug
+  } else {
+    outp = float($1) # Must be float or double for values to be computed accurately
+     pi = 3.141592653589793
+  }
+  intd = dim(outp)
+
+  if (type($2) == "double") {
+    Inertia = double($2)
+  } else {
+    Inertia = float($2)
+  }
+  if (type($3) == "double") {
+    T = double($3)
+  } else {
+    T = float($3)
+  }
+
+  if (type($4) == "double") {
+    porosity = double($4)
+  } else {
+    porosity = float($4)
+  }
+
+  if (type($5) == "double") {
+    rho = double($5)
+  } else {
+    rho = float($5)
+  }
+
+  if (type($6) == "double") {
+    C = double($6)
+  } else {
+    C = float($6)
+  }
+
+  if (type($7) == "double") {
+    emissivity = double($7)
+  } else {
+    emissivity = float($7)
+  }
+
+  if (type($8) == "double") {
+    Ks = double($8)
+  } else {
+    Ks = float($8)
+  }
+  if (type($9) == "double") {
+    E = double($9)
+  } else {
+    E = float($9)
+  }
+  if (type($10) == "double") {
+    mu = double($10)
+  } else {
+    mu = float($10)
+  }
+  if (type($11) == "double") {
+    gamma = double($11)
+  } else {
+    gamma = float($11)
+  }
+
+  if (type($12) == "double") {
+    xhi = double($11)
+  } else {
+    xhi = float($11)
+  }
+
+
+
+
+  #Define constant
+  sigma = 5.670374e-8
+  e_1 = 1.34
+  f1 = 5.18e-2
+  f2 = 5.26
+
+
+
+
+  # Element-by-element 
+
+for (intk = 1; intk <= intd[3,1,1]; intk++) {
+      for (intj = 1; intj <= intd[2,1,1]; intj++) {
+        for (inti = 1; inti <= intd[1,1,1]; inti++) {
+
+          intx = float(1)*outp[inti, intj, intk]
+
+
+          Fe = emissivity*e_1*porosity/(1-porosity)
+
+           part_rad = 8*intx*Fe*sigma*T^3*(1-porosity)*rho*C 
+          part_cont = 1.5e-8/intx*Ks*(1-porosity)*rho*C
+
+
+          outp[inti, intj, intk] = part_rad + part_cont - Inertia^2
+
+
+          }
+          }
+          }
+
+  return(outp)
+}
+
+

@@ -1,0 +1,2 @@
+This file contains a code providing 3rd order polynomial fit with T that can be used in KRC to model conductivity/specific heat dependency w.r.t the temperature
+.sh allows to test the quality of the fit obtained.

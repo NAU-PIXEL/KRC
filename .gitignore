@@ -11,3 +11,6 @@ porbmndb
 
 # various logs
 eLog*.*
+
+# Mac preview files
+.DS_Store
