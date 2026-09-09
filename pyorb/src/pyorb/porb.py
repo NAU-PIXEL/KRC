@@ -937,7 +937,11 @@ def get_secondary_spin_params(
     spin_axis_orbital = np.matmul(rotation_matrix_FtoA.T, spin_axis_j2000)
     # XBFXU : Vernal equinox, along spinAxis cross OrbitPole (orbit pole in F is [0,0,1]) 
     spin_cross_Z = np.cross(spin_axis_orbital, [0,0,1])
-    vernal_equinox_orbital = spin_cross_Z / np.linalg.norm(spin_cross_Z)
+    if np.linalg.norm(spin_cross_Z) < 1e-12:
+        # spin axis is (anti)parallel to orbit pole; vernal equinox direction
+        vernal_equinox_orbital = np.array([1.0, 0.0, 0.0])  
+    else:
+        vernal_equinox_orbital = spin_cross_Z / np.linalg.norm(spin_cross_Z)
     # YBFXU : Y-axis of Season system
     yaxis_season_orbital = np.cross(spin_axis_orbital, vernal_equinox_orbital)
     # BFRM  : rotation matrix from orbital frame (F) to seasonal frame (B)
