@@ -938,9 +938,9 @@ def get_secondary_spin_params(
     # XBFXU : Vernal equinox, along spinAxis cross OrbitPole (orbit pole in F is [0,0,1]) 
     spin_cross_Z = np.cross(spin_axis_orbital, [0,0,1])
     if np.linalg.norm(spin_cross_Z) < 1e-12:
-        # spin axis is (anti)parallel to orbit pole (i.e., obliquity=0 or pi). 
-        # vernal equinox direction is therefore undefined.
-        # we select +X by convention for this degenerate case, to prevent testing errors.
+        # spin axis is (anti)parallel to orbit pole (i.e., obliquity=0 or pi). The vernal
+        # equinox direction is therefore undefined. We select orbital +X (perihelion 
+        # vector) for this degenerate case to ensure consistent results.
         vernal_equinox_orbital = np.array([1.0, 0.0, 0.0])  
     else:
         vernal_equinox_orbital = spin_cross_Z / np.linalg.norm(spin_cross_Z)
