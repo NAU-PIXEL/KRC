@@ -804,6 +804,11 @@ def get_naifid(search_str:str,
     spice.furnsh(default_mk)
     try:
         naifid = spice.bods2c(search_str)
+
+        str_naifid = f"{naifid}"
+        if str_naifid[0]=="2" and len(str_naifid)==7:
+            naifid = int(f"20{str_naifid[1:]}")
+            
     except spice.utils.exceptions.NotFoundError:
         print(f'String "{search_str}" matched no objects in default metakernel {default_mk}.')
         # if that fails, try the local naifid map file

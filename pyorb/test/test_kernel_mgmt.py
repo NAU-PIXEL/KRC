@@ -372,7 +372,7 @@ def test_get_naifid():
     
 
     bodies = ['Mars', 'Phobos', 'Kore', 'Kieffer', 'ceres']
-    naifids = [499, 401, 549, 20003779, 2000001]
+    naifids = [499, 401, 549, 20003779, 20000001]
 
     for i in range(len(bodies)):
         naifid = km.get_naifid(bodies[i], default_mk=default_mk, naifid_map_file=naifid_map_file)
@@ -416,8 +416,8 @@ def test_make_sb_mk():
     # Those bodies will not reach the inner portion of get_naifid() that appends to the 
     # naifid_map_file. Testing those bodies (or any other similar case) will fail the final
     # assert in this loop. 
-    bodies = ['Kieffer', '1985jv1', '3779 Kieffer', '1985 JV1']
-    naifids = [20003779, 20003779, 20003779, 20003779]
+    bodies = ['Kieffer', '1985jv1', '3779 Kieffer', '1985 JV1'] #, 'ceres']
+    naifids = [20003779, 20003779, 20003779, 20003779] #, 20000001]
     for i in range(len(bodies)):
         mk_path = km.make_sb_mk(bodies[i], default_mk=default_mk, naifid_map_file=naifid_map_file, kernels_dir=kernels_dir)
         assert mk_path == kernels_dir+f'/mk/{naifids[i]:09d}.tm'

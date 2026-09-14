@@ -391,12 +391,13 @@ def test_get_orbital_naifid():
     kernels = f'{kernels_dir}/input/test3'
     epoch_date = defaults.epoch_date
 
-    # cases: Mars, Phobos, (3779) Kieffer
-    naifids = [499, 401, 20003779]
+    # cases: Mars, Phobos, (3779) Kieffer, (1) Ceres
+    naifids = [499, 401, 20003779, 20000001]
     mks = [f'{kernels}/mk/000000401.tm',
            f'{kernels}/mk/000000401.tm',
-           f'{kernels}/mk/020003779.tm']
-    expected_orbital_naifid = [4, 4, 20003779]
+           f'{kernels}/mk/020003779.tm',
+           f'{kernels}/mk/020000001.tm']
+    expected_orbital_naifid = [4, 4, 20003779, 20000001]
 
     for i in range(len(naifids)):
         orbit_naifid = porb.get_orbital_naifid(mks[i], naifids[i], epoch_date)
