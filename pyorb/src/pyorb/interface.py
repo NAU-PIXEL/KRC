@@ -21,7 +21,8 @@ def update_all_default_hdfs():
         update_default_hdf(body_name)
         bodies.append(body_name)
     print(f'Updated default hdfs in {config.porb_defaults_dir} for these bodies:')
-    print(bodies)
+    for body in bodies:
+        print(body)
 
     return
 

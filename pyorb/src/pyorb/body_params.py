@@ -320,7 +320,7 @@ def write_hdf(porb_output:porb.PorbParams, body_params:tuple, out_dir: str) -> s
     rot = str(porb_output) 
 
     # hdf_file = f'{type_params['body_name'].upper()}.params.hdf'
-    hdf_file = f'{out_dir}/{porb_output.NAME}.porb.hdf'
+    hdf_file = f'{out_dir}/{porb_output.NAME.capitalize()}.porb.hdf'
 
     with h5py.File(hdf_file, 'w') as f:
 
@@ -356,6 +356,8 @@ def write_hdf(porb_output:porb.PorbParams, body_params:tuple, out_dir: str) -> s
         add_num_dset(planet_flux['Mut_Period'], planet_flux_grp, 'Mut_Period', '>f')
         add_num_dset(planet_flux['Orb_Radius'], planet_flux_grp, 'Orb_Radius', '>f')
         add_num_dset(planet_flux['Radius'],     planet_flux_grp, 'Radius', '>f')
+
+    print(f"Wrote {hdf_file}.")
 
     return hdf_file
 

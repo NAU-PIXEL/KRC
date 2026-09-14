@@ -1045,7 +1045,7 @@ def get_porb_params(
     except spice.utils.exceptions.SpiceKERNELVARNOTFOUND:
         print(f'WARNING!')
         print(f'No spin axis info found for body: {body_name} in PCK from metakernel: {metakernel}')
-        print(f'Make sure PCK has data for this body, or specify spin axis directly. (not yet implemented!)')
+        print(f'Make sure PCK has data for this body, or specify spin axis directly.')
         print(f'Using default spin axis (24hr period, aligned w/ ecliptic)')
         print()
         spin_axis = defaults.spin_axis

@@ -66,7 +66,10 @@ def download_target(target:str, dest:str|None=None, kernels_dir:str=config.kerne
 
     return destination
 
-def update_naif_kernel(source:str, regex:str, kernels_dir:str=config.kernels_dir) -> str:
+def update_naif_kernel(source:str, 
+                       regex:str, 
+                       kernels_dir:str=config.kernels_dir, 
+                       verbose:bool=False) -> str:
     """
     Checks a naif source location for updated kernels, compares them to latest currently
     available kernel, and if necessary, downloads the updated version.
@@ -76,6 +79,7 @@ def update_naif_kernel(source:str, regex:str, kernels_dir:str=config.kernels_dir
         regex (str): regular expression fully matching the desired kernel for all version numbers.
         kernels_dir (str, optional): Path to directory containing kernels. 
             Defaults to config.kernels_dir.
+        verbose (bool, optional): Flag controlling verbose output. Defaults to False.
 
     Returns:
         str: basename of updated current kernel.
@@ -110,9 +114,13 @@ def update_naif_kernel(source:str, regex:str, kernels_dir:str=config.kernels_dir
     ### compare newest available to current existing in kernels_dir
     if current != newest:
         current_path = download_target(f'{source}{newest}', kernels_dir=kernels_dir)
-        print(f'updated to {newest} from {current}.')
         current = newest
-    else: print(f'{current} is already up to date.')
+        if verbose:
+            print(f'updated to {newest} from {current}.')
+        
+    else: 
+        if verbose:
+            print(f'{current} is already up to date.')
 
     return current_path
 
@@ -200,7 +208,9 @@ def update_name_naifID_map(
 
     return naifid_map_file
 
-def update_satellite_kernel(satellite:str, kernels_dir:str=config.kernels_dir) -> str:
+def update_satellite_kernel(satellite:str, 
+                            kernels_dir:str=config.kernels_dir, 
+                            verbose:bool=False) -> str:
     """
     Checks canonical sources for updated versions of SPK for a planetary system. 
     Works (as of July 2026) for all satellites listed on NAIF's generic kernels site. 
@@ -210,6 +220,7 @@ def update_satellite_kernel(satellite:str, kernels_dir:str=config.kernels_dir) -
         satellite (str): Name of the target satellite to update the SPK for.
         kernels_dir (str, optional): Path to directory containing kernels. 
             Defaults to config.kernels_dir.
+        verbose (bool, optional): Flag controlling verbose output. Defaults to False.
 
     Raises:
         RuntimeError: Thrown when no available satellite kernel contains the target. 
@@ -289,8 +300,11 @@ def update_satellite_kernel(satellite:str, kernels_dir:str=config.kernels_dir) -
     ### download the desired file, if it is not already up to date.
     if newest not in all_current:
         download_target(f'{satellite_source}{newest}', kernels_dir=kernels_dir)
-        print(f'updated satellite spk to {newest}.')
-    else: print(f'{newest} is already up to date.')
+        if verbose:
+            print(f'updated satellite spk to {newest}.')
+    else: 
+        if verbose:
+            print(f'{newest} is already up to date.')
 
     return f'spk/{newest}'
 
@@ -319,7 +333,9 @@ def update_bennu_kernel(kernels_dir:str = config.kernels_dir) -> str:
 
     return spk
 
-def update_small_body_kernel(naifid:int, kernels_dir:str = config.kernels_dir) -> str:
+def update_small_body_kernel(naifid:int, 
+                             kernels_dir:str = config.kernels_dir, 
+                             verbose:bool=False) -> str:
     """
     Downloads a fresh kernel from Horizons for a small body. 
     NAIF ID must uniquely identify the body of interest. 
@@ -334,6 +350,7 @@ def update_small_body_kernel(naifid:int, kernels_dir:str = config.kernels_dir) -
         naifid (int): NAIF ID of target body. 
         kernels_dir (str, optional): Path to directory containing kernels. 
             Defaults to config.kernels_dir.
+        verbose (bool, optional): Flag controlling verbose output. Defaults to False.
 
     Raises:
         err: OSError caught and raised when there's a problem opening the downloaded spk file.
@@ -391,7 +408,8 @@ def update_small_body_kernel(naifid:int, kernels_dir:str = config.kernels_dir) -
             # Decode and write the binary SPK file content:
             f.write(base64.b64decode(data["spk"]))
             f.close()
-            print(f"wrote SPK content to {spk_filename}")
+            if verbose:
+                print(f"wrote SPK content to {spk_filename}")
             return f'spk/{path.basename(spk_filename)}'
         
         # Otherwise, the SPK file was not generated so output an error:
@@ -764,7 +782,8 @@ def append_to_naifid_map(name:str,
 
 def get_naifid(search_str:str, 
                default_mk:str=config.default_mk, 
-               naifid_map_file:str=config.naifid_map_file) -> int:
+               naifid_map_file:str=config.naifid_map_file,
+               verbose:bool=False) -> int:
     """
     Return the NAIF object ID code associated with an object, given some string identifier.
 
@@ -796,6 +815,7 @@ def get_naifid(search_str:str,
             Defaults to config.default_mk.
         naifid_map_file (str, optional): Path to the file containing the name-naifid mapping. 
             Defaults to config.naifid_map_file.
+        verbose (bool, optional): Flag controlling verbose output. Defaults to False.
 
     Returns:
         int: NAIF object ID code for the object.
@@ -808,16 +828,18 @@ def get_naifid(search_str:str,
         str_naifid = f"{naifid}"
         if str_naifid[0]=="2" and len(str_naifid)==7:
             naifid = int(f"20{str_naifid[1:]}")
-            
+
     except spice.utils.exceptions.NotFoundError:
-        print(f'String "{search_str}" matched no objects in default metakernel {default_mk}.')
+        if verbose:
+            print(f'String "{search_str}" matched no objects in default metakernel {default_mk}.')
         # if that fails, try the local naifid map file
         naifid = query_naifid_map(search_str, naifid_map_file=naifid_map_file)
 
         if naifid == None:
-            print(f'No object matching search string {search_str} found in naifid map file {naifid_map_file}')
             # if it fails, use small body db api?
-            print(f'Searching JPL Small Body Database')
+            if verbose:
+                print(f'No object matching search string {search_str} found in naifid map file {naifid_map_file}')
+                print(f'Searching JPL Small Body Database')
             naifid = query_sbdb(search_str)
             append_to_naifid_map(search_str, naifid, naifid_map_file=naifid_map_file)
 
