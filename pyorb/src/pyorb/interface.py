@@ -8,17 +8,17 @@ from . import constants as const
 from . import porb
 from . import body_params
 
-def update_default_hdf(body_name:str) -> str:
-    porb_params = porb.high_level_get_porb_params(body_name, update_kernels=True)
+def update_default_hdf(body_name:str, verbose:bool=False) -> str:
+    porb_params = porb.high_level_get_porb_params(body_name, update_kernels=True, verbose=verbose)
     hdf_file = body_params.high_level_write_hdf(porb_params)
     return hdf_file
 
-def update_all_default_hdfs():
+def update_all_default_hdfs(verbose:bool=False):
     default_hdfs = glob.glob(f'{config.porb_defaults_dir}/*.hdf')
     bodies = []
     for hdf in default_hdfs:
         body_name = path.basename(hdf).split('.')[0]
-        update_default_hdf(body_name)
+        update_default_hdf(body_name, verbose=verbose)
         bodies.append(body_name)
     print(f'Updated default hdfs in {config.porb_defaults_dir} for these bodies:')
     for body in bodies:
@@ -27,6 +27,7 @@ def update_all_default_hdfs():
     return
 
 def get_and_modify_porb_params(body_name, 
+            verbose:bool=False,
             long_of_asc_node:float|None = None,
             eccentricity:float|None = None,
             inclination:float|None = None,
@@ -46,7 +47,7 @@ def get_and_modify_porb_params(body_name,
             rotation_matrix_FtoB:np.ndarray|None = None,
             true_anomaly_at_vernal_equinox:float|None = None) -> porb.PorbParams:
     
-    porb_params = porb.high_level_get_porb_params(body_name)
+    porb_params = porb.high_level_get_porb_params(body_name, verbose=verbose)
     modified_params = porb.modify_porb_params(porb_params,
         long_of_asc_node,
         eccentricity,

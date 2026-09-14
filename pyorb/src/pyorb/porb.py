@@ -1066,7 +1066,8 @@ def high_level_get_porb_params(
         update_kernels:bool = False, 
         default_mk:str=config.default_mk, 
         naifid_map_file:str=config.naifid_map_file,
-        kernels_dir:str=config.kernels_dir) -> PorbParams:
+        kernels_dir:str=config.kernels_dir, 
+        verbose:bool=False) -> PorbParams:
     """
     Generate a PorbParams object, containing orbital and spin axis parameters, for a 
     body of interest, specified by a string identifier. 
@@ -1083,12 +1084,13 @@ def high_level_get_porb_params(
             Defaults to config.naifid_map_file.
         kernels_dir (str, optional): Path to directory containing kernels. 
             Defaults to config.kernels_dir.
+        verbose (bool, optional): Flag controlling verbose output. Defaults to False.
 
     Returns:
         PorbParams: A PorbParams object containing orbit and spin parameters.
     """
-    metakernel = get_mk(body_name, update_kernels, kernels_dir=kernels_dir, default_mk=default_mk, naifid_map_file=naifid_map_file)
-    naifid = get_naifid(body_name, default_mk=default_mk, naifid_map_file=naifid_map_file)
+    metakernel = get_mk(body_name, update_kernels, kernels_dir=kernels_dir, default_mk=default_mk, naifid_map_file=naifid_map_file, verbose=verbose)
+    naifid = get_naifid(body_name, default_mk=default_mk, naifid_map_file=naifid_map_file, verbose=verbose)
     porb_params = get_porb_params(body_name, naifid, metakernel)
     
     return porb_params

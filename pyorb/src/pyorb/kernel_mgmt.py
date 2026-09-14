@@ -124,7 +124,8 @@ def update_naif_kernel(source:str,
 
     return current_path
 
-def update_default_kernels(kernels_dir:str=config.kernels_dir):
+def update_default_kernels(kernels_dir:str=config.kernels_dir,
+                           verbose:bool=False):
     """
     Checks canonical sources for updated versions of the following common kernels:
         - Leap Seconds Kernel (LSK): naif####.tls
@@ -136,6 +137,7 @@ def update_default_kernels(kernels_dir:str=config.kernels_dir):
     Args:
         kernels_dir (str, optional): Path to directory containing kernels. 
             Defaults to config.kernels_dir.
+        verbose (bool, optional): Flag controlling verbose output. Defaults to False.
     """
     kernel_names = {'lsk'            : 'naif\\d{4}\\.tls$', 
                     'pck'            : 'pck\\d{5}\\.tpc$', 
@@ -148,7 +150,7 @@ def update_default_kernels(kernels_dir:str=config.kernels_dir):
         regex = kernel_names[kernel]
         kernel_type = regex[-3:-1]+'k'
     
-        current = path.basename(update_naif_kernel(source, regex, kernels_dir=kernels_dir))
+        current = path.basename(update_naif_kernel(source, regex, kernels_dir=kernels_dir, verbose=verbose))
         default_kernel_list.append(f'{kernel_type}/{current}')
     
     write_metakernel(default_kernel_list, -1, name='default', outdir=f"{kernels_dir}/mk", kernels_dir=kernels_dir)
@@ -536,7 +538,8 @@ def read_mk(metakernel:str) -> list[str]:
 def make_sb_mk(sb_search_str:str, 
             default_mk:str=config.default_mk, 
             naifid_map_file:str=config.naifid_map_file,
-            kernels_dir:str=config.kernels_dir) -> str:
+            kernels_dir:str=config.kernels_dir, 
+            verbose:bool=False) -> str:
     """
     For a small body specified by a search string, updates kernels and writes a metakernel.
 
@@ -567,6 +570,7 @@ def make_sb_mk(sb_search_str:str,
             Defaults to config.naifid_map_file.
         kernels_dir (str, optional): Path to directory containing kernels. 
             Defaults to config.kernels_dir.
+        verbose (bool, optional): Flag controlling verbose output. Defaults to False.
 
     Raises:
         RuntimeError: Thrown when the requested object's search string matches to a 
@@ -584,13 +588,13 @@ def make_sb_mk(sb_search_str:str,
     # first, then uses the NAIFid when querying Horizons.
 
     sb=sb_search_str
-    naifid = get_naifid(sb, default_mk=default_mk, naifid_map_file=naifid_map_file)
+    naifid = get_naifid(sb, default_mk=default_mk, naifid_map_file=naifid_map_file, verbose=verbose)
 
     body_type = get_body_type(naifid)
     if not body_type == 'Comet' and not body_type == 'Minor':
         raise RuntimeError(f'Object {sb} with NAIF ID {naifid} is not a small body!')
 
-    spkname = update_small_body_kernel(naifid, kernels_dir=kernels_dir)
+    spkname = update_small_body_kernel(naifid, kernels_dir=kernels_dir, verbose=verbose)
     kernel_list = default_kernel_list + [spkname]
     
     mk_path = write_metakernel(kernel_list, naifid, name=sb.upper(), outdir=f'{kernels_dir}/mk', kernels_dir=kernels_dir)
@@ -680,7 +684,8 @@ def make_satellite_mk(
         satellite:str, 
         default_mk:str=config.default_mk, 
         naifid_map_file:str=config.naifid_map_file,
-        kernels_dir:str=config.kernels_dir) -> str:
+        kernels_dir:str=config.kernels_dir,
+        verbose:bool=False) -> str:
     """
     For a specified planetary satellite, updates that planetary system's kernels and writes
     a metakernel for the object of interest.
@@ -696,6 +701,7 @@ def make_satellite_mk(
             Defaults to config.naifid_map_file.
         kernels_dir (str, optional): Path to directory containing kernels. 
             Defaults to config.kernels_dir.
+        verbose (bool, optional): Flag controlling verbose output. Defaults to False.
 
     Returns:
         str: Path to the metakernel written for this object.
@@ -703,10 +709,10 @@ def make_satellite_mk(
     
     default_kernel_list = read_mk(default_mk)
 
-    current = update_satellite_kernel(satellite, kernels_dir=kernels_dir)
+    current = update_satellite_kernel(satellite, kernels_dir=kernels_dir, verbose=verbose)
     kernel_list = default_kernel_list + [current]
 
-    naifid = get_naifid(satellite, default_mk=default_mk, naifid_map_file=naifid_map_file)
+    naifid = get_naifid(satellite, default_mk=default_mk, naifid_map_file=naifid_map_file, verbose=verbose)
 
     mk_path = write_metakernel(kernel_list, naifid, name=satellite.upper(), outdir=f'{kernels_dir}/mk', kernels_dir=kernels_dir)
 
@@ -914,7 +920,8 @@ def get_mk(body_name:str,
            update_kernels:bool = False, 
            default_mk:str=config.default_mk, 
            naifid_map_file:str=config.naifid_map_file,
-           kernels_dir:str=config.kernels_dir,) -> str:
+           kernels_dir:str=config.kernels_dir,
+           verbose:bool=False) -> str:
     """
     Returns a metakernel for a body of interest, given some string identifying that body. 
     This will prioritize returning a cached metakernel if one exists, and will generate a 
@@ -931,6 +938,7 @@ def get_mk(body_name:str,
             Defaults to config.naifid_map_file.
         kernels_dir (str, optional): Path to directory containing kernels. 
             Defaults to config.kernels_dir.
+        verbose (bool, optional): Flag controlling verbose output. Defaults to False.
 
     Raises:
         ValueError: Raised when the input object has an invalid body type.
@@ -938,22 +946,22 @@ def get_mk(body_name:str,
     Returns:
         str: Full path to metakernel for the object of interest (either cached or newly generated)
     """
-    naifid = get_naifid(body_name, default_mk=default_mk, naifid_map_file=naifid_map_file)
+    naifid = get_naifid(body_name, default_mk=default_mk, naifid_map_file=naifid_map_file, verbose=verbose)
     if cached_mk_exists(naifid, kernels_dir=kernels_dir) and update_kernels == False:
         metakernel = get_cached_mk(naifid, kernels_dir=kernels_dir)
     else:
         #always update default kernels
-        update_default_kernels(kernels_dir=kernels_dir)
+        update_default_kernels(kernels_dir=kernels_dir, verbose=verbose)
         
         body_type = get_body_type(naifid)
         if body_type == 'Planet':
             # planets are essentially satellites of their system barycenters and need satellite mks.
-            metakernel = make_satellite_mk(body_name, default_mk=default_mk, kernels_dir=kernels_dir, naifid_map_file=naifid_map_file)
+            metakernel = make_satellite_mk(body_name, default_mk=default_mk, kernels_dir=kernels_dir, naifid_map_file=naifid_map_file, verbose=verbose)
         elif body_type == 'Satellite':
             # make a satellite mk associated with parent body
-            metakernel = make_satellite_mk(body_name, default_mk=default_mk, kernels_dir=kernels_dir, naifid_map_file=naifid_map_file)
+            metakernel = make_satellite_mk(body_name, default_mk=default_mk, kernels_dir=kernels_dir, naifid_map_file=naifid_map_file, verbose=verbose)
         elif body_type == 'Comet' or body_type == 'Minor':
-            metakernel = make_sb_mk(body_name, default_mk=default_mk, kernels_dir=kernels_dir, naifid_map_file=naifid_map_file) 
+            metakernel = make_sb_mk(body_name, default_mk=default_mk, kernels_dir=kernels_dir, naifid_map_file=naifid_map_file, verbose=verbose) 
         else:
             raise ValueError(f'input body {body_name} with naifid {naifid} has invalid type {body_type}. Body must be a Planet, Satellite, Comet, or Minor (i.e., an asteroid).')
 

@@ -4,10 +4,10 @@ from . import interface
 from . import body_params
 
 def update_command(args):
-    interface.update_default_hdf(args.body_name)
+    interface.update_default_hdf(args.body_name, verbose=args.verbose)
 
 def update_all_command(args):
-    interface.update_all_default_hdfs()
+    interface.update_all_default_hdfs(verbose=args.verbose)
 
 def modify_porb_command(args):
     kwargs = vars(args)
@@ -25,11 +25,13 @@ def main():
     update_parser = subparsers.add_parser('update', help='Update the HDF for a specified body')
     update_parser.set_defaults(func=update_command)
     update_parser.add_argument('body_name', help='Name of body to update.')
+    update_parser.add_argument('-v', '--verbose', action='store_true', help='Flag to enable verbose output.')
 
     modify_porb_parser = subparsers.add_parser('custom', help='Generate a custom HDF for the selected body')
     modify_porb_parser.set_defaults(func=modify_porb_command)
     modify_porb_parser.add_argument('body_name', help='Name of the base body to use for the custom HDF.')
     modify_porb_parser.add_argument('output_dir', help='Directory into which to write the HDF file.')
+    modify_porb_parser.add_argument('-v', '--verbose', action='store_true', help='Flag to enable verbose output.')
     modify_porb_parser.add_argument("--long_of_asc_node", type=float)
     modify_porb_parser.add_argument("--eccentricity", type=float)
     modify_porb_parser.add_argument("--inclination", type=float)
@@ -50,6 +52,7 @@ def main():
 
     update_all_parser = subparsers.add_parser('update_all', help='Update all HDFs in the default directory.')
     update_all_parser.set_defaults(func=update_all_command)
+    update_all_parser.add_argument('-v', '--verbose', action='store_true', help='Flag to enable verbose output.')
     
     args = parser.parse_args()
     args.func(args)
