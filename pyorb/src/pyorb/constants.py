@@ -1,7 +1,7 @@
 # defines constants used by pyorb
 
 # PORB version date:
-porb_version = '2025nov20'
+porb_version = '2026sep15'
 
 ##### Constants #####
 #earth sidereal year in Earth days 

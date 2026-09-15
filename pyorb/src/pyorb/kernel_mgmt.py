@@ -328,7 +328,7 @@ def update_bennu_kernel(kernels_dir:str = config.kernels_dir) -> str:
     #   epoch I'm using to calculate orbits (2024-11-01):     
     # source = 'https://naif.jpl.nasa.gov/pub/naif/pds/pds4/orex/orex_spice/spice_kernels/spk/bennu_refdrmc_v1.bsp'
     
-    spk = "spk/20101955.bsp"
+    spk = "spk/2101955.bsp"
     destination = f"{kernels_dir}/{spk}"
 
     download_target(source, dest=destination, kernels_dir=kernels_dir)
@@ -364,7 +364,7 @@ def update_small_body_kernel(naifid:int,
     """
 
     # Handle the Bennu case, working around a JPL Horizons bug.
-    if naifid == 20101955:
+    if naifid == 2101955:
         return update_bennu_kernel(kernels_dir=kernels_dir)
 
     # Define API URL and SPK filename:
@@ -832,7 +832,13 @@ def get_naifid(search_str:str,
         naifid = spice.bods2c(search_str)
 
         str_naifid = f"{naifid}"
-        if str_naifid[0]=="2" and len(str_naifid)==7:
+        if naifid == 2101955:
+            # use 7-digit id for Bennu, since the Bennu SPK we want uses that. 
+            pass
+        elif str_naifid[0]=="2" and len(str_naifid)==7:
+            # Correct issue with asteroids which have NAIF ids defined within the core 
+            # SPICE system. These use 7-digit ids, in conflict with JPL Horizons using 
+            # 8-digit ids, so we have to convert to match our Horizons SPKs.  
             naifid = int(f"20{str_naifid[1:]}")
 
     except spice.utils.exceptions.NotFoundError:

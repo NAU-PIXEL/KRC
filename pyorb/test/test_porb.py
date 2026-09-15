@@ -635,6 +635,18 @@ def test_high_level_get_porb_params(download_de442_spk):
     for i in range(1, len(lines)):
         assert lines[i] == goodlines[i]
 
+    # The Mars case should validate the underlying functionality, the following cases 
+    # are just to show they're handled without error:
+    # Ceres
+    ceres_params = porb.high_level_get_porb_params('Ceres', update_kernels=True, kernels_dir=outdir, default_mk=default_mk, naifid_map_file=naifid_map_file)
+    assert isinstance(ceres_params, porb.PorbParams)
+    # Bennu
+    bennu_params = porb.high_level_get_porb_params('Bennu', update_kernels=True, kernels_dir=outdir, default_mk=default_mk, naifid_map_file=naifid_map_file)
+    assert isinstance(bennu_params, porb.PorbParams)
+    # Deimos
+    deimos_params = porb.high_level_get_porb_params('Deimos', update_kernels=True, kernels_dir=outdir, default_mk=default_mk, naifid_map_file=naifid_map_file)
+    assert isinstance(deimos_params, porb.PorbParams)
+
 def test_modify_porb_params(mars_porb):
     mars_porb_params = mars_porb
     europa_porb_params = get_europa_porb_params()

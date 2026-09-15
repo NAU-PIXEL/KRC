@@ -839,6 +839,7 @@ def get_spin_axis(metakernel:str, body_naifid:int) -> tuple[float, float, float,
     except:
         if len(str(body_naifid))>=8:
             pck_naifid=int("2"+str(body_naifid)[-6:])
+        else: pck_naifid = body_naifid
         
 
     #pm: prime meridian
