@@ -416,12 +416,16 @@ def update_small_body_kernel(naifid:int,
         
         # Otherwise, the SPK file was not generated so output an error:
         else:    
-            print("ERROR: SPK file not generated")
+            print("ERROR: SPK file not generated. Response from Horizons:")
             if "result" in data:
                 print(data["result"])
             else:
                 print(response.text)
-            raise RuntimeError('"spk" not in decoded JSON. SPK file not generated.')
+            print()
+            print("This may have been an issue on Horizons' end. Maybe check the Horizons")
+            print("web interface to see if they're having server issues: ")
+            print("https://ssd.jpl.nasa.gov/horizons/app.html#/")
+            raise RuntimeError('"spk" not in decoded JSON. SPK file not generated. This was possibly a Horizons issue?')
         
     # If the request was invalid, extract error content and display it:
     elif (response.status_code == 400):
