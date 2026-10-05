@@ -324,9 +324,9 @@ def test_update_small_body_kernel():
         shutil.rmtree(outdir)
     assert not os.path.exists(outdir)
 
-    naifids = [20000001, 20000002, 20059980, 20000052, 20003779, 2101955]
+    naifids = [20000001, 20000002, 20059980, 20000052, 20003779, 2101955, 1000036]
 
-    spks = ['20000001.bsp', '20000002.bsp', '20059980.bsp', '20000052.bsp', '20003779.bsp', '2101955.bsp']
+    spks = ['20000001.bsp', '20000002.bsp', '20059980.bsp', '20000052.bsp', '20003779.bsp', '2101955.bsp', '1000036.bsp']
     
     for i in range(len(naifids)):
         km.update_small_body_kernel(naifids[i], kernels_dir=outdir)

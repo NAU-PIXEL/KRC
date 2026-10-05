@@ -649,6 +649,8 @@ def test_high_level_get_porb_params(download_de442_spk):
     # Kieffer
     kieffer_params = porb.high_level_get_porb_params('Kieffer', update_kernels=True, kernels_dir=outdir, default_mk=default_mk, naifid_map_file=naifid_map_file)
     assert isinstance(kieffer_params, porb.PorbParams)
+    churyumov_gerasimenko_params =  porb.high_level_get_porb_params('67p', update_kernels=True, kernels_dir=outdir, default_mk=default_mk, naifid_map_file=naifid_map_file)
+    assert isinstance(churyumov_gerasimenko_params, porb.PorbParams)
 
 def test_modify_porb_params(mars_porb):
     mars_porb_params = mars_porb

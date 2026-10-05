@@ -385,8 +385,14 @@ def update_small_body_kernel(naifid:int,
     # all match 1 Ceres. So, we convert to all upper-case.
     # IMPORTANT: You must encode the "=" as "%3D" and the ";" as "%3B" in the
     #            Horizons COMMAND parameter specification.
+    command = f"DES={naifid}%3B" 
+    # This should get the correct apparition's orbit for comets with multiple apparitions.
+    if get_body_type(naifid) == 'Comet':
+        command += "NOFRAG%3B CAP%3B"
+
     url += "?format=json&EPHEM_TYPE=SPK&OBJ_DATA=NO"
-    url += f"&COMMAND='DES={naifid}%3B'&START_TIME='{start_time}'&STOP_TIME='{stop_time}'"
+    url += f"&COMMAND='{command}'"
+    url += f"&START_TIME='{start_time}'&STOP_TIME='{stop_time}'"
 
     # Submit the API request and decode the JSON-response:
     response = requests.get(url)
