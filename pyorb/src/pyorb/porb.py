@@ -248,6 +248,79 @@ class OrbParams:
 
         return cls(long_of_asc_node, eccentricity, inclination, arg_of_peri, mean_anomaly, semimajor_axis, epoch_JD, orbit_period, perihelion_date, centuries_from_j2000)
 
+    @classmethod
+    def from_specified_params(cls,
+                long_of_asc_node:float,
+                eccentricity:float,
+                inclination:float,
+                arg_of_peri:float,
+                semimajor_axis:float|None = None,
+                orbit_period:float|None = None,
+                perihelion_date:float|None = None,
+                centuries_from_j2000:float|None = None,
+                epoch_JD:float|None = None,
+                mean_anomaly:float|None = None) -> Self:
+        """
+        Constructs an OrbParams object using fully specified inputs with which to 
+        populate each parameter. The function ensures conflicting parameters are not set 
+        at the same time, and correctly derives dependent parameters based on the input.
+
+        Args:
+            long_of_asc_node (float): longitude of the ascending node [radians]. 
+            eccentricity (float): eccentricity [unitless]. 
+            inclination (float): inclination [radians]. 
+            arg_of_peri (float): argument of perihelion [radians]. 
+            semimajor_axis (float | None, optional): semimajor axis [km]. 
+                Defaults to None.
+            orbit_period (float | None, optional): Period of the orbit in Earth days. 
+                Defaults to None.
+            perihelion_date (float | None, optional): J2000 date (days past J2000 epoch) 
+                of previous perihelion passage. Defaults to None.
+            centuries_from_j2000 (float | None, optional): Time of reference epoch from 
+                J2000 epoch, in centuries. Defaults to None.
+            epoch_JD (float | None, optional): Julian date of epoch [Julian Date]. 
+                Defaults to None.
+            mean_anomaly (float | None, optional): mean anomaly at epoch [radians]. 
+                Defaults to None.      
+
+        Raises:
+            ValueError: Raised when conflicting arguments are both specified, or both unspecified (semimajor_axis and orbit_period)
+            ValueError: Raised when conflicting arguments are both specified, or both unspecified (epoch_JD and centuries_from_j2000)
+            ValueError: Raised when conflicting arguments are both specified, or both unspecified (perihelion_date and mean_anomaly)
+
+        Returns:
+            Self: An OrbParams object containing the specified values.
+        """
+
+        if (semimajor_axis is not None) and (orbit_period is not None):
+            raise ValueError("Only one of semimajor_axis and orbit_period may be specified.")
+        if (semimajor_axis is None) and (orbit_period is None):
+            raise ValueError("One of semimajor_axis and orbit_period must be specified.")
+        if semimajor_axis is not None:
+            orbit_period = semimajor_axis**(1.5) * const.earth_year    
+        else:
+            semimajor_axis = (orbit_period / const.earth_year)**(2./3.)
+
+        if (epoch_JD is not None) and (centuries_from_j2000 is not None):
+            raise ValueError("Only one of epoch_JD and centuries_from_j2000 may be specified.")
+        if (epoch_JD is None) and (centuries_from_j2000 is None):
+            raise ValueError("One of epoch_JD and centuries_from_j2000 must be specified.")
+        if epoch_JD is not None:
+            centuries_from_j2000 = (epoch_JD - const.j2000_JD) / (const.earth_year*100)
+        else:
+            epoch_JD = centuries_from_j2000 * const.earth_year*100 + const.j2000_JD
+
+        if (perihelion_date is not None) and (mean_anomaly is not None):
+            raise ValueError("Only one of perihelion_date and mean_anomaly may be specified.")
+        if (perihelion_date is None) and (mean_anomaly is None):
+            raise ValueError("One of perihelion_date and mean_anomaly must be specified.")
+        if perihelion_date is not None:
+            mean_anomaly = ((perihelion_date - epoch_JD + const.j2000_JD) / orbit_period) * (-2*np.pi)
+        else:
+            perihelion_date = epoch_JD - (mean_anomaly/(2*np.pi))*orbit_period - const.j2000_JD
+
+        return cls(long_of_asc_node, eccentricity, inclination, arg_of_peri, mean_anomaly, semimajor_axis, epoch_JD, orbit_period, perihelion_date, centuries_from_j2000)
+
 class SpinParams:
     def __init__(self,
                  rotation_period: float, 
@@ -465,6 +538,76 @@ class SpinParams:
             obliquity   = porb_params.BLIP
             true_anomaly_at_vernal_equinox = porb_params.TAV
             rotation_matrix_FtoB = porb_params.BFRM
+        
+        return cls(rotation_period, phase_at_j2000, pole_ra, pole_dec, default_spin_flag, obliquity, rotation_matrix_FtoB, true_anomaly_at_vernal_equinox)
+
+    @classmethod
+    def from_specified_params(cls, orb:OrbParams,
+            rotation_period:float,
+            phase_at_j2000:float,
+            pole_ra:float|None = None,
+            pole_dec:float|None = None,
+            obliquity:float|None = None,
+            true_anomaly_at_vernal_equinox:float|None = None) -> Self:
+        """
+        Creates a SpinParams object, containing spin axis orientation and rate information,
+        based on an existing OrbParams object, plus a set of parameters which fully 
+        specify the spin state. The system will correctly reject sets of parameters 
+        when one of a pair of linked parameters are missing, or when two conflicting 
+        parameters are both set at the same time. The system will use the provided
+        parameters to calculate any derived parameters to complete the contents of the
+        SpinParams object.
+
+        Args:
+            orb (OrbParams): An OrbParams object, containing orbital elements.
+            
+            rotation_period (float): rotation period [hours]. 
+            phase_at_j2000 (float): rotational phase (angle of prime meridian) at 
+                J2000 epoch [degrees]. 
+
+            pole_ra (float | None, optional): right ascension of spin axis in J2000 
+                frame [radians]. Defaults to None.
+            pole_dec (float | None, optional): declination of spin axis in J2000 
+                frame [radians]. Defaults to None.
+        
+            obliquity (float | None, optional): angle between spin axis and orbit 
+                pole [radians]. Defaults to None.
+            true_anomaly_at_vernal_equinox (float | None, optional): 
+                True anomaly at vernal equinox [radians]. Defaults to None.
+
+        Raises:
+            ValueError: Raised when either rotation_period or phase_at_j2000 are unspecified.
+            ValueError: Raised when one of two paired parameters (pole_ra and pole_dec) 
+                is set without the other.  
+            ValueError: Raised when one of two paired parameters (obliquity and 
+                true_anomaly_at_vernal_equinox) is set without the other.
+            ValueError: Raised when conflicting sets of parameters ([Spin pole RA and Dec] 
+                and [Obliquity and True Anomaly]) are set at the same time.
+            ValueError: Raised when neither pair of spin-axis defining parameters is specified.
+
+        Returns:
+            Self: A Spin Params object, containing spin axis orientation and rate.
+        """
+
+        default_spin_flag = 0
+
+        if (rotation_period is None) or (phase_at_j2000 is None):
+            raise ValueError("rotation_period and phase_at_j2000 must be specified.")
+        
+        if not (pole_ra is None) == (pole_dec is None):
+            raise ValueError("pole_ra and pole_dec must be set together or not at all.")
+        if not (obliquity is None) == (true_anomaly_at_vernal_equinox is None):
+            raise ValueError("obliquity and true_anomaly_at_vernal_equinox must be set together or not at all.")
+        if (pole_ra is not None) and (obliquity is not None):
+            raise ValueError("Spin pole RA and Dec cannot be set at the same time as Obliquity and True Anomaly.")
+        if (pole_ra is None) and (obliquity is None):
+            raise ValueError("Either (Spin pole RA and Dec) or (Obliquity and True Anomaly) must be specified.")
+
+
+        if pole_ra is not None:
+            (obliquity, rotation_matrix_FtoB, true_anomaly_at_vernal_equinox) = get_secondary_spin_params(orb, pole_ra, pole_dec)
+        else:
+            (pole_ra, pole_dec, rotation_matrix_FtoB) = alt_get_secondary_spin_params(orb, obliquity, true_anomaly_at_vernal_equinox)
         
         return cls(rotation_period, phase_at_j2000, pole_ra, pole_dec, default_spin_flag, obliquity, rotation_matrix_FtoB, true_anomaly_at_vernal_equinox)
 
@@ -1160,8 +1303,8 @@ def modify_porb_params(porb_params:PorbParams,
                 2: rotation period is real, pole orientation is default. 
                     (not implemented, but I imagine this could be done by 
                     searching the small body lightcurve database). 
-        obliquity (float): Angle between the object's spin axis and the north pole of 
-            its orbit [radians]. Defaults to None.
+        obliquity (float | None, optional): Angle between the object's spin axis and the 
+            north pole of its orbit [radians]. Defaults to None.
         rotation_matrix_FtoB (np.ndarray | None, optional): rotation matrix from 
             orbital frame (F) to seasonal frame (B) [3x3 matrix]. Defaults to None.
         true_anomaly_at_vernal_equinox (float): True anomaly at vernal equinox (prograde 
@@ -1195,3 +1338,92 @@ def modify_porb_params(porb_params:PorbParams,
             true_anomaly_at_vernal_equinox = true_anomaly_at_vernal_equinox)
 
     return PorbParams.from_orb_and_spin_params(porb_params.NAME, porb_params.body_type, porb_params.PLANUM, orb, spin)
+
+def fully_specify_porb_params(
+        body_name:str,
+        body_type:str,
+        body_naifid:int,
+        long_of_asc_node:float,
+        eccentricity:float,
+        inclination:float,
+        arg_of_peri:float,
+        rotation_period:float,
+        phase_at_j2000:float,
+        semimajor_axis:float|None = None,
+        orbit_period:float|None = None,
+        perihelion_date:float|None = None,
+        centuries_from_j2000:float|None = None,
+        epoch_JD:float|None = None,
+        mean_anomaly:float|None = None,
+        pole_ra:float|None = None,
+        pole_dec:float|None = None,
+        obliquity:float|None = None,
+        true_anomaly_at_vernal_equinox:float|None = None
+        ) -> PorbParams:
+    """
+    Constructs PorbParams object using inputs which fully specify the orbit and spin
+    parameters. The underlying functions ensure conflicting parameters are not set at 
+    the same time, and correctly derives dependent parameters based on the input.
+
+    Args:
+        body_name (str): String identifier for the object of interest.
+        body_type (str): Body type for the object of interest. Can be "Planet", 
+            "Satellite", "Comet", or "Minor".
+        body_naifid (int): NAIF object ID code for the object of interest.
+
+        long_of_asc_node (float): longitude of the ascending node [radians].
+        eccentricity (float): eccentricity [unitless].
+        inclination (float): inclination [radians]. 
+        arg_of_peri (float): argument of perihelion [radians].
+        rotation_period (float): rotation period [hours].
+        phase_at_j2000 (float): rotational phase (angle of prime meridian) at J2000 epoch 
+            [degrees].
+        
+        semimajor_axis (float | None, optional): semimajor axis [km]. 
+            Defaults to None.
+        orbit_period (float | None, optional): Period of the orbit in Earth days. 
+            Defaults to None.
+        perihelion_date (float | None, optional): J2000 date (days past J2000 epoch) 
+            of previous perihelion passage. Defaults to None.
+        centuries_from_j2000 (float | None, optional): Time of reference epoch from 
+            J2000 epoch, in centuries. Defaults to None.
+        epoch_JD (float | None, optional): Julian date of epoch [Julian Date]. 
+            Defaults to None.
+        mean_anomaly (float | None, optional): mean anomaly at epoch [radians]. 
+            Defaults to None.      
+        pole_ra (float | None, optional): right ascension of spin axis in J2000 
+            frame [radians]. Defaults to None.
+        pole_dec (float | None, optional): declination of spin axis in J2000 
+            frame [radians]. Defaults to None.
+        obliquity (float | None, optional): Angle between the object's spin axis and the 
+            north pole of its orbit [radians]. Defaults to None.
+        true_anomaly_at_vernal_equinox (float | None, optional): True anomaly at vernal 
+            equinox (prograde angle between perihelion vector and vernal equinox vector) 
+            [radians]. Defaults to None.
+
+    Returns:
+        PorbParams: A PorbParams object containing orbit and spin parameters for 
+        the body of interest.
+    """
+    
+    orb = OrbParams.from_specified_params(
+            long_of_asc_node = long_of_asc_node, 
+            eccentricity     = eccentricity, 
+            inclination      = inclination, 
+            arg_of_peri      = arg_of_peri, 
+            semimajor_axis   = semimajor_axis, 
+            orbit_period     = orbit_period, 
+            perihelion_date  = perihelion_date, 
+            centuries_from_j2000 = centuries_from_j2000, 
+            epoch_JD         = epoch_JD, 
+            mean_anomaly     = mean_anomaly)
+
+    spin = SpinParams.from_specified_params(orb,
+            rotation_period  = rotation_period,
+            phase_at_j2000   = phase_at_j2000,
+            pole_ra          = pole_ra,
+            pole_dec         = pole_dec,
+            obliquity        = obliquity,
+            true_anomaly_at_vernal_equinox = true_anomaly_at_vernal_equinox)
+
+    return PorbParams.from_orb_and_spin_params(body_name, body_type, body_naifid, orb, spin)

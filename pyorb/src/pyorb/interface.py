@@ -69,3 +69,56 @@ def get_and_modify_porb_params(body_name,
         true_anomaly_at_vernal_equinox)
 
     return modified_params
+
+def specify_custom_porb_params(
+        body_name:str,
+        body_id:int,
+        long_of_asc_node:float,
+        eccentricity:float,
+        inclination:float,
+        arg_of_peri:float,
+        rotation_period:float,
+        phase_at_j2000:float,
+        semimajor_axis:float|None = None,
+        orbit_period:float|None = None,
+        perihelion_date:float|None = None,
+        centuries_from_j2000:float|None = None,
+        epoch_JD:float|None = None,
+        mean_anomaly:float|None = None,
+        pole_ra:float|None = None,
+        pole_dec:float|None = None,
+        obliquity:float|None = None,
+        true_anomaly_at_vernal_equinox:float|None = None,
+        verbose:bool=False
+) -> porb.PorbParams:
+
+    # Command line specification of custom planets and satellites is not yet implemented.
+    # To prevent interaction with those systems, all custom bodies are assigned the type 
+    # "Custom", and their body_id is forced to be negative, to deconflict with existing
+    # NAIF object IDs.
+
+    body_id = -1* abs(body_id)
+
+    porb_params = porb.fully_specify_porb_params(
+        body_name,
+        'Custom',
+        body_id,
+        long_of_asc_node,
+        eccentricity,
+        inclination,
+        arg_of_peri,
+        rotation_period,
+        phase_at_j2000,
+        semimajor_axis,
+        orbit_period,
+        perihelion_date,
+        centuries_from_j2000,
+        epoch_JD,
+        mean_anomaly,
+        pole_ra,
+        pole_dec,
+        obliquity,
+        true_anomaly_at_vernal_equinox
+    )
+
+    return porb_params

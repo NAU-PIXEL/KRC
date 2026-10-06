@@ -28,7 +28,9 @@ Note that, because the config files are local, each user must run the setup comm
 ## Usage
 ### Command Line
 To use the command line, ensure that the virtual environment is active, and run `pyorb` to verify that the command is available.
+There are four pyorb commands currently available: `update`, `update_all`, `modify`, and `custom`.
 
+#### `update`:
 To download a body, run `pyorb update <body_name>` , where body_name should be the body's name or alphanumeric IAU provisional designation (case-insensitive).
 Note that you can't use any designation that's entirely numeric for the body_name, to prevent potential collisions with object NAIF ID codes. 
 For small bodies, this means the object's IAU number should not be used, except when paired with its name. 
@@ -43,10 +45,29 @@ For example, the following strings are each valid identifiers, and all map to th
 If searching using both the number and name of an object, e.g. `3779 Kieffer`, the space must be included. 
 If searching a provisional designation, e.g. `1985 JV1`, the space is optional.
 
-To use custom orbital orbital parameters based off a body, run `pyorb custom <body_name>` , and specify the parameters you are changing with `--<parameter> <value>`, e.g. `pyorb custom Mars --inclination 0.125`.
+#### `update_all`:
+To update all HDFs in the default HDF directory, run `pyorb update_all`. 
+
+#### `modify`:
+To use modified orbital orbital parameters based off an existing body, run `pyorb modify <body_name> <output_dir>` , and specify the parameters you are changing with `--<parameter> <value>`, e.g. `pyorb custom Mars --inclination 0.125`.
 Any number of parameters can be changed this way, by adding more `--<parameter> <value>` pairs.
 
-To update all HDFs in the default HDF directory, run `pyorb update_all`. 
+#### `custom`:
+To fully specify a custom body, run `pyorb custom <body_name> <body_id> <output_dir> <long_of_asc_node> <eccentricity> <inclination> <arg_of_peri> <rotation_period> <phase_at_j2000>`, inputting the values of the desired parameters. 
+Then, using the `--<parameter> <value>` syntax as seen in the `modify` command, above, specify one parameter from each of the following pairs:
+- `semimajor_axis` or `orbit_period`
+- `perihelion_date` or `mean_anomaly`
+- `epoch_JD` or `centuries_from_j2000`
+
+then specify either:
+- both `pole_ra` and `pole_dec`
+or:
+- both `obliquity` and `true_anomaly_at_vernal_equinox`
+
+An example of a complete custom body command is shown here: 
+```
+pyorb custom mybody -1 path/to/mydir 1.5 0.02 0.01 2.1 30.4 0.0 --orbit_period 500 --perihelion_date 1515 --epoch_JD 1701 --obliquity 0.4 --true_anomaly_at_vernal_equinox 3.0
+```
 
 ### Python Interface
 <!-- @nmsplanets could you explain the way you envision basic usage of the direct Python interface? -->
