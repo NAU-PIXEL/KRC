@@ -320,7 +320,7 @@ def write_hdf(porb_output:porb.PorbParams, body_params:tuple, out_dir: str) -> s
     rot = str(porb_output) 
 
     # hdf_file = f'{type_params['body_name'].upper()}.params.hdf'
-    hdf_file = f'{out_dir}/{porb_output.NAME.capitalize()}.porb.hdf'
+    hdf_file = f'{out_dir}/{porb_output.NAME}.porb.hdf'
 
     with h5py.File(hdf_file, 'w') as f:
 
@@ -408,6 +408,7 @@ def high_level_write_hdf(porb_output:porb.PorbParams, out_dir:str=config.porb_de
     Returns:
         str: Full path to the newly-written HDF file. 
     """
+    porb_output.NAME = porb_output.NAME.capitalize()
     body_params = get_body_params(porb_output)
     hdf_file = write_hdf(porb_output, body_params, out_dir)
     
