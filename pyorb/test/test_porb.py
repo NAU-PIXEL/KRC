@@ -236,6 +236,30 @@ def test_OrbParams_from_modified_params(mars_porb, mars_orb):
 
     assert from_modified == desired_orb
 
+def test_OrbParams_from_specified_params(mars_orb):
+    # exactly one of semimajor_axis and orbit_period must be specified
+    with pytest.raises(ValueError):
+        orb = porb.OrbParams.from_specified_params(0.0, 0.0, 0.0, 0.0, semimajor_axis=1.0, orbit_period=2.0, centuries_from_j2000=0.2, perihelion_date=1.0)
+    with pytest.raises(ValueError):
+        orb = porb.OrbParams.from_specified_params(0.0, 0.0, 0.0, 0.0, centuries_from_j2000=0.2, perihelion_date=1.0)
+    # exactly one of epoch_JD and centuries_from_j2000 must be specified
+    with pytest.raises(ValueError):
+        orb = porb.OrbParams.from_specified_params(0.0, 0.0, 0.0, 0.0, semimajor_axis=1.0, epoch_JD=10.0, centuries_from_j2000=0.2, perihelion_date=1.0)
+    with pytest.raises(ValueError):
+        orb = porb.OrbParams.from_specified_params(0.0, 0.0, 0.0, 0.0, semimajor_axis=1.0, perihelion_date=1.0)    
+    # exactly one of perihelion date and mean anomaly must be specified
+    with pytest.raises(ValueError):
+        orb = porb.OrbParams.from_specified_params(0.0, 0.0, 0.0, 0.0, semimajor_axis=1.0, epoch_JD=10.0, perihelion_date=1.0, mean_anomaly=2.0)    
+    with pytest.raises(ValueError):
+        orb = porb.OrbParams.from_specified_params(0.0, 0.0, 0.0, 0.0, semimajor_axis=1.0, epoch_JD=10.0)    
+                
+    test_orb1 = porb.OrbParams.from_specified_params(mars_orb.long_of_asc_node, mars_orb.eccentricity, mars_orb.inclination, mars_orb.arg_of_peri, semimajor_axis=mars_orb.semimajor_axis, epoch_JD=mars_orb.epoch_JD, perihelion_date=mars_orb.perihelion_date)
+    test_orb2 = porb.OrbParams.from_specified_params(mars_orb.long_of_asc_node, mars_orb.eccentricity, mars_orb.inclination, mars_orb.arg_of_peri, orbit_period=mars_orb.orbit_period, centuries_from_j2000=mars_orb.centuries_from_j2000, mean_anomaly=mars_orb.mean_anomaly)
+
+    assert test_orb1 == mars_orb
+    assert test_orb2 == mars_orb
+
+
 #### SpinParams class tests ####
 def test_SpinParams_init(mars_spin):
     assert isinstance(mars_spin, porb.SpinParams)
@@ -326,6 +350,35 @@ def test_SpinParams_from_modified_params(mars_porb, mars_orb):
 
     assert test_spin == check_spin
 
+def test_SpinParams_from_specified_params(mars_orb, mars_spin):
+    # checking that errors are raised when parameters are under or over specified
+    with pytest.raises(ValueError):
+        spin = porb.SpinParams.from_specified_params(mars_orb, 1.0, 0.0, pole_ra=1.0)
+    with pytest.raises(ValueError):
+        spin = porb.SpinParams.from_specified_params(mars_orb, 1.0, 0.0, pole_dec=1.0)
+    with pytest.raises(ValueError):
+        spin = porb.SpinParams.from_specified_params(mars_orb, 1.0, 0.0, obliquity=1.0)
+    with pytest.raises(ValueError):
+        spin = porb.SpinParams.from_specified_params(mars_orb, 1.0, 0.0, true_anomaly_at_vernal_equinox=1.0)
+    with pytest.raises(ValueError):
+        spin = porb.SpinParams.from_specified_params(mars_orb, 1.0, 0.0, pole_ra=1.0, pole_dec=1.0, obliquity=1.0, true_anomaly_at_vernal_equinox=1.0)
+    with pytest.raises(ValueError):
+        spin = porb.SpinParams.from_specified_params(mars_orb, 1.0, 0.0)
+
+    test_spin1 = porb.SpinParams.from_specified_params(mars_orb, mars_spin.rotation_period, mars_spin.phase_at_j2000, pole_ra=mars_spin.pole_ra, pole_dec=mars_spin.pole_dec)
+    test_spin2 = porb.SpinParams.from_specified_params(mars_orb, mars_spin.rotation_period, mars_spin.phase_at_j2000, obliquity=mars_spin.obliquity, true_anomaly_at_vernal_equinox=mars_spin.true_anomaly_at_vernal_equinox)
+
+    # from_specified_params() always forces the default_spin_flag to 0 (indicating a non-default spin)
+    # but mars_spin does have a default spin, so its flag is 1.
+    # we change the test spins' flags here to make the final comparison easier. 
+    assert test_spin1.default_spin_flag == 0
+    test_spin1.default_spin_flag = 1
+
+    assert test_spin2.default_spin_flag == 0
+    test_spin2.default_spin_flag = 1
+
+    assert test_spin1 == mars_spin
+    assert test_spin2 == mars_spin
 
 #### PorbParams class tests ####
 
@@ -686,4 +739,90 @@ def test_modify_porb_params(mars_porb):
     assert np.isclose(test_porb_params.TAV, europa_porb_params.TAV)
     assert np.isclose(test_porb_params.BLIP, europa_porb_params.BLIP) # <- obliquity from pole RA & DEC is correctly calculated, but doesn't match default europa HDF
     assert np.all(np.isclose(test_porb_params.BFRM, europa_porb_params.BFRM))
-    
+
+
+def test_fully_specify_porb_params():
+    europa_porb_params = get_europa_porb_params()
+
+    europa_porb_params.WDOT = 360. / 3.551181
+
+    body_name = 'Test'
+    body_type = 'Satellite'
+    naifid = -502
+
+    epoch_JD = europa_porb_params.TC*const.earth_year*100 + const.j2000_JD
+    mean_anomaly = ((europa_porb_params.TJP - epoch_JD + const.j2000_JD) / europa_porb_params.OPERIOD) * (-2 * np.pi)
+
+    test_porb_params1 = porb.fully_specify_porb_params(
+        body_name,
+        body_type,
+        naifid,
+        europa_porb_params.RODE,
+        europa_porb_params.XECC,
+        europa_porb_params.CLIN,
+        europa_porb_params.ARGP,
+        (360.* 24.)/ europa_porb_params.WDOT,
+        europa_porb_params.WO,
+        semimajor_axis=europa_porb_params.SJA,
+        perihelion_date=europa_porb_params.TJP,
+        epoch_JD=epoch_JD,
+        pole_ra=europa_porb_params.ZBAB,
+        pole_dec=europa_porb_params.ZBAA
+    )
+
+    test_porb_params2 = porb.fully_specify_porb_params(
+        body_name,
+        body_type,
+        naifid,
+        europa_porb_params.RODE,
+        europa_porb_params.XECC,
+        europa_porb_params.CLIN,
+        europa_porb_params.ARGP,
+        (360.* 24.)/ europa_porb_params.WDOT,
+        europa_porb_params.WO,
+        orbit_period=europa_porb_params.OPERIOD,
+        mean_anomaly=mean_anomaly,
+        centuries_from_j2000=europa_porb_params.TC,
+        obliquity=europa_porb_params.BLIP,
+        true_anomaly_at_vernal_equinox=europa_porb_params.TAV
+    )
+
+    assert test_porb_params1.NAME == body_name
+    assert test_porb_params1.body_type == body_type
+    assert test_porb_params1.PLANUM == naifid
+    assert test_porb_params1.TC == pytest.approx(europa_porb_params.TC)
+    assert test_porb_params1.RODE == pytest.approx(europa_porb_params.RODE)
+    assert test_porb_params1.CLIN == pytest.approx(europa_porb_params.CLIN)
+    assert test_porb_params1.ARGP == pytest.approx(europa_porb_params.ARGP)
+    assert test_porb_params1.XECC == pytest.approx(europa_porb_params.XECC)
+    assert test_porb_params1.SJA == pytest.approx(europa_porb_params.SJA)
+    assert np.isclose(test_porb_params1.ZBAA, europa_porb_params.ZBAA)
+    assert np.isclose(test_porb_params1.ZBAB, europa_porb_params.ZBAB)
+    assert test_porb_params1.WDOT == pytest.approx(europa_porb_params.WDOT)
+    assert test_porb_params1.WO == pytest.approx(europa_porb_params.WO)
+    assert test_porb_params1.OPERIOD == pytest.approx(europa_porb_params.OPERIOD)
+    assert test_porb_params1.TJP == pytest.approx(europa_porb_params.TJP)
+    assert test_porb_params1.SIDAY == pytest.approx(europa_porb_params.SIDAY)
+    assert np.isclose(test_porb_params1.TAV, europa_porb_params.TAV)
+    assert np.isclose(test_porb_params1.BLIP, europa_porb_params.BLIP)
+    assert np.all(np.isclose(test_porb_params1.BFRM, europa_porb_params.BFRM))
+
+    assert test_porb_params2.NAME == body_name
+    assert test_porb_params2.body_type == body_type
+    assert test_porb_params2.PLANUM == naifid
+    assert test_porb_params2.TC == pytest.approx(europa_porb_params.TC)
+    assert test_porb_params2.RODE == pytest.approx(europa_porb_params.RODE)
+    assert test_porb_params2.CLIN == pytest.approx(europa_porb_params.CLIN)
+    assert test_porb_params2.ARGP == pytest.approx(europa_porb_params.ARGP)
+    assert test_porb_params2.XECC == pytest.approx(europa_porb_params.XECC)
+    assert test_porb_params2.SJA == pytest.approx(europa_porb_params.SJA)
+    assert np.isclose(test_porb_params2.ZBAA, europa_porb_params.ZBAA)
+    assert np.isclose(test_porb_params2.ZBAB, europa_porb_params.ZBAB)
+    assert test_porb_params2.WDOT == pytest.approx(europa_porb_params.WDOT)
+    assert test_porb_params2.WO == pytest.approx(europa_porb_params.WO)
+    assert test_porb_params2.OPERIOD == pytest.approx(europa_porb_params.OPERIOD)
+    assert test_porb_params2.TJP == pytest.approx(europa_porb_params.TJP)
+    assert test_porb_params2.SIDAY == pytest.approx(europa_porb_params.SIDAY)
+    assert np.isclose(test_porb_params2.TAV, europa_porb_params.TAV)
+    assert np.isclose(test_porb_params2.BLIP, europa_porb_params.BLIP) 
+    assert np.all(np.isclose(test_porb_params2.BFRM, europa_porb_params.BFRM))

@@ -352,6 +352,15 @@ class SpinParams:
             np.isclose(self.true_anomaly_at_vernal_equinox, other.true_anomaly_at_vernal_equinox)
         ])
 
+        print(f"rotation_period:                {self.rotation_period == other.rotation_period} {self.rotation_period} {other.rotation_period} ")
+        print(f"phase_at_j2000:                 {self.phase_at_j2000 == other.phase_at_j2000} {self.phase_at_j2000} {other.phase_at_j2000} ")
+        print(f"pole_ra:                        {np.isclose(self.pole_ra, other.pole_ra)} {self.pole_ra} {other.pole_ra} ")
+        print(f"pole_dec:                       {np.isclose(self.pole_dec, other.pole_dec)} {self.pole_dec} {other.pole_dec} ")
+        print(f"default_spin_flag:              {self.default_spin_flag == other.default_spin_flag} {self.default_spin_flag} {other.default_spin_flag} ")
+        print(f"obliquity:                      {np.isclose(self.obliquity, other.obliquity)} {self.obliquity} {other.obliquity} ")
+        print(f"rotation_matrix_FtoB:           {np.all(np.isclose(self.rotation_matrix_FtoB, other.rotation_matrix_FtoB))} {self.rotation_matrix_FtoB} {other.rotation_matrix_FtoB}")
+        print(f"true_anomaly_at_vernal_equinox: {np.isclose(self.true_anomaly_at_vernal_equinox, other.true_anomaly_at_vernal_equinox)} {self.true_anomaly_at_vernal_equinox} {other.true_anomaly_at_vernal_equinox} ")
+
         return is_equal
     
     def __str__(self) -> str:
@@ -576,7 +585,6 @@ class SpinParams:
                 True anomaly at vernal equinox [radians]. Defaults to None.
 
         Raises:
-            ValueError: Raised when either rotation_period or phase_at_j2000 are unspecified.
             ValueError: Raised when one of two paired parameters (pole_ra and pole_dec) 
                 is set without the other.  
             ValueError: Raised when one of two paired parameters (obliquity and 
@@ -590,9 +598,6 @@ class SpinParams:
         """
 
         default_spin_flag = 0
-
-        if (rotation_period is None) or (phase_at_j2000 is None):
-            raise ValueError("rotation_period and phase_at_j2000 must be specified.")
         
         if not (pole_ra is None) == (pole_dec is None):
             raise ValueError("pole_ra and pole_dec must be set together or not at all.")
