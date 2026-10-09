@@ -81,7 +81,7 @@ class OrbParams:
                     inclination:        inclination [radians]
                     arg_of_peri:        argument of perihelion [radians] 
                     mean_anomaly:       mean anomaly at epoch [radians]
-                    semimajor_axis:     semimajor axis [km]
+                    semimajor_axis:     semimajor axis [AU]
                     epoch_JD:           Julian date of epoch [Julian Date]
 
         Returns:
@@ -108,7 +108,7 @@ class OrbParams:
                     inclination:        inclination [radians]
                     arg_of_peri:        argument of perihelion [radians] 
                     mean_anomaly:       mean anomaly at epoch [radians]
-                    semimajor_axis:     semimajor axis [km]
+                    semimajor_axis:     semimajor axis [AU]
                     epoch_JD:           Julian date of epoch [Julian Date]
             orb_second_params (tuple[float, float, float]): Tuple of derived orbital 
                 parameters, usually from get_secondary_orb_params(). Contains:
@@ -176,7 +176,7 @@ class OrbParams:
                 Defaults to None.
             arg_of_peri (float | None, optional): argument of perihelion [radians]. 
                 Defaults to None.
-            semimajor_axis (float | None, optional): semimajor axis [km]. 
+            semimajor_axis (float | None, optional): semimajor axis [AU]. 
                 Defaults to None.
             orbit_period (float | None, optional): Period of the orbit in Earth days. 
                 Defaults to None.
@@ -270,7 +270,7 @@ class OrbParams:
             eccentricity (float): eccentricity [unitless]. 
             inclination (float): inclination [radians]. 
             arg_of_peri (float): argument of perihelion [radians]. 
-            semimajor_axis (float | None, optional): semimajor axis [km]. 
+            semimajor_axis (float | None, optional): semimajor axis [AU]. 
                 Defaults to None.
             orbit_period (float | None, optional): Period of the orbit in Earth days. 
                 Defaults to None.
@@ -392,7 +392,7 @@ class SpinParams:
         Args:
             spin_axis (tuple[float, float, float, float, int]): Tuple containing spin
                 axis information, as would be produced by get_spin_axis(). Contains:
-                    rotation_period:    rotation period [hours]
+                    rotation_period:    sidereal rotation period [hours]
                     phase_at_j2000:     rotational phase (angle of prime meridian) at J2000 epoch [degrees]
                     pole_ra:            right ascension of spin axis in J2000 frame [radians]
                     pole_dec:           declination of spin axis in J2000 frame [radians]
@@ -479,7 +479,7 @@ class SpinParams:
                 spin axis information.
             orb (OrbParams): An OrbParams object, containing orbital elements.
             
-            rotation_period (float | None, optional): rotation period [hours]. 
+            rotation_period (float | None, optional): sidereal rotation period [hours]. 
                 Defaults to None.
             phase_at_j2000 (float | None, optional): rotational phase (angle of prime 
                 meridian) at J2000 epoch [degrees]. Defaults to None.
@@ -570,7 +570,7 @@ class SpinParams:
         Args:
             orb (OrbParams): An OrbParams object, containing orbital elements.
             
-            rotation_period (float): rotation period [hours]. 
+            rotation_period (float): sidereal rotation period [hours]. 
             phase_at_j2000 (float): rotational phase (angle of prime meridian) at 
                 J2000 epoch [degrees]. 
 
@@ -929,7 +929,7 @@ def get_orbital_elements(
                     inclination:        inclination [radians]
                     arg_of_peri:        argument of perihelion [radians] 
                     mean_anomaly:       mean anomaly at epoch [radians]
-                    semimajor_axis:     semimajor axis [km]
+                    semimajor_axis:     semimajor axis [AU]
                     epoch_JD:           Julian date of epoch [Julian Date]
     """
     spice.furnsh(metakernel)
@@ -962,7 +962,7 @@ def get_spin_axis(metakernel:str, body_naifid:int) -> tuple[float, float, float,
 
     Returns:
         tuple[float, float, float, float, int]: Tuple of spin axis parameters:
-            rotation_period:    rotation period [hours]
+            rotation_period:    sidereal rotation period [hours]
             phase_at_j2000:     rotational phase (angle of prime meridian) at J2000 epoch [degrees]
             pole_ra:            right ascension of spin axis in J2000 frame [radians]
             pole_dec:           declination of spin axis in J2000 frame [radians]
@@ -1024,7 +1024,7 @@ def get_secondary_orb_params(
                 inclination:        inclination [radians]
                 arg_of_peri:        argument of perihelion [radians] 
                 mean_anomaly:       mean anomaly at epoch [radians]
-                semimajor_axis:     semimajor axis [km]
+                semimajor_axis:     semimajor axis [AU]
                 epoch_JD:           Julian date of epoch [Julian Date]
 
     Returns:
@@ -1280,7 +1280,7 @@ def modify_porb_params(porb_params:PorbParams,
             Defaults to None.
         arg_of_peri (float | None, optional): argument of perihelion [radians]. 
             Defaults to None.
-        semimajor_axis (float | None, optional): semimajor axis [km]. 
+        semimajor_axis (float | None, optional): semimajor axis [AU]. 
             Defaults to None.
         orbit_period (float | None, optional): Period of the orbit in Earth days. 
             Defaults to None.
@@ -1292,7 +1292,7 @@ def modify_porb_params(porb_params:PorbParams,
             Defaults to None.
         mean_anomaly (float | None, optional): mean anomaly at epoch [radians]. 
             Defaults to None.      
-        rotation_period (float | None, optional): rotation period [hours]. 
+        rotation_period (float | None, optional): sidereal rotation period [hours]. 
             Defaults to None.
         phase_at_j2000 (float | None, optional): rotational phase (angle of prime 
             meridian) at J2000 epoch [degrees]. Defaults to None.
@@ -1380,11 +1380,11 @@ def fully_specify_porb_params(
         eccentricity (float): eccentricity [unitless].
         inclination (float): inclination [radians]. 
         arg_of_peri (float): argument of perihelion [radians].
-        rotation_period (float): rotation period [hours].
+        rotation_period (float): sidereal rotation period [hours].
         phase_at_j2000 (float): rotational phase (angle of prime meridian) at J2000 epoch 
             [degrees].
         
-        semimajor_axis (float | None, optional): semimajor axis [km]. 
+        semimajor_axis (float | None, optional): semimajor axis [AU]. 
             Defaults to None.
         orbit_period (float | None, optional): Period of the orbit in Earth days. 
             Defaults to None.
